@@ -1,6 +1,6 @@
 # Build the virtual environment in one stage, ship it in a clean one.
 # The runtime image contains no pip, no compiler and no development tools.
-FROM python:3.13-slim-bookworm AS build
+FROM python:3.14-slim-bookworm AS build
 
 WORKDIR /app
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -13,7 +13,7 @@ RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r requirements.lock \
     && /opt/venv/bin/pip install --no-cache-dir --no-deps .
 
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

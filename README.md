@@ -130,7 +130,7 @@ open-ended questions fall through to retrieval.
 
 | Area | Choice | Reason |
 |---|---|---|
-| Backend | Python 3.13+, FastAPI, Pydantic | Typed API, mature AI ecosystem |
+| Backend | Python 3.14+, FastAPI, Pydantic | Typed API, mature AI ecosystem |
 | Frontend | TanStack Start, React 19, strict TypeScript, designed in Lovable | The design is the deliverable; the server carries the API proxy |
 | Store | PostgreSQL 16 + pgvector | Structured mapping and vectors in one database |
 | Persistence | SQLAlchemy 2, Alembic | Explicit schema, repeatable migrations |
@@ -220,7 +220,7 @@ your own Postgres.
 | Path | You need | First commands |
 |---|---|---|
 | Docker | Docker Engine and Compose v2 | `make run-docker` |
-| Make | Python 3.13, bun, PostgreSQL 16 with pgvector | `make setup` then `make run` |
+| Make | Python 3.14, bun, PostgreSQL 16 with pgvector | `make setup` then `make run` |
 
 ```bash
 make run-docker   # copies config/app.env, builds and starts db, api and web

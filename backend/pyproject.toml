@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "career-assistant"
 version = "0.1.0"
 description = "Career Intelligence Assistant API"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi>=0.141,<0.142",
     "pydantic-settings>=2.10,<3",
@@ -59,14 +59,14 @@ omit = ["*/migrations/*"]
 
 [tool.ruff]
 src = ["src", "tests"]
-target-version = "py313"
+target-version = "py314"
 line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 strict = true
 files = ["src"]
 plugins = ["pydantic.mypy"]

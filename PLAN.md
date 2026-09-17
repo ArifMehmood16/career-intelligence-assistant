@@ -58,7 +58,7 @@ Approved for the initial implementation. A change requires an ADR and human appr
 | Area | Decision | Reason | Deferred alternative |
 |---|---|---|---|
 | Shape | Modular monolith | Clear boundaries without operational overhead | Services |
-| Backend | Python 3.13+, FastAPI, Pydantic | Typed API, mature AI ecosystem | Node/NestJS |
+| Backend | Python 3.14+, FastAPI, Pydantic | Typed API, mature AI ecosystem | Node/NestJS |
 | Frontend | TanStack Start (React 19, Vite, strict TS), as designed in Lovable | The design is the deliverable; the Start server carries the API proxy | Vite SPA |
 | Frontend packages | `bun` | Lovable maintains `bun.lock` | npm |
 | Store | PostgreSQL 16 + pgvector | Structured mapping and vectors in one store | Dedicated vector DB |

@@ -79,3 +79,21 @@ Never record a command output, metric, date or commit hash that was not observed
   Compose profile and is started only when asked for.
 - Human validation: `docker compose --profile ollama` documented in `compose.yaml`,
   the README quick start and `make help`.
+
+### 002 — Backend Python bumped to 3.14
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: unplanned — unblock `make setup` after host Python mismatch
+- Prompt intent: upgrade the project to the most recent Python on the system
+  (3.14.4) instead of installing 3.13.
+- Suggestion: widen `requires-python` to include 3.14; bump Docker, ruff, mypy,
+  README/PLAN/Makefile; add ADR 008; recreate the venv and re-run setup.
+- Outcome: accepted.
+- Reason: developer chose to track system Python 3.14 rather than maintain a
+  separate 3.13 toolchain. The previous upper bound `<3.14` was the direct cause
+  of the setup failure.
+- Human validation: `make setup` succeeded on Python 3.14.4;
+  `backend/.venv/bin/python --version` reports 3.14.4; `import career_assistant`
+  succeeds. Regenerated stale `frontend/bun.lock` so the frozen install step
+  could pass.

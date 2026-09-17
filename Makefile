@@ -35,7 +35,7 @@ help:
 	@echo "  make config             Ensure config/app.env exists"
 	@echo ""
 	@echo "Settings: $(ENV_FILE) (copy from config/app.env.example). Optional root .env overlays host runs."
-	@echo "Needs: Python 3.13, bun, Docker for run-docker/security."
+	@echo "Needs: Python 3.14, bun, Docker for run-docker/security."
 
 config:
 	test -f $(ENV_FILE) || cp config/app.env.example $(ENV_FILE)
