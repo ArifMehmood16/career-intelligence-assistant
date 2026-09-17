@@ -18,6 +18,37 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 0 — Repository baseline and decisions
+
+- Date: 2026-09-18
+- Commands run:
+  - `backend/.venv/bin/pytest tests/unit/test_phase0_baseline.py -q --no-cov`
+    observed failing on missing Product scope, threat-model draft coverage, fixtures,
+    dataset stub and scoring rubric config (intended red).
+  - Same command after the Phase 0 assets landed — all Phase 0 baseline tests passed.
+  - `backend/.venv/bin/pytest -q` (full hermetic suite) after the green cycle.
+- Observed result:
+  - AGENTS.md now carries a Product scope section aligned with features.md
+    “Deliberately not features”, and hard delete explicitly includes generated drafts.
+  - ADRs 001–007 confirmed accepted and dated 2026-09-18; contents match PLAN fixed
+    direction (monolith, Postgres/pgvector, pluggable providers + egress, deterministic
+    scoring, runtime provider selection, TanStack Start, grounded generation).
+  - threat-model.md names upload, document/job-description text, model output,
+    generated drafts, personal data and egress controls.
+  - Fixtures: 3 synthetic CVs, 6 synthetic JDs, manifest pairings for clean / partial /
+    poor / vague seniority / injection / recency decay.
+  - `sample-data/evaluation/dataset.json` stub with the documented case shape.
+  - Starting rubric weights in `config/scoring_rubric.toml`, referenced from features.md.
+- Decisions made:
+  - Scope boundaries stay as features.md states; no product expansion in Phase 0.
+  - Rubric constants are configuration from day one, not deferred until scoring code.
+- Problems hit and how they were resolved:
+  - Host Python was already on 3.14 from the preceding commit; Phase 0 tests run on that
+    interpreter.
+- Carried forward:
+  - Phase 1 remaining: frontend hygiene (1.3), Vitest (1.4), colour/fixture ESLint guard
+    (1.8), CI (1.9).
+
 ## Phase 1 (partial) — run and deploy surface
 
 - Date: 2026-09-17

@@ -1,7 +1,7 @@
 # ADR 002 — PostgreSQL with pgvector
 
 - Status: accepted
-- Date: TBD
+- Date: 2026-09-18
 
 ## Context
 

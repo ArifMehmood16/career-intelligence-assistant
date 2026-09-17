@@ -1,0 +1,18 @@
+SYNTHETIC FIXTURE — not a real job posting.
+
+Company: Orbit SaaS
+Role: Analytics Engineer
+Location: Remote — UK
+
+About the role
+Join a small data team building customer-facing metrics for a B2B product.
+
+Must-have requirements
+- Hands-on dbt in a production warehouse.
+- Experience operating scheduled pipelines (Airflow or equivalent).
+- Strong SQL and the ability to define trustworthy product metrics.
+- Comfort collaborating with product managers on experiment readouts.
+
+Desirable
+- Prior work with feature stores or ML feature tables.
+- Experience mentoring junior analysts.

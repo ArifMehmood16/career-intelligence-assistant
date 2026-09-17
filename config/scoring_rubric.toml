@@ -1,0 +1,22 @@
+# Starting fit-score rubric.
+# Initial configuration documented in docs/features.md.
+# Not measurements. Evaluation may change them; domain code must read
+# configuration rather than hard-coding literals.
+
+[weights]
+must_have = 3
+desirable = 1
+
+[status]
+met = 1.0
+partial = 0.5
+missing = 0.0
+
+[recency]
+within_2y = 1.0
+from_2y_to_5y = 0.85
+over_5y = 0.7
+
+[bands]
+strong_match_min = 75
+partial_match_min = 50

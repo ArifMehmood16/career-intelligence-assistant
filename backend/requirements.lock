@@ -1,5 +1,5 @@
 # Runtime dependencies only. This is what the container image installs.
-# Locked from Python 3.13.15 against pyproject.toml.
+# Locked from Python 3.14.4 against pyproject.toml.
 # Regenerate: make lock
 annotated-doc==0.0.5
     # via fastapi

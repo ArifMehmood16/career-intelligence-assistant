@@ -94,9 +94,11 @@ score = 100 × Σ(weight × status × recency) ÷ Σ(weight)
 bands:  75+ strong match      50–74 partial match      under 50 limited match
 ```
 
-These weights are the **initial** rubric. They are configuration, they are documented
+These weights are the **initial** rubric. They live in
+[`config/scoring_rubric.toml`](../config/scoring_rubric.toml), they are documented
 here, and they are the thing evaluation in [evaluation.md](evaluation.md) is allowed
-to change. No number in this section is a measurement.
+to change. No number in this section is a measurement. Domain scoring code must read
+the configuration file rather than hard-coding these literals.
 
 **Rules**
 

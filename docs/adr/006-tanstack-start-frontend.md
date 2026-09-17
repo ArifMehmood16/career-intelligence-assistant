@@ -1,7 +1,7 @@
 # ADR 006 — The Lovable TanStack Start app is the shipped frontend
 
 - Status: accepted
-- Date: TBD
+- Date: 2026-09-18
 - Supersedes the "React + Vite SPA" row in the original stack table.
 
 ## Context

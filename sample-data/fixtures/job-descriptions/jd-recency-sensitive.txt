@@ -1,0 +1,19 @@
+SYNTHETIC FIXTURE — not a real job posting.
+
+Company: Arc Stream Media
+Role: Streaming Data Engineer
+Location: Remote — UK
+
+About the role
+We process high-volume clickstream and need engineers who have operated large Spark
+workloads in production.
+
+Must-have requirements
+- Production Apache Spark experience on multi-terabyte workloads.
+- Experience operating Hadoop or an equivalent distributed compute platform.
+- Python for pipeline tooling and operational automation.
+- Willingness to support overnight batch windows.
+
+Desirable
+- Recent cloud warehouse experience (BigQuery or Snowflake).
+- Mentoring experience on Spark performance.

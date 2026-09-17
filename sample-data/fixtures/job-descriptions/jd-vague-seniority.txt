@@ -1,0 +1,19 @@
+SYNTHETIC FIXTURE — not a real job posting.
+
+Company: Vague Peak Labs
+Role: Data Person (title TBD)
+Location: Flexible
+
+About the role
+Looking for a rockstar data ninja who thrives in ambiguous environments and can wear
+many hats. Must be a self-starter with a growth mindset and excellent vibes.
+
+Requirements
+- Senior-level experience (or someone who operates like a senior).
+- Strong ownership mentality across the modern data stack.
+- Ability to influence without authority and drive outcomes end to end.
+- Comfortable with "scale" and "impact" in fast-paced settings.
+- Ideally has led "initiatives" rather than merely delivered tickets.
+
+We are not listing concrete tools on purpose. Interpret seniority and scope as best
+you can — this fixture exists to exercise vague-requirement detection.
