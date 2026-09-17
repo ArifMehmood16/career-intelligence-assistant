@@ -3,8 +3,12 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 0, task 0.1. No application code exists. The Lovable
-frontend design has landed in `frontend/` and is the shipped frontend
+**Current position:** Phase 0 is still open; the run surface was brought forward at
+the developer's direction on 2026-09-17, so tasks 1.1, 1.2, 1.5, 1.6 and 1.7 are done
+and part of 16.1 exists. Phase 0 remains the next work: the threat model (0.3), the
+synthetic fixtures (0.4) and the evaluation dataset shape (0.5).
+
+The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
 
 Read alongside this plan:
@@ -112,9 +116,9 @@ independent.
 
 ## Phase 1 — Skeleton and quality gates
 
-- [ ] **1.1** `backend/pyproject.toml` with Ruff, mypy strict on the package, pytest
+- [x] **1.1** `backend/pyproject.toml` with Ruff, mypy strict on the package, pytest
       with coverage; locked dependency install.
-- [ ] **1.2** Package skeleton `backend/src/career_assistant/` with `domain/`,
+- [x] **1.2** Package skeleton `backend/src/career_assistant/` with `domain/`,
       `application/`, `adapters/`, `parsing/`, `matching/`, `generation/`,
       `evaluation/`, `ops/`.
 - [ ] **1.3** Frontend hygiene: delete `package-lock.json` (keep `bun.lock`), delete
@@ -122,10 +126,10 @@ independent.
       on the Lovable output as delivered. Record anything that does not.
 - [ ] **1.4** Frontend test tooling: Vitest, Testing Library, jsdom, coverage, and a
       first component test against a Lovable component rendered from props.
-- [ ] **1.5** `Makefile` targets: `setup test lint typecheck run verify security`,
+- [x] **1.5** `Makefile` targets: `setup test lint typecheck run verify security`,
       covering both halves.
-- [ ] **1.6** Liveness endpoint with an API test. First backend red-green cycle.
-- [ ] **1.7** Architecture guard test: fail if `domain/` or `application/` imports
+- [x] **1.6** Liveness endpoint with an API test. First backend red-green cycle.
+- [x] **1.7** Architecture guard test: fail if `domain/` or `application/` imports
       FastAPI, SQLAlchemy or a provider SDK.
 - [ ] **1.8** Frontend guard: an ESLint rule failing the build on a hex colour or raw
       Tailwind palette class in `src/components/**`, and on a fixture import outside
@@ -472,6 +476,10 @@ Kept light. No vendor APM, no dashboards.
 
 - [ ] **16.1** Nitro `node-server` preset for the frontend build; non-root backend and
       frontend images; `compose.yaml` with health checks for Postgres, API and web.
+      *Written on 2026-09-17 and unverified: no Docker was available on the machine
+      that wrote them. Building both images and running the stack is what closes this
+      task — treat the frontend build output path and the Nitro preset as the two
+      things most likely to need a fix.*
 - [ ] **16.2** Clean-room walkthrough: fresh clone, follow the README exactly, fix
       every step that does not work.
 - [ ] **16.3** Playwright end-to-end following the session walkthrough in
