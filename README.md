@@ -6,9 +6,11 @@ and turns that mapping into the things a candidate actually needs — a prioriti
 plan, CV bullets, an interview pack, a cover letter draft — with every claim traceable
 to the span of text it came from.
 
-> **Status:** planning. The frontend design is built; no application code yet.
-> [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
-> protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
+> **Status:** phase 1. The run surface exists — the API answers liveness, the web
+> app renders against fixtures, and `make run-docker` builds all three services.
+> No product behaviour yet. [PLAN.md](PLAN.md) is the execution order,
+> [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
+> [docs/features.md](docs/features.md) is what it does.
 
 ## The engineering thesis
 
@@ -212,20 +214,39 @@ a paragraph at the end of it:
 
 ## Quick start
 
-_Not runnable yet — Phase 1 establishes the skeleton. The intended surface:_
+Two paths. Docker is the smaller first clone; Make is for a host install against
+your own Postgres.
+
+| Path | You need | First commands |
+|---|---|---|
+| Docker | Docker Engine and Compose v2 | `make run-docker` |
+| Make | Python 3.13, bun, PostgreSQL 16 with pgvector | `make setup` then `make run` |
 
 ```bash
-cp config/app.env.example config/app.env
-docker compose --env-file config/app.env up -d --build
+make run-docker   # copies config/app.env, builds and starts db, api and web
 # Web http://localhost:3000   API http://localhost:8000/docs
+make down         # stop it again
 ```
 
 ```bash
-make setup   # venv, locked install, bun install
-make test    # hermetic backend + frontend
-make run     # migrate, API + web on the host
-make verify  # lint + typecheck + test + security
+make setup   # config/app.env, Python venv from the lock, bun install
+make test    # hermetic backend tests — no database, no key, no model download
+make lint    # ruff, mypy strict, tsc, eslint
+make run     # API and web dev server on the host
+make verify  # lint + test + security
+make help    # every target, with what it needs
 ```
+
+Nothing here downloads a model or needs an API key. Ollama is available but sits
+behind a Compose profile, so it starts only when asked for:
+
+```bash
+docker compose --env-file config/app.env --profile ollama up -d
+```
+
+**What runs today:** Postgres, the API answering `GET /api/health`, and the web app
+serving the Lovable screens against fixture data. Everything in the feature table
+above is [PLAN.md](PLAN.md) work that has not been built yet.
 
 ## Documentation
 

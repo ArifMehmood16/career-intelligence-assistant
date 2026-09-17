@@ -1,0 +1,114 @@
+# Run with: docker compose --env-file config/app.env up -d --build
+# `make run-docker` does that for you and prints the URLs.
+#
+# Three services by default. Ollama is behind a profile because the default
+# providers are hermetic — nothing here downloads a model unless you ask it to:
+#   docker compose --env-file config/app.env --profile ollama up -d
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-career}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-career}
+      POSTGRES_DB: ${POSTGRES_DB:-career_assistant}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-career} -d ${POSTGRES_DB:-career_assistant}"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-career}:${POSTGRES_PASSWORD:-career}@db:5432/${POSTGRES_DB:-career_assistant}
+
+      # Providers. Hermetic needs nothing; hosted needs the gate open and a key.
+      COMPLETION_PROVIDER: ${COMPLETION_PROVIDER:-hermetic}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-hermetic}
+      EXTRACTION_STRATEGY: ${EXTRACTION_STRATEGY:-rules}
+      ALLOW_HOSTED_PROVIDERS: ${ALLOW_HOSTED_PROVIDERS:-false}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_COMPLETION_MODEL: ${OLLAMA_COMPLETION_MODEL:-}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_COMPLETION_MODEL: ${OPENAI_COMPLETION_MODEL:-}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_COMPLETION_MODEL: ${ANTHROPIC_COMPLETION_MODEL:-}
+      PROVIDER_TIMEOUT_SECONDS: ${PROVIDER_TIMEOUT_SECONDS:-60}
+      PROVIDER_MAX_RETRIES: ${PROVIDER_MAX_RETRIES:-2}
+      PROVIDER_BREAKER_FAILURE_THRESHOLD: ${PROVIDER_BREAKER_FAILURE_THRESHOLD:-5}
+      PROVIDER_ALLOW_LOCAL_FALLBACK: ${PROVIDER_ALLOW_LOCAL_FALLBACK:-false}
+      TRACK_TOKEN_USAGE: ${TRACK_TOKEN_USAGE:-true}
+
+      # Scoring rubric. Documented in docs/features.md; changing it re-scores.
+      SCORE_WEIGHT_MUST: ${SCORE_WEIGHT_MUST:-3}
+      SCORE_WEIGHT_DESIRABLE: ${SCORE_WEIGHT_DESIRABLE:-1}
+      SCORE_FACTOR_MET: ${SCORE_FACTOR_MET:-1.0}
+      SCORE_FACTOR_PARTIAL: ${SCORE_FACTOR_PARTIAL:-0.5}
+      SCORE_RECENCY_RECENT_YEARS: ${SCORE_RECENCY_RECENT_YEARS:-2}
+      SCORE_RECENCY_MID_YEARS: ${SCORE_RECENCY_MID_YEARS:-5}
+      SCORE_RECENCY_FACTOR_MID: ${SCORE_RECENCY_FACTOR_MID:-0.85}
+      SCORE_RECENCY_FACTOR_OLD: ${SCORE_RECENCY_FACTOR_OLD:-0.7}
+      SCORE_BAND_STRONG: ${SCORE_BAND_STRONG:-75}
+      SCORE_BAND_PARTIAL: ${SCORE_BAND_PARTIAL:-50}
+
+      # Generation (ADR 007) and jobs.
+      GENERATION_ENABLED: ${GENERATION_ENABLED:-true}
+      GENERATION_MAX_REGENERATIONS: ${GENERATION_MAX_REGENERATIONS:-1}
+      GENERATION_MAX_OUTPUT_TOKENS: ${GENERATION_MAX_OUTPUT_TOKENS:-900}
+      COVER_LETTER_MIN_MET_MUSTS: ${COVER_LETTER_MIN_MET_MUSTS:-2}
+      JOB_WORKER_CONCURRENCY: ${JOB_WORKER_CONCURRENCY:-2}
+      JOB_QUEUE_MAX_DEPTH: ${JOB_QUEUE_MAX_DEPTH:-50}
+      JOB_TIMEOUT_SECONDS: ${JOB_TIMEOUT_SECONDS:-900}
+
+      # Limits and retention.
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-10485760}
+      MAX_DOCUMENT_PAGES: ${MAX_DOCUMENT_PAGES:-40}
+      MAX_DOCUMENT_CHARS: ${MAX_DOCUMENT_CHARS:-400000}
+      MAX_QUESTION_CHARS: ${MAX_QUESTION_CHARS:-1000}
+      MAX_CONTEXT_CHARS: ${MAX_CONTEXT_CHARS:-12000}
+      MAX_EXCERPT_CHARS: ${MAX_EXCERPT_CHARS:-600}
+      LLM_MAX_OUTPUT_TOKENS: ${LLM_MAX_OUTPUT_TOKENS:-1024}
+      MAX_ROLES_PER_WORKSPACE: ${MAX_ROLES_PER_WORKSPACE:-25}
+      RATE_LIMIT_UPLOADS_PER_HOUR: ${RATE_LIMIT_UPLOADS_PER_HOUR:-30}
+      RATE_LIMIT_GENERATIONS_PER_HOUR: ${RATE_LIMIT_GENERATIONS_PER_HOUR:-60}
+      DOCUMENT_RETENTION_DAYS: ${DOCUMENT_RETENTION_DAYS:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+    environment:
+      # Server-side only. The browser never holds an API origin — it calls the
+      # same origin and this server proxies /api/** onward.
+      API_BASE_URL: http://api:8000
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      PORT: "3000"
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ollama"]
+    ports:
+      - "${OLLAMA_HOST_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  postgres_data:
+  ollama_data:
