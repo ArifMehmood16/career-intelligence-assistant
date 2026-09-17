@@ -1,0 +1,11 @@
+# Gitleaks configuration. Extends the default rule set.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Paths that legitimately contain placeholder credentials"
+paths = [
+  '''\.env\.example$''',
+  '''config/app\.env\.example$''',
+  '''sample-data/''',
+]
