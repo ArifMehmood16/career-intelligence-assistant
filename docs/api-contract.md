@@ -1,0 +1,388 @@
+# API contract
+
+The single agreement between the FastAPI backend and the TanStack Start frontend.
+Both sides are written against this file, and it is the first thing to change when
+the shape changes.
+
+- Backend routes live under `/api`.
+- The browser always calls the **same origin**. The Start server proxies `/api/**` to
+  the backend, so there is no CORS configuration and no API URL in browser code. See
+  [frontend-integration.md](frontend-integration.md).
+- All field names are `camelCase` on the wire. Python models use `snake_case`
+  internally with an alias generator; the wire format matches the TypeScript types in
+  `frontend/src/types/index.ts` exactly.
+- Every route has an explicit Pydantic response model. No bare `dict`.
+- Times are RFC 3339 UTC strings.
+
+---
+
+## Workspace identity
+
+There is no authentication in this build. The server resolves a workspace from a
+`workspace` cookie, issuing one on first request (`HttpOnly`, `SameSite=Lax`). Every
+query is scoped by workspace id, and an integration test proves one workspace cannot
+read another's rows — so the scoping is real even though the identity is not yet.
+
+---
+
+## Error envelope
+
+Every non-2xx response:
+
+```json
+{ "error": { "code": "role_not_found", "message": "No role with that id.", "correlationId": "01J..." } }
+```
+
+- `code` is a stable machine string; the frontend switches on it, never on `message`.
+- `message` is safe to display. No stack traces, prompts, provider payloads or file
+  paths ever appear in it.
+- `correlationId` is on every request and every log line for it.
+
+| Code | Status | Meaning |
+|---|---|---|
+| `validation_failed` | 422 | Request body failed schema validation |
+| `cv_required` | 409 | The action needs a parsed CV and none exists |
+| `document_too_large` | 413 | Over `MAX_UPLOAD_BYTES`, rejected before buffering |
+| `document_unsupported` | 415 | Not PDF, DOCX or plain text |
+| `document_unreadable` | 422 | Encrypted, scanned, or no extractable text |
+| `role_not_found` / `cv_not_found` / `span_not_found` | 404 | Unknown id in this workspace |
+| `analysis_incomplete` | 409 | Output requested before the analysis job finished |
+| `insufficient_evidence` | 200 | Not an error — an answer kind. Listed here so it is not mistaken for one |
+| `provider_unavailable` | 409 | Selected provider is not usable; `message` gives the reason |
+| `egress_not_permitted` | 403 | Hosted provider selected while the gate is closed |
+| `egress_not_acknowledged` | 409 | Hosted selection without `acknowledgedEgress` |
+| `provider_failed` | 502 | Upstream provider error after retries |
+| `rate_limited` | 429 | Local request limit |
+| `internal_error` | 500 | Anything else, logged with the correlation id |
+
+---
+
+## Health
+
+| Route | Returns |
+|---|---|
+| `GET /api/health` | `{ "status": "ok" }` — liveness, no dependencies touched |
+| `GET /api/ready` | `{ "database": "ok", "migrations": "current", "completionProvider": "hermetic", "embeddingProvider": "hermetic", "hostedEgress": false }` |
+
+---
+
+## CV
+
+```http
+GET    /api/cv           → CvDocument | null
+POST   /api/cv           → 201 CvDocument
+DELETE /api/cv           → 204
+```
+
+`POST /api/cv` accepts either `multipart/form-data` with a `file` part, or
+`application/json` with `{ "text": "...", "filename": "pasted.txt" }`.
+
+```ts
+CvDocument { id, filename, pageCount: number, parsedAt: string }
+```
+
+Unchanged from the existing frontend type. Uploading replaces the current CV and
+enqueues re-analysis of every role; the response carries `reanalysis: { jobIds: [] }`
+as an additive field the current UI may ignore.
+
+---
+
+## Roles
+
+```http
+GET    /api/roles                    → Role[]
+POST   /api/roles                    → 202 RoleCreated
+GET    /api/roles/{id}               → Role
+DELETE /api/roles/{id}               → 204
+POST   /api/roles/{id}/reanalyse     → 202 { jobId }
+```
+
+```ts
+Role {
+  id; title; company;
+  fitScore: number;            // 0 when not yet scored
+  bandLabel: string;           // "Strong match" | "Partial match" | "Limited match" | "Not scored yet"
+  counts: { met: number; partial: number; missing: number };
+  status: "analysing" | "ready" | "failed";   // additive
+  updatedAt: string;                          // additive
+}
+
+RoleCreated { role: Role; jobId: string }
+```
+
+`POST /api/roles` body: `{ title, company, description }` as JSON, or multipart with
+`file` plus `title` and `company`. It returns immediately with `status: "analysing"`;
+the analysis runs as a job.
+
+---
+
+## Analysis jobs
+
+Extraction against a local or hosted model takes seconds to minutes. It is a job, and
+the UI shows it as one.
+
+```http
+GET /api/jobs/{id} → AnalysisJob
+```
+
+```ts
+AnalysisJob {
+  id;
+  kind: "role_analysis" | "cv_parse" | "reindex";
+  state: "queued" | "running" | "succeeded" | "failed";
+  stage: "parsing" | "extracting_requirements" | "extracting_claims" | "mapping" | "scoring" | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: { code: string; message: string } | null;
+}
+```
+
+The frontend polls this with react-query while `state` is `queued` or `running`, at a
+fixed interval, and stops on a terminal state. A failed job leaves the role at
+`status: "failed"` with the reason, and `POST /reanalyse` is the retry.
+
+---
+
+## Role analysis output
+
+```http
+GET /api/roles/{id}/requirements   → Requirement[]
+GET /api/roles/{id}/breakdown      → BreakdownRow[]
+GET /api/roles/{id}/gap-plan       → GapPlan
+GET /api/roles/{id}/interview-pack → InterviewPack
+```
+
+All four return `409 analysis_incomplete` until the role's analysis has succeeded.
+
+```ts
+Requirement {
+  id; roleId; text;
+  type: "must" | "desirable";
+  status: "met" | "partial" | "missing";
+  evidence: Evidence | null;
+}
+
+Evidence { documentId; page: number; paragraph: string; highlight: string }
+// highlight is always an exact substring of paragraph — enforced server-side.
+
+BreakdownRow { id: "must" | "desirable" | "recency"; label; value: number; requirementIds: string[] }
+```
+
+`Requirement` and `Evidence` are unchanged from the existing frontend types. Evidence
+is returned inline so the requirement table renders in one request; `GET /api/spans/{id}`
+exists for citation chips that arrive without it.
+
+### Gap plan
+
+```ts
+GapPlan {
+  roleId;
+  currentScore: number;
+  items: GapItem[];          // ordered by scoreDelta descending
+}
+
+GapItem {
+  requirementId; requirementText;
+  type: "must" | "desirable";
+  status: "partial" | "missing";
+  reason: "no_related_claim" | "adjacent_claim_only" | "evidence_too_old" | "evidence_thin";
+  adjacentEvidence: Evidence | null;
+  scoreDelta: number;        // points gained if this one requirement became met
+  action: "evidence_it" | "learn_it" | "accept_it";
+  canDraftBullet: boolean;   // true when adjacentEvidence exists
+}
+```
+
+`scoreDelta` is computed by re-running the rubric with that requirement at met. No
+model is involved in this route at all.
+
+### Interview pack
+
+```ts
+InterviewPack {
+  roleId;
+  probes:    { requirementId; question: string; status: RequirementStatus }[];
+  leadWith:  { requirementId; evidence: Evidence; note: string }[];
+  thinAreas: { requirementId; requirementText; nearest: Evidence | null }[];
+  askThem:   { question: string; requirementId: string | null }[];
+  provenance: DraftProvenance;
+}
+```
+
+---
+
+## Generated drafts
+
+```http
+POST /api/roles/{id}/bullets       → BulletDraft
+POST /api/roles/{id}/cover-letter  → CoverLetterDraft
+GET  /api/roles/{id}/export/{artefact}.md → text/markdown
+```
+
+`artefact` is one of `gap-plan`, `interview-pack`, `cover-letter`, `bullets`.
+
+```ts
+DraftProvenance {
+  provider: string;          // provider id that produced it
+  model: string | null;      // null for the hermetic template path
+  leftMachine: boolean;      // true when a hosted provider was used
+  generatedAt: string;
+  grounded: boolean;         // passed the validator
+  fallback: "none" | "regenerated" | "template";
+}
+
+BulletDraft {
+  requirementId;
+  bullets: { text: string; spanIds: string[]; evidence: Evidence[] }[];
+  provenance: DraftProvenance;
+}
+
+CoverLetterDraft {
+  roleId;
+  paragraphs: { text: string; requirementIds: string[]; spanIds: string[] }[];
+  omittedReason: string | null;   // set when a paragraph was dropped by the validator
+  provenance: DraftProvenance;
+}
+```
+
+`POST /api/roles/{id}/bullets` body: `{ requirementId }`.
+`POST /api/roles/{id}/cover-letter` body: `{ tone: "plain" | "warm", includeGapLine: boolean }`.
+
+The cover letter returns `409` with code `insufficient_matched_requirements` when
+fewer than two must-haves are met, with a message that points at the gap plan.
+
+**Every draft route runs the groundedness validator before responding.** A draft that
+fails twice is returned from the deterministic template path with
+`provenance.fallback: "template"`. The response is never an ungrounded draft.
+
+---
+
+## Cross-role
+
+```http
+GET /api/ranking              → RankedRole[]
+GET /api/compare?a={id}&b={id} → Comparison
+```
+
+```ts
+RankedRole { role: Role; rank: number; tied: boolean; because: string[] }   // because = requirement texts that decided the position
+
+Comparison {
+  a: Role; b: Role;
+  shared:   { text: string; aStatus: RequirementStatus; bStatus: RequirementStatus }[];
+  onlyInA:  Requirement[];
+  onlyInB:  Requirement[];
+  differentiator: string;
+}
+```
+
+Both are derived from stored scores, so they cannot disagree with a role page.
+
+---
+
+## Spans
+
+```http
+GET /api/spans/{id} → Evidence
+```
+
+The citation chip contract. A span id that does not resolve is a `404`, and the
+frontend treats that as a bug worth surfacing rather than an empty panel — an
+unresolvable citation is the one failure this product must never hide.
+
+---
+
+## Ask
+
+```http
+GET    /api/messages  → ChatMessage[]
+POST   /api/messages  → text/event-stream (or application/json)
+DELETE /api/messages  → 204
+```
+
+```ts
+ChatMessage {
+  id; author: "user" | "assistant"; content;
+  kind: "answer" | "insufficient";
+  citations: Citation[];
+  model: string | null;
+  provider: string | null;
+}
+
+Citation { id; label; evidence: Evidence }
+```
+
+Unchanged from the existing frontend types.
+
+`POST /api/messages` body: `{ content, roleId?: string }`. With
+`Accept: text/event-stream` it streams; with `Accept: application/json` it returns the
+finished `ChatMessage`. Both paths run the same use case — streaming is a transport,
+not a second implementation.
+
+Event sequence:
+
+```text
+event: meta      data: { "messageId": "...", "intent": "gaps", "provider": "ollama", "model": "..." }
+event: token     data: { "text": "..." }            (repeated)
+event: citations data: { "citations": [ ... ] }     (after the text, once)
+event: done      data: { "kind": "answer" | "insufficient" }
+event: error     data: { "code": "provider_failed", "message": "..." }
+```
+
+Citations arrive **after** the text because they are validated against stored spans
+once the answer is complete. An answer whose citations do not all resolve is reduced
+to `kind: "insufficient"` before `done` is sent.
+
+---
+
+## Providers and settings
+
+```http
+GET /api/providers          → Provider[]
+GET /api/settings/providers → ProviderChoice
+PUT /api/settings/providers → ProviderChoice
+```
+
+```ts
+Provider {
+  id; name;
+  kind: "local" | "hosted";
+  models: string[];
+  available: boolean;
+  unavailableReason: string | null;
+  supports: { completion: boolean; embedding: boolean };   // additive
+  capabilities: {                                          // additive
+    structuredOutput: boolean;
+    contextWindow: number | null;
+    maxOutputTokens: number | null;
+    embeddingDimensions: number | null;
+  };
+}
+
+ProviderChoice { answerProviderId; answerModel; indexProviderId; indexModel }
+```
+
+`PUT` body is a `ProviderChoice` plus `acknowledgedEgress: boolean`.
+
+- `403 egress_not_permitted` — hosted provider while `ALLOW_HOSTED_PROVIDERS` is false
+  or no key is configured.
+- `409 egress_not_acknowledged` — hosted provider without `acknowledgedEgress: true`.
+  The confirmation dialog is enforced server-side, not only in the UI.
+- Changing `indexProviderId` or `indexModel` invalidates embeddings and returns
+  `reindex: { jobId }` as an additive field.
+
+**No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
+masked, not a boolean per key beyond `available`. A redaction test asserts that the
+string of a configured key appears in no response body and no log line.
+
+---
+
+## Type parity
+
+`frontend/src/types/index.ts` is the canonical TypeScript statement of everything
+above. The additive fields marked in this document are added there in Phase 12; the
+existing types are not changed, so the Lovable components keep compiling untouched.
+
+A contract test in Phase 11 asserts the generated OpenAPI schema and the TypeScript
+types agree on every shared model. When they disagree, this file is what they are both
+wrong about.
