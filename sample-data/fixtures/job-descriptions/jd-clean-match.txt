@@ -1,0 +1,19 @@
+SYNTHETIC FIXTURE — not a real job posting.
+
+Company: Harbourline Retail
+Role: Analytics Engineer
+Location: Hybrid — Edinburgh
+
+About the role
+We need an analytics engineer to own production dbt models on Snowflake and partner
+with analysts on trusted marts.
+
+Requirements
+- Production experience with dbt for analytics engineering.
+- Strong SQL on a cloud warehouse such as Snowflake or BigQuery.
+- Python for lightweight data quality checks.
+- Experience documenting metrics and working with finance stakeholders.
+- Familiarity with Looker or an equivalent BI tool is desirable.
+
+Nice to have
+- Prior retail or e-commerce domain experience.

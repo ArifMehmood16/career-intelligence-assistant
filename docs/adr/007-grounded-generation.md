@@ -1,7 +1,7 @@
 # ADR 007 — Generated drafts may only assert what cited spans contain
 
 - Status: accepted
-- Date: TBD
+- Date: 2026-09-18
 
 ## Context
 

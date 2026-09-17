@@ -32,6 +32,22 @@ frameworks or services.
   and hosted adapters are equals behind the same port, and every one of them passes the
   same contract suite. Any behaviour that only works on one vendor is a bug in the port.
 
+## Product scope
+
+Confirmed against `docs/features.md` (Phase 0.1). The feature catalogue and the
+"Deliberately not features" list there are authoritative for product behaviour.
+Non-negotiable boundaries for this build:
+
+- This is a **candidate's tool**, not an employer screening product.
+- **One CV per workspace.** No multi-CV comparison.
+- **No scanned-image** / OCR intake until that work is explicitly justified.
+- **No authentication** or multi-tenancy yet — required before any untrusted user
+  touches a deployment.
+- Hard delete removes documents, spans, chunks, embeddings, claims, mappings and
+  **generated drafts**. Nothing soft-survives.
+- Absence of auto-apply, job-board ingestion, email integration, writing back into the
+  CV file, and an overall "should I apply?" verdict is intentional.
+
 ## Mandatory working protocol
 
 For every task:
@@ -155,7 +171,7 @@ untrusted.
 - Do not log document text, raw uploads, embeddings, full prompts, credentials or
   model responses.
 - Personal data: implement hard delete that removes documents, chunks, embeddings,
-  extracted claims and mappings. Test that nothing survives it.
+  extracted claims, mappings and generated drafts. Test that nothing survives it.
 - Secrets in environment variables locally, a secret manager in production.
 
 Update `docs/threat-model.md` when a trust boundary or control changes.

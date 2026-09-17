@@ -3,10 +3,10 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 0 is still open; the run surface was brought forward at
-the developer's direction on 2026-09-17, so tasks 1.1, 1.2, 1.5, 1.6 and 1.7 are done
-and part of 16.1 exists. Phase 0 remains the next work: the threat model (0.3), the
-synthetic fixtures (0.4) and the evaluation dataset shape (0.5).
+**Current position:** Phase 0 exit gate is satisfied (tasks 0.1–0.6). Next work is
+the remaining Phase 1 items: frontend hygiene (1.3), frontend test tooling (1.4),
+frontend colour/fixture guard (1.8) and CI (1.9). Tasks 1.1, 1.2, 1.5, 1.6 and 1.7
+and part of 16.1 already landed earlier.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -93,23 +93,23 @@ independent.
 
 ## Phase 0 — Repository baseline and decisions
 
-- [ ] **0.1** Confirm the product scope and the invariant in `AGENTS.md` against
+- [x] **0.1** Confirm the product scope and the invariant in `AGENTS.md` against
       `docs/features.md`; record any amendment before code exists.
-- [ ] **0.2** ADRs 001–005 written up: modular monolith, Postgres + pgvector,
+- [x] **0.2** ADRs 001–005 written up: modular monolith, Postgres + pgvector,
       pluggable providers with a local default and an egress gate, deterministic
       scoring, provider selection as runtime state. ADR 006 (frontend) and ADR 007
       (grounded generation) exist — confirm they match what is about to be built.
-- [ ] **0.3** Fill `docs/threat-model.md`: trust boundaries for upload, document text,
+- [x] **0.3** Fill `docs/threat-model.md`: trust boundaries for upload, document text,
       job-description text as untrusted input, model output, generated drafts and
       stored personal data.
-- [ ] **0.4** Create the synthetic fixture set — three CVs and six job descriptions in
+- [x] **0.4** Create the synthetic fixture set — three CVs and six job descriptions in
       `sample-data/fixtures/`, covering: a clean match, a partial match, a poor match,
       a description with vague seniority signals, a description containing an
       injection attempt, and a CV with dated experience that exercises recency decay.
       Synthetic only — never a real person's CV.
-- [ ] **0.5** Define the evaluation dataset shape in `docs/evaluation.md` and stub
+- [x] **0.5** Define the evaluation dataset shape in `docs/evaluation.md` and stub
       `sample-data/evaluation/dataset.json`.
-- [ ] **0.6** Confirm the scoring rubric constants in `docs/features.md` are the
+- [x] **0.6** Confirm the scoring rubric constants in `docs/features.md` are the
       starting values, and that they are configuration rather than literals.
 
 **Exit gate:** decisions recorded, fixtures exist, no application code written.

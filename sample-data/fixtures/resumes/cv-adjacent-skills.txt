@@ -1,0 +1,30 @@
+SYNTHETIC FIXTURE — not a real person.
+
+Name: Jordan Lee
+Title: Business Intelligence Analyst
+Location: Manchester, UK (synthetic)
+
+SUMMARY
+BI analyst focused on dashboard delivery and SQL reporting. Has touched modern
+warehouse tools in limited contexts but has not owned production transformation
+frameworks.
+
+EXPERIENCE
+
+Cedar Metrics Co — BI Analyst
+June 2021 – Present
+- Built Power BI dashboards for customer support SLAs and ticket volume.
+- Wrote SQL against BigQuery for weekly executive packs.
+- Collaborated with engineers who maintained Airflow DAGs; did not own the DAGs.
+- Used Python notebooks for ad-hoc cohort analysis shared with product.
+
+Summit Grocery — Reporting Analyst
+August 2018 – May 2021
+- Maintained Excel and Tableau reports for store operations.
+- Reconciled daily sales files received by email from regional managers.
+
+SKILLS
+SQL, Power BI, Tableau, Excel, BigQuery (query only), Python (notebooks)
+
+EDUCATION
+BA Economics — Synthetic College, 2018

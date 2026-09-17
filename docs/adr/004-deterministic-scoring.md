@@ -1,7 +1,7 @@
 # ADR 004 — The fit score is computed, not generated
 
 - Status: accepted
-- Date: TBD
+- Date: 2026-09-18
 
 ## Context
 

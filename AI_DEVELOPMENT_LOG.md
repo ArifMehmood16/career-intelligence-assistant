@@ -97,3 +97,19 @@ Never record a command output, metric, date or commit hash that was not observed
   `backend/.venv/bin/python --version` reports 3.14.4; `import career_assistant`
   succeeds. Regenerated stale `frontend/bun.lock` so the frozen install step
   could pass.
+
+### 003 — Phase 0 repository baseline
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 0.1–0.6 (Phase 0 exit gate)
+- Prompt intent: complete Phase 0 with TDD-style commits, then open a PR.
+- Suggestion: failing hermetic baseline tests first; then AGENTS product scope,
+  threat-model draft/personal-data coverage, synthetic fixtures, evaluation stub,
+  scoring rubric config, ADR date confirmation, PLAN/journal updates.
+- Outcome: accepted.
+- Reason: Phase 0 requires decisions and fixtures before application behaviour;
+  pinning those with tests keeps the exit gate enforceable.
+- Human validation: focused `pytest tests/unit/test_phase0_baseline.py --no-cov`
+  observed red then green; full hermetic `pytest` passed with 100% package coverage
+  on the existing skeleton.

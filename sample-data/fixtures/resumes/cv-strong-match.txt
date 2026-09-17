@@ -1,0 +1,31 @@
+SYNTHETIC FIXTURE — not a real person.
+
+Name: Alex Rivera
+Title: Analytics Engineer
+Location: Edinburgh, UK (synthetic)
+
+SUMMARY
+Analytics engineer with production dbt and warehouse modelling experience across
+retail and SaaS datasets. Comfortable owning pipelines end to end and partnering
+with analysts on trustworthy metrics.
+
+EXPERIENCE
+
+Northwind Analytics Ltd — Analytics Engineer
+January 2023 – Present
+- Owned dbt models that cover the core order and inventory marts in production.
+- Designed incremental models in Snowflake for daily sales reporting used by finance.
+- Partnered with data scientists on feature tables for churn models.
+- Wrote Python utilities to validate row counts before dbt builds promote.
+
+Blue Harbour Retail — Data Analyst
+March 2020 – December 2022
+- Built Looker dashboards for store performance and inventory turn.
+- Authored SQL transformations for weekly merchandising packs.
+- Documented metric definitions for revenue and margin used company-wide.
+
+SKILLS
+dbt, Snowflake, SQL, Python, Looker, Git, CI for analytics
+
+EDUCATION
+BSc Mathematics — Synthetic University, 2019

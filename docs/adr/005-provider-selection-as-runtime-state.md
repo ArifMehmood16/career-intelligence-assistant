@@ -1,7 +1,7 @@
 # ADR 005 — Provider selection is runtime state, not deployment configuration
 
 - Status: accepted
-- Date: TBD
+- Date: 2026-09-18
 
 ## Context
 

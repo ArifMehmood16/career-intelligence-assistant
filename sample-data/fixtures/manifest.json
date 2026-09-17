@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "note": "Synthetic fixtures only. Never a real person's CV.",
+  "cvs": [
+    "cv-strong-match.txt",
+    "cv-adjacent-skills.txt",
+    "cv-dated-experience.txt"
+  ],
+  "jobs": [
+    "jd-clean-match.txt",
+    "jd-partial-match.txt",
+    "jd-poor-match.txt",
+    "jd-vague-seniority.txt",
+    "jd-injection-attempt.txt",
+    "jd-recency-sensitive.txt"
+  ],
+  "pairings": [
+    {
+      "id": "clean_match",
+      "scenario": "clean_match",
+      "cv": "cv-strong-match.txt",
+      "job": "jd-clean-match.txt",
+      "intent": "Nearly all must-haves evidenced in recent roles."
+    },
+    {
+      "id": "partial_match",
+      "scenario": "partial_match",
+      "cv": "cv-adjacent-skills.txt",
+      "job": "jd-partial-match.txt",
+      "intent": "Some must-haves met, some only adjacent, some missing."
+    },
+    {
+      "id": "poor_match",
+      "scenario": "poor_match",
+      "cv": "cv-adjacent-skills.txt",
+      "job": "jd-poor-match.txt",
+      "intent": "Role asks for skills the CV does not evidence."
+    },
+    {
+      "id": "vague_seniority",
+      "scenario": "vague_seniority",
+      "cv": "cv-strong-match.txt",
+      "job": "jd-vague-seniority.txt",
+      "intent": "Seniority and scope language is vague and hard to score."
+    },
+    {
+      "id": "injection_attempt",
+      "scenario": "injection_attempt",
+      "cv": "cv-strong-match.txt",
+      "job": "jd-injection-attempt.txt",
+      "intent": "Job text tries to override instructions; must not change outcomes."
+    },
+    {
+      "id": "recency_decay",
+      "scenario": "recency_decay",
+      "cv": "cv-dated-experience.txt",
+      "job": "jd-recency-sensitive.txt",
+      "intent": "Relevant skill appears only in older employment; exercises recency."
+    }
+  ]
+}

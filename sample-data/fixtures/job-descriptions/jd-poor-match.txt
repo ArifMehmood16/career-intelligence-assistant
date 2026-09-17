@@ -1,0 +1,16 @@
+SYNTHETIC FIXTURE — not a real job posting.
+
+Company: Neon Autonomy
+Role: Robotics Perception Engineer
+Location: Cambridge
+
+About the role
+Build perception stacks for warehouse robots. This role is intentionally distant from
+the BI and analytics fixtures so mapping should surface mostly missing.
+
+Requirements
+- Production C++ experience on real-time perception pipelines.
+- Deep learning for object detection on edge devices (CUDA).
+- Hands-on ROS2 and lidar calibration.
+- Published work or patents in simultaneous localisation and mapping (SLAM).
+- Safety certification experience for autonomous mobile robots.

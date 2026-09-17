@@ -1,0 +1,31 @@
+SYNTHETIC FIXTURE — not a real person.
+
+Name: Sam Okonkwo
+Title: Data Engineer
+Location: Bristol, UK (synthetic)
+
+SUMMARY
+Data engineer with deep historical Spark and Hadoop experience and a smaller set of
+recent cloud warehouse contributions. Useful for exercising recency decay on skills
+that appear only in older roles.
+
+EXPERIENCE
+
+Cloud Lattice Ltd — Data Engineer
+February 2023 – Present
+- Maintained Airflow DAGs that load partner CSV files into BigQuery.
+- Wrote Python services for schema drift alerts on landing tables.
+- No dbt ownership in this role; transformations were hand-written SQL scripts.
+
+Legacy Grid Corp — Senior ETL Developer
+January 2014 – January 2020
+- Built production Spark jobs on Hadoop for overnight retail inventory rebuilds.
+- Owned MapReduce and Spark pipelines processing multi-terabyte clickstream.
+- Mentored juniors on Scala Spark performance tuning.
+- Documented Hadoop cluster runbooks used by the night operations team.
+
+SKILLS
+Python, Airflow, BigQuery, Spark (historical), Hadoop (historical), SQL
+
+EDUCATION
+MSc Computer Science — Synthetic Institute, 2013

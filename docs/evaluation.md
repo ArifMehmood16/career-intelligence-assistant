@@ -6,7 +6,9 @@ evidenced. No number appears here that was not observed from a recorded run.
 ## Dataset
 
 `sample-data/evaluation/dataset.json`. Synthetic CVs and job descriptions only — never
-a real person's document.
+a real person's document. The stub cases reference ids from
+`sample-data/fixtures/manifest.json`; labels are starting points until Phase 14
+measures them.
 
 Each case carries:
 
