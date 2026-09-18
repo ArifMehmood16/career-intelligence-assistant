@@ -379,3 +379,19 @@ Never record a command output, metric, date or commit hash that was not observed
   deferred.
 - Reason: prove workspace-scoped HTTP contracts before wiring the analysis worker.
 - Human validation: focused API suites green; hermetic pytest (~84%), ruff, mypy.
+
+### 024 — Phase 11.8 hermetic analysis output routes (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — analysis artefacts)
+- Prompt intent: continue Phase 11 in the same PR; green the analysis/ranking reds.
+- Suggestion: sync hermetic analyse on role create; routes for requirements,
+  breakdown, gap-plan, interview-pack, bullets, cover-letter, export, ranking,
+  compare using domain generation + scoring rubric.
+- Outcome: accepted for hermetic API contracts; SQL persistence still deferred.
+- Reason: artefact routes need a finished analysis; sync hermetic path keeps tests
+  deterministic without a worker.
+- Human validation: `pytest tests/api/test_role_analysis_routes.py
+  tests/api/test_role_routes.py -q --no-cov` green (7 tests); ruff clean on changed
+  files.

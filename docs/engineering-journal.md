@@ -18,6 +18,26 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 hermetic analysis artefacts)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_role_analysis_routes.py tests/api/test_role_routes.py -q --no-cov`
+  - `ruff check` / `ruff format` on changed analysis modules
+- Observed result:
+  - Role create now runs hermetic rules extract→map→score synchronously; status
+    `ready`, job `succeeded`.
+  - Requirements, breakdown, gap-plan, interview-pack, bullets, cover-letter (or
+    `insufficient_matched_requirements`), markdown export, ranking and compare
+    routes pass the focused API suite (7 analysis + role tests).
+- Decisions made: keep in-memory stores for hermetic API contracts; domain
+  generation helpers remain the source of gap/interview/draft text; drafts stamp
+  hermetic provenance with `leftMachine: false`.
+- Problems hit: focused pytest hit the global 80% coverage gate — use `--no-cov`
+  for slice runs; suite-wide coverage still via full `pytest`.
+- Carried forward: SQL-backed CV/role/analysis persistence; generated cover-letter
+  list; SSE ask (11.9); OpenAPI/frontend type agreement (11.11).
+
 ## Phase 11 — API contracts (11.8 partial: CV, spans, roles, jobs)
 
 - Date: 2026-09-18
