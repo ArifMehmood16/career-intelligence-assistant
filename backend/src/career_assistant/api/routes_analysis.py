@@ -322,14 +322,17 @@ def post_bullets(
             }
         )
     now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
-    return BulletDraftWire(
+    existing = _roles(request).list_bullet_drafts(workspace_id, role_id)
+    draft = BulletDraftWire(
         id=str(uuid.uuid4()),
-        version=1,
+        version=len(existing) + 1,
         created_at=now,
         requirement_id=body.requirement_id,
         bullets=bullets,
         provenance=_provenance(fallback="template"),
     )
+    _roles(request).save_bullet_draft(workspace_id, role_id, draft)
+    return draft
 
 
 @router.post("/roles/{role_id}/cover-letter", response_model=CoverLetterDraftWire)
@@ -364,15 +367,32 @@ def post_cover_letter(
         for para in draft.body.strip().split("\n\n")
         if para.strip()
     ]
-    return CoverLetterDraftWire(
+    existing = store.list_cover_letters(workspace_id, role_id)
+    wire = CoverLetterDraftWire(
         id=str(uuid.uuid4()),
-        version=1,
+        version=len(existing) + 1,
         created_at=now,
         role_id=role_id,
         paragraphs=paragraphs,
         omitted_reason=None,
         provenance=_provenance(fallback="template"),
     )
+    store.save_cover_letter(workspace_id, role_id, wire)
+    return wire
+
+
+@router.get(
+    "/roles/{role_id}/cover-letters",
+    response_model=list[CoverLetterDraftWire],
+)
+def list_cover_letters(
+    role_id: str, request: Request, workspace_id: WorkspaceId
+) -> list[CoverLetterDraftWire]:
+    try:
+        drafts = _roles(request).list_cover_letters(workspace_id, role_id)
+    except RoleOperationRejected as exc:
+        raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
+    return [draft for draft in drafts if isinstance(draft, CoverLetterDraftWire)]
 
 
 @router.get(
@@ -386,6 +406,7 @@ def export_artefact(
     request: Request,
     workspace_id: WorkspaceId,
 ) -> PlainTextResponse:
+    store = _roles(request)
     bundle = _require_bundle(request, workspace_id, role_id)
     if artefact == "gap-plan":
         body = export_markdown(
@@ -399,6 +420,38 @@ def export_artefact(
             artefact,
             build_interview_pack(bundle.requirements, bundle.mappings, bundle.claims),
         )
+    elif artefact == "cover-letter":
+        drafts = store.list_cover_letters(workspace_id, role_id)
+        if not drafts:
+            raise AppError(
+                "validation_failed",
+                "No cover letter draft to export for this role.",
+                status_code=422,
+            )
+        latest = drafts[-1]
+        assert isinstance(latest, CoverLetterDraftWire)
+        paragraphs = [
+            str(para.get("text", ""))
+            for para in latest.paragraphs
+            if isinstance(para, dict)
+        ]
+        body = "\n\n".join(p for p in paragraphs if p) + "\n"
+    elif artefact == "bullets":
+        drafts = store.list_bullet_drafts(workspace_id, role_id)
+        if not drafts:
+            raise AppError(
+                "validation_failed",
+                "No bullet drafts to export for this role.",
+                status_code=422,
+            )
+        lines = ["# CV bullets", ""]
+        for draft in drafts:
+            assert isinstance(draft, BulletDraftWire)
+            for bullet in draft.bullets:
+                if isinstance(bullet, dict) and bullet.get("text"):
+                    lines.append(str(bullet["text"]))
+        lines.append("")
+        body = "\n".join(lines)
     else:
         raise AppError(
             "validation_failed",

@@ -8,6 +8,7 @@ from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.schemas import (
     AnalysisJobResponse,
+    ReanalyseResponse,
     RoleCounts,
     RoleCreatedResponse,
     RoleCreateRequest,
@@ -107,6 +108,33 @@ def get_role(role_id: str, request: Request, workspace_id: WorkspaceId) -> RoleR
     if role is None:
         raise AppError("role_not_found", "No role with that id.", status_code=404)
     return _role_response(role)
+
+
+@router.delete(
+    "/roles/{role_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+def delete_role(role_id: str, request: Request, workspace_id: WorkspaceId) -> None:
+    try:
+        _role_store(request).delete_role(workspace_id, role_id)
+    except RoleOperationRejected as exc:
+        raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
+
+
+@router.post(
+    "/roles/{role_id}/reanalyse",
+    response_model=ReanalyseResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def reanalyse_role(
+    role_id: str, request: Request, workspace_id: WorkspaceId
+) -> ReanalyseResponse:
+    try:
+        _role, job = _role_store(request).reanalyse(workspace_id, role_id)
+    except RoleOperationRejected as exc:
+        raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
+    return ReanalyseResponse(job_id=job.id)
 
 
 @router.get("/jobs/{job_id}", response_model=AnalysisJobResponse)

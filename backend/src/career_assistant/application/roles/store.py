@@ -55,6 +55,8 @@ class InMemoryRoleStore:
     jobs: dict[str, dict[str, JobView]] = field(default_factory=dict)
     analyses: dict[str, dict[str, AnalysisBundle]] = field(default_factory=dict)
     role_job: dict[str, dict[str, str]] = field(default_factory=dict)
+    cover_letters: dict[str, dict[str, list[object]]] = field(default_factory=dict)
+    bullet_drafts: dict[str, dict[str, list[object]]] = field(default_factory=dict)
 
     def create_role(
         self,
@@ -119,6 +121,110 @@ class InMemoryRoleStore:
 
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         return self.jobs.get(workspace_id, {}).get(job_id)
+
+    def delete_role(self, workspace_id: str, role_id: str) -> None:
+        role = self.get_role(workspace_id, role_id)
+        if role is None:
+            raise RoleOperationRejected(
+                "role_not_found", "No role with that id.", status_code=404
+            )
+        job_id = self.role_job.get(workspace_id, {}).pop(role_id, None)
+        self.roles.get(workspace_id, {}).pop(role_id, None)
+        self.analyses.get(workspace_id, {}).pop(role_id, None)
+        self.cover_letters.get(workspace_id, {}).pop(role_id, None)
+        self.bullet_drafts.get(workspace_id, {}).pop(role_id, None)
+        if job_id is not None:
+            self.jobs.get(workspace_id, {}).pop(job_id, None)
+
+    def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
+        role = self.get_role(workspace_id, role_id)
+        if role is None:
+            raise RoleOperationRejected(
+                "role_not_found", "No role with that id.", status_code=404
+            )
+        cv = self.cv_store.get_active(workspace_id)
+        if cv is None:
+            raise RoleOperationRejected(
+                "cv_required",
+                "Upload a CV before reanalysing a role.",
+                status_code=409,
+            )
+        now = datetime.now(UTC)
+        job_id = str(uuid.uuid4())
+        bundle = analyse_hermetic(
+            cv_text=cv.normalised_text,
+            cv_document_id=cv.view.id,
+            jd_text=role.description,
+        )
+        updated = RoleView(
+            id=role.id,
+            title=role.title,
+            company=role.company,
+            fit_score=int(round(bundle.explanation.score)),
+            band_label=band_label(bundle.explanation.band),
+            counts=count_statuses(bundle.mappings),
+            status="ready",
+            updated_at=now,
+            description=role.description,
+        )
+        job = JobView(
+            id=job_id,
+            kind=JobKind.ROLE_ANALYSIS.value,
+            state=JobState.SUCCEEDED.value,
+            stage="scoring",
+            started_at=now,
+            finished_at=now,
+            error=None,
+        )
+        self.roles[workspace_id][role_id] = updated
+        self.jobs.setdefault(workspace_id, {})[job.id] = job
+        self.analyses.setdefault(workspace_id, {})[role_id] = bundle
+        self.role_job.setdefault(workspace_id, {})[role_id] = job.id
+        return updated, job
+
+    def mark_incomplete(self, workspace_id: str, role_id: str) -> None:
+        """Test helper: leave the role analysing with no finished analysis."""
+        role = self.get_role(workspace_id, role_id)
+        if role is None:
+            raise RoleOperationRejected(
+                "role_not_found", "No role with that id.", status_code=404
+            )
+        self.roles[workspace_id][role_id] = RoleView(
+            id=role.id,
+            title=role.title,
+            company=role.company,
+            fit_score=0,
+            band_label="Not scored yet",
+            counts={"met": 0, "partial": 0, "missing": 0},
+            status="analysing",
+            updated_at=datetime.now(UTC),
+            description=role.description,
+        )
+        self.analyses.get(workspace_id, {}).pop(role_id, None)
+
+    def save_cover_letter(self, workspace_id: str, role_id: str, draft: object) -> None:
+        self.cover_letters.setdefault(workspace_id, {}).setdefault(role_id, []).append(
+            draft
+        )
+
+    def list_cover_letters(self, workspace_id: str, role_id: str) -> tuple[object, ...]:
+        if self.get_role(workspace_id, role_id) is None:
+            raise RoleOperationRejected(
+                "role_not_found", "No role with that id.", status_code=404
+            )
+        return tuple(self.cover_letters.get(workspace_id, {}).get(role_id, []))
+
+    def save_bullet_draft(self, workspace_id: str, role_id: str, draft: object) -> None:
+        self.bullet_drafts.setdefault(workspace_id, {}).setdefault(role_id, []).append(
+            draft
+        )
+
+    def list_bullet_drafts(self, workspace_id: str, role_id: str) -> tuple[object, ...]:
+        if self.get_role(workspace_id, role_id) is None:
+            raise RoleOperationRejected(
+                "role_not_found", "No role with that id.", status_code=404
+            )
+        return tuple(self.bullet_drafts.get(workspace_id, {}).get(role_id, []))
 
     def require_analysis(self, workspace_id: str, role_id: str) -> AnalysisBundle:
         role = self.get_role(workspace_id, role_id)

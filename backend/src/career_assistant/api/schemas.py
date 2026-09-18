@@ -91,6 +91,10 @@ class RoleCreatedResponse(ApiModel):
     job_id: str
 
 
+class ReanalyseResponse(ApiModel):
+    job_id: str
+
+
 class AnalysisJobResponse(ApiModel):
     id: str
     kind: str
