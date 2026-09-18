@@ -98,20 +98,7 @@ def test_create_app_installs_upload_size_limit() -> None:
     from career_assistant.main import create_app
 
     app = create_app()
-    # Starlette wraps user middleware; ensure our class is in the stack.
     assert any(
-        "UploadSizeLimitMiddleware" in type(m.cls).__name__
-        or "UploadSizeLimitMiddleware" in getattr(m, "cls", type(None)).__name__
-        for m in getattr(app, "user_middleware_stack", []) or []
-    ) or _middleware_present(app)
-
-
-def _middleware_present(app: FastAPI) -> bool:
-    middleware = getattr(app, "user_middleware", None)
-    if not middleware:
-        return False
-    return any(
         getattr(item, "cls", None) is UploadSizeLimitMiddleware
-        or getattr(item, "cls", None).__name__ == "UploadSizeLimitMiddleware"
-        for item in middleware
+        for item in app.user_middleware
     )

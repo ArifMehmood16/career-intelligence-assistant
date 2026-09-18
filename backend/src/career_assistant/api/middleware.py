@@ -1,12 +1,14 @@
-"""Cross-cutting HTTP middleware for workspace identity and correlation ids."""
+"""Cross-cutting HTTP middleware for workspace, correlation and upload limits."""
 
 from __future__ import annotations
 
+import json
 from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from career_assistant.api.deps import (
     CORRELATION_HEADER,
@@ -15,6 +17,8 @@ from career_assistant.api.deps import (
     resolve_workspace_id,
     workspace_cookie_needs_set,
 )
+
+_UPLOAD_METHODS = frozenset({"POST", "PUT", "PATCH"})
 
 
 class WorkspaceCookieMiddleware(BaseHTTPMiddleware):
@@ -49,3 +53,65 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers[CORRELATION_HEADER] = correlation_id
         return response
+
+
+class UploadSizeLimitMiddleware:
+    """Reject oversized bodies using Content-Length — never buffer them first."""
+
+    def __init__(self, app: ASGIApp, *, max_upload_bytes: int) -> None:
+        self.app = app
+        self.max_upload_bytes = max_upload_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope.get("method") not in _UPLOAD_METHODS:
+            await self.app(scope, receive, send)
+            return
+
+        headers = {key.lower(): value for key, value in scope.get("headers", [])}
+        raw_length = headers.get(b"content-length")
+        if raw_length is None:
+            await self.app(scope, receive, send)
+            return
+
+        try:
+            content_length = int(raw_length.decode("ascii"))
+        except ValueError, UnicodeDecodeError:
+            await self.app(scope, receive, send)
+            return
+
+        if content_length <= self.max_upload_bytes:
+            await self.app(scope, receive, send)
+            return
+
+        correlation_id = resolve_correlation_id(
+            headers.get(b"x-correlation-id", b"").decode("ascii", errors="ignore")
+            or None
+        )
+        payload = json.dumps(
+            {
+                "error": {
+                    "code": "document_too_large",
+                    "message": "Document exceeds the configured upload size limit.",
+                    "correlationId": correlation_id,
+                }
+            }
+        ).encode("utf-8")
+
+        async def send_reject(message: Message) -> None:
+            await send(message)
+
+        await send_reject(
+            {
+                "type": "http.response.start",
+                "status": 413,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(payload)).encode("ascii")),
+                    (
+                        CORRELATION_HEADER.lower().encode("ascii"),
+                        correlation_id.encode("ascii"),
+                    ),
+                ],
+            }
+        )
+        await send_reject({"type": "http.response.body", "body": payload})

@@ -129,3 +129,21 @@ class ProviderSettings(BaseSettings):
             "ollamaBaseUrl": self.ollama_base_url,
             "providerAllowLocalFallback": self.provider_allow_local_fallback,
         }
+
+
+class LimitSettings(BaseSettings):
+    """Upload and request caps — enforced at the HTTP boundary before buffering."""
+
+    model_config = SettingsConfigDict(
+        env_file=("config/app.env", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    max_upload_bytes: int = Field(default=10_485_760, ge=1)
+    max_document_pages: int = Field(default=40, ge=1)
+    max_document_chars: int = Field(default=400_000, ge=1)
+    max_question_chars: int = Field(default=1000, ge=1)
+    max_context_chars: int = Field(default=12_000, ge=1)
+    max_excerpt_chars: int = Field(default=600, ge=1)
+    max_roles_per_workspace: int = Field(default=25, ge=1)
