@@ -300,3 +300,26 @@ def test_chat_history_hard_delete_removes_questions_and_answers(
             session.execute(text("SELECT count(*) FROM answer_citations")).scalar_one()
             == 0
         )
+
+
+def test_application_tables_live_in_dedicated_schema(
+    session_factory: sessionmaker[Session],
+) -> None:
+    from career_assistant.adapters.persistence.schema import APP_SCHEMA
+
+    with session_factory() as session:
+        in_app = session.execute(
+            text(
+                "SELECT count(*) FROM information_schema.tables "
+                "WHERE table_schema = :schema AND table_name = 'workspaces'"
+            ),
+            {"schema": APP_SCHEMA},
+        ).scalar_one()
+        in_public = session.execute(
+            text(
+                "SELECT count(*) FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_name = 'workspaces'"
+            )
+        ).scalar_one()
+    assert in_app == 1
+    assert in_public == 0

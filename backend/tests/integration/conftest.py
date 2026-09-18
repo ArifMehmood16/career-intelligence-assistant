@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.engine import create_db_engine
 from career_assistant.adapters.persistence.migrate import downgrade_base, upgrade_head
+from career_assistant.adapters.persistence.schema import APP_SCHEMA
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentKind, Span
@@ -43,17 +44,24 @@ def session_factory(migrated_engine: Engine) -> Iterator[sessionmaker[Session]]:
     factory = sessionmaker(
         bind=migrated_engine, autoflush=False, expire_on_commit=False
     )
-    # Truncate between tests while keeping schema.
+    # Truncate between tests while keeping the dedicated application schema.
     with migrated_engine.begin() as conn:
         conn.execute(
             text(
-                "TRUNCATE TABLE "
-                "mapping_spans, mappings, draft_citations, answer_citations, "
-                "score_explanations, requirements, generated_drafts, embeddings, "
-                "claim_spans, answers, analysis_jobs, spans, roles, questions, "
-                "claims, chunks, provider_settings, provider_call_accounting, "
-                "documents, conversations, workspaces "
-                "RESTART IDENTITY CASCADE"
+                f"TRUNCATE TABLE "
+                f"{APP_SCHEMA}.mapping_spans, {APP_SCHEMA}.mappings, "
+                f"{APP_SCHEMA}.draft_citations, {APP_SCHEMA}.answer_citations, "
+                f"{APP_SCHEMA}.score_explanations, {APP_SCHEMA}.requirements, "
+                f"{APP_SCHEMA}.generated_drafts, {APP_SCHEMA}.embeddings, "
+                f"{APP_SCHEMA}.claim_spans, {APP_SCHEMA}.answers, "
+                f"{APP_SCHEMA}.analysis_jobs, {APP_SCHEMA}.spans, "
+                f"{APP_SCHEMA}.roles, {APP_SCHEMA}.questions, "
+                f"{APP_SCHEMA}.claims, {APP_SCHEMA}.chunks, "
+                f"{APP_SCHEMA}.provider_settings, "
+                f"{APP_SCHEMA}.provider_call_accounting, "
+                f"{APP_SCHEMA}.documents, {APP_SCHEMA}.conversations, "
+                f"{APP_SCHEMA}.workspaces "
+                f"RESTART IDENTITY CASCADE"
             )
         )
     yield factory

@@ -205,3 +205,15 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: hermetic pytest (~82% coverage), ruff, mypy green; eight
   integration tests green against local pgvector; `make db-check` and `make db-migrate`
   observed green.
+
+### 012 — Dedicated PostgreSQL application schema
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: follow-up to Phase 4 (persistence)
+- Prompt intent: stop using the public schema; use a dedicated schema.
+- Suggestion: `career_assistant` schema, MetaData.schema, search_path, forward
+  migration moving tables out of public; keep `vector` in public.
+- Outcome: accepted.
+- Human validation: unit + integration tests green; `\dt career_assistant.*` shows
+  21 tables; `make db-migrate` / `make db-check` green.
