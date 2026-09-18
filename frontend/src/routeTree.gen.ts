@@ -8,114 +8,114 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as AskRouteImport } from "./routes/ask";
-import { Route as SettingsRouteImport } from "./routes/settings";
-import { Route as DevStatesRouteImport } from "./routes/dev.states";
-import { Route as RolesIdRouteImport } from "./routes/roles.$id";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AskRouteImport } from './routes/ask'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as DevStatesRouteImport } from './routes/dev.states'
+import { Route as RolesIdRouteImport } from './routes/roles.$id'
 
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AskRoute = AskRouteImport.update({
-  id: "/ask",
-  path: "/ask",
+  id: '/ask',
+  path: '/ask',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DevStatesRoute = DevStatesRouteImport.update({
-  id: "/dev/states",
-  path: "/dev/states",
+  id: '/dev/states',
+  path: '/dev/states',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const RolesIdRoute = RolesIdRouteImport.update({
-  id: "/roles/$id",
-  path: "/roles/$id",
+  id: '/roles/$id',
+  path: '/roles/$id',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/ask": typeof AskRoute;
-  "/settings": typeof SettingsRoute;
-  "/dev/states": typeof DevStatesRoute;
-  "/roles/$id": typeof RolesIdRoute;
+  '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/settings': typeof SettingsRoute
+  '/dev/states': typeof DevStatesRoute
+  '/roles/$id': typeof RolesIdRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/ask": typeof AskRoute;
-  "/settings": typeof SettingsRoute;
-  "/dev/states": typeof DevStatesRoute;
-  "/roles/$id": typeof RolesIdRoute;
+  '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/settings': typeof SettingsRoute
+  '/dev/states': typeof DevStatesRoute
+  '/roles/$id': typeof RolesIdRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/ask": typeof AskRoute;
-  "/settings": typeof SettingsRoute;
-  "/dev/states": typeof DevStatesRoute;
-  "/roles/$id": typeof RolesIdRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/settings': typeof SettingsRoute
+  '/dev/states': typeof DevStatesRoute
+  '/roles/$id': typeof RolesIdRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: "/" | "/ask" | "/settings" | "/dev/states" | "/roles/$id";
-  fileRoutesByTo: FileRoutesByTo;
-  to: "/" | "/ask" | "/settings" | "/dev/states" | "/roles/$id";
-  id: "__root__" | "/" | "/ask" | "/settings" | "/dev/states" | "/roles/$id";
-  fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
+  id: '__root__' | '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AskRoute: typeof AskRoute;
-  SettingsRoute: typeof SettingsRoute;
-  DevStatesRoute: typeof DevStatesRoute;
-  RolesIdRoute: typeof RolesIdRoute;
+  IndexRoute: typeof IndexRoute
+  AskRoute: typeof AskRoute
+  SettingsRoute: typeof SettingsRoute
+  DevStatesRoute: typeof DevStatesRoute
+  RolesIdRoute: typeof RolesIdRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/ask": {
-      id: "/ask";
-      path: "/ask";
-      fullPath: "/ask";
-      preLoaderRoute: typeof AskRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/settings": {
-      id: "/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dev/states": {
-      id: "/dev/states";
-      path: "/dev/states";
-      fullPath: "/dev/states";
-      preLoaderRoute: typeof DevStatesRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/roles/$id": {
-      id: "/roles/$id";
-      path: "/roles/$id";
-      fullPath: "/roles/$id";
-      preLoaderRoute: typeof RolesIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dev/states': {
+      id: '/dev/states'
+      path: '/dev/states'
+      fullPath: '/dev/states'
+      preLoaderRoute: typeof DevStatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/roles/$id': {
+      id: '/roles/$id'
+      path: '/roles/$id'
+      fullPath: '/roles/$id'
+      preLoaderRoute: typeof RolesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,17 +125,17 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   DevStatesRoute: DevStatesRoute,
   RolesIdRoute: RolesIdRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { startInstance } from "./start.ts";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

@@ -141,3 +141,17 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: matches ADR 003/005; keeps default runs hermetic; no vendor SDK lock-in.
 - Human validation: `pytest` hermetic suite green (coverage ≥80%), ruff and mypy
   clean on the package.
+
+### 006 — Remove Lovable branding and telemetry from the frontend
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 2 PR follow-up (branding)
+- Prompt intent: strip Lovable mentions, logo, favicon and trackers; brand as CIA.
+- Suggestion: delete lovable error-reporting hook, replace favicon with an original
+  CIA monogram SVG, update shell/docs titles, keep `@lovable.dev/vite-tanstack-config`
+  only as the existing Vite/Start build helper.
+- Outcome: accepted.
+- Reason: product branding should not ship editor telemetry or vendor marketing.
+- Human validation: `bun run test` (6 passed), `bun run lint` (warnings only),
+  `bun run typecheck` green.

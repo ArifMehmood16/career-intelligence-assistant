@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { CiaMark } from "@/components/CiaMark";
 import { ProviderBadge } from "@/components/ProviderBadge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Provider } from "@/types";
@@ -30,9 +31,14 @@ export function AppShell({
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link
             to="/"
-            className={`text-sm font-semibold tracking-tight ${linkFocus}`}
+            aria-label="CIA — Career Intelligence Assistant"
+            className={`inline-flex items-center gap-2 text-sm font-semibold tracking-tight ${linkFocus}`}
           >
-            Career Intelligence
+            <CiaMark className="size-6 shrink-0 text-foreground" />
+            <span>CIA</span>
+            <span className="hidden font-normal text-muted-foreground sm:inline">
+              Career Intelligence
+            </span>
           </Link>
 
           <nav className="order-3 flex w-full flex-wrap items-center gap-1 sm:order-none sm:w-auto">

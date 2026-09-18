@@ -20,14 +20,14 @@ import type {
 export const Route = createFileRoute("/dev/states")({
   head: () => ({
     meta: [
-      { title: "Component states — Career Intelligence" },
+      { title: "Component states — CIA" },
       {
         name: "description",
         content: "Gallery of every component state rendered from props alone.",
       },
       {
         property: "og:title",
-        content: "Component states — Career Intelligence",
+        content: "Component states — CIA",
       },
       {
         property: "og:description",
