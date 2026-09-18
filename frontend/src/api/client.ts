@@ -8,6 +8,7 @@ import type {
   BulletDraft,
   ChatMessage,
   Citation,
+  CoverLetterDraft,
   CvDocument,
   Evidence,
   GapPlan,
@@ -24,6 +25,7 @@ import {
   bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
+  coverLetterDraftSchema,
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
@@ -316,6 +318,28 @@ export function createBulletDraft(
 export function getInterviewPack(roleId: string): Promise<InterviewPack> {
   return request(`/api/roles/${roleId}/interview-pack`, {
     schema: interviewPackSchema,
+  });
+}
+
+export function getGeneratedCoverLetters(
+  roleId: string,
+): Promise<CoverLetterDraft[]> {
+  return request(`/api/roles/${roleId}/cover-letters`, {
+    schema: coverLetterDraftSchema.array(),
+  });
+}
+
+export function createCoverLetterDraft(
+  roleId: string,
+  input: { tone: "plain" | "warm"; includeGapLine: boolean },
+): Promise<CoverLetterDraft> {
+  return request(`/api/roles/${roleId}/cover-letter`, {
+    method: "POST",
+    body: {
+      tone: input.tone,
+      includeGapLine: input.includeGapLine,
+    },
+    schema: coverLetterDraftSchema,
   });
 }
 

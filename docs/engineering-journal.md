@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Letter tab (13.5)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/LetterPanel.test.tsx` — 3 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Letter tab drafts via POST /cover-letter, lists versions,
+  exports Markdown, refuses with Open Gaps, and lists workspace supporting uploads
+  separately.
+- Decisions made: citation chips use span ids resolved through EvidencePanel.
+- Problems hit: none material.
+- Carried forward: 13.6 Ranking.
+
 ## Phase 13 — Prepare / interview pack (13.4)
 
 - Date: 2026-09-18

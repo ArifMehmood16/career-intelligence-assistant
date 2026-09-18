@@ -538,6 +538,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 051 — Phase 13.5 Letter tab (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.5
+- Prompt intent: continue Phase 13 after Prepare.
+- Suggestion: LetterPanel with tone/gap controls, generate, version history,
+  export, refusal → Open Gaps, supporting uploads listed separately.
+- Outcome: accepted.
+- Reason: 409 `insufficient_matched_requirements` is a next step, not an error toast.
+- Rejected alternatives: merging uploaded letters into generated version history.
+- Human validation: LetterPanel tests 3 green; full frontend vitest; tsc/lint.
+
 ### 050 — Phase 13.4 Prepare / interview pack (TDD)
 
 - Date: 2026-09-18

@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 frontend features in progress — through 13.4 Prepare.
-Next: 13.5 Letter tab.
+**Current position:** Phase 13 frontend features in progress — through 13.5 Letter.
+Next: 13.6 Ranking.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -536,7 +536,7 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
       copy, and the visible template-fallback state.
 - [x] **13.4** **Prepare**: the four sections, each evidence line clickable to its
       span, export.
-- [ ] **13.5** **Letter**: tone and gap-line controls, paragraphs with citations,
+- [x] **13.5** **Letter**: tone and gap-line controls, paragraphs with citations,
       persisted version history, export, and the refusal state rendered as a next step
       rather than an error. Uploaded cover letters are shown separately as supporting
       documents, never as generated versions.

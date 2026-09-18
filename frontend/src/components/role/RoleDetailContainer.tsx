@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  ApiError,
   createBulletDraft,
+  createCoverLetterDraft,
   exportRoleArtefact,
+  getCoverLetters,
   getFitBreakdown,
   getGapPlan,
+  getGeneratedCoverLetters,
   getInterviewPack,
   getRequirements,
   getRole,
@@ -16,6 +20,7 @@ import { EvidencePanel } from "@/components/EvidencePanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { GapsPanel } from "@/components/role/GapsPanel";
+import { LetterPanel, type LetterTone } from "@/components/role/LetterPanel";
 import { PreparePanel } from "@/components/role/PreparePanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
@@ -25,6 +30,7 @@ import {
 } from "@/components/role/role-detail-tabs";
 import { RoleHeader } from "@/components/role/RoleHeader";
 import type {
+  CoverLetterDraft,
   Evidence,
   GapItem,
   Requirement,
@@ -35,17 +41,10 @@ export interface RoleDetailContainerProps {
   roleId: string;
 }
 
-function ComingSoon({ feature }: { feature: string }) {
-  return (
-    <p className="rounded-md border border-dashed border-border px-5 py-8 text-sm text-muted-foreground">
-      {feature} will appear here in a later Phase 13 slice.
-    </p>
-  );
-}
-
 export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const navigate = useNavigate({ from: "/roles/$id" });
   const search = useSearch({ from: "/roles/$id" });
+  const queryClient = useQueryClient();
   const activeTab: RoleDetailTabId =
     search.tab !== undefined && isRoleDetailTabId(search.tab)
       ? search.tab
@@ -63,6 +62,14 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [draftRequirementId, setDraftRequirementId] = useState<string | null>(
     null,
   );
+  const [letterTone, setLetterTone] = useState<LetterTone>("plain");
+  const [includeGapLine, setIncludeGapLine] = useState(false);
+  const [selectedLetter, setSelectedLetter] = useState<CoverLetterDraft | null>(
+    null,
+  );
+  const [letterRefusal, setLetterRefusal] = useState<{
+    message: string;
+  } | null>(null);
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
@@ -84,10 +91,44 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     queryKey: ["interview-pack", roleId],
     queryFn: () => getInterviewPack(roleId),
   });
+  const generatedLettersQuery = useQuery({
+    queryKey: ["generated-cover-letters", roleId],
+    queryFn: () => getGeneratedCoverLetters(roleId),
+  });
+  const supportingLettersQuery = useQuery({
+    queryKey: ["cover-letters"],
+    queryFn: () => getCoverLetters(),
+  });
 
   const bulletMutation = useMutation({
     mutationFn: (requirementId: string) =>
       createBulletDraft(roleId, requirementId),
+  });
+
+  const letterMutation = useMutation({
+    mutationFn: () =>
+      createCoverLetterDraft(roleId, {
+        tone: letterTone,
+        includeGapLine,
+      }),
+    onSuccess: (draft) => {
+      setLetterRefusal(null);
+      setSelectedLetter(draft);
+      void queryClient.invalidateQueries({
+        queryKey: ["generated-cover-letters", roleId],
+      });
+    },
+    onError: (error) => {
+      if (
+        error instanceof ApiError &&
+        error.code === "insufficient_matched_requirements"
+      ) {
+        setSelectedLetter(null);
+        setLetterRefusal({ message: error.message });
+        return;
+      }
+      setLetterRefusal(null);
+    },
   });
 
   const spanId = selected?.evidence?.spanId ?? null;
@@ -317,7 +358,53 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
             }}
           />
         }
-        letter={<ComingSoon feature="Letter" />}
+        letter={
+          <LetterPanel
+            tone={letterTone}
+            includeGapLine={includeGapLine}
+            generating={letterMutation.isPending}
+            draft={
+              selectedLetter ??
+              generatedLettersQuery.data?.[
+                (generatedLettersQuery.data?.length ?? 0) - 1
+              ] ??
+              null
+            }
+            versions={generatedLettersQuery.data ?? []}
+            refusal={letterRefusal}
+            supportingDocuments={supportingLettersQuery.data ?? []}
+            onToneChange={setLetterTone}
+            onIncludeGapLineChange={setIncludeGapLine}
+            onGenerate={() => {
+              setLetterRefusal(null);
+              letterMutation.mutate();
+            }}
+            onSelectVersion={(version) => {
+              setLetterRefusal(null);
+              setSelectedLetter(version);
+            }}
+            onExport={() => {
+              void exportRoleArtefact(roleId, "cover-letter").then((body) =>
+                downloadMarkdown(`cover-letter-${roleId}.md`, body),
+              );
+            }}
+            onCitation={(citationSpanId) => {
+              openEvidence("Cited span", "met", {
+                spanId: citationSpanId,
+                documentId: "",
+                page: 1,
+                paragraph: "",
+                highlight: "",
+              });
+            }}
+            onOpenGaps={() => {
+              void navigate({
+                search: (prev) => ({ ...prev, tab: "gaps" }),
+                replace: true,
+              });
+            }}
+          />
+        }
       />
 
       <EvidencePanel

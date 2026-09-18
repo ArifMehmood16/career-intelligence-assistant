@@ -224,6 +224,22 @@ export const interviewPackSchema = z.object({
   provenance: draftProvenanceSchema,
 });
 
+export const coverLetterParagraphSchema = z.object({
+  text: z.string(),
+  requirementIds: z.array(z.string()),
+  spanIds: z.array(z.string()),
+});
+
+export const coverLetterDraftSchema = z.object({
+  id: z.string(),
+  version: z.number().int(),
+  createdAt: z.string(),
+  roleId: z.string(),
+  paragraphs: z.array(coverLetterParagraphSchema),
+  omittedReason: z.string().nullable(),
+  provenance: draftProvenanceSchema,
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),
