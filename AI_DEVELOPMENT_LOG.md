@@ -408,3 +408,18 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: finish hermetic wire contracts before swapping stores for PostgreSQL.
 - Human validation: lifecycle red→green; `pytest tests/api/ -q --no-cov` → 51
   passed; ruff and mypy clean on changed modules.
+
+### 026 — Phase 11.8 SqlCvStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL CV persistence)
+- Prompt intent: continue Phase 11; first SQL slice for API stores.
+- Suggestion: SqlCvStore implementing CvStore over SqlUnitOfWork; integration tests
+  for port + HTTP CV/span routes with injected store.
+- Outcome: accepted; create_app still defaults to InMemoryCvStore for hermetic
+  API tests.
+- Reason: production CV data must hit PostgreSQL without breaking offline contract
+  tests; injection keeps both paths.
+- Human validation: integration SqlCvStore + CV HTTP SQL tests green; hermetic
+  `tests/api/` green; ruff/mypy clean.

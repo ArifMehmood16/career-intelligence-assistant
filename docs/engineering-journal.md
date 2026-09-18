@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 SqlCvStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_cv_store.py tests/integration/test_cv_http_sql.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `ruff` / `mypy` on `adapters/persistence/cv_store.py`
+- Observed result:
+  - SqlCvStore upload/get/span/delete round-trip via CvStore port against
+    `TEST_DATABASE_URL`.
+  - `create_app(cv_store=SqlCvStore(...))` serves CV + span HTTP routes from Postgres.
+  - Hermetic API suite still green on InMemoryCvStore default.
+- Decisions made: keep in-memory as create_app default for hermetic tests; inject
+  SqlCvStore for SQL-backed runs. Roles/analysis SQL wiring deferred.
+- Problems hit: none after green.
+- Carried forward: SqlRoleStore / analysis persistence behind API; 11.9 SSE.
+
 ## Phase 11 — API contracts (11.8 hermetic lifecycle + draft list)
 
 - Date: 2026-09-18
