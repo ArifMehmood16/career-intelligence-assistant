@@ -309,15 +309,9 @@ def test_identical_inputs_produce_identical_published_score() -> None:
 
 def test_bounded_dispatcher_respects_max_concurrent() -> None:
     service, _ = _service()
-    service.create_role(
-        workspace_id="ws-1", role_id="r1", title="A", job_id="j1"
-    )
-    service.create_role(
-        workspace_id="ws-1", role_id="r2", title="B", job_id="j2"
-    )
-    service.create_role(
-        workspace_id="ws-1", role_id="r3", title="C", job_id="j3"
-    )
+    service.create_role(workspace_id="ws-1", role_id="r1", title="A", job_id="j1")
+    service.create_role(workspace_id="ws-1", role_id="r2", title="B", job_id="j2")
+    service.create_role(workspace_id="ws-1", role_id="r3", title="C", job_id="j3")
     started = service.start_available(limit=10)
     assert len(started) == 2
     assert service.get_job("j3").state is JobState.QUEUED
