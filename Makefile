@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs
+.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs db-check db-migrate
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -15,10 +15,12 @@ help:
 	@echo ""
 	@echo "Run"
 	@echo "  make setup              Copy config/app.env if missing; install Python and frontend deps"
-	@echo "  make run                Host API + web dev server (does not start Docker)"
+	@echo "  make run                Host API + web; migrates local Postgres first"
 	@echo "  make run-docker         Compose Postgres, API and web; build images"
 	@echo "  make down               Stop Compose services"
 	@echo "  make logs               Follow Compose logs"
+	@echo "  make db-check           Verify DATABASE_URL reaches Postgres + pgvector"
+	@echo "  make db-migrate         Alembic upgrade head against DATABASE_URL"
 	@echo ""
 	@echo "Check"
 	@echo "  make lint               Ruff, mypy, TypeScript, ESLint"
@@ -77,7 +79,7 @@ test:
 	cd $(FRONTEND) && bun run test
 
 test-integration:
-	# Narrow Postgres suite; the default coverage gate does not apply to it.
+	# Narrow Postgres suite; refuses to run when TEST_DATABASE_URL == DATABASE_URL.
 	cd backend && .venv/bin/pytest -m integration -q --no-cov
 
 test-evaluation:
@@ -97,6 +99,14 @@ security:
 
 verify: lint test security
 
+db-check: config
+	@test -x $(BACKEND_BIN)/python || (echo "Run make setup first." && exit 1)
+	$(LOAD_ENV) && $(BACKEND_BIN)/python -c "from career_assistant.adapters.persistence import create_db_engine, ping_database; from career_assistant.settings import DatabaseSettings; s=DatabaseSettings(); e=create_db_engine(s); ping_database(e); print('database ok:', s.host_path_hostname()+':'+str(s.host_path_port()))"
+
+db-migrate: config
+	@test -x $(BACKEND_BIN)/alembic || (echo "Run make setup first." && exit 1)
+	$(LOAD_ENV) && cd backend && ../$(BACKEND_BIN)/alembic upgrade head
+
 run-docker: config
 	$(COMPOSE) up -d --build
 	$(LOAD_ENV) && echo "Web http://localhost:$${WEB_PORT:-3000}  API http://localhost:$${API_PORT:-8000}/docs"
@@ -107,9 +117,8 @@ logs: config
 down: config
 	$(COMPOSE) down
 
-# Host API + web dev server. Uses your own Postgres from config/app.env.
-# `alembic upgrade head` joins this target at PLAN phase 4.
-run: config
+# Host API + web. Uses local Postgres from config/app.env; migrates before start.
+run: config db-check db-migrate
 	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
 	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)
 	$(LOAD_ENV) && \

@@ -18,6 +18,36 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 4 — Persistence
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_database_settings.py … --no-cov` — red on missing
+    `DatabaseSettings`, then green.
+  - `pytest -m integration -q --no-cov` against local `career_assistant_test`
+  - `pytest -q`, `ruff check`, `mypy`
+  - `make db-check`, `make db-migrate`
+- Observed result:
+  - `DatabaseSettings` enforces `postgresql+psycopg://`, separate test URL, bounded
+    pool/timeouts, and `hide_parameters` on the engine.
+  - Alembic baseline creates `vector` plus the Phase 4 table set; upgrade/downgrade
+    round-trips on an empty database.
+  - Repository ports + `SqlUnitOfWork` store CV/cover-letter bytes with spans,
+    workspace-scope reads, hard delete, CV replacement invalidation, and conversation
+    uniqueness constraints.
+  - `make db-check` / `make db-migrate` / `make run` use local `DATABASE_URL`.
+- Decisions made:
+  - Embedding column is `vector(64)` matching the hermetic default; dimensions are
+    also stored per row. Hosted dims with a different size need a later migration.
+  - SQLAlchemy stays under `adapters/persistence/` with a dedicated boundary guard.
+- Problems hit and how they were resolved:
+  - Answer citations flushed before the parent answer; fixed by flushing the answer
+    first.
+  - Local role `career` and databases created for integration runs; Docker was not
+    required.
+- Carried forward:
+  - Phase 5 requirement extraction; HTTP upload routes still Phase 11.
+
 ## Phase 3 — Document intake and spans
 
 - Date: 2026-09-18

@@ -6,11 +6,12 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** phase 3 complete. Documents parse to offset-backed spans (PDF, DOCX,
-> plain text) behind an admission policy; model providers sit behind ports with a
-> hermetic default. Persistence and fit mapping are not built yet.
-> [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
-> protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
+> **Status:** phase 4 complete. PostgreSQL 16 + pgvector is the system of record for
+> originals, spans, conversations and provenance; documents parse to offset-backed
+> spans; model providers sit behind ports with a hermetic default. Fit mapping is not
+> built yet. [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the
+> working protocol for coding agents, [docs/features.md](docs/features.md) is what it
+> does.
 
 ## The engineering thesis
 
