@@ -18,6 +18,36 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 1 — Skeleton and quality gates (remainder)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bunx tsc --noEmit` — passed on Lovable sources as delivered.
+  - `bun run lint` — failed as delivered with 226 Prettier errors; after
+    `bun run format`, lint passed with 2 pre-existing react-refresh warnings only.
+  - `bunx vitest run` — StatusMark component tests and ESLint guard tests green.
+  - `make lint` and `make test` after wiring frontend into the Make targets.
+- Observed result:
+  - Deleted `frontend/package-lock.json` and empty `src/app/` stubs; ignored
+    `.output` / `.wrangler` build artefacts.
+  - Vitest + Testing Library + jsdom added; first test covers `StatusMark` from props.
+  - Custom ESLint plugin bans hex / raw Tailwind palette classes in
+    `src/components/**`; fixture imports banned outside tests (exceptions:
+    `api/client.ts`, `api/fixtures.ts`, `routes/dev.states.tsx`).
+  - GitHub Actions workflow `.github/workflows/ci.yml` runs install, `make lint`,
+    `make test` on Python 3.14 and Bun 1.4.0.
+- Decisions made:
+  - Keep temporary fixture imports in `api/client.ts` until Phase 12 replaces the
+    fixture store; the guard still blocks components and routes.
+  - Format the as-delivered Lovable tree so the Phase 1 exit gate can pass; record
+    the Prettier failure as the only as-delivered defect.
+- Problems hit and how they were resolved:
+  - ESLint `lintText` guards initially pointed at `src/` instead of the frontend
+    root; fixed the test path resolution.
+- Carried forward:
+  - Phase 2 model providers.
+  - Phase 16.1 still needs a real Docker/bun image build verification.
+
 ## Phase 0 — Repository baseline and decisions
 
 - Date: 2026-09-18

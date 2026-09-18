@@ -113,3 +113,17 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: focused `pytest tests/unit/test_phase0_baseline.py --no-cov`
   observed red then green; full hermetic `pytest` passed with 100% package coverage
   on the existing skeleton.
+
+### 004 — Phase 1 frontend quality gates
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 1.3, 1.4, 1.8, 1.9
+- Prompt intent: continue with the next phase through completion and PR.
+- Suggestion: frontend hygiene, Vitest/Testing Library, ESLint design/fixture
+  guards with red-green proof, Makefile typecheck/test wiring, GitHub Actions CI.
+- Outcome: accepted.
+- Reason: Phase 1 exit gate requires lint, typecheck and hermetic tests on both
+  halves; Lovable as delivered failed Prettier-only lint until formatted.
+- Human validation: `bunx vitest run` (5 passed, including red-then-green ESLint
+  guards), `make typecheck`, `make lint`, and `make test` all observed green.

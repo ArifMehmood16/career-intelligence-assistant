@@ -6,11 +6,11 @@ and turns that mapping into the things a candidate actually needs — a prioriti
 plan, CV bullets, an interview pack, a cover letter draft — with every claim traceable
 to the span of text it came from.
 
-> **Status:** phase 1. The run surface exists — the API answers liveness, the web
-> app renders against fixtures, and `make run-docker` builds all three services.
-> No product behaviour yet. [PLAN.md](PLAN.md) is the execution order,
-> [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
-> [docs/features.md](docs/features.md) is what it does.
+> **Status:** phase 1 complete. Quality gates cover both halves; the API answers
+> liveness, the web app has component tests and design/fixture ESLint guards, and
+> `make run-docker` builds all three services. No product behaviour yet.
+> [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
+> protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 
 ## The engineering thesis
 

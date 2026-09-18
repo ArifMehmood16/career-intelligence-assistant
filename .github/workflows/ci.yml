@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  hermetic:
+    name: Lint, typecheck and hermetic tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+
+      - name: Install backend
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -U pip
+          backend/.venv/bin/pip install -r backend/requirements-dev.lock
+          backend/.venv/bin/pip install --no-deps -e ./backend
+
+      - name: Install frontend
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+
+      - name: Lint and typecheck
+        run: make lint
+
+      - name: Hermetic tests
+        run: make test
