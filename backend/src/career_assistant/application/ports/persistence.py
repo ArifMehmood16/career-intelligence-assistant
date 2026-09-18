@@ -88,6 +88,17 @@ class AnswerRecord:
     created_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class HistoryMessage:
+    id: str
+    kind: str  # question | answer
+    content: str
+    created_at: datetime
+    provider: str | None = None
+    model_tag: str | None = None
+    left_machine: bool | None = None
+
+
 class WorkspaceRepository(Protocol):
     def ensure(self, workspace_id: str) -> None: ...
 
@@ -135,6 +146,18 @@ class ConversationRepository(Protocol):
         left_machine: bool,
         citation_span_ids: tuple[str, ...],
     ) -> AnswerRecord: ...
+
+    def get_by_client_request_id(
+        self, workspace_id: str, client_request_id: str
+    ) -> tuple[QuestionRecord, AnswerRecord] | None: ...
+
+    def list_answer_citations(
+        self, workspace_id: str, answer_id: str
+    ) -> tuple[str, ...]: ...
+
+    def list_history(
+        self, workspace_id: str, conversation_id: str
+    ) -> tuple[HistoryMessage, ...]: ...
 
     def hard_delete_history(self, workspace_id: str, conversation_id: str) -> None: ...
 

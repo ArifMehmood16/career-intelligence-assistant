@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 9 — Question answering (complete)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_ask_use_case.py -q --no-cov`
+  - `pytest tests/integration/test_ask_persistence.py -m integration -q --no-cov`
+  - `pytest -m integration -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - `AskService.ask` / `.stream` share one produce path; tokens never persisted mid-stream.
+  - Question committed before answer; `clientRequestId` returns existing pair.
+  - SQL `get_by_client_request_id`, `list_history`, citation list, hard delete.
+- Decisions made: HTTP `/api/messages` remains Phase 11; behaviour proven at use-case
+  + repository layers.
+- Problems hit: same-timestamp history order — tests use ordered UUIDs; schema-
+  qualified raw SQL in hard-delete assertions.
+- Carried forward: Phase 10 grounded generation; wire AskService in Phase 11.
+
 ## Phase 9 — Question answering (domain slice)
 
 - Date: 2026-09-18

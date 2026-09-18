@@ -294,3 +294,17 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: structured intents must not use vector search; citations must resolve
   or become insufficient before any HTTP surface exists.
 - Human validation: focused unit suites green; hermetic pytest (~84%), ruff, mypy.
+
+### 018 — Phase 9 ask streaming and persistence (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 9.7–9.9
+- Prompt intent: continue next work with TDD after PR #17 merged to main.
+- Suggestion: `AskService` with shared stream/non-stream path; in-memory red specs
+  then green; conversation repo lookup/history/citations red integration then green.
+- Outcome: accepted.
+- Reason: exit gate needs stream parity, question-before-answer persistence, and
+  idempotent clientRequestId without storing partial tokens.
+- Human validation: unit ask use-case green; integration ask persistence green;
+  full `-m integration` green; hermetic pytest (~84%), ruff, mypy.
