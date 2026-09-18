@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 9 (question answering) is in progress — domain routing,
-structured answers, retrieval scope and prompts are done; streaming/persistence next.
+**Current position:** Phase 9 (question answering) exit gate is satisfied at the
+domain/application layer. Next work is Phase 10 — grounded generation.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -370,13 +370,13 @@ partial mapping.
       answer is reduced to insufficient evidence before it is sent.
 - [x] **9.6** Comparison across multiple roles returns a ranking derived from stored
       scores, with the differentiating requirements named.
-- [ ] **9.7** Streaming: the same use case serves a streamed and a non-streamed
+- [x] **9.7** Streaming: the same use case serves a streamed and a non-streamed
       response, with citations validated after the text completes.
-- [ ] **9.8** Persist the user question before processing, then persist exactly one
+- [x] **9.8** Persist the user question before processing, then persist exactly one
       final validated answer or insufficient-evidence result with citations,
       provider/model provenance and `left_machine`. Never persist partial SSE tokens
       as the answer. A repeated `clientRequestId` returns the existing result.
-- [ ] **9.9** Stored history survives an API restart and is returned in deterministic
+- [x] **9.9** Stored history survives an API restart and is returned in deterministic
       order. Deleting history hard-deletes the conversation, questions, answers and
       citations. Failed attempts retain only a safe status/code, never provider
       payloads or partial generated text.

@@ -63,8 +63,15 @@ def test_get_by_client_request_id_returns_question_and_answer(
 def test_list_history_is_deterministic_creation_order(uow: SqlUnitOfWork) -> None:
     workspace_id = str(uuid.uuid4())
     conversation_id = str(uuid.uuid4())
-    q1, q2 = str(uuid.uuid4()), str(uuid.uuid4())
-    a1, a2 = str(uuid.uuid4()), str(uuid.uuid4())
+    # Time-tied created_at values sort by id; use ordered ids for a stable sequence.
+    q1, q2 = (
+        "00000000-0000-4000-8000-000000000001",
+        "00000000-0000-4000-8000-000000000002",
+    )
+    a1, a2 = (
+        "00000000-0000-4000-8000-000000000011",
+        "00000000-0000-4000-8000-000000000012",
+    )
 
     with uow:
         uow.workspaces.ensure(workspace_id)

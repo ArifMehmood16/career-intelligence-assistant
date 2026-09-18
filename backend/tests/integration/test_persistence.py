@@ -301,10 +301,22 @@ def test_chat_history_hard_delete_removes_questions_and_answers(
         uow.commit()
 
     with session_factory() as session:
-        assert session.execute(text("SELECT count(*) FROM questions")).scalar_one() == 0
-        assert session.execute(text("SELECT count(*) FROM answers")).scalar_one() == 0
         assert (
-            session.execute(text("SELECT count(*) FROM answer_citations")).scalar_one()
+            session.execute(
+                text(f"SELECT count(*) FROM {APP_SCHEMA}.questions")
+            ).scalar_one()
+            == 0
+        )
+        assert (
+            session.execute(
+                text(f"SELECT count(*) FROM {APP_SCHEMA}.answers")
+            ).scalar_one()
+            == 0
+        )
+        assert (
+            session.execute(
+                text(f"SELECT count(*) FROM {APP_SCHEMA}.answer_citations")
+            ).scalar_one()
             == 0
         )
 
