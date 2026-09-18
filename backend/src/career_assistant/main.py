@@ -8,6 +8,7 @@ from typing import Literal
 
 from fastapi import APIRouter, FastAPI, Request, Response
 
+from career_assistant.adapters.persistence.readiness import SettingsReadiness
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
@@ -15,7 +16,6 @@ from career_assistant.api.middleware import (
 )
 from career_assistant.api.readiness import (
     ReadinessProbe,
-    SettingsReadiness,
     StaticReadiness,
 )
 from career_assistant.api.schemas import ApiModel, ReadyResponse

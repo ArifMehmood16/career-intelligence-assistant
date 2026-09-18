@@ -336,3 +336,19 @@ Never record a command output, metric, date or commit hash that was not observed
   persist; regenerations must be immutable versions, not in-place updates.
 - Human validation: draft persistence integration green; full `-m integration` green;
   hermetic pytest (~84%), ruff, mypy.
+
+### 021 — Phase 11 API wire foundation (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.1, 11.2, 11.4, 11.5, 11.6
+- Prompt intent: continue on updated main with TDD; start Phase 11 API contracts.
+- Suggestion: shared camelCase `ApiModel`; workspace cookie middleware; correlation
+  id middleware; safe error envelope; `/api/ready` with injectable probe (SQL probe
+  kept under adapters/persistence).
+- Outcome: accepted for the HTTP foundation; 11.3 upload limits and feature routes
+  deferred to follow-up slices.
+- Reason: every later route needs aliases, workspace identity, correlation ids and
+  safe errors before CV/role handlers land.
+- Human validation: focused API suites green; hermetic pytest (~83%), ruff, mypy;
+  persistence boundary test green after moving SettingsReadiness into adapters.
