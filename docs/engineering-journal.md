@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Gaps panel (13.2)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/GapsPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Gaps tab lists ordered gap items with reason, score delta,
+  action, adjacent evidence, and Draft a bullet when canDraftBullet.
+- Decisions made: draft click is wired as a no-op until 13.3; evidence reuses
+  EvidencePanel via a synthetic Requirement selection.
+- Problems hit: none material.
+- Carried forward: 13.3 bullet draft surface.
+
 ## Phase 13 — Role detail tabs (13.1)
 
 - Date: 2026-09-18

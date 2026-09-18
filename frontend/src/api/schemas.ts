@@ -145,6 +145,29 @@ export const supportingDocumentSchema = z.object({
   createdAt: z.string(),
 });
 
+export const gapItemSchema = z.object({
+  requirementId: z.string(),
+  requirementText: z.string(),
+  type: z.enum(["must", "desirable"]),
+  status: z.enum(["partial", "missing"]),
+  reason: z.enum([
+    "no_related_claim",
+    "adjacent_claim_only",
+    "evidence_too_old",
+    "evidence_thin",
+  ]),
+  adjacentEvidence: evidenceSchema.nullable(),
+  scoreDelta: z.number(),
+  action: z.enum(["evidence_it", "learn_it", "accept_it"]),
+  canDraftBullet: z.boolean(),
+});
+
+export const gapPlanSchema = z.object({
+  roleId: z.string(),
+  currentScore: z.number(),
+  items: z.array(gapItemSchema),
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),

@@ -538,6 +538,20 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 048 — Phase 13.2 Gaps panel (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.2
+- Prompt intent: continue Phase 13 after role tabs.
+- Suggestion: GapsPanel presentational list from GET /gap-plan; Draft a bullet
+  control when canDraftBullet; adjacent evidence opens shared EvidencePanel.
+- Outcome: accepted.
+- Reason: gap plan is deterministic server-side; UI only presents ordered items.
+- Rejected alternatives: inventing gap order in the client (API already sorts by
+  scoreDelta).
+- Human validation: GapsPanel tests 2 green; full frontend vitest; tsc/lint.
+
 ### 047 — Phase 13.1 role detail tabs (TDD)
 
 - Date: 2026-09-18

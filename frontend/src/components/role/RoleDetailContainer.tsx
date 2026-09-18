@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   getFitBreakdown,
+  getGapPlan,
   getRequirements,
   getRole,
   getSpan,
@@ -10,6 +11,7 @@ import {
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
+import { GapsPanel } from "@/components/role/GapsPanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import {
@@ -17,7 +19,7 @@ import {
   type RoleDetailTabId,
 } from "@/components/role/role-detail-tabs";
 import { RoleHeader } from "@/components/role/RoleHeader";
-import type { Requirement, RequirementStatus } from "@/types";
+import type { GapItem, Requirement, RequirementStatus } from "@/types";
 
 export interface RoleDetailContainerProps {
   roleId: string;
@@ -60,6 +62,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     queryKey: ["requirements", roleId],
     queryFn: () => getRequirements(roleId),
   });
+  const gapPlanQuery = useQuery({
+    queryKey: ["gap-plan", roleId],
+    queryFn: () => getGapPlan(roleId),
+  });
 
   const spanId = selected?.evidence?.spanId ?? null;
   const spanQuery = useQuery({
@@ -95,6 +101,28 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       : requirements.length === 0
         ? "empty"
         : "ready";
+
+  const gapItems = gapPlanQuery.data?.items ?? [];
+  const gapsState: AsyncState = gapPlanQuery.isPending
+    ? "loading"
+    : gapPlanQuery.isError
+      ? "error"
+      : gapItems.length === 0
+        ? "empty"
+        : "ready";
+
+  const openGapEvidence = (item: GapItem) => {
+    if (!item.adjacentEvidence) return;
+    setSelected({
+      id: item.requirementId,
+      roleId,
+      text: item.requirementText,
+      type: item.type,
+      status: item.status,
+      evidence: item.adjacentEvidence,
+    });
+    setPanelOpen(true);
+  };
 
   const resolveState =
     !panelOpen || !spanId
@@ -148,19 +176,22 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           void requirementsQuery.refetch();
         }}
       />
-
-      <EvidencePanel
-        open={panelOpen}
-        title={selected?.text ?? ""}
-        status={selected?.status ?? "missing"}
-        evidence={
-          spanId ? (spanQuery.data ?? null) : (selected?.evidence ?? null)
-        }
-        resolveState={resolveState}
-        resolveError={resolveError}
-        onOpenChange={setPanelOpen}
-      />
     </div>
+  );
+
+  const gapsPane = (
+    <GapsPanel
+      state={gapsState}
+      currentScore={gapPlanQuery.data?.currentScore ?? 0}
+      items={gapItems}
+      onRetry={() => {
+        void gapPlanQuery.refetch();
+      }}
+      onSelectEvidence={openGapEvidence}
+      onDraftBullet={() => {
+        // Phase 13.3 wires the draft surface; the control is present from 13.2.
+      }}
+    />
   );
 
   return (
@@ -176,9 +207,21 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           });
         }}
         fit={fitPane}
-        gaps={<ComingSoon feature="Gaps" />}
+        gaps={gapsPane}
         prepare={<ComingSoon feature="Prepare" />}
         letter={<ComingSoon feature="Letter" />}
+      />
+
+      <EvidencePanel
+        open={panelOpen}
+        title={selected?.text ?? ""}
+        status={selected?.status ?? "missing"}
+        evidence={
+          spanId ? (spanQuery.data ?? null) : (selected?.evidence ?? null)
+        }
+        resolveState={resolveState}
+        resolveError={resolveError}
+        onOpenChange={setPanelOpen}
       />
     </div>
   );

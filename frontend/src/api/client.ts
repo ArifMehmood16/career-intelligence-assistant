@@ -9,6 +9,7 @@ import type {
   Citation,
   CvDocument,
   Evidence,
+  GapPlan,
   Provider,
   ProviderChoice,
   Requirement,
@@ -23,6 +24,7 @@ import {
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
+  gapPlanSchema,
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
@@ -287,6 +289,12 @@ export function getRequirements(roleId: string): Promise<Requirement[]> {
 export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
   return request(`/api/roles/${roleId}/breakdown`, {
     schema: breakdownRowSchema.array(),
+  });
+}
+
+export function getGapPlan(roleId: string): Promise<GapPlan> {
+  return request(`/api/roles/${roleId}/gap-plan`, {
+    schema: gapPlanSchema,
   });
 }
 
