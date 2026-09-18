@@ -199,7 +199,16 @@ function MessageBubble({
         <p className="text-xs font-medium">Not enough evidence</p>
       ) : null}
 
-      <p className="whitespace-pre-wrap">
+      <p
+        className="whitespace-pre-wrap"
+        {...(streaming
+          ? {
+              role: "status" as const,
+              "aria-live": "polite" as const,
+              "aria-label": "Streaming answer",
+            }
+          : {})}
+      >
         {body}
         {streaming ? (
           <span

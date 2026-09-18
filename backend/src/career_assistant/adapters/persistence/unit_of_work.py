@@ -223,6 +223,17 @@ class SqlDocumentRepository:
         self._session.flush()
         return stored
 
+    def list_cover_letters(self, workspace_id: str) -> tuple[StoredDocument, ...]:
+        rows = self._session.scalars(
+            select(DocumentRow)
+            .where(
+                DocumentRow.workspace_id == _as_uuid(workspace_id),
+                DocumentRow.kind == DocumentKind.COVER_LETTER.value,
+            )
+            .order_by(DocumentRow.created_at.asc())
+        ).all()
+        return tuple(_to_stored(row) for row in rows)
+
 
 class SqlConversationRepository:
     def __init__(self, session: Session) -> None:

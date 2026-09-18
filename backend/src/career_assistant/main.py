@@ -146,13 +146,14 @@ def create_production_app(
     providers: ProviderSettings | None = None,
 ) -> FastAPI:
     """Wire SQL stores for the process entrypoint (uvicorn / Docker CMD)."""
-    cv_store, role_store = build_sql_stores()
+    cv_store, role_store, supporting_store = build_sql_stores()
     return create_app(
         readiness=readiness if readiness is not None else SettingsReadiness(),
         limits=limits,
         providers=providers,
         cv_store=cv_store,
         role_store=role_store,
+        supporting_store=supporting_store,
     )
 
 

@@ -5,12 +5,18 @@
 import type {
   AnalysisJob,
   BreakdownRow,
+  BulletDraft,
   ChatMessage,
   Citation,
+  Comparison,
+  CoverLetterDraft,
   CvDocument,
   Evidence,
+  GapPlan,
+  InterviewPack,
   Provider,
   ProviderChoice,
+  RankedRole,
   Requirement,
   Role,
   SupportingDocument,
@@ -18,14 +24,20 @@ import type {
 import {
   analysisJobSchema,
   breakdownRowSchema,
+  bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
+  comparisonSchema,
+  coverLetterDraftSchema,
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
+  gapPlanSchema,
+  interviewPackSchema,
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
+  rankedRoleSchema,
   reanalyseResponseSchema,
   requirementSchema,
   roleCreatedSchema,
@@ -266,6 +278,36 @@ export async function getRoles(): Promise<Role[]> {
   return rows.map(mapRole);
 }
 
+export async function getRanking(): Promise<RankedRole[]> {
+  const rows = await request("/api/ranking", {
+    schema: rankedRoleSchema.array(),
+  });
+  return rows.map((row) => ({
+    role: mapRole(row.role),
+    rank: row.rank,
+    tied: row.tied,
+    because: row.because,
+  }));
+}
+
+export async function getComparison(
+  roleAId: string,
+  roleBId: string,
+): Promise<Comparison> {
+  const params = new URLSearchParams({ a: roleAId, b: roleBId });
+  const row = await request(`/api/compare?${params.toString()}`, {
+    schema: comparisonSchema,
+  });
+  return {
+    a: mapRole(row.a),
+    b: mapRole(row.b),
+    shared: row.shared,
+    onlyInA: row.onlyInA,
+    onlyInB: row.onlyInB,
+    differentiator: row.differentiator,
+  };
+}
+
 export async function getRole(id: string): Promise<Role | null> {
   try {
     const row = await request(`/api/roles/${id}`, { schema: roleSchema });
@@ -288,6 +330,87 @@ export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
   return request(`/api/roles/${roleId}/breakdown`, {
     schema: breakdownRowSchema.array(),
   });
+}
+
+export function getGapPlan(roleId: string): Promise<GapPlan> {
+  return request(`/api/roles/${roleId}/gap-plan`, {
+    schema: gapPlanSchema,
+  });
+}
+
+export function createBulletDraft(
+  roleId: string,
+  requirementId: string,
+): Promise<BulletDraft> {
+  return request(`/api/roles/${roleId}/bullets`, {
+    method: "POST",
+    body: { requirementId },
+    schema: bulletDraftSchema,
+  });
+}
+
+export function getInterviewPack(roleId: string): Promise<InterviewPack> {
+  return request(`/api/roles/${roleId}/interview-pack`, {
+    schema: interviewPackSchema,
+  });
+}
+
+export function getGeneratedCoverLetters(
+  roleId: string,
+): Promise<CoverLetterDraft[]> {
+  return request(`/api/roles/${roleId}/cover-letters`, {
+    schema: coverLetterDraftSchema.array(),
+  });
+}
+
+export function createCoverLetterDraft(
+  roleId: string,
+  input: { tone: "plain" | "warm"; includeGapLine: boolean },
+): Promise<CoverLetterDraft> {
+  return request(`/api/roles/${roleId}/cover-letter`, {
+    method: "POST",
+    body: {
+      tone: input.tone,
+      includeGapLine: input.includeGapLine,
+    },
+    schema: coverLetterDraftSchema,
+  });
+}
+
+export type ExportArtefact =
+  "gap-plan" | "interview-pack" | "cover-letter" | "bullets";
+
+/** Download Markdown for a role artefact; returns the raw text. */
+export async function exportRoleArtefact(
+  roleId: string,
+  artefact: ExportArtefact,
+): Promise<string> {
+  const response = await fetch(`/api/roles/${roleId}/export/${artefact}.md`, {
+    method: "GET",
+    headers: { Accept: "text/markdown, text/plain, */*" },
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    let code = "internal_error";
+    let message = "Export failed.";
+    let correlationId = response.headers.get("X-Correlation-Id") ?? "unknown";
+    try {
+      const payload: unknown = await response.json();
+      const parsed = errorEnvelopeSchema.safeParse(payload);
+      if (parsed.success) {
+        code = parsed.data.error.code;
+        message = parsed.data.error.message;
+        correlationId = parsed.data.error.correlationId || correlationId;
+      }
+    } catch {
+      // keep defaults
+    }
+    throw new ApiError(code, message, {
+      correlationId,
+      status: response.status,
+    });
+  }
+  return response.text();
 }
 
 export function getSpan(spanId: string): Promise<Evidence> {

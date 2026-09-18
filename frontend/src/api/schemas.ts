@@ -145,6 +145,123 @@ export const supportingDocumentSchema = z.object({
   createdAt: z.string(),
 });
 
+export const gapItemSchema = z.object({
+  requirementId: z.string(),
+  requirementText: z.string(),
+  type: z.enum(["must", "desirable"]),
+  status: z.enum(["partial", "missing"]),
+  reason: z.enum([
+    "no_related_claim",
+    "adjacent_claim_only",
+    "evidence_too_old",
+    "evidence_thin",
+  ]),
+  adjacentEvidence: evidenceSchema.nullable(),
+  scoreDelta: z.number(),
+  action: z.enum(["evidence_it", "learn_it", "accept_it"]),
+  canDraftBullet: z.boolean(),
+});
+
+export const gapPlanSchema = z.object({
+  roleId: z.string(),
+  currentScore: z.number(),
+  items: z.array(gapItemSchema),
+});
+
+export const draftProvenanceSchema = z.object({
+  provider: z.string(),
+  model: z.string().nullable(),
+  leftMachine: z.boolean(),
+  generatedAt: z.string(),
+  grounded: z.boolean(),
+  fallback: z.enum(["none", "regenerated", "template"]),
+});
+
+export const bulletLineSchema = z.object({
+  text: z.string(),
+  spanIds: z.array(z.string()),
+  evidence: z.array(evidenceSchema),
+});
+
+export const bulletDraftSchema = z.object({
+  id: z.string(),
+  version: z.number().int(),
+  createdAt: z.string(),
+  requirementId: z.string(),
+  bullets: z.array(bulletLineSchema),
+  provenance: draftProvenanceSchema,
+});
+
+export const interviewProbeSchema = z.object({
+  requirementId: z.string(),
+  question: z.string(),
+  status: z.enum(["met", "partial", "missing"]),
+});
+
+export const interviewLeadWithSchema = z.object({
+  requirementId: z.string(),
+  evidence: evidenceSchema,
+  note: z.string(),
+});
+
+export const interviewThinAreaSchema = z.object({
+  requirementId: z.string(),
+  requirementText: z.string(),
+  nearest: evidenceSchema.nullable(),
+});
+
+export const interviewAskThemSchema = z.object({
+  question: z.string(),
+  requirementId: z.string().nullable(),
+});
+
+export const interviewPackSchema = z.object({
+  roleId: z.string(),
+  probes: z.array(interviewProbeSchema),
+  leadWith: z.array(interviewLeadWithSchema),
+  thinAreas: z.array(interviewThinAreaSchema),
+  askThem: z.array(interviewAskThemSchema),
+  provenance: draftProvenanceSchema,
+});
+
+export const coverLetterParagraphSchema = z.object({
+  text: z.string(),
+  requirementIds: z.array(z.string()),
+  spanIds: z.array(z.string()),
+});
+
+export const coverLetterDraftSchema = z.object({
+  id: z.string(),
+  version: z.number().int(),
+  createdAt: z.string(),
+  roleId: z.string(),
+  paragraphs: z.array(coverLetterParagraphSchema),
+  omittedReason: z.string().nullable(),
+  provenance: draftProvenanceSchema,
+});
+
+export const rankedRoleSchema = z.object({
+  role: roleSchema,
+  rank: z.number().int(),
+  tied: z.boolean(),
+  because: z.array(z.string()),
+});
+
+export const comparisonSharedSchema = z.object({
+  text: z.string(),
+  aStatus: z.enum(["met", "partial", "missing"]),
+  bStatus: z.enum(["met", "partial", "missing"]),
+});
+
+export const comparisonSchema = z.object({
+  a: roleSchema,
+  b: roleSchema,
+  shared: z.array(comparisonSharedSchema),
+  onlyInA: z.array(requirementSchema),
+  onlyInB: z.array(requirementSchema),
+  differentiator: z.string(),
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),

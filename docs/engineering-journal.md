@@ -18,6 +18,156 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.1 — Restore the complete quality baseline
+
+- Date: 2026-09-18
+- Commands run:
+  - `backend/.venv/bin/ruff format --check backend/src backend/tests` — 168 files
+    already formatted after collapsing `list_cover_letters` in
+    `application/ports/persistence.py`
+  - `make lint` — ruff check/format green; mypy "Success: no issues found in 111
+    source files"; frontend `tsc --noEmit` and `eslint .` green
+  - `make typecheck` — mypy 111 files; frontend `tsc --noEmit` green
+  - `make test` — backend 230 passed, 3 skipped, 29 deselected, 2 warnings;
+    coverage 80.58%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 29 passed against local PostgreSQL; same 2 warnings
+- Observed result: exact Make quality targets are green without changing Ruff's
+  `backend/src backend/tests` scope. Alembic versions remain in
+  `backend/migrations/`, outside that target.
+- Decisions made: carry the two TestClient deprecation warnings as a Phase 15
+  maintenance risk rather than adding `httpx2`, widening FastAPI, or filtering
+  warnings.
+- Problems hit: `list_cover_letters` was the only unformatted signature.
+- Carried forward: 13A.2 SQL-backed chat and provider settings.
+
+## Phase 13 — Accessibility and escaped text (13.9–13.10) + exit gate
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/a11y/phase13-accessibility.test.tsx` — 3 passed
+  - `bun run test src/a11y/phase13-escaped-text.test.tsx` — 2 passed
+  - `bun run test` — 100 passed / 32 files
+  - `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: live regions on parsing, analysing, streaming; XSS strings stay
+  text; Phase 13 exit gate met for frontend quality checks.
+- Decisions made: polite live regions only.
+- Problems hit: duplicate Analysing status in table+cards layouts — tests use
+  getAllByRole.
+- Carried forward: Phase 14 Evaluation.
+
+## Phase 13 — /dev/states gallery (13.8)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/routes/dev.states.test.tsx` — 1 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: gallery lists Phase 13 surfaces; smoke test asserts every
+  DEV_STATE_SECTION_TITLES h2 is present.
+- Decisions made: export DevStatesPage + title list for the smoke test.
+- Problems hit: getByRole heading name matching was flaky vs nested content;
+  smoke test uses h2 text selector.
+- Carried forward: 13.9 Accessibility.
+
+## Phase 13 — Compare (13.7)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/workspace/ComparePanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: workspace Compare picks two roles, shows shared/unique/
+  differentiator, and links into Gaps.
+- Decisions made: only ready roles appear in the selectors.
+- Problems hit: none material.
+- Carried forward: 13.8 `/dev/states`.
+
+## Phase 13 — Ranking (13.6)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/workspace/RankingPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: workspace shows ranked roles with because lines and Tied labels.
+- Decisions made: RankingPanel sits below RolesPanel on `/`.
+- Problems hit: none material.
+- Carried forward: 13.7 Compare.
+
+## Phase 13 — Letter tab (13.5)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/LetterPanel.test.tsx` — 3 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Letter tab drafts via POST /cover-letter, lists versions,
+  exports Markdown, refuses with Open Gaps, and lists workspace supporting uploads
+  separately.
+- Decisions made: citation chips use span ids resolved through EvidencePanel.
+- Problems hit: none material.
+- Carried forward: 13.6 Ranking.
+
+## Phase 13 — Prepare / interview pack (13.4)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/PreparePanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Prepare tab shows probes, lead-with, thin areas, ask-them;
+  evidence is clickable; Export Markdown downloads the artefact.
+- Decisions made: empty when all four sections are empty arrays.
+- Problems hit: none material.
+- Carried forward: 13.5 Letter tab.
+
+## Phase 13 — Bullet drafts (13.3)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/BulletDraftPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Draft a bullet POSTs /bullets and shows text, citation chips,
+  provenance, copy, and template-fallback status.
+- Decisions made: draft panel sits under the Gaps list; dismiss resets the mutation.
+- Problems hit: none material.
+- Carried forward: 13.4 Prepare tab.
+
+## Phase 13 — Gaps panel (13.2)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/GapsPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Gaps tab lists ordered gap items with reason, score delta,
+  action, adjacent evidence, and Draft a bullet when canDraftBullet.
+- Decisions made: draft click is wired as a no-op until 13.3; evidence reuses
+  EvidencePanel via a synthetic Requirement selection.
+- Problems hit: none material.
+- Carried forward: 13.3 bullet draft surface.
+
+## Phase 13 — Role detail tabs (13.1)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/RoleDetailTabs.test.tsx` — 3 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: role detail has Fit/Gaps/Prepare/Letter tabs; `?tab=gaps`
+  deep-links; arrow keys move focus across the tablist.
+- Decisions made: optional search param `tab` (default Fit); later panes are
+  placeholders until 13.2–13.5.
+- Problems hit: macOS case-insensitive clash between RoleDetailTabs.tsx and
+  roleDetailTabs.ts — renamed constants module to role-detail-tabs.ts.
+- Carried forward: 13.2 Gaps content.
+
+## Phase 13 — SQL supporting cover letters (carry-forward)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_production_app_wiring.py tests/integration/test_sql_supporting_store.py tests/api/test_supporting_documents.py -q --no-cov`
+  - ruff check + mypy on touched modules
+- Observed result: production app wires SqlSupportingDocumentStore; cover letters
+  persist in PostgreSQL documents (kind=cover_letter) with list/delete/download.
+- Decisions made: close Phase 12 carry-forward before 13.1 UI tabs.
+- Problems hit: none material.
+- Carried forward: 13.1 role detail tabs; chunk/embedding index path; model-backed
+  SqlRoleStore analysis.
+
 ## Phase 12 — Frontend integration (exit gate)
 
 - Date: 2026-09-18

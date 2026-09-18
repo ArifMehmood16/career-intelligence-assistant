@@ -538,6 +538,189 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 057 — Phase 13A.1 quality baseline (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13A.1
+- Prompt intent: restore `make lint` after the observed Ruff format failure on
+  `application/ports/persistence.py`, then run the exact quality targets.
+- Suggestion: collapse `list_cover_letters` to one line; keep Alembic migrations
+  outside Ruff's `backend/src backend/tests` target; record FastAPI/Starlette
+  TestClient deprecation warnings as a Phase 15 risk instead of silencing them.
+- Outcome: accepted.
+- Reason: the lint miss was formatting only; adding `httpx2` or `filterwarnings`
+  would weaken the gate. Installed versions observed: FastAPI 0.141.1, Starlette
+  1.6.0, httpx 0.28.1, anyio 4.15.1.
+- Rejected alternatives: installing `httpx2`; widening `fastapi>=0.141,<0.142`;
+  adding pytest `filterwarnings`.
+- Human validation: `make lint`, `make typecheck`, `make test` (230 passed, 3
+  skipped, 29 deselected; frontend 100 passed), `make test-integration` (29
+  passed). Two third-party warnings remain and are recorded in PLAN Phase 15.
+
+### 056 — Post-Phase-13 logic and production-wiring audit
+
+- Date: 2026-09-18
+- Tool / model: Codex
+- Plan task: audit checkpoint before Phase 14
+- Prompt intent: verify all logic through Phase 13, identify defects and record the
+  required corrections before evaluation.
+- Suggestion: add mandatory Phase 13A remediation for SQL-backed chat/provider
+  settings, real queued production analysis and CV-replacement jobs, runtime provider
+  use, supporting-letter retrieval and general span resolution, grounded generation,
+  correct ties/differentiators/version export, frontend failure states and honest
+  documentation.
+- Outcome: pending human review; no application behaviour changed in this audit.
+- Reason: hermetic, component and direct repository tests pass, but production routes
+  still instantiate process-memory chat/provider state, run synchronous hermetic
+  analysis, omit supporting documents from retrieval, and bypass the existing
+  provider and grounded-generation application paths. Evaluation before correcting
+  those paths would report results for a different system than the shipped app.
+- Human validation: `make test` observed 230 passed, 3 skipped and 29 deselected;
+  frontend Vitest observed 100 passed when run with local socket access;
+  `make test-integration` observed 29 passed against local PostgreSQL; `make
+  typecheck` passed. Exact `make lint` remains red because Ruff would reformat one
+  method declaration in `application/ports/persistence.py`.
+
+### 055 — Phase 13.9–13.10 a11y live regions and escaped text (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.9, 13.10
+- Prompt intent: close Phase 13 exit gate after /dev/states.
+- Suggestion: polite aria-live for parsing, analysing, and streaming chat; regression
+  tests that XSS-looking excerpts never become DOM nodes.
+- Outcome: accepted.
+- Reason: progress must be announced; React text children already escape — tests
+  lock that property.
+- Rejected alternatives: aria-live=assertive for streaming (too noisy).
+- Human validation: a11y 3 green; escaped-text 2 green; full frontend vitest 100;
+  tsc/lint.
+
+### 054 — Phase 13.8 /dev/states gallery fill (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.8
+- Prompt intent: continue Phase 13 after Compare.
+- Suggestion: add Gaps/Bullet/Prepare/Letter/Ranking/Compare/tabs/cover-letter
+  states to /dev/states; export DEV_STATE_SECTION_TITLES; gallery smoke test.
+- Outcome: accepted.
+- Reason: exit gate requires every gallery state to have a test; component unit
+  tests already cover behaviours, gallery test locks the section list.
+- Rejected alternatives: omitting gallery coverage for Phase 13 surfaces.
+- Human validation: gallery test 1 green; full frontend vitest; tsc/lint.
+
+### 053 — Phase 13.7 Compare panel (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.7
+- Prompt intent: continue Phase 13 after Ranking.
+- Suggestion: ComparePanel with two role selectors; GET /compare; shared/unique/
+  differentiator; Gaps shortcuts into role detail.
+- Outcome: accepted.
+- Reason: comparison is server-derived from stored mappings.
+- Rejected alternatives: client-side diff of requirement tables.
+- Human validation: ComparePanel tests 2 green; full frontend vitest; tsc/lint.
+
+### 052 — Phase 13.6 workspace ranking (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.6
+- Prompt intent: continue Phase 13 after Letter.
+- Suggestion: RankingPanel on workspace from GET /ranking; show rank, tied label,
+  because texts, link into role detail.
+- Outcome: accepted.
+- Reason: ranking is derived from stored scores, not a client re-sort of the table.
+- Rejected alternatives: replacing RolesPanel sort with ranking (table stays for
+  column sort; ranking is the named-reason view).
+- Human validation: RankingPanel tests 2 green; full frontend vitest; tsc/lint.
+
+### 051 — Phase 13.5 Letter tab (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.5
+- Prompt intent: continue Phase 13 after Prepare.
+- Suggestion: LetterPanel with tone/gap controls, generate, version history,
+  export, refusal → Open Gaps, supporting uploads listed separately.
+- Outcome: accepted.
+- Reason: 409 `insufficient_matched_requirements` is a next step, not an error toast.
+- Rejected alternatives: merging uploaded letters into generated version history.
+- Human validation: LetterPanel tests 3 green; full frontend vitest; tsc/lint.
+
+### 050 — Phase 13.4 Prepare / interview pack (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.4
+- Prompt intent: continue Phase 13 after bullet drafts.
+- Suggestion: PreparePanel with four sections from GET /interview-pack; evidence
+  opens EvidencePanel; Export Markdown via GET /export/interview-pack.md.
+- Outcome: accepted.
+- Reason: matches features.md Prepare flow; export is a download, not a new store.
+- Rejected alternatives: inventing probe questions in the client.
+- Human validation: PreparePanel tests 2 green; full frontend vitest; tsc/lint.
+
+### 049 — Phase 13.3 bullet draft panel (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.3
+- Prompt intent: continue Phase 13 after Gaps panel.
+- Suggestion: BulletDraftPanel + POST /bullets; citation chips, copy, provenance,
+  visible template-fallback banner; Gaps "Draft a bullet" triggers the mutation.
+- Outcome: accepted.
+- Reason: matches features.md grounding labelling; hermetic path uses fallback
+  template which the UI must show honestly.
+- Rejected alternatives: writing drafts back into the CV (explicitly out of scope).
+- Human validation: BulletDraftPanel tests 2 green; full frontend vitest; tsc/lint.
+
+### 048 — Phase 13.2 Gaps panel (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.2
+- Prompt intent: continue Phase 13 after role tabs.
+- Suggestion: GapsPanel presentational list from GET /gap-plan; Draft a bullet
+  control when canDraftBullet; adjacent evidence opens shared EvidencePanel.
+- Outcome: accepted.
+- Reason: gap plan is deterministic server-side; UI only presents ordered items.
+- Rejected alternatives: inventing gap order in the client (API already sorts by
+  scoreDelta).
+- Human validation: GapsPanel tests 2 green; full frontend vitest; tsc/lint.
+
+### 047 — Phase 13.1 role detail tabs (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.1
+- Prompt intent: continue Phase 13 after SQL supporting store.
+- Suggestion: Fit/Gaps/Prepare/Letter tabs with `?tab=` deep-link search param;
+  Gaps/Prepare/Letter placeholders until later slices.
+- Outcome: accepted.
+- Reason: matches features.md navigation; Fit keeps existing breakdown + table.
+- Rejected alternatives: path segments per tab (search param is enough and keeps
+  one route file).
+- Human validation: RoleDetailTabs tests 3 green; full frontend vitest; tsc/lint.
+
+### 046 — Phase 13 carry-forward: SQL supporting cover letters (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 12 exit-gate carry-forward into Phase 13
+- Prompt intent: continue next phases after cover letters were not durable.
+- Suggestion: SqlSupportingDocumentStore + wire into create_production_app /
+  build_sql_stores.
+- Outcome: accepted.
+- Reason: Phase 12 exit gate already deferred SQL supporting store to Phase 13;
+  uploads were process-memory only.
+- Rejected alternatives: leaving cover letters in-memory until 13.5 Letter UI.
+- Human validation: production wiring unit test; integration SQL store test;
+  supporting API tests; ruff/mypy clean on touched modules.
+
 ### 045 — Phase 12 exit gate + Ask incomplete-analysis 409 (TDD)
 
 - Date: 2026-09-18

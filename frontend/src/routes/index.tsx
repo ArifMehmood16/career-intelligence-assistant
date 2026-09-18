@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ComparePanelContainer } from "@/components/workspace/ComparePanelContainer";
 import { CoverLettersCardContainer } from "@/components/workspace/CoverLettersCardContainer";
 import { CvCardContainer } from "@/components/workspace/CvCardContainer";
+import { RankingPanelContainer } from "@/components/workspace/RankingPanelContainer";
 import { RolesPanelContainer } from "@/components/workspace/RolesPanelContainer";
 
 export const Route = createFileRoute("/")({
@@ -34,8 +36,10 @@ function WorkspacePage() {
           <CvCardContainer />
           <CoverLettersCardContainer />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-6">
           <RolesPanelContainer />
+          <RankingPanelContainer />
+          <ComparePanelContainer />
         </div>
       </div>
     </div>
