@@ -6,11 +6,10 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** phase 5 complete. Job descriptions extract to span-backed requirements
-> (rules default; model path schema-validated); PostgreSQL holds originals and spans;
-> providers sit behind ports with a hermetic default. Evidence extraction and fit
-> mapping are not built yet. [PLAN.md](PLAN.md) is the execution order,
-> [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
+> **Status:** phase 6 complete. CVs extract to span-backed claims with date-derived
+> recency/duration; job descriptions extract requirements; PostgreSQL holds originals
+> and spans. Fit mapping and scoring are not built yet. [PLAN.md](PLAN.md) is the
+> execution order, [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
 > [docs/features.md](docs/features.md) is what it does.
 
 ## The engineering thesis

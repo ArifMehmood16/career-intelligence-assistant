@@ -232,3 +232,17 @@ Never record a command output, metric, date or commit hash that was not observed
   leakage; rules stay default so hermetic runs need no network.
 - Human validation: eight focused extraction tests green; hermetic pytest (~81%),
   ruff, mypy green.
+
+### 014 — Phase 6 evidence / claim extraction (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 6.1–6.5
+- Prompt intent: continue with Phase 6 evidence extraction.
+- Suggestion: domain Claim; pure date-derived recency/duration; rules CV extractor;
+  span validation; cover-letter rejection; model-backed path intersecting hermetic
+  claims JSON with rule spans.
+- Outcome: accepted.
+- Reason: exit gate requires fixture CVs with resolvable spans and dated-experience
+  recency that is not assumed recent.
+- Human validation: eight focused claim tests green; hermetic pytest, ruff, mypy.

@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 5 (requirement extraction) exit gate is satisfied.
-Next work is Phase 6 — evidence extraction.
+**Current position:** Phase 6 (evidence extraction) exit gate is satisfied.
+Next work is Phase 7 — mapping and scoring.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -294,14 +294,14 @@ requirement resolves to a real span; the injection fixture changes nothing.
 
 ## Phase 6 — Evidence extraction
 
-- [ ] **6.1** Domain type `Claim`: competency, context, duration signal, recency
+- [x] **6.1** Domain type `Claim`: competency, context, duration signal, recency
       signal, source spans.
-- [ ] **6.2** Rule-based adapter as the default; model-backed extraction through the
+- [x] **6.2** Rule-based adapter as the default; model-backed extraction through the
       Phase 2 port, schema validated on every provider.
-- [ ] **6.3** Span verification identical to 5.4.
-- [ ] **6.4** Recency and duration derived from dates in the CV, in domain code, not
+- [x] **6.3** Span verification identical to 5.4.
+- [x] **6.4** Recency and duration derived from dates in the CV, in domain code, not
       by the model. Undated experience is treated as undated, never assumed recent.
-- [ ] **6.5** Candidate claims are extracted only from the active stored CV. Uploaded
+- [x] **6.5** Candidate claims are extracted only from the active stored CV. Uploaded
       or generated cover letters are self-authored prose, not independent evidence,
       and are excluded from claims, mappings and scores by a regression test.
 
