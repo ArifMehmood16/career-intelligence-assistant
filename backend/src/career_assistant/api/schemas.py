@@ -33,3 +33,41 @@ class ReadyResponse(ApiModel):
     completion_provider: str
     embedding_provider: str
     hosted_egress: bool
+
+
+class ProviderSupportsModel(ApiModel):
+    completion: bool
+    embedding: bool
+
+
+class ProviderCapabilitiesModel(ApiModel):
+    structured_output: bool
+    context_window: int | None
+    max_output_tokens: int | None
+    embedding_dimensions: int | None
+
+
+class ProviderResponse(ApiModel):
+    id: str
+    name: str
+    kind: str
+    models: list[str]
+    available: bool
+    unavailable_reason: str | None
+    supports: ProviderSupportsModel
+    capabilities: ProviderCapabilitiesModel
+
+
+class ProviderChoiceResponse(ApiModel):
+    answer_provider_id: str
+    answer_model: str
+    index_provider_id: str
+    index_model: str
+
+
+class ProviderChoiceUpdateRequest(ApiModel):
+    answer_provider_id: str
+    answer_model: str
+    index_provider_id: str
+    index_model: str
+    acknowledged_egress: bool

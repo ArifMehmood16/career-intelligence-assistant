@@ -55,7 +55,7 @@ def test_get_provider_choice_defaults_from_settings() -> None:
         "answerProviderId": "hermetic",
         "answerModel": "rules-v1",
         "indexProviderId": "hermetic",
-        "indexModel": "hash-v1",
+        "indexModel": "lexical-hash-v1",
     }
 
 
@@ -89,7 +89,7 @@ def test_put_hosted_while_gate_closed_returns_egress_not_permitted() -> None:
             "answerProviderId": "openai",
             "answerModel": "gpt-4o-mini",
             "indexProviderId": "hermetic",
-            "indexModel": "hash-v1",
+            "indexModel": "lexical-hash-v1",
             "acknowledgedEgress": True,
         },
     )
@@ -106,7 +106,7 @@ def test_put_local_choice_persists_for_workspace() -> None:
             "answerProviderId": "hermetic",
             "answerModel": "rules-v1",
             "indexProviderId": "hermetic",
-            "indexModel": "hash-v1",
+            "indexModel": "lexical-hash-v1",
             "acknowledgedEgress": False,
         },
     )
@@ -134,7 +134,7 @@ def test_provider_responses_never_include_api_key_material() -> None:
             "answerProviderId": "openai",
             "answerModel": "gpt-4o-mini",
             "indexProviderId": "hermetic",
-            "indexModel": "hash-v1",
+            "indexModel": "lexical-hash-v1",
             "acknowledgedEgress": True,
         },
     )
