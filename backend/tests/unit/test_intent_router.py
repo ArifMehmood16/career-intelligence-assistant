@@ -11,7 +11,8 @@ from career_assistant.domain.intents import Intent, route_intent
     ("question", "expected"),
     [
         (
-            "What skills am I missing for this role, and which gap is worth closing first?",
+            "What skills am I missing for this role, "
+            "and which gap is worth closing first?",
             Intent.GAPS,
         ),
         ("Show me the gaps for this role", Intent.GAPS),
