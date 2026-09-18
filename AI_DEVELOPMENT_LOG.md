@@ -537,3 +537,17 @@ Never record a command output, metric, date or commit hash that was not observed
   matching prior Phase 11 pattern).
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
+
+### 035 — Phase 12.1–12.2 API proxy spike and catch-all (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.1, 12.2
+- Prompt intent: continue to Phase 12; spike SSE/upload through Start, then proxy.
+- Suggestion: `proxyToUpstream` with Node http spike tests; `src/routes/api.$.ts`
+  catch-all; record pass on ADR 006 / PLAN.
+- Outcome: accepted; spike passed — no CORS fallback.
+- Reason: ADR 006 risk was buffering in the Node proxy; proofs close that risk
+  before the real client depends on it.
+- Human validation: api-proxy tests (6) green; full frontend vitest (12) green;
+  typecheck/lint green.

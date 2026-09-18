@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as DevStatesRouteImport } from './routes/dev.states'
 import { Route as RolesIdRouteImport } from './routes/roles.$id'
 
@@ -30,6 +31,11 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevStatesRoute = DevStatesRouteImport.update({
   id: '/dev/states',
   path: '/dev/states',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/settings': typeof SettingsRoute
+  '/api/$': typeof ApiSplatRoute
   '/dev/states': typeof DevStatesRoute
   '/roles/$id': typeof RolesIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/settings': typeof SettingsRoute
+  '/api/$': typeof ApiSplatRoute
   '/dev/states': typeof DevStatesRoute
   '/roles/$id': typeof RolesIdRoute
 }
@@ -60,21 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ask': typeof AskRoute
   '/settings': typeof SettingsRoute
+  '/api/$': typeof ApiSplatRoute
   '/dev/states': typeof DevStatesRoute
   '/roles/$id': typeof RolesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
+  fullPaths:
+    '/' | '/ask' | '/settings' | '/api/$' | '/dev/states' | '/roles/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
-  id: '__root__' | '/' | '/ask' | '/settings' | '/dev/states' | '/roles/$id'
+  to: '/' | '/ask' | '/settings' | '/api/$' | '/dev/states' | '/roles/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/ask'
+    | '/settings'
+    | '/api/$'
+    | '/dev/states'
+    | '/roles/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AskRoute: typeof AskRoute
   SettingsRoute: typeof SettingsRoute
+  ApiSplatRoute: typeof ApiSplatRoute
   DevStatesRoute: typeof DevStatesRoute
   RolesIdRoute: typeof RolesIdRoute
 }
@@ -102,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/states': {
       id: '/dev/states'
       path: '/dev/states'
@@ -123,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AskRoute: AskRoute,
   SettingsRoute: SettingsRoute,
+  ApiSplatRoute: ApiSplatRoute,
   DevStatesRoute: DevStatesRoute,
   RolesIdRoute: RolesIdRoute,
 }

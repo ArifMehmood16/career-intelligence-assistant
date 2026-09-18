@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.1–12.2 proxy spike and catch-all)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/server/api-proxy.test.ts`
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+  - `@tanstack/router-cli generate` (route tree includes `/api/$`)
+- Observed result:
+  - Spike **pass**: first SSE event arrives before upstream finishes; streaming
+    upload body is forwarded without `arrayBuffer`/`text`/`json`; upstream reads
+    the first byte before the client stream closes.
+  - `src/routes/api.$.ts` proxies `/api/**` to `API_BASE_URL` with same-origin
+    checks on non-GET.
+- Decisions made: keep Start proxy path (no ADR CORS fallback); `API_BASE_URL`
+  remains server-only.
+- Problems hit: none after prettier fix.
+- Carried forward: 12.3 real HTTP client replacing fixture `client.ts`.
+
 ## Phase 11 — API contracts (complete)
 
 - Date: 2026-09-18

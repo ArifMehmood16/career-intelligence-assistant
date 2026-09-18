@@ -3,8 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts complete. Next: Phase 12 frontend
-integration (proxy spike first).
+**Current position:** Phase 12 frontend integration in progress — 12.1 spike
+passed (SSE + upload unbuffered through fetch proxy); 12.2 catch-all `/api/$`
+landed. Next: 12.3 real HTTP client.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -475,12 +476,16 @@ failure path land.)
 The screens exist. This phase makes them real. See
 [docs/frontend-integration.md](docs/frontend-integration.md).
 
-- [ ] **12.1** **Spike first:** prove a `text/event-stream` response and a
+- [x] **12.1** **Spike first:** prove a `text/event-stream` response and a
       `MAX_UPLOAD_BYTES` multipart upload both pass through a TanStack Start server
       route without buffering. Record the result. If either fails, take the
       direct-origin-plus-CORS fallback and add a follow-up entry to ADR 006 before
       continuing.
-- [ ] **12.2** Catch-all server route proxying `/api/**` to `API_BASE_URL`, forwarding
+      - Result (2026-09-18): **pass.** `proxyToUpstream` delivers the first SSE
+        event before upstream finishes, and forwards a streaming request body
+        (representative of `MAX_UPLOAD_BYTES`) so upstream reads the first byte
+        before the client stream closes. No ADR 006 follow-up required.
+- [x] **12.2** Catch-all server route proxying `/api/**` to `API_BASE_URL`, forwarding
       method, headers, body, cookie and stream. `Origin` checked on every non-`GET`.
       `API_BASE_URL` is a server variable, never `VITE_*`.
 - [ ] **12.3** Replace `src/api/client.ts` with a real HTTP client keeping the existing
