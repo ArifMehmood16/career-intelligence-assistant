@@ -538,6 +538,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 041 — Phase 12.9 Ask SSE wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.9
+- Prompt intent: continue TDD and commit regularly after 12.8.
+- Suggestion: postMessageStream + ChatContainer real SSE; delete history; retry
+  with stable clientRequestId; provider stamp includes leftMachine.
+- Outcome: accepted.
+- Reason: replaces fake token interval with the documented stream transport.
+- Rejected alternatives: EventSource (POST body required).
+- Human validation: stream tests green; full vitest 53; typecheck/lint green.
+
 ### 040 — Phase 12.8 role detail span resolution (TDD)
 
 - Date: 2026-09-18

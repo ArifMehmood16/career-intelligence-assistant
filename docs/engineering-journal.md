@@ -18,6 +18,21 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.9 Ask SSE)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/stream.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `postMessageStream` parses documented SSE events; ChatContainer streams tokens,
+    stops via AbortController, deletes history, retries with the same
+    `clientRequestId`, and resolves citation spans.
+  - Frontend vitest 53 green.
+- Decisions made: keep JSON `sendMessage` helper; Ask path uses SSE only.
+- Problems hit: none after prettier/index-signature fixes.
+- Carried forward: 12.10 settings wiring.
+
 ## Phase 12 — Frontend integration (12.8 role detail + span resolve)
 
 - Date: 2026-09-18

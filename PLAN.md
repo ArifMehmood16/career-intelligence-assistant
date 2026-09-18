@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration in progress — 12.1–12.8
-landed (through role-detail span resolution). Next: 12.9 wire Ask SSE.
+**Current position:** Phase 12 frontend integration in progress — 12.1–12.9
+landed (through Ask SSE). Next: 12.10 wire settings.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -504,7 +504,7 @@ The screens exist. This phase makes them real. See
       then the score, or `Failed` with the reason and a retry.
 - [x] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
       spans through `GET /api/spans/{id}`.
-- [ ] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
+- [x] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
       insufficient-evidence state, persisted history after reload, delete-history and
       the provider stamp. Client retries reuse the same `clientRequestId`.
 - [ ] **12.10** Wire settings: provider list with real availability reasons, the
