@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs db-check db-migrate
+.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs db-check db-migrate db-create
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -19,6 +19,7 @@ help:
 	@echo "  make run-docker         Compose Postgres, API and web; build images"
 	@echo "  make down               Stop Compose services"
 	@echo "  make logs               Follow Compose logs"
+	@echo "  make db-create          Create DATABASE_URL / TEST_DATABASE_URL if missing"
 	@echo "  make db-check           Verify DATABASE_URL reaches Postgres + pgvector"
 	@echo "  make db-migrate         Alembic upgrade head against DATABASE_URL"
 	@echo ""
@@ -99,11 +100,15 @@ security:
 
 verify: lint test security
 
+db-create: config
+	@test -x $(BACKEND_BIN)/python || (echo "Run make setup first." && exit 1)
+	$(LOAD_ENV) && $(BACKEND_BIN)/python -m career_assistant.adapters.persistence.ensure_db
+
 db-check: config
 	@test -x $(BACKEND_BIN)/python || (echo "Run make setup first." && exit 1)
 	$(LOAD_ENV) && $(BACKEND_BIN)/python -c "from career_assistant.adapters.persistence import create_db_engine, ping_database; from career_assistant.settings import DatabaseSettings; s=DatabaseSettings(); e=create_db_engine(s); ping_database(e); print('database ok:', s.host_path_hostname()+':'+str(s.host_path_port()))"
 
-db-migrate: config
+db-migrate: config db-create
 	@test -x $(BACKEND_BIN)/alembic || (echo "Run make setup first." && exit 1)
 	$(LOAD_ENV) && cd backend && ../$(BACKEND_BIN)/alembic upgrade head
 
@@ -117,7 +122,7 @@ logs: config
 down: config
 	$(COMPOSE) down
 
-# Host API + web. Uses local Postgres from config/app.env; migrates before start.
+# Host API + web. Creates DB if missing, migrates schema, then starts.
 run: config db-migrate db-check
 	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
 	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)

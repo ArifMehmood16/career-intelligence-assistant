@@ -245,13 +245,15 @@ make help    # every target, with what it needs
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on
-`localhost:5432`. Application tables live in the dedicated Postgres schema
-`career_assistant` (not `public`); Alembic creates that schema and migrations own
-the table set. `make run-docker` instead starts the Compose `db` container; the API
-reaches it privately as `db:5432`, while development Compose may expose host port
-5433 to avoid colliding with the local instance. Both paths use the same Alembic
-migrations and PostgreSQL repositories. SQLite and filesystem-backed uploads are not
-fallbacks.
+`localhost:5432`. `make db-create` (also run by `make db-migrate` / `make run`)
+creates the `DATABASE_URL` and `TEST_DATABASE_URL` databases when they are missing;
+the role in those URLs must already exist and be allowed to `CREATE DATABASE`.
+Application tables live in the dedicated Postgres schema `career_assistant` (not
+`public`); Alembic creates that schema and owns the table set. `make run-docker`
+instead starts the Compose `db` container; the API reaches it privately as
+`db:5432`, while development Compose may expose host port 5433 to avoid colliding
+with the local instance. Both paths use the same Alembic migrations and PostgreSQL
+repositories. SQLite and filesystem-backed uploads are not fallbacks.
 
 PostgreSQL stores the bounded original bytes for CVs, job descriptions and supporting
 cover letters alongside parsed text and spans. Uploaded cover letters may be queried
