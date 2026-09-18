@@ -4,12 +4,17 @@ import { useRef } from "react";
 import { StatusMark } from "@/components/StatusMark";
 import type { Evidence, RequirementStatus } from "@/types";
 
+export type EvidenceResolveState = "idle" | "loading" | "ready" | "error";
+
 export interface EvidencePanelProps {
   open: boolean;
   title: string;
   /** Omitted for sources that have no requirement status, such as chat citations. */
   status?: RequirementStatus | null;
   evidence: Evidence | null;
+  /** Span resolution against GET /api/spans/{id}. Defaults to ready. */
+  resolveState?: EvidenceResolveState;
+  resolveError?: string | null;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -24,6 +29,8 @@ export function EvidencePanel({
   title,
   status,
   evidence,
+  resolveState = "ready",
+  resolveError = null,
   onOpenChange,
 }: EvidencePanelProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -60,7 +67,16 @@ export function EvidencePanel({
 
           {status ? <StatusMark status={status} /> : null}
 
-          {evidence ? (
+          {resolveState === "loading" ? (
+            <p className="text-muted-foreground" aria-busy="true">
+              Loading evidence…
+            </p>
+          ) : resolveState === "error" ? (
+            <p className="text-muted-foreground" role="alert">
+              {resolveError ??
+                "This citation could not be resolved. The span id did not match a stored passage."}
+            </p>
+          ) : evidence ? (
             <div className="space-y-2">
               <p className="text-muted-foreground">
                 CV page <span className="font-mono">{evidence.page}</span>

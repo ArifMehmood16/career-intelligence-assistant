@@ -537,3 +537,159 @@ Never record a command output, metric, date or commit hash that was not observed
   matching prior Phase 11 pattern).
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
+
+### 045 — Phase 12 exit gate + Ask incomplete-analysis 409 (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 12 exit gate (plus defect found during it)
+- Prompt intent: continue TDD with regular commits through Phase 12.
+- Suggestion: run host API + Start proxy against sample fixtures; exercise UI;
+  map Ask `RoleOperationRejected` to AppError 409.
+- Outcome: accepted.
+- Reason: exit gate requires a real backend path; 500 on incomplete analysis was
+  a visible failure path bug.
+- Rejected alternatives: declaring the gate met from unit tests alone; leaving
+  Ask incomplete analysis as internal_error.
+- Human validation: proxy walkthrough + browser role detail; SSE pytest green;
+  frontend vitest 76 previously green for 12.12.
+
+### 044 — Phase 12.12 wired screen component states (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.12
+- Prompt intent: continue TDD with regular commits through Phase 12.
+- Suggestion: prop-driven Vitest coverage for every wired presentational screen
+  state (loading/empty/error/ready and analysis-status variants).
+- Outcome: accepted.
+- Reason: PLAN 12.12 requires component tests driven by props before the exit gate.
+- Rejected alternatives: only container integration tests (would couple UI copy to
+  network timing).
+- Human validation: focused component tests green; full frontend vitest 76;
+  typecheck/lint green.
+
+### 043 — Phase 12.11 API error code → actionable UI (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.11
+- Prompt intent: continue TDD with regular commits.
+- Suggestion: describeApiError catalogue from api-contract; wire containers to use it.
+- Outcome: accepted.
+- Reason: unknown codes must fail visibly; known codes need a next step.
+- Rejected alternatives: switching on message text.
+- Human validation: errors tests green; full vitest 60; typecheck/lint.
+
+### 042 — Phase 12.10 provider settings wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.10
+- Prompt intent: continue TDD with regular commits.
+- Suggestion: re-index warning dialog; keep hosted confirm; show unavailableReason;
+  setProviderChoice acknowledgedEgress + optional reindex response.
+- Outcome: accepted.
+- Reason: matches api-contract egress ack and index-change invalidation warning.
+- Rejected alternatives: silent index changes without user confirmation.
+- Human validation: ProviderSettings tests green; full vitest 56; typecheck/lint.
+
+### 041 — Phase 12.9 Ask SSE wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.9
+- Prompt intent: continue TDD and commit regularly after 12.8.
+- Suggestion: postMessageStream + ChatContainer real SSE; delete history; retry
+  with stable clientRequestId; provider stamp includes leftMachine.
+- Outcome: accepted.
+- Reason: replaces fake token interval with the documented stream transport.
+- Rejected alternatives: EventSource (POST body required).
+- Human validation: stream tests green; full vitest 53; typecheck/lint green.
+
+### 040 — Phase 12.8 role detail span resolution (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.8
+- Prompt intent: continue Phase 12 after job polling.
+- Suggestion: getSpan client; EvidencePanel loading/error resolve states;
+  RoleDetailContainer fetches span when panel opens.
+- Outcome: accepted.
+- Reason: api-contract requires unresolved citations to fail visibly.
+- Rejected alternatives: rendering inline requirement.evidence without a span GET.
+- Human validation: spans + EvidencePanel tests green; full vitest 49; typecheck/lint.
+
+### 039 — Phase 12.7 analysis job polling (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.7
+- Prompt intent: continue Phase 12 after workspace wiring.
+- Suggestion: getJob/reanalyseRole; RolesPanel Analysing/Failed/Retry; react-query
+  refetchInterval on roles and jobs.
+- Outcome: accepted.
+- Reason: matches api-contract polling model without inventing a job list endpoint.
+- Rejected alternatives: polling only the roles list (loses failure reason from job).
+- Human validation: jobs + RolesPanel tests green; full frontend vitest 45;
+  typecheck/lint green.
+
+### 038 — Phase 12.6 workspace upload wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.6
+- Prompt intent: continue Phase 12 in TDD after additive types.
+- Suggestion: multipart `uploadCv`/`uploadCoverLetter`; backend multipart routes;
+  confirmations; cover-letter “not score evidence” card; ApiError messages in UI.
+- Outcome: accepted; added `python-multipart` dependency.
+- Reason: api-contract already required multipart; paste-only could not admit PDF/DOCX.
+- Rejected alternatives: reading PDF client-side into paste JSON; deferring multipart
+  to a later phase.
+- Human validation: upload + component tests green; CV/supporting API tests green;
+  frontend typecheck/lint green; locks regenerated.
+
+### 037 — Phase 12.5 additive frontend types (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.5
+- Prompt intent: continue Phase 12 in TDD style after 12.3–12.4.
+- Suggestion: additive types from api-contract; Role.status/updatedAt; extend
+  OpenAPI↔TS contract suite.
+- Outcome: accepted.
+- Reason: screens for gaps/prepare/letter need typed contracts before wiring.
+- Rejected alternatives: optional Role.status (API always returns it; required
+  keeps the list UI honest for 12.7 polling).
+- Human validation: additive + client tests green; full frontend vitest 33 green;
+  OpenAPI contract pytest green; typecheck/lint green.
+
+### 036 — Phase 12.3–12.4 real HTTP client and fixture move (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.3, 12.4
+- Prompt intent: continue Phase 12 in TDD style.
+- Suggestion: zod schemas + `request()`/`ApiError` client; move fixtures to
+  `__fixtures__/`; ban fixture imports from components.
+- Outcome: accepted.
+- Reason: screens already call `@/api/client`; swapping the implementation keeps
+  signatures and removes mock data from the production path.
+- Rejected alternatives: keeping fixtures co-located with `client.ts`; CORS
+  browser client (proxy already proven).
+- Human validation: client tests 6 green; fixtures + eslint-guard tests green;
+  typecheck and lint green.
+
+### 035 — Phase 12.1–12.2 API proxy spike and catch-all (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.1, 12.2
+- Prompt intent: continue to Phase 12; spike SSE/upload through Start, then proxy.
+- Suggestion: `proxyToUpstream` with Node http spike tests; `src/routes/api.$.ts`
+  catch-all; record pass on ADR 006 / PLAN.
+- Outcome: accepted; spike passed — no CORS fallback.
+- Reason: ADR 006 risk was buffering in the Node proxy; proofs close that risk
+  before the real client depends on it.
+- Human validation: api-proxy tests (6) green; full frontend vitest (12) green;
+  typecheck/lint green.

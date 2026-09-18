@@ -83,3 +83,31 @@ def test_post_messages_streams_documented_sse_sequence() -> None:
 
     done = events[-1][1]
     assert done["kind"] in {"answer", "insufficient"}
+
+
+def test_ask_with_incomplete_analysis_returns_409_not_500() -> None:
+    client = TestClient(create_app())
+    assert (
+        client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"}).status_code
+        == 201
+    )
+    created = client.post(
+        "/api/roles",
+        json={"title": "AE", "company": "Acme", "description": _JD},
+    )
+    assert created.status_code == 202
+    role_id = created.json()["role"]["id"]
+    workspace_id = client.cookies["workspace"]
+    client.app.state.role_store.mark_incomplete(workspace_id, role_id)
+
+    response = client.post(
+        "/api/messages",
+        headers={"Accept": "text/event-stream"},
+        json={
+            "content": "What gaps should I close first?",
+            "roleId": role_id,
+            "clientRequestId": "cr-incomplete-1",
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "analysis_incomplete"

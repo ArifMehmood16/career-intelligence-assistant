@@ -25,11 +25,8 @@ export const Route = createFileRoute("/ask")({
 
 function AskPage() {
   return (
-    <div className="flex min-h-[calc(100vh-8.5rem)] flex-col gap-6">
-      <h1 className="text-xl">Ask</h1>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <ChatContainer />
-      </div>
+    <div className="flex min-h-[calc(100vh-8.5rem)] flex-col">
+      <ChatContainer />
     </div>
   );
 }

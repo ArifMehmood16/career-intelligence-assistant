@@ -15,6 +15,7 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentView,
     limits_from,
     reraise_intake_as_message,
+    upload_bytes_cover_letter,
     upload_pasted_cover_letter,
 )
 from career_assistant.application.intake.errors import IntakeError
@@ -74,19 +75,44 @@ def list_cover_letters(
     response_model=SupportingDocumentResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def post_cover_letter(
+async def post_cover_letter(
     request: Request,
-    body: CvPasteRequest,
     workspace_id: WorkspaceId,
 ) -> SupportingDocumentResponse:
+    content_type = (request.headers.get("content-type") or "").lower()
+    limits = limits_from(_limits(request))
+    store = _supporting_store(request)
     try:
-        view = upload_pasted_cover_letter(
-            _supporting_store(request),
-            workspace_id=workspace_id,
-            text=body.text,
-            filename=body.filename,
-            limits=limits_from(_limits(request)),
-        )
+        if "multipart/form-data" in content_type:
+            form = await request.form()
+            upload = form.get("file")
+            if upload is None or not hasattr(upload, "read"):
+                raise AppError(
+                    "document_unreadable",
+                    "Upload a file part named file.",
+                    status_code=422,
+                )
+            data = await upload.read()
+            filename = getattr(upload, "filename", None) or "cover-letter"
+            media_type = getattr(upload, "content_type", None)
+            view = upload_bytes_cover_letter(
+                store,
+                workspace_id=workspace_id,
+                data=data,
+                filename=str(filename),
+                declared_media_type=str(media_type) if media_type else None,
+                limits=limits,
+            )
+        else:
+            payload = await request.json()
+            body = CvPasteRequest.model_validate(payload)
+            view = upload_pasted_cover_letter(
+                store,
+                workspace_id=workspace_id,
+                text=body.text,
+                filename=body.filename,
+                limits=limits,
+            )
     except IntakeError as exc:
         code, message, http_status = reraise_intake_as_message(exc)
         raise AppError(code, message, status_code=http_status) from exc

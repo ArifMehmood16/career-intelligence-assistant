@@ -18,6 +18,176 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (exit gate)
+
+- Date: 2026-09-18
+- Commands run:
+  - Host API: `COMPLETION_PROVIDER=hermetic EMBEDDING_PROVIDER=hermetic
+    EXTRACTION_STRATEGY=rules uvicorn … :8000` (overrides `config/app.env` ollama)
+  - Frontend: `API_BASE_URL=http://127.0.0.1:8000 bun run dev -- --host 127.0.0.1`
+  - Proxy walkthrough: POST `/api/cv` with `sample-data/fixtures/resumes/cv-strong-match.txt`,
+    POST `/api/roles` with `jd-clean-match.txt`, poll job → succeeded, requirements/
+    breakdown/SSE Ask tokens, pages `/` `/settings` `/ask` `/dev/states` → 200
+  - Failure paths: empty file → `document_unreadable` 422; JPEG →
+    `document_unsupported` 415; missing span → `span_not_found` 404; Ask with
+    incomplete analysis → `analysis_incomplete` 409 (after fix)
+  - Browser: workspace empty → upload CV → add role → score 73 / Partial match →
+    role detail breakdown + requirements
+  - `bun run test` — 76; Ask SSE pytest — 2 green after 409 mapping
+- Observed result: Phase 12 exit gate criteria met for the wired screens; no mock
+  data in `src/api/client.ts`.
+- Decisions made: exit gate verified on hermetic providers, not the ollama values
+  currently in `config/app.env`.
+- Problems hit and how they were resolved:
+  - Proxy mutations need `Origin` matching the app origin (csrf).
+  - Dev server needs `API_BASE_URL` in the process environment.
+  - Ask against incomplete analysis returned 500; mapped `RoleOperationRejected`
+    to `AppError` (TDD).
+- Carried forward:
+  - Production supporting-document store still in-memory.
+  - Playwright e2e (16.5); Docker image/stack (16.1).
+  - Phase 13 new screens.
+
+## Phase 12 — Frontend integration (12.12 wired screen states)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test` (frontend) — 76 passed across 21 files
+  - `bun run lint` — clean
+  - `bunx tsc --noEmit` — clean
+- Observed result:
+  - Prop-driven state coverage for RolesPanel, CvCard, CoverLettersCard,
+    FitBreakdown, RequirementTable, RoleHeader, ChatView, ProviderSettings
+    (loading / empty / error / ready as applicable), plus prior EvidencePanel
+    resolve states.
+- Decisions made: none beyond the task.
+- Problems hit and how they were resolved:
+  - RequirementTable ready row text appears in table and card layouts; tests click
+    `getAllByText(...)[0]`.
+- Carried forward: Phase 12 exit gate against a running backend.
+
+## Phase 12 — Frontend integration (12.11 error mapping)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/errors.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `describeApiError` covers every documented contract code; unknown codes surface
+    with correlation id; wired into CV, roles, cover letters, chat, settings, and
+    span resolve paths.
+  - Frontend vitest 60 green.
+- Decisions made: switch on code only; keep server `message` and append next-step copy.
+- Problems hit: none after prettier.
+- Carried forward: 12.12 component tests for wired screens.
+
+## Phase 12 — Frontend integration (12.10 settings)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/settings/ProviderSettings.test.tsx` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - Unavailable reasons rendered from the API; hosted egress dialog retained;
+    re-index confirmation when index provider/model changes; save errors surfaced
+    from ApiError; setProviderChoice returns optional reindex job id.
+  - Frontend vitest 56 green.
+- Decisions made: warn before PUT on index changes (UI gate); hosted still requires
+  acknowledgement; acknowledgedEgress only when a hosted provider is in the choice.
+- Problems hit: duplicate reason text across answer/index selectors in tests.
+- Carried forward: 12.11 error-code mapping across the app.
+
+## Phase 12 — Frontend integration (12.9 Ask SSE)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/stream.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `postMessageStream` parses documented SSE events; ChatContainer streams tokens,
+    stops via AbortController, deletes history, retries with the same
+    `clientRequestId`, and resolves citation spans.
+  - Frontend vitest 53 green.
+- Decisions made: keep JSON `sendMessage` helper; Ask path uses SSE only.
+- Problems hit: none after prettier/index-signature fixes.
+- Carried forward: 12.10 settings wiring.
+
+## Phase 12 — Frontend integration (12.8 role detail + span resolve)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/spans.test.ts src/components/EvidencePanel.test.tsx`
+    (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `getSpan` client helper; role detail resolves selected evidence via
+    `GET /api/spans/{id}`; unresolvable spans show a visible error (not the empty
+    “no supporting text” copy).
+  - Frontend vitest 49 green.
+- Decisions made: always re-fetch by `spanId` when present rather than trusting
+  inline requirement evidence alone.
+- Problems hit: none after prettier fix.
+- Carried forward: 12.9 Ask SSE wiring.
+
+## Phase 12 — Frontend integration (12.7 analysis job polling)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/jobs.test.ts src/components/workspace/RolesPanel.test.tsx`
+    (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `getJob` / `reanalyseRole` client helpers; roles query refetches while any role
+    is `analysing`; job query polls while `queued`/`running`.
+  - Roles list shows Analysing / Failed (+ reason + Retry analysis).
+  - Frontend vitest 45 green.
+- Decisions made: map OpenAPI string `AnalysisJob.error` to
+  `{ code: "analysis_failed", message }` on the client; track role→jobId in
+  container state from create/reanalyse responses.
+- Problems hit: none material after exactOptionalPropertyTypes FitCell fix.
+- Carried forward: 12.8 wire role detail.
+
+## Phase 12 — Frontend integration (12.3–12.6 client, types, workspace)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/client.test.ts` / `src/api/upload.test.ts` /
+    `src/types/additive.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+  - `backend/.venv/bin/pytest tests/contract/test_openapi_frontend_types.py -q --no-cov`
+  - `backend/.venv/bin/pytest tests/api/test_cv_routes.py tests/api/test_supporting_documents.py -q --no-cov`
+  - `make lock` (python-multipart)
+- Observed result:
+  - Real HTTP client with zod; fixtures under `__fixtures__/`; additive types;
+    multipart CV/cover-letter upload on API + frontend; workspace shows ApiError
+    rejection messages, replace/delete confirmations, supporting cover letters with
+    “not score evidence” notice.
+  - Frontend vitest 39 green; CV/supporting API tests green.
+- Decisions made: add `python-multipart` for Starlette form parsing; keep paste
+  JSON path alongside multipart; upload progress UI uses parsing busy state (byte
+  progress deferred until XHR helper if needed).
+- Problems hit: nested-brace TS parser for Role; exactOptionalPropertyTypes on
+  fetch init / ChatMessage mapping.
+- Carried forward: 12.7 analysis job polling.
+
+## Phase 12 — Frontend integration (12.1–12.2 proxy spike and catch-all)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/server/api-proxy.test.ts`
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+  - `@tanstack/router-cli generate` (route tree includes `/api/$`)
+- Observed result:
+  - Spike **pass**: first SSE event arrives before upstream finishes; streaming
+    upload body is forwarded without `arrayBuffer`/`text`/`json`; upstream reads
+    the first byte before the client stream closes.
+  - `src/routes/api.$.ts` proxies `/api/**` to `API_BASE_URL` with same-origin
+    checks on non-GET.
+- Decisions made: keep Start proxy path (no ADR CORS fallback); `API_BASE_URL`
+  remains server-only.
+- Problems hit: none after prettier fix.
+- Carried forward: 12.3 real HTTP client replacing fixture `client.ts`.
+
 ## Phase 11 — API contracts (complete)
 
 - Date: 2026-09-18

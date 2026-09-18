@@ -18,6 +18,7 @@ export interface AddRoleDialogProps {
   open: boolean;
   disabled: boolean;
   submitting: boolean;
+  errorMessage?: string | null;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: {
     title: string;
@@ -30,6 +31,7 @@ export function AddRoleDialog({
   open,
   disabled,
   submitting,
+  errorMessage = null,
   onOpenChange,
   onSubmit,
 }: AddRoleDialogProps) {
@@ -75,6 +77,12 @@ export function AddRoleDialog({
             Upload a job description file or paste the text.
           </DialogDescription>
         </DialogHeader>
+
+        {errorMessage ? (
+          <p className="text-sm text-muted-foreground" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
 
         <div className="grid gap-3">
           <div className="grid gap-1.5">

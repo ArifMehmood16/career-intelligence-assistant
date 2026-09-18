@@ -24,6 +24,12 @@ import type { Provider } from "@/types";
 export type ProviderSettingsState = "loading" | "error" | "ready";
 export type SelectorKind = "answer" | "index";
 
+export interface PendingReindex {
+  kind: SelectorKind;
+  providerId: string;
+  model: string;
+}
+
 export interface ProviderSettingsProps {
   state: ProviderSettingsState;
   providers: Provider[];
@@ -33,15 +39,20 @@ export interface ProviderSettingsProps {
   indexModel: string;
   /** Hosted provider awaiting confirmation, null when no dialog is open. */
   pendingProvider: Provider | null;
+  /** Index change awaiting re-index confirmation. */
+  pendingReindex: PendingReindex | null;
+  saveError: string | null;
   onSelect: (kind: SelectorKind, providerId: string) => void;
   onModelChange: (kind: SelectorKind, model: string) => void;
   onConfirmHosted: () => void;
   onCancelHosted: () => void;
+  onConfirmReindex: () => void;
+  onCancelReindex: () => void;
   onRetry: () => void;
 }
 
 export function ProviderSettings(props: ProviderSettingsProps) {
-  const { state, providers, pendingProvider } = props;
+  const { state, providers, pendingProvider, pendingReindex } = props;
 
   if (state === "loading") {
     return (
@@ -72,6 +83,12 @@ export function ProviderSettings(props: ProviderSettingsProps) {
 
   return (
     <div className="mx-auto w-full max-w-[720px] space-y-6">
+      {props.saveError ? (
+        <p className="text-sm text-muted-foreground" role="alert">
+          {props.saveError}
+        </p>
+      ) : null}
+
       <Selector
         kind="answer"
         heading="Answer model"
@@ -121,6 +138,36 @@ export function ProviderSettings(props: ProviderSettingsProps) {
               onClick={props.onConfirmHosted}
             >
               Use {pendingProvider?.name}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={pendingReindex !== null}
+        onOpenChange={(open) => {
+          if (!open) props.onCancelReindex();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start a re-index?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Changing the index provider or model invalidates existing
+              embeddings. A re-index will run before retrieval uses the new
+              model. Your documents stay on this machine unless the index
+              provider is hosted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={props.onCancelReindex}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "outline" })}
+              onClick={props.onConfirmReindex}
+            >
+              Continue re-index
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

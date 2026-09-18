@@ -44,6 +44,8 @@ Ship the TanStack Start application.
 - The SSE answer stream and multipart uploads now pass through a Node proxy. That is
   the one genuine technical risk in the decision, so it is spiked at the start of
   Phase 12 before anything depends on it, with a direct-origin-plus-CORS fallback.
+  **Spike result (2026-09-18):** pass — see `frontend/src/server/api-proxy.test.ts`
+  and PLAN 12.1. No CORS fallback required.
 - `bun` becomes the frontend package manager, since Lovable maintains `bun.lock`.
 - Lovable stays connected to the branch, so the design can be revised there later.
   The re-sync rules are in `docs/frontend-integration.md`.

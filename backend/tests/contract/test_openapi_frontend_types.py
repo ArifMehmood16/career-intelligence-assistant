@@ -10,24 +10,22 @@ from career_assistant.main import create_app
 _REPO = Path(__file__).resolve().parents[3]
 _TS_TYPES = _REPO / "frontend" / "src" / "types" / "index.ts"
 
-# Shared product models: TypeScript name → OpenAPI component name.
-_SHARED: dict[str, str] = {
-    "CvDocument": "CvDocumentResponse",
-    "Evidence": "EvidenceResponse",
-    "Role": "RoleResponse",
-    "Requirement": "RequirementWire",
-    "BreakdownRow": "BreakdownRowWire",
-    "Citation": "CitationWire",
-    "ChatMessage": "ChatMessageWire",
-    "Provider": "ProviderResponse",
-    "ProviderChoice": "ProviderChoiceResponse",
-}
-
 # Fields that both sides must expose (camelCase). API may add more.
 _REQUIRED: dict[str, frozenset[str]] = {
     "CvDocument": frozenset({"id", "filename", "pageCount", "parsedAt"}),
     "Evidence": frozenset({"spanId", "documentId", "page", "paragraph", "highlight"}),
-    "Role": frozenset({"id", "title", "company", "fitScore", "bandLabel", "counts"}),
+    "Role": frozenset(
+        {
+            "id",
+            "title",
+            "company",
+            "fitScore",
+            "bandLabel",
+            "counts",
+            "status",
+            "updatedAt",
+        }
+    ),
     "Requirement": frozenset({"id", "roleId", "text", "type", "status", "evidence"}),
     "BreakdownRow": frozenset({"id", "label", "value", "requirementIds"}),
     "Citation": frozenset({"id", "label", "evidence"}),
@@ -54,6 +52,85 @@ _REQUIRED: dict[str, frozenset[str]] = {
             "indexModel",
         }
     ),
+    "AnalysisJob": frozenset(
+        {"id", "kind", "state", "stage", "startedAt", "finishedAt", "error"}
+    ),
+    "GapPlan": frozenset({"roleId", "currentScore", "items"}),
+    "GapItem": frozenset(
+        {
+            "requirementId",
+            "requirementText",
+            "type",
+            "status",
+            "reason",
+            "adjacentEvidence",
+            "scoreDelta",
+            "action",
+            "canDraftBullet",
+        }
+    ),
+    "DraftProvenance": frozenset(
+        {
+            "provider",
+            "model",
+            "leftMachine",
+            "generatedAt",
+            "grounded",
+            "fallback",
+        }
+    ),
+    "BulletDraft": frozenset(
+        {"id", "version", "createdAt", "requirementId", "bullets", "provenance"}
+    ),
+    "CoverLetterDraft": frozenset(
+        {
+            "id",
+            "version",
+            "createdAt",
+            "roleId",
+            "paragraphs",
+            "omittedReason",
+            "provenance",
+        }
+    ),
+    "RankedRole": frozenset({"role", "rank", "tied", "because"}),
+    "Comparison": frozenset(
+        {"a", "b", "shared", "onlyInA", "onlyInB", "differentiator"}
+    ),
+    "SupportingDocument": frozenset(
+        {
+            "id",
+            "kind",
+            "filename",
+            "mediaType",
+            "byteLength",
+            "pageCount",
+            "parsedAt",
+            "createdAt",
+        }
+    ),
+}
+
+# Shared product models: TypeScript name → OpenAPI component name.
+_SHARED: dict[str, str] = {
+    "CvDocument": "CvDocumentResponse",
+    "Evidence": "EvidenceResponse",
+    "Role": "RoleResponse",
+    "Requirement": "RequirementWire",
+    "BreakdownRow": "BreakdownRowWire",
+    "Citation": "CitationWire",
+    "ChatMessage": "ChatMessageWire",
+    "Provider": "ProviderResponse",
+    "ProviderChoice": "ProviderChoiceResponse",
+    "AnalysisJob": "AnalysisJobResponse",
+    "GapPlan": "GapPlanWire",
+    "GapItem": "GapItemWire",
+    "DraftProvenance": "DraftProvenanceWire",
+    "BulletDraft": "BulletDraftWire",
+    "CoverLetterDraft": "CoverLetterDraftWire",
+    "RankedRole": "RankedRoleWire",
+    "Comparison": "ComparisonWire",
+    "SupportingDocument": "SupportingDocumentResponse",
 }
 
 
@@ -64,16 +141,26 @@ def _openapi_properties(schema_name: str) -> set[str]:
 
 
 def _parse_ts_interfaces(source: str) -> dict[str, set[str]]:
-    """Extract interface property names (ignores nested object shapes)."""
+    """Extract interface property names (handles one level of nested braces)."""
     interfaces: dict[str, set[str]] = {}
     pattern = re.compile(
-        r"export interface (\w+)\s*\{([^}]*)\}",
-        re.MULTILINE | re.DOTALL,
+        r"export interface (\w+)\s*\{",
+        re.MULTILINE,
     )
     prop_pattern = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*[?]?\s*:", re.MULTILINE)
     for match in pattern.finditer(source):
         name = match.group(1)
-        body = match.group(2)
+        start = match.end()
+        depth = 1
+        idx = start
+        while idx < len(source) and depth > 0:
+            char = source[idx]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            idx += 1
+        body = source[start : idx - 1]
         interfaces[name] = set(prop_pattern.findall(body))
     return interfaces
 

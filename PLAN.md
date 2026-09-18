@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts complete. Next: Phase 12 frontend
-integration (proxy spike first).
+**Current position:** Phase 12 frontend integration complete (exit gate observed
+against host API + Start proxy with hermetic providers). Next: Phase 13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -475,42 +475,53 @@ failure path land.)
 The screens exist. This phase makes them real. See
 [docs/frontend-integration.md](docs/frontend-integration.md).
 
-- [ ] **12.1** **Spike first:** prove a `text/event-stream` response and a
+- [x] **12.1** **Spike first:** prove a `text/event-stream` response and a
       `MAX_UPLOAD_BYTES` multipart upload both pass through a TanStack Start server
       route without buffering. Record the result. If either fails, take the
       direct-origin-plus-CORS fallback and add a follow-up entry to ADR 006 before
       continuing.
-- [ ] **12.2** Catch-all server route proxying `/api/**` to `API_BASE_URL`, forwarding
+      - Result (2026-09-18): **pass.** `proxyToUpstream` delivers the first SSE
+        event before upstream finishes, and forwards a streaming request body
+        (representative of `MAX_UPLOAD_BYTES`) so upstream reads the first byte
+        before the client stream closes. No ADR 006 follow-up required.
+- [x] **12.2** Catch-all server route proxying `/api/**` to `API_BASE_URL`, forwarding
       method, headers, body, cookie and stream. `Origin` checked on every non-`GET`.
       `API_BASE_URL` is a server variable, never `VITE_*`.
-- [ ] **12.3** Replace `src/api/client.ts` with a real HTTP client keeping the existing
+- [x] **12.3** Replace `src/api/client.ts` with a real HTTP client keeping the existing
       exported signatures: one `request()`, the typed `ApiError` carrying `code` and
       `correlationId`, and zod validation of every response.
-- [ ] **12.4** Move fixtures to `src/api/__fixtures__/` for tests and the state
+- [x] **12.4** Move fixtures to `src/api/__fixtures__/` for tests and the state
       gallery. No component imports a fixture.
-- [ ] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
+- [x] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
       `GapPlan`, `GapItem`, `InterviewPack`, `BulletDraft`, `CoverLetterDraft`,
       `RankedRole`, `Comparison`, `DraftProvenance`, persisted message fields and
       supporting documents. (`Evidence.spanId` and `ChatMessage.leftMachine` already
       landed in 11.11.)
-- [ ] **12.6** Wire the workspace: CV upload with real progress and real rejection
+- [x] **12.6** Wire the workspace: CV upload with real progress and real rejection
       messages, supporting cover-letter upload/list/delete, add role, delete and
       replace-CV confirmation. Make clear that cover letters are not score evidence.
-- [ ] **12.7** Analysis job polling with react-query; the role list shows `Analysing`,
+- [x] **12.7** Analysis job polling with react-query; the role list shows `Analysing`,
       then the score, or `Failed` with the reason and a retry.
-- [ ] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
+- [x] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
       spans through `GET /api/spans/{id}`.
-- [ ] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
+- [x] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
       insufficient-evidence state, persisted history after reload, delete-history and
       the provider stamp. Client retries reuse the same `clientRequestId`.
-- [ ] **12.10** Wire settings: provider list with real availability reasons, the
+- [x] **12.10** Wire settings: provider list with real availability reasons, the
       hosted confirmation, and the re-index warning when the index provider changes.
-- [ ] **12.11** Error handling across the app: every documented error code maps to a
+- [x] **12.11** Error handling across the app: every documented error code maps to a
       state the user can act on. Unknown codes fail visibly, not silently.
-- [ ] **12.12** Component tests for every state of every wired screen, driven by props.
+- [x] **12.12** Component tests for every state of every wired screen, driven by props.
 
-**Exit gate:** the full existing UI runs against the real backend with fixtures
-loaded, including the failure paths. No mock data remains in `src/api/client.ts`.
+**Exit gate:** ~~the full existing UI runs against the real backend with fixtures
+loaded, including the failure paths. No mock data remains in `src/api/client.ts`.~~
+**Met 2026-09-18** — host API (`create_production_app` + SQL CV/role stores) and
+TanStack Start proxy with `API_BASE_URL`; sample-data CV/JD via proxy; browser
+workspace → add role → role detail; failures: empty upload, JPEG reject,
+`span_not_found`, Ask `analysis_incomplete` → 409. No fixtures in `client.ts`.
+Supporting cover-letter store remains in-memory on the production entrypoint
+(SQL supporting store still Phase 13/carry-forward). Playwright walkthrough is
+Phase 16.5.
 
 ## Phase 13 — Frontend: the new features
 

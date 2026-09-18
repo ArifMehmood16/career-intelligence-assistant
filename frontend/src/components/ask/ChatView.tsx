@@ -20,10 +20,14 @@ export interface ChatViewProps {
   streamingText: string;
   draft: string;
   sending: boolean;
+  sendError?: string | null;
+  canClear?: boolean;
   providerNameById: Record<string, string>;
   onDraftChange: (value: string) => void;
   onSend: () => void;
+  onRetrySend?: () => void;
   onStop: () => void;
+  onClear?: () => void;
   onCitation: (citation: Citation) => void;
   onRetry: () => void;
 }
@@ -35,10 +39,14 @@ export function ChatView({
   streamingText,
   draft,
   sending,
+  sendError = null,
+  canClear = false,
   providerNameById,
   onDraftChange,
   onSend,
+  onRetrySend,
   onStop,
+  onClear,
   onCitation,
   onRetry,
 }: ChatViewProps) {
@@ -46,6 +54,15 @@ export function ChatView({
 
   return (
     <div className="mx-auto flex h-full w-full max-w-[760px] flex-col">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h1 className="text-xl">Ask</h1>
+        {canClear && onClear ? (
+          <Button type="button" variant="outline" size="sm" onClick={onClear}>
+            Delete history
+          </Button>
+        ) : null}
+      </div>
+
       <div className="flex flex-1 flex-col gap-5 pb-4">
         {state === "loading" ? (
           <>
@@ -78,6 +95,25 @@ export function ChatView({
       </div>
 
       <div className="sticky bottom-0 space-y-3 border-t border-border bg-background pt-3 pb-4">
+        {sendError ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-muted-foreground" role="alert">
+              {sendError}
+            </p>
+            {onRetrySend ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onRetrySend}
+                disabled={sending}
+              >
+                Retry send
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
         {empty ? (
           <div className="flex flex-wrap gap-2">
             {STARTER_PROMPTS.map((prompt) => (
@@ -106,7 +142,7 @@ export function ChatView({
               }
             }}
           />
-          {streamingId ? (
+          {streamingId || sending ? (
             <Button type="button" variant="outline" onClick={onStop}>
               Stop
             </Button>
@@ -195,12 +231,13 @@ function MessageBubble({
         </div>
       ) : null}
 
-      {!streaming && message.model ? (
+      {!streaming && (message.model || message.provider) ? (
         <p className="font-mono text-[11px] text-muted-foreground">
-          {message.model}{" "}
+          {message.model ?? "model"} ·{" "}
           {message.provider
             ? (providerNameById[message.provider] ?? message.provider)
             : "unknown provider"}
+          {message.leftMachine ? " · left this machine" : " · stayed local"}
         </p>
       ) : null}
     </div>

@@ -10,8 +10,8 @@ export interface CvCardProps {
   state: CvCardState;
   document: CvDocument | null;
   errorMessage: string | null;
-  onUpload: (filename: string) => void;
-  onReplace: (filename: string) => void;
+  onUpload: (file: File) => void;
+  onReplace: (file: File) => void;
   onDelete: () => void;
   onRetry: () => void;
 }
@@ -47,13 +47,23 @@ export function CvCard({
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx"
+        accept=".pdf,.docx,.txt,application/pdf,text/plain"
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (!file) return;
-          if (state === "parsed") onReplace(file.name);
-          else onUpload(file.name);
+          if (state === "parsed") {
+            const confirmed = window.confirm(
+              "Replace this CV? Role mappings and scores will be re-analysed.",
+            );
+            if (!confirmed) {
+              event.target.value = "";
+              return;
+            }
+            onReplace(file);
+          } else {
+            onUpload(file);
+          }
           event.target.value = "";
         }}
       />
@@ -65,7 +75,7 @@ export function CvCard({
             aria-hidden="true"
           />
           <p className="mt-3 text-sm text-muted-foreground">
-            Upload your CV. PDF or DOCX, up to 10MB
+            Upload your CV. PDF, DOCX or plain text, up to 10MB
           </p>
           <Button type="button" className="mt-4" onClick={pickFile}>
             Browse
@@ -123,7 +133,12 @@ export function CvCard({
               type="button"
               variant="outline"
               size="sm"
-              onClick={onDelete}
+              onClick={() => {
+                const confirmed = window.confirm(
+                  "Delete this CV? Related analysis will no longer have evidence.",
+                );
+                if (confirmed) onDelete();
+              }}
             >
               Delete
             </Button>
