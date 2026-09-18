@@ -44,9 +44,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        correlation_id = resolve_correlation_id(
-            request.headers.get(CORRELATION_HEADER)
-        )
+        correlation_id = resolve_correlation_id(request.headers.get(CORRELATION_HEADER))
         request.state.correlation_id = correlation_id
         response = await call_next(request)
         response.headers[CORRELATION_HEADER] = correlation_id

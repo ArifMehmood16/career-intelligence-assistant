@@ -15,3 +15,13 @@ class ApiModel(BaseModel):
         from_attributes=True,
         serialize_by_alias=True,
     )
+
+
+class ErrorBody(ApiModel):
+    code: str
+    message: str
+    correlation_id: str
+
+
+class ErrorEnvelope(ApiModel):
+    error: ErrorBody

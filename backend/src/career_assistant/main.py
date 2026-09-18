@@ -8,6 +8,7 @@ from typing import Literal
 
 from fastapi import APIRouter, FastAPI
 
+from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
     WorkspaceCookieMiddleware,
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     # Last added runs first for requests.
     app.add_middleware(WorkspaceCookieMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
+    install_exception_handlers(app)
     app.include_router(router)
     return app
 

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import BaseModel
 
 from career_assistant.api.errors import AppError, install_exception_handlers
 from career_assistant.api.middleware import CorrelationIdMiddleware
-from career_assistant.api.schemas import ApiModel
+from career_assistant.api.schemas import ApiModel, ErrorBody, ErrorEnvelope
 
 
 class _ProbeBody(ApiModel):
@@ -31,10 +30,6 @@ def _probe_app() -> FastAPI:
     @app.post("/validate")
     def validate(body: _ProbeBody) -> _ProbeBody:
         return body
-
-    @app.get("/http")
-    def http_err() -> None:
-        raise HTTPException(status_code=409, detail="cv_required")
 
     return app
 
@@ -88,8 +83,6 @@ def test_validation_failure_uses_validation_failed_code() -> None:
 
 
 def test_error_envelope_model_is_camel_case() -> None:
-    from career_assistant.api.schemas import ErrorBody, ErrorEnvelope
-
     envelope = ErrorEnvelope(
         error=ErrorBody(
             code="internal_error",
@@ -104,7 +97,3 @@ def test_error_envelope_model_is_camel_case() -> None:
             "correlationId": "abc",
         }
     }
-
-
-# Keep BaseModel import used for typing clarity in probe routes.
-assert issubclass(_ProbeBody, BaseModel)
