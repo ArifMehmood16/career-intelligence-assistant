@@ -18,7 +18,6 @@ from career_assistant.application.intake.resolve_span import (
     resolve_span,
 )
 from career_assistant.domain.documents import (
-    Document,
     DocumentFormat,
     DocumentKind,
     Page,
@@ -34,7 +33,7 @@ FIXTURE_CV = ROOT / "sample-data" / "fixtures" / "resumes" / "cv-strong-match.tx
 
 
 def test_normalisation_expands_ligatures_and_bullets() -> None:
-    raw = "e\ufb01cient\n\u2022 owned dbt"
+    raw = "ef\ufb01cient\n\u2022 owned dbt"
     out = normalise_text(raw)
     assert "efficient" in out
     assert "- owned dbt" in out
@@ -145,12 +144,11 @@ def test_plain_text_fixture_parses_to_spans_with_round_trip() -> None:
 
 
 def test_pdf_bytes_parse_preserve_offsets() -> None:
-    from career_assistant.parsing.pipeline import parse_document
     from tests.support.document_bytes import make_pdf_bytes
 
-    pdf = make_pdf_bytes(
-        ["SYNTHETIC FIXTURE\n\nOwned dbt models in production."]
-    )
+    from career_assistant.parsing.pipeline import parse_document
+
+    pdf = make_pdf_bytes(["SYNTHETIC FIXTURE\n\nOwned dbt models in production."])
     parsed = parse_document(
         pdf,
         filename="cv.pdf",
@@ -166,12 +164,11 @@ def test_pdf_bytes_parse_preserve_offsets() -> None:
 
 
 def test_docx_bytes_parse_preserve_offsets() -> None:
-    from career_assistant.parsing.pipeline import parse_document
     from tests.support.document_bytes import make_docx_bytes
 
-    docx = make_docx_bytes(
-        ["SYNTHETIC FIXTURE", "Owned dbt models in production."]
-    )
+    from career_assistant.parsing.pipeline import parse_document
+
+    docx = make_docx_bytes(["SYNTHETIC FIXTURE", "Owned dbt models in production."])
     parsed = parse_document(
         docx,
         filename="cv.docx",
@@ -186,8 +183,9 @@ def test_docx_bytes_parse_preserve_offsets() -> None:
 
 
 def test_encrypted_pdf_is_unreadable() -> None:
-    from career_assistant.parsing.pipeline import parse_document
     from tests.support.document_bytes import make_encrypted_pdf_bytes
+
+    from career_assistant.parsing.pipeline import parse_document
 
     with pytest.raises(IntakeError) as err:
         parse_document(
@@ -201,8 +199,9 @@ def test_encrypted_pdf_is_unreadable() -> None:
 
 
 def test_empty_pdf_is_unreadable() -> None:
-    from career_assistant.parsing.pipeline import parse_document
     from tests.support.document_bytes import make_pdf_bytes
+
+    from career_assistant.parsing.pipeline import parse_document
 
     with pytest.raises(IntakeError) as err:
         parse_document(

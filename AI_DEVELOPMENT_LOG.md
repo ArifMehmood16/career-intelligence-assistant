@@ -155,3 +155,17 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: product branding should not ship editor telemetry or vendor marketing.
 - Human validation: `bun run test` (6 passed), `bun run lint` (warnings only),
   `bun run typecheck` green.
+
+### 007 — Phase 3 document intake and spans (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 3.1–3.7
+- Prompt intent: continue Phase 3 following TDD where possible.
+- Suggestion: commit failing intake tests first; implement admit → extract → span
+  pipeline for plain text, PDF and DOCX; span resolution and normalisation.
+- Outcome: accepted.
+- Reason: exit gate requires fixture CV → spans round-trip and safe rejection of
+  bad uploads; tests encode that before parsers land.
+- Human validation: intake tests red then green; full hermetic pytest, ruff, mypy
+  observed green.

@@ -6,11 +6,11 @@ and turns that mapping into the things a candidate actually needs — a prioriti
 plan, CV bullets, an interview pack, a cover letter draft — with every claim traceable
 to the span of text it came from.
 
-> **Status:** phase 2 complete. Model providers sit behind ports with a hermetic
-> default and an egress gate; quality gates cover both halves. No document intake or
-> fit mapping yet. [PLAN.md](PLAN.md) is the execution order,
-> [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
-> [docs/features.md](docs/features.md) is what it does.
+> **Status:** phase 3 complete. Documents parse to offset-backed spans (PDF, DOCX,
+> plain text) behind an admission policy; model providers sit behind ports with a
+> hermetic default. Persistence and fit mapping are not built yet.
+> [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
+> protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 
 ## The engineering thesis
 

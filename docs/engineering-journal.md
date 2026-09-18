@@ -18,6 +18,31 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 3 — Document intake and spans
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_document_intake.py -q --no-cov` — observed red on missing
+    `parsing.pipeline` and a ligature fixture typo; then green after implementation.
+  - `pytest -q`, `ruff check`, `mypy`
+- Observed result:
+  - Domain `Document` / `Page` / `Span` with offset-backed citation units.
+  - Admission sniffs PDF/DOCX/plain text; maps oversized and unsupported inputs to
+    api-contract codes.
+  - Normalisation expands ligatures/bullets and joins hyphenated line breaks; paragraph
+    offsets round-trip.
+  - Pipeline parses plain text fixtures plus synthetic PDF/DOCX bytes; encrypted and
+    empty PDFs raise `document_unreadable`.
+  - Span resolution guarantees `highlight ⊆ paragraph`.
+- Decisions made:
+  - Add `pypdf`, `python-docx`, and `cryptography` (AES encrypt fixtures / PDF crypto).
+  - Generate PDF/DOCX test bytes in `tests/support` rather than committing binaries.
+- Problems hit and how they were resolved:
+  - Ligature test used `e`+`ﬁ`+`cient` (eficient); corrected to `ef`+`ﬁ`+`cient`.
+  - TDD: failing tests committed first, then the pipeline implementation.
+- Carried forward:
+  - Phase 4 persistence; HTTP upload routes still later (Phase 11).
+
 ## Phase 2 — Model providers
 
 - Date: 2026-09-18
