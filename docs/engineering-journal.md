@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 SqlRoleStore delete/reanalyse)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `pytest tests/integration/test_analysis_persistence.py -m integration -q --no-cov`
+  - `ruff` / `mypy` on changed persistence modules
+- Observed result:
+  - delete removes role (cascade) and JD document; get returns None.
+  - reanalyse bumps analysis_version, publishes new hermetic results, new job id.
+  - list_mappings scoped to current analysis_version.
+  - HTTP delete/reanalyse against injected SQL stores green (4 SqlRoleStore tests).
+- Decisions made: JD document deleted after role (RESTRICT FK); drafts still
+  process-memory on SqlRoleStore.
+- Problems hit: none after green.
+- Carried forward: durable drafts; production SQL create_app default; 11.9 SSE.
+
 ## Phase 11 — API contracts (11.8 SqlRoleStore)
 
 - Date: 2026-09-18

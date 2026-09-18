@@ -3,9 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — SqlCvStore and
-SqlRoleStore land SQL persistence for CV/spans/roles/jobs/analysis publish.
-Next: SQL delete/reanalyse/drafts, production store wiring default, then 11.9+.
+**Current position:** Phase 11 API contracts in progress — SqlCvStore/SqlRoleStore
+cover CV and role create/list/get/delete/reanalyse against PostgreSQL. Next:
+durable generated drafts, production SQL default wiring, then 11.9+.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -445,9 +445,8 @@ disagree, the file is corrected first and the change is deliberate.
 - [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
       compare and span routes.
       - Done so far: hermetic in-memory 11.8 surface; SqlCvStore; SqlRoleStore
-        (create/list/get/require_analysis + HTTP) with roles.company migration.
-        Remaining: SQL delete/reanalyse; durable generated drafts; default
-        production create_app wiring to SQL stores.
+        create/list/get/delete/reanalyse + HTTP (roles.company migration).
+        Remaining: durable generated drafts; production create_app SQL default.
 - [ ] **11.9** SSE answer stream with the documented event sequence.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.

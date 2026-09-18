@@ -437,3 +437,16 @@ Never record a command output, metric, date or commit hash that was not observed
   the store surface.
 - Human validation: SqlRoleStore integration (2) green; related analysis/draft
   integration green; hermetic `tests/api/` green; ruff/mypy clean.
+
+### 028 — Phase 11.8 SqlRoleStore delete and reanalyse (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL role lifecycle)
+- Prompt intent: continue Phase 11 with TDD.
+- Suggestion: RoleRepository.delete + bump_analysis_version; SqlRoleStore
+  delete/reanalyse; version-scoped list_mappings; HTTP integration coverage.
+- Outcome: accepted; durable drafts and production SQL default still deferred.
+- Reason: finish role lifecycle persistence before draft durability.
+- Human validation: 4 SqlRoleStore integration tests green; hermetic API and
+  analysis persistence green; ruff/mypy clean.
