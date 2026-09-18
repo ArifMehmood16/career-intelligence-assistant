@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 8 (analysis jobs) exit gate is satisfied.
-Next work is Phase 9 — question answering.
+**Current position:** Phase 9 (question answering) is in progress — domain routing,
+structured answers, retrieval scope and prompts are done; streaming/persistence next.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -360,15 +360,15 @@ partial mapping.
 
 ## Phase 9 — Question answering
 
-- [ ] **9.1** Deterministic intent router: gaps, fit, compare roles, evidence for a
+- [x] **9.1** Deterministic intent router: gaps, fit, compare roles, evidence for a
       requirement, interview preparation, open question.
-- [ ] **9.2** Structured intents answer from the stored mapping. No vector search.
-- [ ] **9.3** Open questions use workspace-scoped retrieval over spans.
-- [ ] **9.4** Prompt construction: retrieved text delimited and labelled untrusted;
+- [x] **9.2** Structured intents answer from the stored mapping. No vector search.
+- [x] **9.3** Open questions use workspace-scoped retrieval over spans.
+- [x] **9.4** Prompt construction: retrieved text delimited and labelled untrusted;
       budgets for question, context and output.
-- [ ] **9.5** Answer validation: every citation resolves to a stored span or the
+- [x] **9.5** Answer validation: every citation resolves to a stored span or the
       answer is reduced to insufficient evidence before it is sent.
-- [ ] **9.6** Comparison across multiple roles returns a ranking derived from stored
+- [x] **9.6** Comparison across multiple roles returns a ranking derived from stored
       scores, with the differentiating requirements named.
 - [ ] **9.7** Streaming: the same use case serves a streamed and a non-streamed
       response, with citations validated after the text completes.
@@ -380,7 +380,7 @@ partial mapping.
       order. Deleting history hard-deletes the conversation, questions, answers and
       citations. Failed attempts retain only a safe status/code, never provider
       payloads or partial generated text.
-- [ ] **9.10** Open-question retrieval may cite uploaded cover letters when the user
+- [x] **9.10** Open-question retrieval may cite uploaded cover letters when the user
       asks about them, but those spans remain excluded from fit scoring and candidate
       evidence. Role-scoped questions cannot retrieve another role's description.
 
