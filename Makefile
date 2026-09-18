@@ -118,7 +118,7 @@ down: config
 	$(COMPOSE) down
 
 # Host API + web. Uses local Postgres from config/app.env; migrates before start.
-run: config db-check db-migrate
+run: config db-migrate db-check
 	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
 	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)
 	$(LOAD_ENV) && \

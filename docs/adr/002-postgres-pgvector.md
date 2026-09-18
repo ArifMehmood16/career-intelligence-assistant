@@ -15,7 +15,9 @@ mean multiple stores to secure, back up, migrate, delete and keep consistent.
 ## Decision
 
 PostgreSQL 16 with the pgvector extension is the system of record. SQLAlchemy 2 is the
-adapter implementation and Alembic owns the schema. Bounded original uploads are
+adapter implementation and Alembic owns the schema. Application tables live in the
+dedicated Postgres schema `career_assistant`, not `public` (extensions such as
+`vector` remain in `public`). Bounded original uploads are
 stored in `bytea`; configured admission limits keep them small enough for this
 portfolio workload. Fakes are permitted in tests only—there is no SQLite, filesystem
 or process-memory production fallback.

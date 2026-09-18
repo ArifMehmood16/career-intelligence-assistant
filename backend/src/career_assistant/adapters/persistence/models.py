@@ -25,6 +25,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from career_assistant.adapters.persistence.schema import APP_SCHEMA
+
 NAMING = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -38,7 +40,7 @@ EMBEDDING_DIMENSIONS = 64
 
 
 class Base(DeclarativeBase):
-    metadata = MetaData(naming_convention=NAMING)
+    metadata = MetaData(naming_convention=NAMING, schema=APP_SCHEMA)
 
 
 def _uuid() -> uuid.UUID:
