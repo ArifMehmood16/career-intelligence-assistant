@@ -27,7 +27,7 @@ def _seed_role_with_span(uow: SqlUnitOfWork) -> tuple[str, str, str]:
     )
     with uow:
         uow.workspaces.ensure(workspace_id)
-        stored_cv = uow.documents.save_admitted(workspace_id, cv)
+        uow.documents.save_admitted(workspace_id, cv)
         stored_jd = uow.documents.save_admitted(workspace_id, jd)
         uow.roles.create(
             workspace_id=workspace_id,
@@ -121,9 +121,7 @@ def test_regeneration_creates_new_immutable_version(uow: SqlUnitOfWork) -> None:
     assert first.version == 1
     assert second.version == 2
     with uow:
-        versions = uow.drafts.list_for_role(
-            workspace_id, role_id, kind="cover-letter"
-        )
+        versions = uow.drafts.list_for_role(workspace_id, role_id, kind="cover-letter")
         assert [d.version for d in versions] == [1, 2]
         assert versions[0].body == "Version one letter."
         assert versions[1].body == "Version two letter."

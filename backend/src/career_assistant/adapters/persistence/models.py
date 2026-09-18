@@ -507,7 +507,12 @@ class AnswerCitationRow(Base):
 
 class GeneratedDraftRow(Base):
     __tablename__ = "generated_drafts"
-    __table_args__ = (Index("ix_generated_drafts_workspace_id", "workspace_id"),)
+    __table_args__ = (
+        Index("ix_generated_drafts_workspace_id", "workspace_id"),
+        UniqueConstraint(
+            "role_id", "kind", "version", name="uq_generated_drafts_role_kind_version"
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     workspace_id: Mapped[uuid.UUID] = mapped_column(
@@ -526,6 +531,14 @@ class GeneratedDraftRow(Base):
     model_tag: Mapped[str] = mapped_column(String(128), nullable=False)
     left_machine: Mapped[bool] = mapped_column(Boolean, nullable=False)
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    groundedness: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="pass"
+    )
+    used_template_fallback: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    regeneration_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

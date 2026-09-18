@@ -9,6 +9,7 @@ from typing import Protocol
 
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import AnalysisJob, RoleStatus
 from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.requirements import Requirement
@@ -228,6 +229,56 @@ class AnalysisResultRepository(Protocol):
     ) -> tuple[RequirementMapping, ...]: ...
 
 
+@dataclass(frozen=True, slots=True)
+class NewGeneratedDraft:
+    id: str
+    workspace_id: str
+    role_id: str
+    kind: str
+    body: str
+    analysis_version: int
+    citation_span_ids: tuple[str, ...]
+    provider: str
+    model_tag: str
+    left_machine: bool
+    groundedness: GroundednessVerdict
+    used_template_fallback: bool
+    regeneration_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class GeneratedDraftRecord:
+    id: str
+    workspace_id: str
+    role_id: str
+    kind: str
+    body: str
+    analysis_version: int
+    version: int
+    citation_span_ids: tuple[str, ...]
+    provider: str
+    model_tag: str
+    left_machine: bool
+    groundedness: GroundednessVerdict
+    used_template_fallback: bool
+    regeneration_count: int
+    created_at: datetime
+
+
+class DraftRepository(Protocol):
+    def save(self, draft: NewGeneratedDraft) -> GeneratedDraftRecord: ...
+
+    def get(self, workspace_id: str, draft_id: str) -> GeneratedDraftRecord | None: ...
+
+    def list_for_role(
+        self, workspace_id: str, role_id: str, *, kind: str | None = None
+    ) -> tuple[GeneratedDraftRecord, ...]: ...
+
+    def get_latest(
+        self, workspace_id: str, role_id: str, *, kind: str
+    ) -> GeneratedDraftRecord | None: ...
+
+
 class UnitOfWork(Protocol):
     workspaces: WorkspaceRepository
     documents: DocumentRepository
@@ -235,6 +286,7 @@ class UnitOfWork(Protocol):
     roles: RoleRepository
     jobs: AnalysisJobRepository
     analysis: AnalysisResultRepository
+    drafts: DraftRepository
 
     def commit(self) -> None: ...
 

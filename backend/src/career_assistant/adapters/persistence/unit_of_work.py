@@ -13,6 +13,7 @@ from career_assistant.adapters.persistence.analysis_repos import (
     SqlAnalysisResultRepository,
     SqlRoleRepository,
 )
+from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
@@ -31,6 +32,7 @@ from career_assistant.application.ports.persistence import (
     AnswerRecord,
     ConversationRepository,
     DocumentRepository,
+    DraftRepository,
     HistoryMessage,
     NewDocument,
     ParseStatus,
@@ -396,6 +398,7 @@ class SqlUnitOfWork:
         self.roles: RoleRepository
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
+        self.drafts: DraftRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -407,6 +410,7 @@ class SqlUnitOfWork:
         self.analysis = SqlAnalysisResultRepository(
             self._session, self.roles, self.jobs
         )
+        self.drafts = SqlDraftRepository(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:
