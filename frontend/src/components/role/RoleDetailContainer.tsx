@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  createBulletDraft,
   getFitBreakdown,
   getGapPlan,
   getRequirements,
@@ -10,6 +11,7 @@ import {
 } from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { EvidencePanel } from "@/components/EvidencePanel";
+import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { GapsPanel } from "@/components/role/GapsPanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
@@ -19,7 +21,12 @@ import {
   type RoleDetailTabId,
 } from "@/components/role/role-detail-tabs";
 import { RoleHeader } from "@/components/role/RoleHeader";
-import type { GapItem, Requirement, RequirementStatus } from "@/types";
+import type {
+  Evidence,
+  GapItem,
+  Requirement,
+  RequirementStatus,
+} from "@/types";
 
 export interface RoleDetailContainerProps {
   roleId: string;
@@ -49,6 +56,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   ]);
   const [selected, setSelected] = useState<Requirement | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [draftVisible, setDraftVisible] = useState(false);
+  const [draftRequirementId, setDraftRequirementId] = useState<string | null>(
+    null,
+  );
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
@@ -65,6 +76,11 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const gapPlanQuery = useQuery({
     queryKey: ["gap-plan", roleId],
     queryFn: () => getGapPlan(roleId),
+  });
+
+  const bulletMutation = useMutation({
+    mutationFn: (requirementId: string) =>
+      createBulletDraft(roleId, requirementId),
   });
 
   const spanId = selected?.evidence?.spanId ?? null;
@@ -111,17 +127,35 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         ? "empty"
         : "ready";
 
-  const openGapEvidence = (item: GapItem) => {
-    if (!item.adjacentEvidence) return;
+  const draftState: AsyncState = !draftVisible
+    ? "empty"
+    : bulletMutation.isPending
+      ? "loading"
+      : bulletMutation.isError
+        ? "error"
+        : bulletMutation.data
+          ? "ready"
+          : "empty";
+
+  const openEvidence = (
+    title: string,
+    status: RequirementStatus,
+    evidence: Evidence,
+  ) => {
     setSelected({
-      id: item.requirementId,
+      id: evidence.spanId,
       roleId,
-      text: item.requirementText,
-      type: item.type,
-      status: item.status,
-      evidence: item.adjacentEvidence,
+      text: title,
+      type: "must",
+      status,
+      evidence,
     });
     setPanelOpen(true);
+  };
+
+  const openGapEvidence = (item: GapItem) => {
+    if (!item.adjacentEvidence) return;
+    openEvidence(item.requirementText, item.status, item.adjacentEvidence);
   };
 
   const resolveState =
@@ -137,6 +171,12 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     spanQuery.error != null
       ? formatDescribedError(describeApiError(spanQuery.error))
       : null;
+
+  const requestBulletDraft = (requirementId: string) => {
+    setDraftRequirementId(requirementId);
+    setDraftVisible(true);
+    bulletMutation.mutate(requirementId);
+  };
 
   const fitPane = (
     <div className="space-y-6">
@@ -180,18 +220,40 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   );
 
   const gapsPane = (
-    <GapsPanel
-      state={gapsState}
-      currentScore={gapPlanQuery.data?.currentScore ?? 0}
-      items={gapItems}
-      onRetry={() => {
-        void gapPlanQuery.refetch();
-      }}
-      onSelectEvidence={openGapEvidence}
-      onDraftBullet={() => {
-        // Phase 13.3 wires the draft surface; the control is present from 13.2.
-      }}
-    />
+    <div className="space-y-6">
+      <GapsPanel
+        state={gapsState}
+        currentScore={gapPlanQuery.data?.currentScore ?? 0}
+        items={gapItems}
+        onRetry={() => {
+          void gapPlanQuery.refetch();
+        }}
+        onSelectEvidence={openGapEvidence}
+        onDraftBullet={(item) => {
+          requestBulletDraft(item.requirementId);
+        }}
+      />
+      <BulletDraftPanel
+        state={draftState}
+        draft={bulletMutation.data ?? null}
+        onRetry={() => {
+          if (draftRequirementId) {
+            bulletMutation.mutate(draftRequirementId);
+          }
+        }}
+        onCopy={(text) => {
+          void navigator.clipboard.writeText(text);
+        }}
+        onCitation={(evidence) => {
+          openEvidence("Cited span", "partial", evidence);
+        }}
+        onDismiss={() => {
+          setDraftVisible(false);
+          bulletMutation.reset();
+          setDraftRequirementId(null);
+        }}
+      />
+    </div>
   );
 
   return (

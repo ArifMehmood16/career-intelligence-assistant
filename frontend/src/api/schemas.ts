@@ -168,6 +168,30 @@ export const gapPlanSchema = z.object({
   items: z.array(gapItemSchema),
 });
 
+export const draftProvenanceSchema = z.object({
+  provider: z.string(),
+  model: z.string().nullable(),
+  leftMachine: z.boolean(),
+  generatedAt: z.string(),
+  grounded: z.boolean(),
+  fallback: z.enum(["none", "regenerated", "template"]),
+});
+
+export const bulletLineSchema = z.object({
+  text: z.string(),
+  spanIds: z.array(z.string()),
+  evidence: z.array(evidenceSchema),
+});
+
+export const bulletDraftSchema = z.object({
+  id: z.string(),
+  version: z.number().int(),
+  createdAt: z.string(),
+  requirementId: z.string(),
+  bullets: z.array(bulletLineSchema),
+  provenance: draftProvenanceSchema,
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),

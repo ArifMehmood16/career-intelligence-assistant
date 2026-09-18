@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 frontend features in progress — through 13.2 Gaps
-panel. Next: 13.3 bullet drafts.
+**Current position:** Phase 13 frontend features in progress — through 13.3 bullet
+drafts. Next: 13.4 Prepare tab.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -532,7 +532,7 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
       navigable, deep-linkable.
 - [x] **13.2** **Gaps**: ordered gap list with reason, adjacent evidence, score delta
       and action. "Draft a bullet" where the evidence exists.
-- [ ] **13.3** **Bullet drafts**: the draft, its citation chips, the provenance line,
+- [x] **13.3** **Bullet drafts**: the draft, its citation chips, the provenance line,
       copy, and the visible template-fallback state.
 - [ ] **13.4** **Prepare**: the four sections, each evidence line clickable to its
       span, export.

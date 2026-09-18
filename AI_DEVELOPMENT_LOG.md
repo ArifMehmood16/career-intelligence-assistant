@@ -538,6 +538,20 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 049 — Phase 13.3 bullet draft panel (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.3
+- Prompt intent: continue Phase 13 after Gaps panel.
+- Suggestion: BulletDraftPanel + POST /bullets; citation chips, copy, provenance,
+  visible template-fallback banner; Gaps "Draft a bullet" triggers the mutation.
+- Outcome: accepted.
+- Reason: matches features.md grounding labelling; hermetic path uses fallback
+  template which the UI must show honestly.
+- Rejected alternatives: writing drafts back into the CV (explicitly out of scope).
+- Human validation: BulletDraftPanel tests 2 green; full frontend vitest; tsc/lint.
+
 ### 048 — Phase 13.2 Gaps panel (TDD)
 
 - Date: 2026-09-18

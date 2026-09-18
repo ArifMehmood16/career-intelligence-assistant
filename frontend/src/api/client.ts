@@ -5,6 +5,7 @@
 import type {
   AnalysisJob,
   BreakdownRow,
+  BulletDraft,
   ChatMessage,
   Citation,
   CvDocument,
@@ -19,6 +20,7 @@ import type {
 import {
   analysisJobSchema,
   breakdownRowSchema,
+  bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
   cvDocumentSchema,
@@ -295,6 +297,17 @@ export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
 export function getGapPlan(roleId: string): Promise<GapPlan> {
   return request(`/api/roles/${roleId}/gap-plan`, {
     schema: gapPlanSchema,
+  });
+}
+
+export function createBulletDraft(
+  roleId: string,
+  requirementId: string,
+): Promise<BulletDraft> {
+  return request(`/api/roles/${roleId}/bullets`, {
+    method: "POST",
+    body: { requirementId },
+    schema: bulletDraftSchema,
   });
 }
 

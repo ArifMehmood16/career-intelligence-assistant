@@ -18,6 +18,18 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Bullet drafts (13.3)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/BulletDraftPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Draft a bullet POSTs /bullets and shows text, citation chips,
+  provenance, copy, and template-fallback status.
+- Decisions made: draft panel sits under the Gaps list; dismiss resets the mutation.
+- Problems hit: none material.
+- Carried forward: 13.4 Prepare tab.
+
 ## Phase 13 — Gaps panel (13.2)
 
 - Date: 2026-09-18
