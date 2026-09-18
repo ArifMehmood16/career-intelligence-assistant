@@ -538,6 +538,30 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 056 — Post-Phase-13 logic and production-wiring audit
+
+- Date: 2026-09-18
+- Tool / model: Codex
+- Plan task: audit checkpoint before Phase 14
+- Prompt intent: verify all logic through Phase 13, identify defects and record the
+  required corrections before evaluation.
+- Suggestion: add mandatory Phase 13A remediation for SQL-backed chat/provider
+  settings, real queued production analysis and CV-replacement jobs, runtime provider
+  use, supporting-letter retrieval and general span resolution, grounded generation,
+  correct ties/differentiators/version export, frontend failure states and honest
+  documentation.
+- Outcome: pending human review; no application behaviour changed in this audit.
+- Reason: hermetic, component and direct repository tests pass, but production routes
+  still instantiate process-memory chat/provider state, run synchronous hermetic
+  analysis, omit supporting documents from retrieval, and bypass the existing
+  provider and grounded-generation application paths. Evaluation before correcting
+  those paths would report results for a different system than the shipped app.
+- Human validation: `make test` observed 230 passed, 3 skipped and 29 deselected;
+  frontend Vitest observed 100 passed when run with local socket access;
+  `make test-integration` observed 29 passed against local PostgreSQL; `make
+  typecheck` passed. Exact `make lint` remains red because Ruff would reformat one
+  method declaration in `application/ports/persistence.py`.
+
 ### 055 — Phase 13.9–13.10 a11y live regions and escaped text (TDD)
 
 - Date: 2026-09-18

@@ -3,8 +3,10 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 complete (exit gate: frontend lint/tsc/component
-tests). Next: Phase 14 Evaluation.
+**Current position:** Phase 13 UI work is complete. A post-Phase-13 audit found
+production-wiring and end-to-end correctness gaps that the existing component,
+API and repository tests do not cover. Complete Phase 13A before Phase 14; do not
+evaluate simulated or process-local behaviour as if it were the shipped system.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -553,6 +555,92 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
 
 **Exit gate:** `bun run lint`, `tsc --noEmit` and component tests pass; every state in
 `/dev/states` has a test.
+
+## Phase 13A — Pre-evaluation logic and production-wiring remediation
+
+This is a mandatory audit-remediation gate, not new product scope. Phase 13's UI
+slice is complete, but the 2026-09-18 logic audit found that several earlier phase
+contracts exist in isolated domain/repository tests without being used by the
+production HTTP path. Close these gaps before Phase 14 so evaluation measures the
+real application.
+
+- [ ] **13A.1 Restore the complete quality baseline.** Format
+      `application/ports/persistence.py`, then run the exact repository lint,
+      typecheck, hermetic and PostgreSQL integration targets. Keep generated Alembic
+      migrations outside Ruff's hand-written-source target; do not broaden or weaken
+      the configured checks merely to obtain green output. Record the two current
+      third-party deprecation warnings and either remove them through compatible
+      dependency upgrades or carry them as an explicit Phase 15 maintenance risk.
+- [ ] **13A.2 Make PostgreSQL the production source of truth for chat and provider
+      settings.** Add application adapters over the existing conversation repository
+      and `provider_settings` table, including selected model tags; wire them through
+      `build_sql_stores` / `create_production_app`. Remove production fallbacks to
+      `InMemoryConversationStore` and `app.state.provider_choices`. Prove through the
+      HTTP surface that questions, final answers, citations, idempotent retries,
+      deletion and provider choices survive construction of a fresh app process and
+      remain workspace-scoped.
+- [ ] **13A.3 Use the PostgreSQL-backed analysis worker in production.** Adding or
+      reanalysing a role must commit an `analysing` role and queued job, return 202
+      before extraction completes, and let the bounded worker publish results or a
+      safe failure transactionally. Wire startup recovery for persisted queued and
+      stale-running jobs. CV replacement must invalidate stale results and enqueue
+      every affected role in the same transaction, return those job ids, and never
+      leave a role marked `ready` with a missing or stale score; CV deletion needs an
+      equally explicit non-ready/deletion outcome. Add production-path tests for
+      queued/running/succeeded/failed states, restart recovery and no partial results.
+- [ ] **13A.4 Make provider selection affect actual work.** Resolve the persisted
+      workspace choice through the Phase 2 factories for requirement extraction,
+      claim extraction, open-question answers and generated phrasing. Keep the
+      completion and embedding choices independent, enforce the hosted egress gate at
+      construction and call time, and persist truthful provider/model/`left_machine`
+      provenance plus accounting. Remove hard-coded hermetic provenance from routes;
+      tests must use scripted adapters to prove the selected provider is called and a
+      rejected hosted choice makes no network attempt.
+- [ ] **13A.5 Complete database-backed retrieval and span resolution.** Open questions
+      may retrieve workspace-scoped spans from the active CV and uploaded supporting
+      cover letters, while role-scoped retrieval may additionally use only that
+      role's job description. A single workspace-scoped span resolver must open every
+      citation emitted by Ask or generated artefacts, not only active-CV spans.
+      Preserve the hard boundary that cover-letter text cannot become a claim,
+      mapping or score input. Cover this through production HTTP tests, including
+      cross-workspace and cross-role rejection.
+- [ ] **13A.6 Route all generated prose through the grounded-generation use case.**
+      Bullet, interview-pack and cover-letter HTTP routes must call the Phase 10
+      generation pipeline, verify citations against stored spans, run the
+      groundedness validator, retry/fall back as specified and persist the real
+      verdict. The SQL draft adapter must never replace an untrusted or failed verdict
+      with `PASS`. Either implement the Letter tab's tone and honest-gap-line inputs
+      through this validated path or remove the controls until they are real. Refuse
+      a bullet when no cited claim supports it instead of persisting an uncited
+      instruction as a grounded draft.
+- [ ] **13A.7 Correct ranking, comparison and immutable-version export.** Equal scores
+      receive the same displayed rank with deterministic competition ranking; the
+      comparison differentiator must identify an actual status/score distinction,
+      not the first shared requirement alphabetically. Export the exact cover-letter
+      version selected on screen (and define the same rule for bullet versions), with
+      byte-for-byte API and component regressions.
+- [ ] **13A.8 Close frontend asynchronous and failure-state gaps.** Role detail must
+      render explicit not-found, failed and analysing states rather than an indefinite
+      header skeleton plus failing child queries. Fetch tab-specific resources only
+      when the role is ready and the tab is active. Surface generated/supporting
+      letter, role-list/compare, clipboard and export failures with retryable UI
+      states; do not show a successful empty state while its query failed.
+- [ ] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
+      stale README status, API contract, architecture/provenance documentation,
+      threat model and engineering journal after the fixes are proven. Add a
+      production-wiring matrix that names each route's application use case, provider
+      resolver and SQL adapter so an isolated tested implementation cannot be mistaken
+      for a wired feature again.
+
+**Exit gate:** exact `make lint`, `make typecheck`, `make test` and
+`make test-integration` targets pass. A production-app test using PostgreSQL proves
+chat, provider choice, roles, jobs, uploaded supporting letters, citations and drafts
+survive an app restart. An observable queued job becomes ready through the bounded
+worker; a forced failure exposes no partial analysis. A scripted non-hermetic provider
+proves runtime selection and truthful provenance. An invalid generated claim fails
+closed. A direct question retrieves and opens a supporting-letter citation without
+changing any fit score. Ties, comparison differentiators and selected-version export
+are deterministic and covered at API and component level. Only then begin Phase 14.
 
 ## Phase 14 — Evaluation
 
