@@ -463,3 +463,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: generated artefacts must outlive the process like CV/roles.
 - Human validation: durable-draft integration green; full SqlRoleStore + draft
   persistence suites green; hermetic API green; mypy/ruff clean.
+
+### 030 — Phase 11.8 production SQL app wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (complete — production entrypoint)
+- Prompt intent: continue Phase 11; wire SQL as the uvicorn/Docker default.
+- Suggestion: `build_sql_stores` + `create_production_app`; keep `create_app()`
+  hermetic for API tests; unit-test module `app` store types.
+- Outcome: accepted; 11.8 checked off in PLAN.md.
+- Reason: AGENTS forbids process-memory as a production persistence path;
+  Docker/Make run `career_assistant.main:app`.
+- Rejected alternatives: changing `create_app()` default to SQL (would force
+  every hermetic API test onto Postgres).
+- Human validation: production wiring unit tests green; API suite green;
+  `make lint` green.

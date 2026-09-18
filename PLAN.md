@@ -3,9 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — SqlCvStore/SqlRoleStore
-cover CV, roles lifecycle, and durable drafts against PostgreSQL. Next: production
-SQL create_app default wiring, then 11.9+.
+**Current position:** Phase 11 API contracts in progress — 11.8 complete (hermetic
+surface + SQL stores + production `create_production_app` entrypoint). Next: 11.9
+SSE answer stream.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -442,11 +442,11 @@ disagree, the file is corrected first and the change is deliberate.
 - [x] **11.7** Provider endpoints: list with availability and the reason any is
       unavailable; set the workspace choice. Hosted selection is rejected server-side
       without `acknowledgedEgress`, so the confirmation is not only a UI convention.
-- [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
-      compare and span routes.
-      - Done so far: hermetic in-memory 11.8 surface; SqlCvStore; SqlRoleStore
-        create/list/get/delete/reanalyse; durable cover-letter/bullets via
-        generated_drafts. Remaining: production create_app SQL default.
+- [x] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
+      compare and span routes. Hermetic in-memory API surface; SqlCvStore /
+      SqlRoleStore (create/list/get/delete/reanalyse + durable drafts);
+      `create_production_app` wires SQL stores for uvicorn/Docker while
+      `create_app()` stays hermetic for API tests.
 - [ ] **11.9** SSE answer stream with the documented event sequence.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.

@@ -9,6 +9,7 @@ from typing import Literal
 from fastapi import APIRouter, FastAPI, Request, Response
 
 from career_assistant.adapters.persistence.readiness import SettingsReadiness
+from career_assistant.adapters.persistence.wiring import build_sql_stores
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
@@ -87,8 +88,8 @@ def create_app(
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
-    Default stores are in-memory for hermetic API tests. Production and
-    integration runs inject ``SqlCvStore`` / ``SqlRoleStore``.
+    Default stores are in-memory for hermetic API tests. The module-level
+    ``app`` used by uvicorn/Docker is built with ``create_production_app``.
     """
     upload_limits = limits or LimitSettings()
     app = FastAPI(
@@ -124,4 +125,21 @@ def create_app(
     return app
 
 
-app = create_app()
+def create_production_app(
+    *,
+    readiness: ReadinessProbe | None = None,
+    limits: LimitSettings | None = None,
+    providers: ProviderSettings | None = None,
+) -> FastAPI:
+    """Wire SQL stores for the process entrypoint (uvicorn / Docker CMD)."""
+    cv_store, role_store = build_sql_stores()
+    return create_app(
+        readiness=readiness if readiness is not None else SettingsReadiness(),
+        limits=limits,
+        providers=providers,
+        cv_store=cv_store,
+        role_store=role_store,
+    )
+
+
+app = create_production_app()

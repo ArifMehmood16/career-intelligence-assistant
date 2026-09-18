@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 production SQL app wiring)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_production_app_wiring.py -q --no-cov` (red then green)
+  - `pytest tests/api -q --no-cov`
+  - `make lint`
+- Observed result:
+  - Module `career_assistant.main:app` exposes SqlCvStore + SqlRoleStore.
+  - `create_app()` without injection still uses in-memory stores for hermetic API
+    tests (51 API tests green).
+- Decisions made: `create_production_app` + `build_sql_stores` for the process
+  entrypoint; keep `create_app` hermetic for test factories. Engine is lazy until
+  first request.
+- Problems hit: none.
+- Carried forward: 11.9 SSE answer stream.
+
 ## Phase 11 — API contracts (11.8 durable drafts on SqlRoleStore)
 
 - Date: 2026-09-18
