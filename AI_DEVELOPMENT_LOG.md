@@ -217,3 +217,18 @@ Never record a command output, metric, date or commit hash that was not observed
 - Outcome: accepted.
 - Human validation: unit + integration tests green; `\dt career_assistant.*` shows
   21 tables; `make db-migrate` / `make db-check` green.
+
+### 013 — Phase 5 requirement extraction (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 5.1–5.7
+- Prompt intent: continue with the next phase (requirement extraction).
+- Suggestion: domain Requirement; rules extractor for bulleted JD sections; span
+  validation; injection and vague fixtures; cover-letter rejection; model-backed path
+  intersecting CompletionPort JSON with rule spans.
+- Outcome: accepted.
+- Reason: exit gate requires six fixture JDs with resolvable spans and no injection
+  leakage; rules stay default so hermetic runs need no network.
+- Human validation: eight focused extraction tests green; hermetic pytest (~81%),
+  ruff, mypy green.

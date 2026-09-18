@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 4 (persistence) exit gate is satisfied.
-Next work is Phase 5 — requirement extraction.
+**Current position:** Phase 5 (requirement extraction) exit gate is satisfied.
+Next work is Phase 6 — evidence extraction.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -271,21 +271,21 @@ production path falls back to memory or SQLite.
 
 ## Phase 5 — Requirement extraction
 
-- [ ] **5.1** Domain type `Requirement`: text, competency, seniority signal, must-have
+- [x] **5.1** Domain type `Requirement`: text, competency, seniority signal, must-have
       or desirable, source span, extraction confidence.
-- [ ] **5.2** Extraction port and a deterministic rule-based adapter (default,
+- [x] **5.2** Extraction port and a deterministic rule-based adapter (default,
       hermetic) that handles bulleted requirement lists.
-- [ ] **5.3** Extraction against the Phase 2 completion port, schema validated, with
+- [x] **5.3** Extraction against the Phase 2 completion port, schema validated, with
       the same acceptance tests passing on every configured provider.
-- [ ] **5.4** Output validation: reject any requirement whose source span does not
+- [x] **5.4** Output validation: reject any requirement whose source span does not
       resolve to stored text. Drop it, count it, never pass it through.
-- [ ] **5.5** Prompt-injection regression test: a job description containing
+- [x] **5.5** Prompt-injection regression test: a job description containing
       instructions to the model does not change extraction behaviour.
-- [ ] **5.6** Vague-requirement detection: a requirement with a seniority or scope
+- [x] **5.6** Vague-requirement detection: a requirement with a seniority or scope
       signal the description never quantifies is marked as such. This feeds
       "what to ask them" in the interview pack, so it is data, not a heuristic in the
       view.
-- [ ] **5.7** Requirements are extracted only from the stored job-description
+- [x] **5.7** Requirements are extracted only from the stored job-description
       document for that role. An uploaded cover letter cannot contribute a requirement
       or alter a role analysis.
 

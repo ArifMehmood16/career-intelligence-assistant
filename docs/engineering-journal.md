@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 5 — Requirement extraction
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_requirement_extraction.py -q --no-cov`
+  - `pytest -q`, `ruff check`, `mypy`
+- Observed result:
+  - Domain `Requirement` with competency, seniority, must-have, confidence, vagueness.
+  - `RulesRequirementExtractor` parses must/desirable bullet sections with exact spans.
+  - Span validation drops non-resolving refs; injection fixture adds no override reqs.
+  - Vague seniority fixture marks unquantified signals; cover letters are rejected.
+  - Model-backed path uses CompletionPort JSON schema and keeps only span-backed texts.
+- Decisions made:
+  - Rules adapter remains the default; model path intersects model texts with rule
+    spans so invented requirements cannot pass without a stored substring.
+- Problems hit and how they were resolved: none material.
+- Carried forward: Phase 6 evidence / claims extraction.
+
 ## Phase 4 — Persistence
 
 - Date: 2026-09-18
