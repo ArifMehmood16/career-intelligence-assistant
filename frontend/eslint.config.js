@@ -35,7 +35,11 @@ export default tseslint.config(
       ],
       "react-refresh/only-export-components": [
         "warn",
-        { allowConstantExport: true },
+        {
+          allowConstantExport: true,
+          // shadcn Button co-exports CVA variants for composition (alert-dialog, settings).
+          allowExportNames: ["buttonVariants"],
+        },
       ],
       "@typescript-eslint/no-unused-vars": "off",
     },
