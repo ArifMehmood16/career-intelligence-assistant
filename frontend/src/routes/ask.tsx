@@ -4,13 +4,13 @@ import { ChatContainer } from "@/components/ask/ChatContainer";
 export const Route = createFileRoute("/ask")({
   head: () => ({
     meta: [
-      { title: "Ask — Career Intelligence" },
+      { title: "Ask — CIA" },
       {
         name: "description",
         content:
           "Ask questions about your CV and role fit, answered with citations.",
       },
-      { property: "og:title", content: "Ask — Career Intelligence" },
+      { property: "og:title", content: "Ask — CIA" },
       {
         property: "og:description",
         content:

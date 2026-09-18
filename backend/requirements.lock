@@ -12,9 +12,17 @@ click==8.5.0
 fastapi==0.141.1
     # via career-assistant (pyproject.toml)
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via career-assistant (pyproject.toml)
 idna==3.20
-    # via anyio
+    # via
+    #   anyio
+    #   httpx
 pydantic==2.13.5
     # via
     #   fastapi

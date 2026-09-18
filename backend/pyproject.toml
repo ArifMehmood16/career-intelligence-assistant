@@ -9,6 +9,7 @@ description = "Career Intelligence Assistant API"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi>=0.141,<0.142",
+    "httpx>=0.28,<0.29",
     "pydantic-settings>=2.10,<3",
     "uvicorn>=0.52,<0.53",
 ]
@@ -32,7 +33,7 @@ packages = ["src/career_assistant"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "integration: requires PostgreSQL with pgvector",
     "smoke: requires a local Ollama and RUN_LLM_SMOKE=1",

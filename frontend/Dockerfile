@@ -9,7 +9,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-# The Lovable Vite config defaults Nitro to a Cloudflare target. This deploys as
+# The Vite/TanStack config defaults Nitro to a Cloudflare target. This deploys as
 # a container, so build the plain Node server instead.
 ENV NITRO_PRESET=node-server
 RUN bun run build

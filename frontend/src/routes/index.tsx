@@ -5,13 +5,13 @@ import { RolesPanelContainer } from "@/components/workspace/RolesPanelContainer"
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Workspace — Career Intelligence" },
+      { title: "Workspace — CIA" },
       {
         name: "description",
         content:
           "Match your CV against saved job descriptions and see where the evidence sits.",
       },
-      { property: "og:title", content: "Workspace — Career Intelligence" },
+      { property: "og:title", content: "Workspace — CIA" },
       {
         property: "og:description",
         content:

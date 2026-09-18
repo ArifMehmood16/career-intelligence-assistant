@@ -127,3 +127,31 @@ Never record a command output, metric, date or commit hash that was not observed
   halves; Lovable as delivered failed Prettier-only lint until formatted.
 - Human validation: `bunx vitest run` (5 passed, including red-then-green ESLint
   guards), `make typecheck`, `make lint`, and `make test` all observed green.
+
+### 005 — Phase 2 model providers
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 2.1–2.12
+- Prompt intent: continue with the next phase (model providers) through completion.
+- Suggestion: ports + capability descriptors; hermetic/Ollama/OpenAI/Anthropic
+  adapters behind an egress gate; shared contract suite on recorded HTTP fixtures;
+  resilience, accounting, key redaction, explicit fallback.
+- Outcome: accepted.
+- Reason: matches ADR 003/005; keeps default runs hermetic; no vendor SDK lock-in.
+- Human validation: `pytest` hermetic suite green (coverage ≥80%), ruff and mypy
+  clean on the package.
+
+### 006 — Remove Lovable branding and telemetry from the frontend
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 2 PR follow-up (branding)
+- Prompt intent: strip Lovable mentions, logo, favicon and trackers; brand as CIA.
+- Suggestion: delete lovable error-reporting hook, replace favicon with an original
+  CIA monogram SVG, update shell/docs titles, keep `@lovable.dev/vite-tanstack-config`
+  only as the existing Vite/Start build helper.
+- Outcome: accepted.
+- Reason: product branding should not ship editor telemetry or vendor marketing.
+- Human validation: `bun run test` (6 passed), `bun run lint` (warnings only),
+  `bun run typecheck` green.

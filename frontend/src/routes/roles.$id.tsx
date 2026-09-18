@@ -4,13 +4,13 @@ import { RoleDetailContainer } from "@/components/role/RoleDetailContainer";
 export const Route = createFileRoute("/roles/$id")({
   head: () => ({
     meta: [
-      { title: "Role fit — Career Intelligence" },
+      { title: "Role fit — CIA" },
       {
         name: "description",
         content:
           "Requirement-by-requirement fit for a single role, with CV evidence.",
       },
-      { property: "og:title", content: "Role fit — Career Intelligence" },
+      { property: "og:title", content: "Role fit — CIA" },
       {
         property: "og:description",
         content:
