@@ -105,9 +105,7 @@ def test_hard_delete_removes_document_bytes_and_spans(
         ).scalar_one()
         assert remaining == 0
         span_count = session.execute(
-            text(
-                "SELECT count(*) FROM spans WHERE document_id = CAST(:id AS uuid)"
-            ),
+            text("SELECT count(*) FROM spans WHERE document_id = CAST(:id AS uuid)"),
             {"id": stored.id},
         ).scalar_one()
         assert span_count == 0
