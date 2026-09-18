@@ -127,3 +127,17 @@ Never record a command output, metric, date or commit hash that was not observed
   halves; Lovable as delivered failed Prettier-only lint until formatted.
 - Human validation: `bunx vitest run` (5 passed, including red-then-green ESLint
   guards), `make typecheck`, `make lint`, and `make test` all observed green.
+
+### 005 — Phase 2 model providers
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 2.1–2.12
+- Prompt intent: continue with the next phase (model providers) through completion.
+- Suggestion: ports + capability descriptors; hermetic/Ollama/OpenAI/Anthropic
+  adapters behind an egress gate; shared contract suite on recorded HTTP fixtures;
+  resilience, accounting, key redaction, explicit fallback.
+- Outcome: accepted.
+- Reason: matches ADR 003/005; keeps default runs hermetic; no vendor SDK lock-in.
+- Human validation: `pytest` hermetic suite green (coverage ≥80%), ruff and mypy
+  clean on the package.

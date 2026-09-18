@@ -18,6 +18,34 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 2 — Model providers
+
+- Date: 2026-09-18
+- Commands run:
+  - `backend/.venv/bin/pytest tests/contract tests/unit/test_providers.py -q --no-cov`
+  - `backend/.venv/bin/pytest -q` (full hermetic suite)
+  - `backend/.venv/bin/ruff check src tests`, `mypy`
+- Observed result:
+  - Completion and embedding ports live under `application/ports/` with no vendor
+    shapes; capability descriptors drive behaviour.
+  - Hermetic adapters are the default; Ollama/OpenAI/Anthropic use injectable HTTP
+    transports and recorded fixtures in the shared contract suite (no live calls).
+  - Hosted adapters raise `EgressNotPermittedError` when the gate is closed or the
+    key is missing; scripted transport records zero calls in that case.
+  - Resilience (retry 429/5xx, breaker), explicit fallback flag, call accounting, and
+    `ProviderSettings.public_snapshot()` key redaction are covered by unit tests.
+  - Coverage 86% on the package; architecture guard still forbids SDKs in
+    domain/application.
+- Decisions made:
+  - Use `httpx` as the only runtime HTTP client for provider adapters (no vendor
+    SDKs in the lock yet).
+  - Anthropic embedding requests fail closed at the factory — ports stay independent.
+- Problems hit and how they were resolved:
+  - Needed `pythonpath = ["src", "."]` so contract tests can import `tests.support`.
+- Carried forward:
+  - Phase 3 document intake and spans.
+  - Provider HTTP routes and workspace selection land in Phase 11 / 4.
+
 ## Phase 1 — Skeleton and quality gates (remainder)
 
 - Date: 2026-09-18

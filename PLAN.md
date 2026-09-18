@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 0 and Phase 1 exit gates are satisfied. Next work is
-Phase 2 — model providers (ports, hermetic adapters, egress gate).
+**Current position:** Phase 2 (model providers) exit gate is satisfied. Next work is
+Phase 3 — document intake and spans.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -144,34 +144,34 @@ Built before anything depends on it, so no later phase is written against one ve
 shape. Extraction and phrasing are the only model-facing work in this product, so the
 extraction contract is what every adapter is judged against.
 
-- [ ] **2.1** Completion port and embedding port. Small and use-case specific, with no
+- [x] **2.1** Completion port and embedding port. Small and use-case specific, with no
       vendor concepts in the signatures — no `messages`, no `tools`, no vendor error
       types leaking into the application.
-- [ ] **2.2** Capability descriptor per provider: structured-output support, context
+- [x] **2.2** Capability descriptor per provider: structured-output support, context
       window, maximum output, embedding dimensions. The application reads capabilities
       and degrades deterministically. It never branches on a provider's name.
-- [ ] **2.3** Hermetic adapters as the default: a rule-based extractor and lexical
+- [x] **2.3** Hermetic adapters as the default: a rule-based extractor and lexical
       hashing embeddings. No network, no keys, no downloads.
-- [ ] **2.4** Ollama adapter — local models, model tags from configuration.
-- [ ] **2.5** OpenAI adapter — completion and embeddings.
-- [ ] **2.6** Anthropic adapter — completion only. Embeddings stay on whichever
+- [x] **2.4** Ollama adapter — local models, model tags from configuration.
+- [x] **2.5** OpenAI adapter — completion and embeddings.
+- [x] **2.6** Anthropic adapter — completion only. Embeddings stay on whichever
       provider is configured for them; the two ports are independent by design.
-- [ ] **2.7** One contract test suite that every adapter passes, against recorded
+- [x] **2.7** One contract test suite that every adapter passes, against recorded
       fixtures rather than live calls: schema-valid structured output, refusal
       handling, oversized-input rejection, and stable behaviour for identical input.
       An adapter that cannot satisfy the contract is fixed or removed, not
       special-cased.
-- [ ] **2.8** Egress gate: a single enforced chokepoint decides whether content may
+- [x] **2.8** Egress gate: a single enforced chokepoint decides whether content may
       leave the machine. A hosted adapter is constructible only when
       `ALLOW_HOSTED_PROVIDERS` is true and that provider's key is present. A test
       proves no adapter can reach the network around the gate.
-- [ ] **2.9** Resilience: per-provider timeout, bounded retry with backoff on 429 and
+- [x] **2.9** Resilience: per-provider timeout, bounded retry with backoff on 429 and
       5xx only, and a breaker that returns a safe error rather than hanging a request.
-- [ ] **2.10** Accounting: provider, model tag, input and output token counts, latency
+- [x] **2.10** Accounting: provider, model tag, input and output token counts, latency
       and estimated cost recorded per call. Identifiers and counts only, never content.
-- [ ] **2.11** Key handling: keys read at construction, never logged, never returned by
+- [x] **2.11** Key handling: keys read at construction, never logged, never returned by
       any route in any shape including masked, covered by the redaction test.
-- [ ] **2.12** Fallback policy: a hosted provider that fails does not silently fall
+- [x] **2.12** Fallback policy: a hosted provider that fails does not silently fall
       back to a local model. If it falls back, the response says so.
 
 **Exit gate:** every adapter passes the same contract suite; `make test` stays
