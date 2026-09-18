@@ -2,10 +2,23 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
+from starlette.routing import BaseRoute
 
 from career_assistant.main import create_app
+
+
+def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
+    for route in routes:
+        if isinstance(route, APIRoute):
+            yield route
+        elif hasattr(route, "routes"):
+            yield from _iter_api_routes(list(route.routes))
+        elif hasattr(route, "original_router"):
+            yield from _iter_api_routes(list(route.original_router.routes))
 
 
 def test_api_model_serialises_snake_case_fields_as_camel_case() -> None:
@@ -41,7 +54,7 @@ def test_api_model_accepts_camel_case_and_snake_case_input() -> None:
 
 def test_every_route_declares_an_explicit_response_model() -> None:
     app = create_app()
-    api_routes = [route for route in app.routes if isinstance(route, APIRoute)]
+    api_routes = list(_iter_api_routes(list(app.routes)))
     assert api_routes, "expected at least one API route"
 
     for route in api_routes:

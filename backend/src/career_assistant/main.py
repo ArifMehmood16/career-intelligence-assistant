@@ -7,12 +7,13 @@ browser never holds an API origin. See docs/api-contract.md.
 from typing import Literal
 
 from fastapi import APIRouter, FastAPI
-from pydantic import BaseModel
+
+from career_assistant.api.schemas import ApiModel
 
 router = APIRouter(prefix="/api")
 
 
-class HealthResponse(BaseModel):
+class HealthResponse(ApiModel):
     """Liveness only. It answers with no database and no provider configured."""
 
     status: Literal["ok"]
