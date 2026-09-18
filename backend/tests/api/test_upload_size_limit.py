@@ -73,7 +73,9 @@ async def test_asgi_rejects_oversized_content_length_without_receive() -> None:
     start = next(m for m in sent if m["type"] == "http.response.start")
     assert start["status"] == 413
     body = b"".join(
-        m["body"] for m in sent if m["type"] == "http.response.body"  # type: ignore[misc]
+        m["body"]
+        for m in sent
+        if m["type"] == "http.response.body"  # type: ignore[misc]
     )
     assert b"document_too_large" in body
     assert b"corr-upload-1" in body
