@@ -24,6 +24,7 @@ import {
   errorEnvelopeSchema,
   evidenceSchema,
   providerChoiceSchema,
+  providerChoiceUpdateResponseSchema,
   providerSchema,
   reanalyseResponseSchema,
   requirementSchema,
@@ -580,16 +581,25 @@ export function getProviderChoice(): Promise<ProviderChoice> {
   });
 }
 
-export function setProviderChoice(
-  choice: ProviderChoice,
-): Promise<ProviderChoice> {
-  return request("/api/settings/providers", {
+export async function setProviderChoice(input: {
+  choice: ProviderChoice;
+  acknowledgedEgress: boolean;
+}): Promise<{ choice: ProviderChoice; reindexJobId: string | null }> {
+  const raw = await request("/api/settings/providers", {
     method: "PUT",
     body: {
-      ...choice,
-      // Hosted confirmation is enforced in the settings UI before this runs.
-      acknowledgedEgress: true,
+      ...input.choice,
+      acknowledgedEgress: input.acknowledgedEgress,
     },
-    schema: providerChoiceSchema,
+    schema: providerChoiceUpdateResponseSchema,
   });
+  return {
+    choice: {
+      answerProviderId: raw.answerProviderId,
+      answerModel: raw.answerModel,
+      indexProviderId: raw.indexProviderId,
+      indexModel: raw.indexModel,
+    },
+    reindexJobId: raw.reindex?.jobId ?? null,
+  };
 }

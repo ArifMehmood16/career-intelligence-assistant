@@ -539,10 +539,14 @@ function DevStatesPage() {
           indexProviderId="builtin"
           indexModel="built-in-offline"
           pendingProvider={null}
+          pendingReindex={null}
+          saveError={null}
           onSelect={noop}
           onModelChange={noop}
           onConfirmHosted={noop}
           onCancelHosted={noop}
+          onConfirmReindex={noop}
+          onCancelReindex={noop}
           onRetry={noop}
         />
       </Section>
@@ -564,10 +568,14 @@ function DevStatesPage() {
           indexProviderId="builtin"
           indexModel="built-in-offline"
           pendingProvider={egressOpen ? providerAnthropicAvailable : null}
+          pendingReindex={null}
+          saveError={null}
           onSelect={noop}
           onModelChange={noop}
           onConfirmHosted={() => setEgressOpen(false)}
           onCancelHosted={() => setEgressOpen(false)}
+          onConfirmReindex={noop}
+          onCancelReindex={noop}
           onRetry={noop}
         />
       </Section>

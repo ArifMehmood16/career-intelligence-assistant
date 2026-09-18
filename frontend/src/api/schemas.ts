@@ -95,6 +95,15 @@ export const providerChoiceSchema = z.object({
   indexModel: z.string(),
 });
 
+export const providerChoiceUpdateResponseSchema = providerChoiceSchema.extend({
+  reindex: z
+    .object({
+      jobId: z.string(),
+    })
+    .nullable()
+    .optional(),
+});
+
 export const analysisJobSchema = z
   .object({
     id: z.string(),
