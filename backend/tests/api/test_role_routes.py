@@ -43,8 +43,7 @@ def test_create_role_returns_202_with_job() -> None:
     body = response.json()
     assert body["role"]["title"] == "Analytics Engineer"
     assert body["role"]["company"] == "Acme"
-    assert body["role"]["status"] == "analysing"
-    assert body["role"]["fitScore"] == 0
+    assert body["role"]["status"] == "ready"
     assert body["jobId"]
 
     listed = client.get("/api/roles")
@@ -59,7 +58,7 @@ def test_create_role_returns_202_with_job() -> None:
     job = client.get(f"/api/jobs/{body['jobId']}")
     assert job.status_code == 200
     assert job.json()["id"] == body["jobId"]
-    assert job.json()["state"] in {"queued", "running", "succeeded", "failed"}
+    assert job.json()["state"] == "succeeded"
 
 
 def test_get_unknown_role_returns_404() -> None:

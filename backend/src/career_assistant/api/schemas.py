@@ -101,6 +101,102 @@ class AnalysisJobResponse(ApiModel):
     error: str | None
 
 
+class RequirementWire(ApiModel):
+    id: str
+    role_id: str
+    text: str
+    type: str
+    status: str
+    evidence: EvidenceResponse | None
+
+
+class BreakdownRowWire(ApiModel):
+    id: str
+    label: str
+    value: float
+    requirement_ids: list[str]
+
+
+class GapItemWire(ApiModel):
+    requirement_id: str
+    requirement_text: str
+    type: str
+    status: str
+    reason: str
+    adjacent_evidence: EvidenceResponse | None
+    score_delta: float
+    action: str
+    can_draft_bullet: bool
+
+
+class GapPlanWire(ApiModel):
+    role_id: str
+    current_score: float
+    items: list[GapItemWire]
+
+
+class DraftProvenanceWire(ApiModel):
+    provider: str
+    model: str | None
+    left_machine: bool
+    generated_at: str
+    grounded: bool
+    fallback: str
+
+
+class InterviewPackWire(ApiModel):
+    role_id: str
+    probes: list[dict[str, object]]
+    lead_with: list[dict[str, object]]
+    thin_areas: list[dict[str, object]]
+    ask_them: list[dict[str, object]]
+    provenance: DraftProvenanceWire
+
+
+class BulletDraftWire(ApiModel):
+    id: str
+    version: int
+    created_at: str
+    requirement_id: str
+    bullets: list[dict[str, object]]
+    provenance: DraftProvenanceWire
+
+
+class CoverLetterDraftWire(ApiModel):
+    id: str
+    version: int
+    created_at: str
+    role_id: str
+    paragraphs: list[dict[str, object]]
+    omitted_reason: str | None
+    provenance: DraftProvenanceWire
+
+
+class BulletRequest(ApiModel):
+    requirement_id: str
+
+
+class CoverLetterRequest(ApiModel):
+    tone: str = "plain"
+    include_gap_line: bool = False
+
+
+class RankedRoleWire(ApiModel):
+    role: RoleResponse
+    rank: int
+    tied: bool
+    because: list[str]
+
+
+class ComparisonWire(ApiModel):
+    a: RoleResponse
+    b: RoleResponse
+    shared: list[dict[str, object]]
+    only_in_a: list[RequirementWire]
+    only_in_b: list[RequirementWire]
+    differentiator: str
+
+
 class ProviderSupportsModel(ApiModel):
     completion: bool
     embedding: bool

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import get_args, get_origin
 
+from fastapi.responses import PlainTextResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 from starlette.routing import BaseRoute
@@ -22,10 +23,22 @@ def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
             yield from _iter_api_routes(list(route.original_router.routes))
 
 
+def _is_plain_text_route(route: APIRoute) -> bool:
+    response_class = route.response_class
+    return isinstance(response_class, type) and issubclass(
+        response_class, PlainTextResponse
+    )
+
+
 def _assert_response_model(model: object, *, route: APIRoute) -> None:
     # 204 No Content routes may omit a body model.
+    # Markdown export routes use PlainTextResponse deliberately (not JSON).
     if model is None:
-        assert route.status_code == 204 or 204 in (route.status_code or (),)
+        assert (
+            route.status_code == 204
+            or 204 in (route.status_code or (),)
+            or _is_plain_text_route(route)
+        ), f"{route.methods} {route.path} needs an explicit response_model"
         return
     assert model is not dict, f"{route.methods} {route.path} must not use bare dict"
     origin = get_origin(model)
