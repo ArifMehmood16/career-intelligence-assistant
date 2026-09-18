@@ -55,6 +55,52 @@ class CvUploadResponse(CvDocumentResponse):
     reanalysis: ReanalysisInfo
 
 
+class EvidenceResponse(ApiModel):
+    span_id: str
+    document_id: str
+    page: int
+    paragraph: str
+    highlight: str
+
+
+class RoleCounts(ApiModel):
+    met: int
+    partial: int
+    missing: int
+
+
+class RoleResponse(ApiModel):
+    id: str
+    title: str
+    company: str
+    fit_score: int
+    band_label: str
+    counts: RoleCounts
+    status: str
+    updated_at: str
+
+
+class RoleCreateRequest(ApiModel):
+    title: str
+    company: str
+    description: str
+
+
+class RoleCreatedResponse(ApiModel):
+    role: RoleResponse
+    job_id: str
+
+
+class AnalysisJobResponse(ApiModel):
+    id: str
+    kind: str
+    state: str
+    stage: str | None
+    started_at: str | None
+    finished_at: str | None
+    error: str | None
+
+
 class ProviderSupportsModel(ApiModel):
     completion: bool
     embedding: bool
