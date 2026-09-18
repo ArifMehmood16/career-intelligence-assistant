@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 6 (evidence extraction) exit gate is satisfied.
-Next work is Phase 7 — mapping and scoring.
+**Current position:** Phase 7 (mapping and scoring) exit gate is satisfied.
+Next work is Phase 8 — analysis jobs.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -310,20 +310,20 @@ recency, including the dated-experience fixture.
 
 ## Phase 7 — Mapping and scoring
 
-- [ ] **7.1** Mapping policy in `domain/`: requirement × claims → `met`, `partial`,
+- [x] **7.1** Mapping policy in `domain/`: requirement × claims → `met`, `partial`,
       `missing`, with the justifying span ids and a reason code
       (`no_related_claim`, `adjacent_claim_only`, `evidence_too_old`,
       `evidence_thin`). Pure function, no I/O.
-- [ ] **7.2** Similarity support for mapping candidates via embeddings, with the
+- [x] **7.2** Similarity support for mapping candidates via embeddings, with the
       decision still made by the policy.
-- [ ] **7.3** Deterministic rubric: must/desirable weights, status factors, recency
+- [x] **7.3** Deterministic rubric: must/desirable weights, status factors, recency
       decay, normalisation and bands exactly as documented in `docs/features.md`, read
       from configuration. Pure, unit tested.
-- [ ] **7.4** Property tests: identical inputs give an identical score; adding a met
+- [x] **7.4** Property tests: identical inputs give an identical score; adding a met
       requirement never lowers the score; every score is in 0–100.
-- [ ] **7.5** Explanation object: every score component traceable to the mapping
+- [x] **7.5** Explanation object: every score component traceable to the mapping
       entries that produced it. This is what `GET /roles/{id}/breakdown` returns.
-- [ ] **7.6** Counterfactual: score recomputed with one requirement set to met, as a
+- [x] **7.6** Counterfactual: score recomputed with one requirement set to met, as a
       pure function. This is the `scoreDelta` the gap plan orders by.
 
 **Exit gate:** a fixture CV against a fixture role yields a stable score, a full

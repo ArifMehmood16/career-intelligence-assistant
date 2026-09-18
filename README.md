@@ -6,11 +6,11 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** phase 6 complete. CVs extract to span-backed claims with date-derived
-> recency/duration; job descriptions extract requirements; PostgreSQL holds originals
-> and spans. Fit mapping and scoring are not built yet. [PLAN.md](PLAN.md) is the
-> execution order, [AGENTS.md](AGENTS.md) is the working protocol for coding agents,
-> [docs/features.md](docs/features.md) is what it does.
+> **Status:** phase 7 complete. Requirements and CV claims map to `met` / `partial` /
+> `missing` with justifying spans; fit scores are pure arithmetic over
+> `config/scoring_rubric.toml`. Analysis jobs and the ask/draft surfaces are next.
+> [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
+> protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 
 ## The engineering thesis
 
