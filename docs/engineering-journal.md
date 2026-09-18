@@ -18,6 +18,21 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.11 error mapping)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/errors.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `describeApiError` covers every documented contract code; unknown codes surface
+    with correlation id; wired into CV, roles, cover letters, chat, settings, and
+    span resolve paths.
+  - Frontend vitest 60 green.
+- Decisions made: switch on code only; keep server `message` and append next-step copy.
+- Problems hit: none after prettier.
+- Carried forward: 12.12 component tests for wired screens.
+
 ## Phase 12 — Frontend integration (12.10 settings)
 
 - Date: 2026-09-18

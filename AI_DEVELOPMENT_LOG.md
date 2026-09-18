@@ -538,6 +538,18 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 043 — Phase 12.11 API error code → actionable UI (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.11
+- Prompt intent: continue TDD with regular commits.
+- Suggestion: describeApiError catalogue from api-contract; wire containers to use it.
+- Outcome: accepted.
+- Reason: unknown codes must fail visibly; known codes need a next step.
+- Rejected alternatives: switching on message text.
+- Human validation: errors tests green; full vitest 60; typecheck/lint.
+
 ### 042 — Phase 12.10 provider settings wiring (TDD)
 
 - Date: 2026-09-18
