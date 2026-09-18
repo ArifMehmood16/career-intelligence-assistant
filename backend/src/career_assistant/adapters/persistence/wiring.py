@@ -8,14 +8,17 @@ from career_assistant.adapters.persistence.engine import (
     create_session_factory,
 )
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
+from career_assistant.adapters.persistence.supporting_store import (
+    SqlSupportingDocumentStore,
+)
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.settings import DatabaseSettings
 
 
 def build_sql_stores(
     settings: DatabaseSettings | None = None,
-) -> tuple[SqlCvStore, SqlRoleStore]:
-    """Build CvStore + RoleStore over one engine and session factory."""
+) -> tuple[SqlCvStore, SqlRoleStore, SqlSupportingDocumentStore]:
+    """Build CvStore + RoleStore + SupportingDocumentStore over one engine."""
     database = settings or DatabaseSettings()
     engine = create_db_engine(database)
     session_factory = create_session_factory(engine)
@@ -25,4 +28,7 @@ def build_sql_stores(
 
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
-    return cv_store, role_store
+    supporting_store = SqlSupportingDocumentStore(
+        uow_factory=uow_factory, cv_store=cv_store
+    )
+    return cv_store, role_store, supporting_store

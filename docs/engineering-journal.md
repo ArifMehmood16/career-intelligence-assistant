@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — SQL supporting cover letters (carry-forward)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_production_app_wiring.py tests/integration/test_sql_supporting_store.py tests/api/test_supporting_documents.py -q --no-cov`
+  - ruff check + mypy on touched modules
+- Observed result: production app wires SqlSupportingDocumentStore; cover letters
+  persist in PostgreSQL documents (kind=cover_letter) with list/delete/download.
+- Decisions made: close Phase 12 carry-forward before 13.1 UI tabs.
+- Problems hit: none material.
+- Carried forward: 13.1 role detail tabs; chunk/embedding index path; model-backed
+  SqlRoleStore analysis.
+
 ## Phase 12 — Frontend integration (exit gate)
 
 - Date: 2026-09-18

@@ -538,6 +538,21 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 046 — Phase 13 carry-forward: SQL supporting cover letters (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 12 exit-gate carry-forward into Phase 13
+- Prompt intent: continue next phases after cover letters were not durable.
+- Suggestion: SqlSupportingDocumentStore + wire into create_production_app /
+  build_sql_stores.
+- Outcome: accepted.
+- Reason: Phase 12 exit gate already deferred SQL supporting store to Phase 13;
+  uploads were process-memory only.
+- Rejected alternatives: leaving cover letters in-memory until 13.5 Letter UI.
+- Human validation: production wiring unit test; integration SQL store test;
+  supporting API tests; ruff/mypy clean on touched modules.
+
 ### 045 — Phase 12 exit gate + Ask incomplete-analysis 409 (TDD)
 
 - Date: 2026-09-18

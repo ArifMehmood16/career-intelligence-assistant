@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration complete (exit gate observed
-against host API + Start proxy with hermetic providers). Next: Phase 13.
+**Current position:** Phase 13 frontend features in progress. SQL supporting
+cover-letter store landed (Phase 12 carry-forward). Next: 13.1 role detail tabs.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -519,9 +519,9 @@ loaded, including the failure paths. No mock data remains in `src/api/client.ts`
 TanStack Start proxy with `API_BASE_URL`; sample-data CV/JD via proxy; browser
 workspace → add role → role detail; failures: empty upload, JPEG reject,
 `span_not_found`, Ask `analysis_incomplete` → 409. No fixtures in `client.ts`.
-Supporting cover-letter store remains in-memory on the production entrypoint
-(SQL supporting store still Phase 13/carry-forward). Playwright walkthrough is
-Phase 16.5.
+SQL supporting cover-letter store landed at the start of Phase 13 (was
+in-memory on the production entrypoint through Phase 12). Playwright walkthrough
+is Phase 16.5.
 
 ## Phase 13 — Frontend: the new features
 

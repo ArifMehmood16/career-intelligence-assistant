@@ -9,6 +9,9 @@ from career_assistant.adapters.persistence.engine import (
 )
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.schema import APP_SCHEMA
+from career_assistant.adapters.persistence.supporting_store import (
+    SqlSupportingDocumentStore,
+)
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.wiring import build_sql_stores
 
@@ -16,6 +19,7 @@ __all__ = [
     "APP_SCHEMA",
     "SqlCvStore",
     "SqlRoleStore",
+    "SqlSupportingDocumentStore",
     "SqlUnitOfWork",
     "build_sql_stores",
     "create_db_engine",

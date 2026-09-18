@@ -126,6 +126,10 @@ class DocumentRepository(Protocol):
         self, workspace_id: str, new_document: NewDocument
     ) -> StoredDocument: ...
 
+    def list_cover_letters(
+        self, workspace_id: str
+    ) -> tuple[StoredDocument, ...]: ...
+
 
 class ConversationRepository(Protocol):
     def create_conversation(self, workspace_id: str, conversation_id: str) -> None: ...
