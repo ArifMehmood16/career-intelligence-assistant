@@ -173,6 +173,44 @@ def upload_pasted_cover_letter(
         limits=limits,
     )
     body = text.encode("utf-8")
+    return _store_parsed_cover_letter(
+        store, workspace_id=workspace_id, parsed=parsed, body=body
+    )
+
+
+def upload_bytes_cover_letter(
+    store: SupportingDocumentStore,
+    *,
+    workspace_id: str,
+    data: bytes,
+    filename: str,
+    declared_media_type: str | None,
+    limits: AdmissionLimits,
+) -> SupportingDocumentView:
+    from career_assistant.parsing.pipeline import parse_document
+
+    parsed = parse_document(
+        data,
+        filename=filename or "cover-letter",
+        kind=DocumentKind.COVER_LETTER,
+        declared_media_type=declared_media_type,
+        limits=limits,
+    )
+    return _store_parsed_cover_letter(
+        store, workspace_id=workspace_id, parsed=parsed, body=data
+    )
+
+
+def _store_parsed_cover_letter(
+    store: SupportingDocumentStore,
+    *,
+    workspace_id: str,
+    parsed: object,
+    body: bytes,
+) -> SupportingDocumentView:
+    from career_assistant.domain.documents import ParsedDocument
+
+    assert isinstance(parsed, ParsedDocument)
     document = NewDocument(
         id=parsed.document.id,
         kind=DocumentKind.COVER_LETTER,
@@ -202,5 +240,6 @@ __all__ = [
     "IntakeError",
     "limits_from",
     "reraise_intake_as_message",
+    "upload_bytes_cover_letter",
     "upload_pasted_cover_letter",
 ]

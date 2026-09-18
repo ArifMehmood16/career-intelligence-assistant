@@ -136,6 +136,40 @@ def upload_pasted_cv(
         limits=limits,
     )
     body = text.encode("utf-8")
+    return _store_parsed_cv(store, workspace_id=workspace_id, parsed=parsed, body=body)
+
+
+def upload_bytes_cv(
+    store: CvStore,
+    *,
+    workspace_id: str,
+    data: bytes,
+    filename: str,
+    declared_media_type: str | None,
+    limits: AdmissionLimits,
+) -> CvView:
+    from career_assistant.parsing.pipeline import parse_document
+
+    parsed = parse_document(
+        data,
+        filename=filename or "upload",
+        kind=DocumentKind.CV,
+        declared_media_type=declared_media_type,
+        limits=limits,
+    )
+    return _store_parsed_cv(store, workspace_id=workspace_id, parsed=parsed, body=data)
+
+
+def _store_parsed_cv(
+    store: CvStore,
+    *,
+    workspace_id: str,
+    parsed: object,
+    body: bytes,
+) -> CvView:
+    from career_assistant.domain.documents import ParsedDocument
+
+    assert isinstance(parsed, ParsedDocument)
     document = NewDocument(
         id=parsed.document.id,
         kind=DocumentKind.CV,

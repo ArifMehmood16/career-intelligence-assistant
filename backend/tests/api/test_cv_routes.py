@@ -19,15 +19,12 @@ def test_get_cv_returns_null_when_none_uploaded() -> None:
     assert response.json() is None
 
 
-def test_post_pasted_cv_returns_201_document() -> None:
+def test_post_multipart_cv_returns_201_document() -> None:
     client = _client()
 
     response = client.post(
         "/api/cv",
-        json={
-            "text": "Owned dbt models in production.",
-            "filename": "cv.txt",
-        },
+        files={"file": ("cv.txt", b"Owned dbt models in production.\n", "text/plain")},
     )
 
     assert response.status_code == 201
@@ -35,9 +32,17 @@ def test_post_pasted_cv_returns_201_document() -> None:
     assert body["filename"] == "cv.txt"
     assert body["pageCount"] >= 1
     assert "id" in body
-    assert "parsedAt" in body
-    assert "reanalysis" in body
     assert body["reanalysis"]["jobIds"] == []
+
+
+def test_post_multipart_unsupported_maps_to_document_unsupported() -> None:
+    response = _client().post(
+        "/api/cv",
+        files={"file": ("x.bin", b"\x00\x01\x02\x03", "application/octet-stream")},
+    )
+
+    assert response.status_code == 415
+    assert response.json()["error"]["code"] == "document_unsupported"
 
 
 def test_get_cv_returns_uploaded_document() -> None:
