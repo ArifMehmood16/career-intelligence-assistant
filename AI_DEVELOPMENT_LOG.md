@@ -508,3 +508,17 @@ Never record a command output, metric, date or commit hash that was not observed
   egress; drafts already had DraftProvenanceWire.
 - Human validation: provenance API tests green; API + ask use-case suites green;
   `make lint` green.
+
+### 033 — Phase 11.11 OpenAPI and TypeScript type parity (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.11
+- Prompt intent: continue Phase 11 after provenance.
+- Suggestion: contract test mapping shared TS interfaces to OpenAPI components;
+  require Evidence.spanId on both sides; update fixtures/client for the new fields.
+- Outcome: accepted; PLAN 12.5 note adjusted so spanId is not re-added later.
+- Reason: citations cannot open stored spans without spanId; contract file is the
+  authority when halves disagree.
+- Human validation: contract tests green; frontend typecheck/lint green; make lint
+  green.

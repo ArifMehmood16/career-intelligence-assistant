@@ -3,8 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — 11.10 provenance on
-answers and drafts complete. Next: 11.11 OpenAPI↔TS contract test, then 11.12–11.13.
+**Current position:** Phase 11 API contracts in progress — 11.11 OpenAPI↔TS
+contract test green (`Evidence.spanId` aligned). Next: 11.12 supporting-document
+routes, then 11.13 message history/delete.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -454,7 +455,7 @@ disagree, the file is corrected first and the change is deliberate.
       tag and whether content left the machine. SSE `meta` includes `leftMachine`;
       JSON `POST /api/messages` returns `ChatMessage` with the same fields; draft and
       interview-pack `provenance` covered by API regression.
-- [ ] **11.11** Contract test: the generated OpenAPI schema and
+- [x] **11.11** Contract test: the generated OpenAPI schema and
       `frontend/src/types/index.ts` agree on every shared model, including the
       `spanId` required to open every `Evidence` citation.
 - [ ] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
@@ -489,8 +490,8 @@ The screens exist. This phase makes them real. See
 - [ ] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
       `GapPlan`, `GapItem`, `InterviewPack`, `BulletDraft`, `CoverLetterDraft`,
       `RankedRole`, `Comparison`, `DraftProvenance`, persisted message fields and
-      supporting documents. Add `spanId` to `Evidence`; this is a necessary correction
-      because the current shape cannot open an exact stored span.
+      supporting documents. (`Evidence.spanId` and `ChatMessage.leftMachine` already
+      landed in 11.11.)
 - [ ] **12.6** Wire the workspace: CV upload with real progress and real rejection
       messages, supporting cover-letter upload/list/delete, add role, delete and
       replace-CV confirmation. Make clear that cover letters are not score evidence.

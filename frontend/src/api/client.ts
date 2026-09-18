@@ -91,10 +91,11 @@ export function sendMessage(content: string): Promise<ChatMessage[]> {
     id: `msg-${Date.now()}`,
     author: "user",
     content,
-    kind: "answer",
+    kind: "question",
     citations: [],
     model: null,
     provider: null,
+    leftMachine: false,
   };
   const reply: ChatMessage = {
     id: `msg-${Date.now() + 1}`,
@@ -104,6 +105,7 @@ export function sendMessage(content: string): Promise<ChatMessage[]> {
     citations: [],
     model: providerChoice.answerModel,
     provider: providerChoice.answerProviderId,
+    leftMachine: false,
   };
   messages = [...messages, userMessage, reply];
   return delay(clone(messages));

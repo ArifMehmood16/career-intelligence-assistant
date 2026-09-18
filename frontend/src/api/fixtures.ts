@@ -59,6 +59,7 @@ const P = {
 };
 
 const ev = (page: number, paragraph: string, highlight: string) => ({
+  spanId: `span-${cvFixture.id}-${page}-${highlight.slice(0, 12)}`,
   documentId: cvFixture.id,
   page,
   paragraph,
@@ -430,10 +431,11 @@ export const messagesFixture: ChatMessage[] = [
     author: "user",
     content:
       "Where does my CV fall short for the Kestrel Systems analytics engineer role?",
-    kind: "answer",
+    kind: "question",
     citations: [],
     model: null,
     provider: null,
+    leftMachine: false,
   },
   {
     id: "msg-2",
@@ -463,6 +465,7 @@ export const messagesFixture: ChatMessage[] = [
     ],
     model: "built-in-offline",
     provider: "builtin",
+    leftMachine: false,
   },
   {
     id: "msg-3",
@@ -473,6 +476,7 @@ export const messagesFixture: ChatMessage[] = [
     citations: [],
     model: "built-in-offline",
     provider: "builtin",
+    leftMachine: false,
   },
 ];
 

@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.11 OpenAPI↔TS types)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/contract/test_openapi_frontend_types.py -q --no-cov` (red then green)
+  - `make lint` / frontend `tsc` / `eslint`
+- Observed result:
+  - Shared models assert required camelCase fields on both OpenAPI and
+    `frontend/src/types/index.ts`.
+  - `Evidence.spanId` added to TS; fixtures and mock client updated.
+  - `ChatMessage.leftMachine` (+ question kind) aligned with the wire contract.
+- Decisions made: required-field intersection test (API may add fields); bring
+  spanId forward from the Phase 12.5 note into 11.11 as PLAN requires.
+- Problems hit: none after fixture/client updates.
+- Carried forward: 11.12 supporting documents; 11.13 GET/DELETE messages + SQL.
+
 ## Phase 11 — API contracts (11.10 answer/draft provenance)
 
 - Date: 2026-09-18
