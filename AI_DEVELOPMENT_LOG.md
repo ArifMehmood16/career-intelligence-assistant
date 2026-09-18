@@ -538,6 +538,22 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 045 — Phase 12 exit gate + Ask incomplete-analysis 409 (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: Phase 12 exit gate (plus defect found during it)
+- Prompt intent: continue TDD with regular commits through Phase 12.
+- Suggestion: run host API + Start proxy against sample fixtures; exercise UI;
+  map Ask `RoleOperationRejected` to AppError 409.
+- Outcome: accepted.
+- Reason: exit gate requires a real backend path; 500 on incomplete analysis was
+  a visible failure path bug.
+- Rejected alternatives: declaring the gate met from unit tests alone; leaving
+  Ask incomplete analysis as internal_error.
+- Human validation: proxy walkthrough + browser role detail; SSE pytest green;
+  frontend vitest 76 previously green for 12.12.
+
 ### 044 — Phase 12.12 wired screen component states (TDD)
 
 - Date: 2026-09-18

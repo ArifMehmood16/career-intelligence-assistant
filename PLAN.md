@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration — 12.1–12.12 landed. Next:
-exit gate (full UI against real backend with fixtures; no mock data in client).
+**Current position:** Phase 12 frontend integration complete (exit gate observed
+against host API + Start proxy with hermetic providers). Next: Phase 13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -513,8 +513,15 @@ The screens exist. This phase makes them real. See
       state the user can act on. Unknown codes fail visibly, not silently.
 - [x] **12.12** Component tests for every state of every wired screen, driven by props.
 
-**Exit gate:** the full existing UI runs against the real backend with fixtures
-loaded, including the failure paths. No mock data remains in `src/api/client.ts`.
+**Exit gate:** ~~the full existing UI runs against the real backend with fixtures
+loaded, including the failure paths. No mock data remains in `src/api/client.ts`.~~
+**Met 2026-09-18** — host API (`create_production_app` + SQL CV/role stores) and
+TanStack Start proxy with `API_BASE_URL`; sample-data CV/JD via proxy; browser
+workspace → add role → role detail; failures: empty upload, JPEG reject,
+`span_not_found`, Ask `analysis_incomplete` → 409. No fixtures in `client.ts`.
+Supporting cover-letter store remains in-memory on the production entrypoint
+(SQL supporting store still Phase 13/carry-forward). Playwright walkthrough is
+Phase 16.5.
 
 ## Phase 13 — Frontend: the new features
 

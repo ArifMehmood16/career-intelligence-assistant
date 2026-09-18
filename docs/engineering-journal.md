@@ -18,6 +18,36 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (exit gate)
+
+- Date: 2026-09-18
+- Commands run:
+  - Host API: `COMPLETION_PROVIDER=hermetic EMBEDDING_PROVIDER=hermetic
+    EXTRACTION_STRATEGY=rules uvicorn … :8000` (overrides `config/app.env` ollama)
+  - Frontend: `API_BASE_URL=http://127.0.0.1:8000 bun run dev -- --host 127.0.0.1`
+  - Proxy walkthrough: POST `/api/cv` with `sample-data/fixtures/resumes/cv-strong-match.txt`,
+    POST `/api/roles` with `jd-clean-match.txt`, poll job → succeeded, requirements/
+    breakdown/SSE Ask tokens, pages `/` `/settings` `/ask` `/dev/states` → 200
+  - Failure paths: empty file → `document_unreadable` 422; JPEG →
+    `document_unsupported` 415; missing span → `span_not_found` 404; Ask with
+    incomplete analysis → `analysis_incomplete` 409 (after fix)
+  - Browser: workspace empty → upload CV → add role → score 73 / Partial match →
+    role detail breakdown + requirements
+  - `bun run test` — 76; Ask SSE pytest — 2 green after 409 mapping
+- Observed result: Phase 12 exit gate criteria met for the wired screens; no mock
+  data in `src/api/client.ts`.
+- Decisions made: exit gate verified on hermetic providers, not the ollama values
+  currently in `config/app.env`.
+- Problems hit and how they were resolved:
+  - Proxy mutations need `Origin` matching the app origin (csrf).
+  - Dev server needs `API_BASE_URL` in the process environment.
+  - Ask against incomplete analysis returned 500; mapped `RoleOperationRejected`
+    to `AppError` (TDD).
+- Carried forward:
+  - Production supporting-document store still in-memory.
+  - Playwright e2e (16.5); Docker image/stack (16.1).
+  - Phase 13 new screens.
+
 ## Phase 12 — Frontend integration (12.12 wired screen states)
 
 - Date: 2026-09-18

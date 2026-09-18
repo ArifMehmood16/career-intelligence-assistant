@@ -37,9 +37,8 @@ configuration anywhere in this repository.
 - `src/api/client.ts`. Real HTTP client with multipart uploads, job/span helpers,
   `postMessageStream`, settings egress/re-index acknowledgement, and
   `describeApiError` (Phase 12.3–12.11). No fixture data remains in the client.
-- Wired presentational screens have prop-driven state tests (Phase 12.12). Exit gate:
-  exercise the full UI against a running backend with fixtures, including failure
-  paths.
+  Phase 12 exit gate observed against a running SQL-backed API through the Start
+  proxy (hermetic providers).
 - `src/api/__fixtures__/`. Test and `/dev/states` gallery data only; no component
   imports (Phase 12.4).
 - `src/types/index.ts`. Additive types landed (Phase 12.5); keep existing shapes stable.
