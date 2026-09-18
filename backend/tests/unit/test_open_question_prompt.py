@@ -99,7 +99,11 @@ def test_prompt_delimits_retrieved_text_as_untrusted_with_budgets() -> None:
             kind=DocumentKind.CV,
         ),
     )
-    budget = PromptBudget(max_question_chars=200, max_context_chars=500, max_output_tokens=256)
+    budget = PromptBudget(
+        max_question_chars=200,
+        max_context_chars=500,
+        max_output_tokens=256,
+    )
     prompt = build_open_question_prompt(
         question="Summarise my dbt experience",
         spans=spans,
@@ -124,7 +128,11 @@ def test_prompt_truncates_over_budget_context() -> None:
             kind=DocumentKind.CV,
         ),
     )
-    budget = PromptBudget(max_question_chars=80, max_context_chars=40, max_output_tokens=64)
+    budget = PromptBudget(
+        max_question_chars=80,
+        max_context_chars=40,
+        max_output_tokens=64,
+    )
     prompt = build_open_question_prompt(
         question="x" * 200,
         spans=spans,
