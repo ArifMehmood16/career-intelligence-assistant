@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 2 (model providers) exit gate is satisfied. Next work is
-Phase 3 — document intake and spans.
+**Current position:** Phase 3 (document intake and spans) exit gate is satisfied.
+Next work is Phase 4 — persistence.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -180,16 +180,16 @@ while the gate is closed.
 
 ## Phase 3 — Document intake and spans
 
-- [ ] **3.1** Domain model for a document, a page/section and a **span** (stable id,
+- [x] **3.1** Domain model for a document, a page/section and a **span** (stable id,
       offsets, text). Spans are the citation unit for the whole product.
-- [ ] **3.2** PDF text extraction with span offsets preserved.
-- [ ] **3.3** DOCX text extraction with span offsets preserved.
-- [ ] **3.4** Plain text and pasted-text intake.
-- [ ] **3.5** Admission policy: type sniffing, size cap, page cap, character cap,
+- [x] **3.2** PDF text extraction with span offsets preserved.
+- [x] **3.3** DOCX text extraction with span offsets preserved.
+- [x] **3.4** Plain text and pasted-text intake.
+- [x] **3.5** Admission policy: type sniffing, size cap, page cap, character cap,
       safe rejection messages mapped to the error codes in `docs/api-contract.md`.
-- [ ] **3.6** Normalisation: whitespace, ligatures, bullet glyphs, hyphenation at line
+- [x] **3.6** Normalisation: whitespace, ligatures, bullet glyphs, hyphenation at line
       breaks. Offsets must survive normalisation — test it.
-- [ ] **3.7** Span resolution: a span id returns the exact source text and the page it
+- [x] **3.7** Span resolution: a span id returns the exact source text and the page it
       sits on, and `highlight` is always an exact substring of the returned paragraph.
 
 **Exit gate:** a fixture CV parses to spans; a span id round-trips to the exact source
