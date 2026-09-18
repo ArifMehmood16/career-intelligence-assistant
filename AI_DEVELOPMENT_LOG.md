@@ -538,6 +538,20 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 052 — Phase 13.6 workspace ranking (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.6
+- Prompt intent: continue Phase 13 after Letter.
+- Suggestion: RankingPanel on workspace from GET /ranking; show rank, tied label,
+  because texts, link into role detail.
+- Outcome: accepted.
+- Reason: ranking is derived from stored scores, not a client re-sort of the table.
+- Rejected alternatives: replacing RolesPanel sort with ranking (table stays for
+  column sort; ranking is the named-reason view).
+- Human validation: RankingPanel tests 2 green; full frontend vitest; tsc/lint.
+
 ### 051 — Phase 13.5 Letter tab (TDD)
 
 - Date: 2026-09-18

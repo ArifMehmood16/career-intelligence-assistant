@@ -18,6 +18,17 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Ranking (13.6)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/workspace/RankingPanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: workspace shows ranked roles with because lines and Tied labels.
+- Decisions made: RankingPanel sits below RolesPanel on `/`.
+- Problems hit: none material.
+- Carried forward: 13.7 Compare.
+
 ## Phase 13 — Letter tab (13.5)
 
 - Date: 2026-09-18

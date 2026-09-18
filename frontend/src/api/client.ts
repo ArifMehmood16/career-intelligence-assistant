@@ -15,6 +15,7 @@ import type {
   InterviewPack,
   Provider,
   ProviderChoice,
+  RankedRole,
   Requirement,
   Role,
   SupportingDocument,
@@ -34,6 +35,7 @@ import {
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
+  rankedRoleSchema,
   reanalyseResponseSchema,
   requirementSchema,
   roleCreatedSchema,
@@ -272,6 +274,18 @@ export async function getRoles(): Promise<Role[]> {
     schema: roleSchema.array(),
   });
   return rows.map(mapRole);
+}
+
+export async function getRanking(): Promise<RankedRole[]> {
+  const rows = await request("/api/ranking", {
+    schema: rankedRoleSchema.array(),
+  });
+  return rows.map((row) => ({
+    role: mapRole(row.role),
+    rank: row.rank,
+    tied: row.tied,
+    because: row.because,
+  }));
 }
 
 export async function getRole(id: string): Promise<Role | null> {

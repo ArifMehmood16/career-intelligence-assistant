@@ -240,6 +240,13 @@ export const coverLetterDraftSchema = z.object({
   provenance: draftProvenanceSchema,
 });
 
+export const rankedRoleSchema = z.object({
+  role: roleSchema,
+  rank: z.number().int(),
+  tied: z.boolean(),
+  because: z.array(z.string()),
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),
