@@ -423,3 +423,17 @@ Never record a command output, metric, date or commit hash that was not observed
   tests; injection keeps both paths.
 - Human validation: integration SqlCvStore + CV HTTP SQL tests green; hermetic
   `tests/api/` green; ruff/mypy clean.
+
+### 027 — Phase 11.8 SqlRoleStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL role/analysis persistence)
+- Prompt intent: continue Phase 11 SQL slice after SqlCvStore.
+- Suggestion: SqlRoleStore create/list/get/require_analysis publishing hermetic
+  analysis; roles.company migration; create_app(role_store=…) injection.
+- Outcome: accepted; delete/reanalyse/durable drafts deferred.
+- Reason: prove role analysis rows round-trip through PostgreSQL before widening
+  the store surface.
+- Human validation: SqlRoleStore integration (2) green; related analysis/draft
+  integration green; hermetic `tests/api/` green; ruff/mypy clean.

@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 SqlRoleStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `pytest tests/integration/test_analysis_persistence.py
+    tests/integration/test_draft_persistence.py … -m integration`
+  - `ruff` / `mypy` on role_store
+- Observed result:
+  - SqlRoleStore create publishes hermetic analysis into PostgreSQL; role ready,
+    job succeeded; require_analysis reloads requirements/mappings/score.
+  - HTTP create role + requirements work with injected SqlCvStore + SqlRoleStore.
+  - Migration `a1b2c3d4e5f6` adds `roles.company`.
+- Decisions made: claim/requirement spans from hermetic extractors are ensured in
+  the spans table before publish; drafts remain process-memory on SqlRoleStore for
+  now; create_app still defaults to in-memory stores.
+- Problems hit: none after green.
+- Carried forward: SQL delete/reanalyse; durable drafts; production SQL default;
+  11.9 SSE.
+
 ## Phase 11 — API contracts (11.8 SqlCvStore)
 
 - Date: 2026-09-18
