@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getProviderChoice, getProviders, setProviderChoice } from "@/api/client";
+import {
+  getProviderChoice,
+  getProviders,
+  setProviderChoice,
+} from "@/api/client";
 import {
   ProviderSettings,
   type ProviderSettingsState,
@@ -10,12 +14,19 @@ import type { Provider, ProviderChoice } from "@/types";
 
 export function ProviderSettingsContainer() {
   const queryClient = useQueryClient();
-  const [pending, setPending] = useState<{ kind: SelectorKind; provider: Provider } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{
+    kind: SelectorKind;
+    provider: Provider;
+  } | null>(null);
 
-  const providersQuery = useQuery({ queryKey: ["providers"], queryFn: getProviders });
-  const choiceQuery = useQuery({ queryKey: ["provider-choice"], queryFn: getProviderChoice });
+  const providersQuery = useQuery({
+    queryKey: ["providers"],
+    queryFn: getProviders,
+  });
+  const choiceQuery = useQuery({
+    queryKey: ["provider-choice"],
+    queryFn: getProviderChoice,
+  });
 
   const save = useMutation({
     mutationFn: setProviderChoice,
@@ -64,7 +75,8 @@ export function ProviderSettingsContainer() {
       }}
       onModelChange={(kind, model) => {
         if (!choice) return;
-        const currentId = kind === "answer" ? choice.answerProviderId : choice.indexProviderId;
+        const currentId =
+          kind === "answer" ? choice.answerProviderId : choice.indexProviderId;
         const provider = providers.find((item) => item.id === currentId);
         if (!provider) return;
         apply(kind, provider, model);

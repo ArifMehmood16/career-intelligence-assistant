@@ -73,7 +73,11 @@ export const requirementsFixture: Requirement[] = [
     text: "5+ years of advanced SQL in a production warehouse",
     type: "must",
     status: "met",
-    evidence: ev(1, P.sql, "writing and tuning complex SQL across a 4TB Postgres warehouse"),
+    evidence: ev(
+      1,
+      P.sql,
+      "writing and tuning complex SQL across a 4TB Postgres warehouse",
+    ),
   },
   {
     id: "req-nw-2",
@@ -81,7 +85,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Python for data manipulation and pipeline work",
     type: "must",
     status: "met",
-    evidence: ev(1, P.python, "building pandas pipelines and small internal libraries"),
+    evidence: ev(
+      1,
+      P.python,
+      "building pandas pipelines and small internal libraries",
+    ),
   },
   {
     id: "req-nw-3",
@@ -97,7 +105,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Experience mentoring junior analysts",
     type: "desirable",
     status: "met",
-    evidence: ev(2, P.leadership, "I mentored two junior analysts through their first year"),
+    evidence: ev(
+      2,
+      P.leadership,
+      "I mentored two junior analysts through their first year",
+    ),
   },
   {
     id: "req-nw-5",
@@ -105,7 +117,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Statistical forecasting applied to commercial problems",
     type: "desirable",
     status: "met",
-    evidence: ev(3, P.stats, "regression and time series forecasting to demand planning problems"),
+    evidence: ev(
+      3,
+      P.stats,
+      "regression and time series forecasting to demand planning problems",
+    ),
   },
   {
     id: "req-nw-6",
@@ -113,7 +129,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Comfortable presenting to executive audiences",
     type: "desirable",
     status: "met",
-    evidence: ev(3, P.viz, "presented findings to the executive team quarterly"),
+    evidence: ev(
+      3,
+      P.viz,
+      "presented findings to the executive team quarterly",
+    ),
   },
   {
     id: "req-nw-7",
@@ -147,7 +167,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Production dbt project ownership end to end",
     type: "must",
     status: "partial",
-    evidence: ev(2, P.dbt, "I introduced dbt for a subset of the warehouse models"),
+    evidence: ev(
+      2,
+      P.dbt,
+      "I introduced dbt for a subset of the warehouse models",
+    ),
   },
   {
     id: "req-ks-2",
@@ -155,7 +179,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Advanced SQL and query performance tuning",
     type: "must",
     status: "met",
-    evidence: ev(1, P.sql, "cutting the nightly batch window from six hours to ninety minutes"),
+    evidence: ev(
+      1,
+      P.sql,
+      "cutting the nightly batch window from six hours to ninety minutes",
+    ),
   },
   {
     id: "req-ks-3",
@@ -171,7 +199,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Data quality testing and source freshness checks",
     type: "desirable",
     status: "met",
-    evidence: ev(2, P.dbt, "tests on the primary keys and freshness checks on the sources"),
+    evidence: ev(
+      2,
+      P.dbt,
+      "tests on the primary keys and freshness checks on the sources",
+    ),
   },
   {
     id: "req-ks-5",
@@ -187,7 +219,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Cloud warehouse administration",
     type: "desirable",
     status: "partial",
-    evidence: ev(2, P.cloud, "a platform team that I worked alongside rather than owned"),
+    evidence: ev(
+      2,
+      P.cloud,
+      "a platform team that I worked alongside rather than owned",
+    ),
   },
   {
     id: "req-ks-7",
@@ -245,7 +281,11 @@ export const requirementsFixture: Requirement[] = [
     text: "Forecasting models shipped to users",
     type: "desirable",
     status: "partial",
-    evidence: ev(3, P.stats, "time series forecasting to demand planning problems"),
+    evidence: ev(
+      3,
+      P.stats,
+      "time series forecasting to demand planning problems",
+    ),
   },
   {
     id: "req-hd-4",
@@ -299,19 +339,88 @@ export const requirementsFixture: Requirement[] = [
 
 export const breakdownFixture: Record<string, BreakdownRow[]> = {
   "role-northwind": [
-    { id: "must", label: "Must-have coverage", value: 78, requirementIds: ["req-nw-1", "req-nw-2", "req-nw-3", "req-nw-7"] },
-    { id: "desirable", label: "Desirable coverage", value: 80, requirementIds: ["req-nw-4", "req-nw-5", "req-nw-6", "req-nw-8", "req-nw-9"] },
-    { id: "recency", label: "Recency of evidence", value: 90, requirementIds: ["req-nw-1", "req-nw-2"] },
+    {
+      id: "must",
+      label: "Must-have coverage",
+      value: 78,
+      requirementIds: ["req-nw-1", "req-nw-2", "req-nw-3", "req-nw-7"],
+    },
+    {
+      id: "desirable",
+      label: "Desirable coverage",
+      value: 80,
+      requirementIds: [
+        "req-nw-4",
+        "req-nw-5",
+        "req-nw-6",
+        "req-nw-8",
+        "req-nw-9",
+      ],
+    },
+    {
+      id: "recency",
+      label: "Recency of evidence",
+      value: 90,
+      requirementIds: ["req-nw-1", "req-nw-2"],
+    },
   ],
   "role-kestrel": [
-    { id: "must", label: "Must-have coverage", value: 55, requirementIds: ["req-ks-1", "req-ks-2", "req-ks-3", "req-ks-7", "req-ks-8"] },
-    { id: "desirable", label: "Desirable coverage", value: 50, requirementIds: ["req-ks-4", "req-ks-5", "req-ks-6", "req-ks-9", "req-ks-10"] },
-    { id: "recency", label: "Recency of evidence", value: 72, requirementIds: ["req-ks-1", "req-ks-4"] },
+    {
+      id: "must",
+      label: "Must-have coverage",
+      value: 55,
+      requirementIds: [
+        "req-ks-1",
+        "req-ks-2",
+        "req-ks-3",
+        "req-ks-7",
+        "req-ks-8",
+      ],
+    },
+    {
+      id: "desirable",
+      label: "Desirable coverage",
+      value: 50,
+      requirementIds: [
+        "req-ks-4",
+        "req-ks-5",
+        "req-ks-6",
+        "req-ks-9",
+        "req-ks-10",
+      ],
+    },
+    {
+      id: "recency",
+      label: "Recency of evidence",
+      value: 72,
+      requirementIds: ["req-ks-1", "req-ks-4"],
+    },
   ],
   "role-halden": [
-    { id: "must", label: "Must-have coverage", value: 30, requirementIds: ["req-hd-1", "req-hd-2", "req-hd-4", "req-hd-5", "req-hd-6"] },
-    { id: "desirable", label: "Desirable coverage", value: 22, requirementIds: ["req-hd-3", "req-hd-7", "req-hd-8", "req-hd-9"] },
-    { id: "recency", label: "Recency of evidence", value: 48, requirementIds: ["req-hd-3"] },
+    {
+      id: "must",
+      label: "Must-have coverage",
+      value: 30,
+      requirementIds: [
+        "req-hd-1",
+        "req-hd-2",
+        "req-hd-4",
+        "req-hd-5",
+        "req-hd-6",
+      ],
+    },
+    {
+      id: "desirable",
+      label: "Desirable coverage",
+      value: 22,
+      requirementIds: ["req-hd-3", "req-hd-7", "req-hd-8", "req-hd-9"],
+    },
+    {
+      id: "recency",
+      label: "Recency of evidence",
+      value: 48,
+      requirementIds: ["req-hd-3"],
+    },
   ],
 };
 
@@ -319,7 +428,8 @@ export const messagesFixture: ChatMessage[] = [
   {
     id: "msg-1",
     author: "user",
-    content: "Where does my CV fall short for the Kestrel Systems analytics engineer role?",
+    content:
+      "Where does my CV fall short for the Kestrel Systems analytics engineer role?",
     kind: "answer",
     citations: [],
     model: null,
@@ -335,12 +445,20 @@ export const messagesFixture: ChatMessage[] = [
       {
         id: "cit-1",
         label: "CV page 2, dbt adoption",
-        evidence: ev(2, P.dbt, "covering roughly a third of the reporting tables"),
+        evidence: ev(
+          2,
+          P.dbt,
+          "covering roughly a third of the reporting tables",
+        ),
       },
       {
         id: "cit-2",
         label: "CV page 2, infrastructure",
-        evidence: ev(2, P.cloud, "a platform team that I worked alongside rather than owned"),
+        evidence: ev(
+          2,
+          P.cloud,
+          "a platform team that I worked alongside rather than owned",
+        ),
       },
     ],
     model: "built-in-offline",
@@ -373,7 +491,8 @@ export const providersFixture: Provider[] = [
     kind: "local",
     models: ["llama3.1:8b", "qwen2.5:14b"],
     available: false,
-    unavailableReason: "Local model server not reachable at http://localhost:11434.",
+    unavailableReason:
+      "Local model server not reachable at http://localhost:11434.",
   },
   {
     id: "openai",

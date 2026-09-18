@@ -1,0 +1,7 @@
+.output
+.wrangler
+.vinxi
+dist
+coverage
+node_modules
+*.tsbuildinfo

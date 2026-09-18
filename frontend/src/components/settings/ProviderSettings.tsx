@@ -57,7 +57,12 @@ export function ProviderSettings(props: ProviderSettingsProps) {
       <div className="mx-auto w-full max-w-[720px]">
         <div className="card-surface space-y-3">
           <p>The provider list could not be loaded.</p>
-          <Button type="button" variant="outline" size="sm" onClick={props.onRetry}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={props.onRetry}
+          >
             Retry
           </Button>
         </div>
@@ -101,13 +106,16 @@ export function ProviderSettings(props: ProviderSettingsProps) {
               Send your documents to {pendingProvider?.name}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Your CV and job descriptions will be sent to {pendingProvider?.name} to
-              generate answers. They leave this machine. This is a normal way to run the
-              tool. Choose it only if you are comfortable with that.
+              Your CV and job descriptions will be sent to{" "}
+              {pendingProvider?.name} to generate answers. They leave this
+              machine. This is a normal way to run the tool. Choose it only if
+              you are comfortable with that.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={props.onCancelHosted}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={props.onCancelHosted}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className={buttonVariants({ variant: "outline" })}
               onClick={props.onConfirmHosted}
@@ -172,13 +180,18 @@ function Selector({
                     <label htmlFor={radioId} className="font-medium">
                       {provider.name}
                     </label>
-                    <ProviderBadge provider={provider} model={provider.models[0] ?? ""} />
+                    <ProviderBadge
+                      provider={provider}
+                      model={provider.models[0] ?? ""}
+                    />
                   </div>
 
                   <p
                     id={reasonId}
                     className={
-                      provider.available ? "font-normal text-muted-foreground" : "font-normal"
+                      provider.available
+                        ? "font-normal text-muted-foreground"
+                        : "font-normal"
                     }
                   >
                     {provider.available
@@ -188,7 +201,9 @@ function Selector({
 
                   <div className="w-[260px] max-w-full">
                     <Select
-                      value={active ? selectedModel : (provider.models[0] ?? "")}
+                      value={
+                        active ? selectedModel : (provider.models[0] ?? "")
+                      }
                       disabled={!provider.available || !active}
                       onValueChange={(value) => onModelChange(kind, value)}
                     >
@@ -197,7 +212,11 @@ function Selector({
                       </SelectTrigger>
                       <SelectContent>
                         {provider.models.map((model) => (
-                          <SelectItem key={model} value={model} className="font-mono">
+                          <SelectItem
+                            key={model}
+                            value={model}
+                            className="font-mono"
+                          >
                             {model}
                           </SelectItem>
                         ))}

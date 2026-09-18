@@ -7,12 +7,14 @@ export const Route = createFileRoute("/ask")({
       { title: "Ask — Career Intelligence" },
       {
         name: "description",
-        content: "Ask questions about your CV and role fit, answered with citations.",
+        content:
+          "Ask questions about your CV and role fit, answered with citations.",
       },
       { property: "og:title", content: "Ask — Career Intelligence" },
       {
         property: "og:description",
-        content: "Ask questions about your CV and role fit, answered with citations.",
+        content:
+          "Ask questions about your CV and role fit, answered with citations.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

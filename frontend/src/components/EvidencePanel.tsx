@@ -42,7 +42,11 @@ export function EvidencePanel({
         >
           <div className="flex items-start justify-between gap-4">
             <DialogPrimitive.Title asChild>
-              <h2 ref={headingRef} tabIndex={-1} className="text-sm font-semibold outline-none">
+              <h2
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-sm font-semibold outline-none"
+              >
                 {title}
               </h2>
             </DialogPrimitive.Title>
@@ -70,8 +74,8 @@ export function EvidencePanel({
             </div>
           ) : (
             <p className="text-muted-foreground">
-              No supporting text was found in your CV for this. Nothing in the parsed
-              document matches it, so there is no passage to show.
+              No supporting text was found in your CV for this. Nothing in the
+              parsed document matches it, so there is no passage to show.
             </p>
           )}
         </DialogPrimitive.Content>

@@ -8,12 +8,14 @@ export const Route = createFileRoute("/")({
       { title: "Workspace — Career Intelligence" },
       {
         name: "description",
-        content: "Match your CV against saved job descriptions and see where the evidence sits.",
+        content:
+          "Match your CV against saved job descriptions and see where the evidence sits.",
       },
       { property: "og:title", content: "Workspace — Career Intelligence" },
       {
         property: "og:description",
-        content: "Match your CV against saved job descriptions and see where the evidence sits.",
+        content:
+          "Match your CV against saved job descriptions and see where the evidence sits.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

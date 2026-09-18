@@ -60,7 +60,10 @@ export function CvCard({
 
       {state === "empty" && (
         <div className="rounded-md border border-dashed border-border px-5 py-8 text-center">
-          <Upload className="mx-auto size-5 text-muted-foreground" aria-hidden="true" />
+          <Upload
+            className="mx-auto size-5 text-muted-foreground"
+            aria-hidden="true"
+          />
           <p className="mt-3 text-sm text-muted-foreground">
             Upload your CV. PDF or DOCX, up to 10MB
           </p>
@@ -92,7 +95,10 @@ export function CvCard({
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <span className="flex size-8 items-center justify-center rounded-md border border-border bg-background">
-              <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
+              <FileText
+                className="size-4 text-muted-foreground"
+                aria-hidden="true"
+              />
             </span>
             <div className="min-w-0">
               <p className="truncate font-mono text-sm">{cv.filename}</p>
@@ -105,10 +111,20 @@ export function CvCard({
             Parsed {formatTimestamp(cv.parsedAt)}
           </p>
           <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" size="sm" onClick={pickFile}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pickFile}
+            >
               Replace
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={onDelete}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onDelete}
+            >
               Delete
             </Button>
           </div>

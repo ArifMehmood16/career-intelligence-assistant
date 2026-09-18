@@ -1,5 +1,10 @@
 import { ArrowUpRight, Square } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Provider } from "@/types";
 
 export interface ProviderBadgeProps {

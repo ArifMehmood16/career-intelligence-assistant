@@ -28,7 +28,9 @@ export function CvCardContainer() {
     <CvCard
       state={state}
       document={cvQuery.data ?? null}
-      errorMessage={failed ? "That CV could not be parsed. Try uploading it again." : null}
+      errorMessage={
+        failed ? "That CV could not be parsed. Try uploading it again." : null
+      }
       onUpload={(filename) => upload.mutate(filename)}
       onReplace={(filename) => upload.mutate(filename)}
       onDelete={() => remove.mutate()}
