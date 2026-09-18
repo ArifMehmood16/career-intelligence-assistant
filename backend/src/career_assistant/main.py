@@ -22,12 +22,17 @@ from career_assistant.api.readiness import (
 )
 from career_assistant.api.routes_analysis import router as analysis_router
 from career_assistant.api.routes_cv import router as cv_router
+from career_assistant.api.routes_documents import router as documents_router
 from career_assistant.api.routes_messages import router as messages_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.documents.supporting import (
+    InMemorySupportingDocumentStore,
+    SupportingDocumentStore,
+)
 from career_assistant.application.roles.store import InMemoryRoleStore
 from career_assistant.settings import LimitSettings, ProviderSettings
 
@@ -86,6 +91,7 @@ def create_app(
     providers: ProviderSettings | None = None,
     cv_store: CvStore | None = None,
     role_store: object | None = None,
+    supporting_store: SupportingDocumentStore | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -117,9 +123,15 @@ def create_app(
         if role_store is not None
         else InMemoryRoleStore(cv_store=resolved_cv)
     )
+    app.state.supporting_store = (
+        supporting_store
+        if supporting_store is not None
+        else InMemorySupportingDocumentStore(cv_store=resolved_cv)
+    )
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
     app.include_router(cv_router, prefix="/api")
+    app.include_router(documents_router, prefix="/api")
     app.include_router(spans_router, prefix="/api")
     app.include_router(roles_router, prefix="/api")
     app.include_router(analysis_router, prefix="/api")

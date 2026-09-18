@@ -213,16 +213,22 @@ class AskService:
         provider = "mapping" if intent is not Intent.OPEN_QUESTION else "hermetic"
         model = "stored"
         left_machine = False
+        question_id: str | None = None
+        message_id: str | None = None
         found = self._store.find_by_client_request_id(
             request.workspace_id, request.client_request_id
         )
         if found is not None:
-            _question, answer = found
+            question, answer = found
+            question_id = str(getattr(question, "id", "") or "") or None
+            message_id = str(getattr(answer, "id", "") or "") or None
             provider = str(getattr(answer, "provider", None) or provider)
             model = str(getattr(answer, "model", None) or model)
             left_machine = bool(getattr(answer, "left_machine", False))
         yield AskEvent(
             type="meta",
+            question_id=question_id,
+            message_id=message_id,
             intent=intent,
             provider=provider,
             model=model,

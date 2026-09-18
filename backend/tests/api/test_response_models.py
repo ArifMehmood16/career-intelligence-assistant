@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import get_args, get_origin
 
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse, Response, StreamingResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 from starlette.routing import BaseRoute
@@ -25,9 +25,12 @@ def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
 
 def _is_non_json_body_route(route: APIRoute) -> bool:
     response_class = route.response_class
-    return isinstance(response_class, type) and issubclass(
-        response_class, (PlainTextResponse, StreamingResponse)
-    )
+    if not isinstance(response_class, type):
+        return False
+    if issubclass(response_class, (PlainTextResponse, StreamingResponse)):
+        return True
+    # Binary document download returns raw bytes with Content-Disposition.
+    return route.path.endswith("/download") and issubclass(response_class, Response)
 
 
 def _assert_response_model(model: object, *, route: APIRoute) -> None:

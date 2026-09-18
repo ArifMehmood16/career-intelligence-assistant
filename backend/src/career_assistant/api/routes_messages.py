@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Iterator
 from datetime import UTC
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import StreamingResponse
 
 from career_assistant.adapters.providers.hermetic.completion import (
@@ -170,6 +170,50 @@ def _assistant_message_wire(
         left_machine=answer.left_machine,
         created_at=created.isoformat().replace("+00:00", "Z"),
     )
+
+
+def _history_message_wire(message: MemoryMessage) -> ChatMessageWire:
+    created = message.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=UTC)
+    return ChatMessageWire(
+        id=message.id,
+        conversation_id=message.conversation_id,
+        author=message.author,
+        content=message.content,
+        kind=message.kind,
+        citations=[
+            CitationWire(id=span_id, label=span_id, evidence=None)
+            for span_id in message.citations
+        ],
+        model=message.model,
+        provider=message.provider,
+        left_machine=message.left_machine,
+        created_at=created.isoformat().replace("+00:00", "Z"),
+    )
+
+
+@router.get("/messages", response_model=list[ChatMessageWire])
+def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessageWire]:
+    store = _conversation_store(request)
+    conversation_id = store.conversations.get(workspace_id)
+    if conversation_id is None:
+        return []
+    history = store.list_history(workspace_id, conversation_id)
+    return [_history_message_wire(message) for message in history]
+
+
+@router.delete(
+    "/messages",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
+def delete_messages(request: Request, workspace_id: WorkspaceId) -> Response:
+    store = _conversation_store(request)
+    conversation_id = store.conversations.get(workspace_id)
+    if conversation_id is not None:
+        store.hard_delete(workspace_id, conversation_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/messages", response_model=ChatMessageWire)

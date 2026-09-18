@@ -18,6 +18,26 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (complete)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_supporting_documents.py` (red→green)
+  - `pytest tests/api/test_message_history.py` (red→green)
+  - `pytest tests/api -q --no-cov`
+  - `pytest tests/api/test_error_table_coverage.py`
+  - `make lint`
+- Observed result:
+  - Supporting cover letters: list/upload/delete + safe document download.
+  - Messages: GET history, DELETE hard-delete, JSON/SSE share answer id on retry.
+  - Full API suite green; lint/mypy/frontend typecheck green.
+- Decisions made: hermetic InMemorySupportingDocumentStore (CV download bridge);
+  conversation store remains process-local for API tests (SQL ask store deferred).
+- Problems hit: download route needed response_class for the response_model gate;
+  SSE replay omitted messageId until fixed.
+- Carried forward: Phase 12; SQL supporting/ask stores; rate_limited/provider_failed
+  HTTP surfaces when those controls exist.
+
 ## Phase 11 — API contracts (11.11 OpenAPI↔TS types)
 
 - Date: 2026-09-18

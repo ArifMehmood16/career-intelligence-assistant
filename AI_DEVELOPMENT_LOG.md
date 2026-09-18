@@ -522,3 +522,18 @@ Never record a command output, metric, date or commit hash that was not observed
   authority when halves disagree.
 - Human validation: contract tests green; frontend typecheck/lint green; make lint
   green.
+
+### 034 — Phase 11.12–11.13 supporting docs and message history (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.12, 11.13 (Phase 11 exit)
+- Prompt intent: complete Phase 11 with TDD.
+- Suggestion: supporting cover-letter CRUD + safe download; GET/DELETE messages;
+  SSE replay messageId; error-table intake/provider coverage tests.
+- Outcome: accepted; Phase 11 checked complete in PLAN.md.
+- Reason: closes the remaining API contract surface before frontend integration.
+- Rejected alternatives: SQL supporting/ask stores in this slice (hermetic first,
+  matching prior Phase 11 pattern).
+- Human validation: supporting + message history API tests green; full API suite
+  green; make lint green.

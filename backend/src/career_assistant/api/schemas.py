@@ -40,6 +40,17 @@ class CvPasteRequest(ApiModel):
     filename: str = "pasted.txt"
 
 
+class SupportingDocumentResponse(ApiModel):
+    id: str
+    kind: str
+    filename: str
+    media_type: str
+    byte_length: int
+    page_count: int
+    parsed_at: str
+    created_at: str
+
+
 class CvDocumentResponse(ApiModel):
     id: str
     filename: str

@@ -3,9 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — 11.11 OpenAPI↔TS
-contract test green (`Evidence.spanId` aligned). Next: 11.12 supporting-document
-routes, then 11.13 message history/delete.
+**Current position:** Phase 11 API contracts complete. Next: Phase 12 frontend
+integration (proxy spike first).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -458,16 +457,18 @@ disagree, the file is corrected first and the change is deliberate.
 - [x] **11.11** Contract test: the generated OpenAPI schema and
       `frontend/src/types/index.ts` agree on every shared model, including the
       `spanId` required to open every `Evidence` citation.
-- [ ] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
+- [x] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
       and download an original document by id, all workspace-scoped. Responses expose
       metadata, never database paths or storage internals. Generated cover-letter
       routes remain role-scoped and distinct.
-- [ ] **11.13** Message routes expose persisted conversation history. `POST` requires
+- [x] **11.13** Message routes expose persisted conversation history. `POST` requires
       `clientRequestId`; both JSON and SSE transports return the same stored final
       answer id. `DELETE` performs the hard-delete contract.
 
 **Exit gate:** OpenAPI is accurate; API tests cover each status path in the error
-table.
+table. (`rate_limited` and `provider_failed` have no dedicated HTTP surface yet —
+mapped in SSE framing / deferred until a rate-limit middleware and live provider
+failure path land.)
 
 ## Phase 12 — Frontend integration
 
