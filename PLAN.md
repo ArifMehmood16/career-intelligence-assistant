@@ -3,9 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — 11.8 complete (hermetic
-surface + SQL stores + production `create_production_app` entrypoint). Next: 11.9
-SSE answer stream.
+**Current position:** Phase 11 API contracts in progress — 11.9 SSE ask stream
+landed on `POST /api/messages`. Next: 11.10 provenance on answers/drafts, then
+11.11–11.13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -447,7 +447,10 @@ disagree, the file is corrected first and the change is deliberate.
       SqlRoleStore (create/list/get/delete/reanalyse + durable drafts);
       `create_production_app` wires SQL stores for uvicorn/Docker while
       `create_app()` stays hermetic for API tests.
-- [ ] **11.9** SSE answer stream with the documented event sequence.
+- [x] **11.9** SSE answer stream with the documented event sequence
+      (`meta` → `token`* → `citations` → `done`) on `POST /api/messages` with
+      `Accept: text/event-stream`, driven by the existing AskService (not a second
+      implementation). JSON Accept and GET/DELETE remain for 11.13.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.
 - [ ] **11.11** Contract test: the generated OpenAPI schema and

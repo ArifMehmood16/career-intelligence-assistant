@@ -185,6 +185,12 @@ class CoverLetterRequest(ApiModel):
     include_gap_line: bool = False
 
 
+class MessageCreateRequest(ApiModel):
+    content: str
+    client_request_id: str
+    role_id: str | None = None
+
+
 class RankedRoleWire(ApiModel):
     role: RoleResponse
     rank: int

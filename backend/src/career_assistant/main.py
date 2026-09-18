@@ -22,6 +22,7 @@ from career_assistant.api.readiness import (
 )
 from career_assistant.api.routes_analysis import router as analysis_router
 from career_assistant.api.routes_cv import router as cv_router
+from career_assistant.api.routes_messages import router as messages_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
@@ -122,6 +123,7 @@ def create_app(
     app.include_router(spans_router, prefix="/api")
     app.include_router(roles_router, prefix="/api")
     app.include_router(analysis_router, prefix="/api")
+    app.include_router(messages_router, prefix="/api")
     return app
 
 

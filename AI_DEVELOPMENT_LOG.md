@@ -479,3 +479,17 @@ Never record a command output, metric, date or commit hash that was not observed
   every hermetic API test onto Postgres).
 - Human validation: production wiring unit tests green; API suite green;
   `make lint` green.
+
+### 031 — Phase 11.9 SSE answer stream (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.9
+- Prompt intent: continue Phase 11 after production SQL wiring.
+- Suggestion: API test for documented SSE sequence; `format_ask_sse` +
+  `POST /api/messages` over AskService.stream; InMemoryConversationStore.
+- Outcome: accepted; JSON Accept / GET / DELETE left for 11.13.
+- Reason: Phase 9 already owns stream/non-stream parity in the use case; 11.9 is
+  the HTTP transport framing only.
+- Human validation: message SSE API test green; full API suite green; `make lint`
+  green.

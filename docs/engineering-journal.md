@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.9 SSE ask stream)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_message_sse.py -q --no-cov` (red then green)
+  - `pytest tests/api -q --no-cov`
+  - `make lint`
+- Observed result:
+  - `POST /api/messages` with `Accept: text/event-stream` returns
+    meta → token(s) → citations → done over hermetic AskService.
+  - Response-model gate allows StreamingResponse alongside PlainTextResponse.
+- Decisions made: SSE framing in `api/sse.py`; in-memory conversation store for
+  hermetic API; JSON Accept deferred to 11.13 with GET/DELETE.
+- Problems hit: none after response_model exemption.
+- Carried forward: 11.10 provenance; 11.13 full message routes + SQL conversation.
+
 ## Phase 11 — API contracts (11.8 production SQL app wiring)
 
 - Date: 2026-09-18
