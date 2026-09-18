@@ -1,0 +1,359 @@
+"""In-process role analysis orchestration — stages, publish, failure discard."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass, replace
+from datetime import datetime, timedelta
+from typing import Protocol
+
+from career_assistant.application.ports.extraction import (
+    ClaimExtractionPort,
+    RequirementExtractionPort,
+)
+from career_assistant.domain.claims import Claim
+from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.jobs import (
+    AnalysisJob,
+    JobError,
+    JobStage,
+    JobState,
+    RoleStatus,
+    mark_failed,
+    mark_running,
+    mark_stage,
+    mark_succeeded,
+    new_role_analysis_job,
+    recover_stale_running,
+)
+from career_assistant.domain.mapping import RequirementMapping, map_requirements
+from career_assistant.domain.requirements import Requirement
+from career_assistant.domain.scoring import ScoreExplanation, ScoringRubric, score_fit
+
+JobClock = Callable[[], datetime]
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisRole:
+    id: str
+    workspace_id: str
+    title: str
+    status: RoleStatus
+    analysis_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class StartupRecovery:
+    failed_job_ids: tuple[str, ...]
+    dispatched_job_ids: tuple[str, ...]
+
+
+class AnalysisDocuments(Protocol):
+    def job_description_text(
+        self, workspace_id: str, role_id: str
+    ) -> tuple[str, str]: ...
+
+    def active_cv_text(self, workspace_id: str) -> tuple[str, str]: ...
+
+
+class AnalysisPublisher(Protocol):
+    def publish(
+        self,
+        *,
+        workspace_id: str,
+        role_id: str,
+        analysis_version: int,
+        requirements: tuple[Requirement, ...],
+        claims: tuple[Claim, ...],
+        mappings: tuple[RequirementMapping, ...],
+        explanation: ScoreExplanation,
+    ) -> None: ...
+
+    def discard_partial(self, *, workspace_id: str, role_id: str) -> None: ...
+
+
+class AnalysisService:
+    """Bounded in-process analysis worker with injectable document/publisher ports."""
+
+    def __init__(
+        self,
+        *,
+        documents: AnalysisDocuments,
+        requirement_extractor: RequirementExtractionPort,
+        claim_extractor: ClaimExtractionPort,
+        publisher: AnalysisPublisher,
+        rubric: ScoringRubric,
+        clock: JobClock,
+        running_timeout: timedelta,
+        max_concurrent: int,
+    ) -> None:
+        self._documents = documents
+        self._requirement_extractor = requirement_extractor
+        self._claim_extractor = claim_extractor
+        self._publisher = publisher
+        self._rubric = rubric
+        self._clock = clock
+        self._running_timeout = running_timeout
+        self._max_concurrent = max_concurrent
+        self._roles: dict[str, AnalysisRole] = {}
+        self._jobs: dict[str, AnalysisJob] = {}
+        self._role_order: list[str] = []
+
+    def create_role(
+        self,
+        *,
+        workspace_id: str,
+        role_id: str,
+        title: str,
+        job_id: str,
+    ) -> tuple[AnalysisRole, AnalysisJob]:
+        role = AnalysisRole(
+            id=role_id,
+            workspace_id=workspace_id,
+            title=title,
+            status=RoleStatus.ANALYSING,
+            analysis_version=1,
+        )
+        self._roles[role_id] = role
+        if role_id not in self._role_order:
+            self._role_order.append(role_id)
+        job = new_role_analysis_job(
+            job_id=job_id,
+            workspace_id=workspace_id,
+            role_id=role_id,
+            created_at=self._clock(),
+        )
+        self._jobs[job_id] = job
+        return role, job
+
+    def get_role(self, workspace_id: str, role_id: str) -> AnalysisRole:
+        role = self._roles[role_id]
+        if role.workspace_id != workspace_id:
+            raise KeyError(role_id)
+        return role
+
+    def get_job(self, job_id: str) -> AnalysisJob:
+        return self._jobs[job_id]
+
+    def enqueue_reanalysis(
+        self,
+        *,
+        workspace_id: str,
+        role_id: str,
+        job_id: str,
+    ) -> AnalysisJob:
+        active = self._active_job_for_role(role_id)
+        if active is not None:
+            return active
+        role = self.get_role(workspace_id, role_id)
+        self._roles[role_id] = replace(role, status=RoleStatus.ANALYSING)
+        job = new_role_analysis_job(
+            job_id=job_id,
+            workspace_id=workspace_id,
+            role_id=role_id,
+            created_at=self._clock(),
+        )
+        self._jobs[job_id] = job
+        return job
+
+    def enqueue_reanalysis_after_cv_replace(
+        self,
+        *,
+        workspace_id: str,
+        new_job_ids: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        roles = [
+            self._roles[rid]
+            for rid in self._role_order
+            if self._roles[rid].workspace_id == workspace_id
+        ]
+        if len(new_job_ids) != len(roles):
+            raise ValueError("new_job_ids must match workspace role count")
+        assigned: list[str] = []
+        for role, job_id in zip(roles, new_job_ids, strict=True):
+            # Force a fresh job even if a prior analysis succeeded.
+            self._roles[role.id] = replace(role, status=RoleStatus.ANALYSING)
+            # Drop terminal jobs from the active check by creating a new id always.
+            for existing in list(self._jobs.values()):
+                if existing.role_id == role.id and existing.state in {
+                    JobState.QUEUED,
+                    JobState.RUNNING,
+                }:
+                    # Cancel in-flight by failing it so the new job can run.
+                    self._jobs[existing.id] = mark_failed(
+                        existing
+                        if existing.state is JobState.RUNNING
+                        else mark_running(existing, at=self._clock()),
+                        at=self._clock(),
+                        error=JobError(
+                            code="superseded",
+                            message="Superseded by CV replacement re-analysis.",
+                        ),
+                    )
+            job = new_role_analysis_job(
+                job_id=job_id,
+                workspace_id=workspace_id,
+                role_id=role.id,
+                created_at=self._clock(),
+            )
+            self._jobs[job_id] = job
+            assigned.append(job_id)
+        return tuple(assigned)
+
+    def mark_job_running_for_tests(
+        self, job_id: str, *, started_at: datetime
+    ) -> AnalysisJob:
+        job = self._jobs[job_id]
+        if job.state is JobState.QUEUED:
+            job = mark_running(job, at=started_at)
+        elif job.state is JobState.RUNNING:
+            job = replace(job, started_at=started_at)
+        else:
+            raise ValueError(f"cannot mark {job.state} as running for tests")
+        self._jobs[job_id] = job
+        role = self._roles[job.role_id]
+        self._roles[job.role_id] = replace(role, status=RoleStatus.ANALYSING)
+        return job
+
+    def startup(self) -> StartupRecovery:
+        failed: list[str] = []
+        for job_id, job in list(self._jobs.items()):
+            if job.state is not JobState.RUNNING:
+                continue
+            recovered = recover_stale_running(
+                job,
+                now=self._clock(),
+                running_timeout=self._running_timeout,
+            )
+            if recovered.state is JobState.FAILED:
+                self._jobs[job_id] = recovered
+                role = self._roles[job.role_id]
+                self._roles[job.role_id] = replace(role, status=RoleStatus.FAILED)
+                self._publisher.discard_partial(
+                    workspace_id=job.workspace_id, role_id=job.role_id
+                )
+                failed.append(job_id)
+        dispatched = tuple(
+            j.id for j in self._jobs.values() if j.state is JobState.QUEUED
+        )
+        return StartupRecovery(
+            failed_job_ids=tuple(failed),
+            dispatched_job_ids=dispatched,
+        )
+
+    def start_available(self, *, limit: int) -> tuple[AnalysisJob, ...]:
+        started: list[AnalysisJob] = []
+        running_count = sum(
+            1 for j in self._jobs.values() if j.state is JobState.RUNNING
+        )
+        for job in self._jobs.values():
+            if len(started) >= limit:
+                break
+            if running_count >= self._max_concurrent:
+                break
+            if job.state is not JobState.QUEUED:
+                continue
+            running = mark_running(job, at=self._clock())
+            self._jobs[job.id] = running
+            started.append(running)
+            running_count += 1
+        return tuple(started)
+
+    def process_next(self) -> AnalysisJob | None:
+        job = next(
+            (j for j in self._jobs.values() if j.state is JobState.QUEUED),
+            None,
+        )
+        if job is None:
+            return None
+        return self._run_job(job.id)
+
+    def _active_job_for_role(self, role_id: str) -> AnalysisJob | None:
+        for job in self._jobs.values():
+            if job.role_id == role_id and job.state in {
+                JobState.QUEUED,
+                JobState.RUNNING,
+            }:
+                return job
+        return None
+
+    def _run_job(self, job_id: str) -> AnalysisJob:
+        job = mark_running(self._jobs[job_id], at=self._clock())
+        self._jobs[job_id] = job
+        role = self._roles[job.role_id]
+        workspace_id = job.workspace_id
+        role_id = job.role_id
+
+        try:
+            job = mark_stage(job, JobStage.PARSING)
+            self._jobs[job_id] = job
+
+            job = mark_stage(job, JobStage.EXTRACTING_REQUIREMENTS)
+            self._jobs[job_id] = job
+            jd_id, jd_text = self._documents.job_description_text(workspace_id, role_id)
+            req_result = self._requirement_extractor.extract(
+                document_id=jd_id,
+                document_kind=DocumentKind.JOB_DESCRIPTION,
+                normalised_text=jd_text,
+            )
+
+            job = mark_stage(job, JobStage.EXTRACTING_CLAIMS)
+            self._jobs[job_id] = job
+            cv_id, cv_text = self._documents.active_cv_text(workspace_id)
+            claim_result = self._claim_extractor.extract(
+                document_id=cv_id,
+                document_kind=DocumentKind.CV,
+                normalised_text=cv_text,
+            )
+
+            job = mark_stage(job, JobStage.MAPPING)
+            self._jobs[job_id] = job
+            mappings = map_requirements(req_result.requirements, claim_result.claims)
+
+            job = mark_stage(job, JobStage.SCORING)
+            self._jobs[job_id] = job
+            explanation = score_fit(
+                req_result.requirements,
+                mappings,
+                claim_result.claims,
+                self._rubric,
+            )
+
+            version = role.analysis_version
+            self._publisher.publish(
+                workspace_id=workspace_id,
+                role_id=role_id,
+                analysis_version=version,
+                requirements=req_result.requirements,
+                claims=claim_result.claims,
+                mappings=mappings,
+                explanation=explanation,
+            )
+            done = mark_succeeded(job, at=self._clock())
+            self._jobs[job_id] = done
+            self._roles[role_id] = replace(
+                role,
+                status=RoleStatus.READY,
+                analysis_version=version,
+            )
+            return done
+        except Exception:
+            stage = job.stage or JobStage.PARSING
+            code = f"{stage.value}_failed"
+            self._publisher.discard_partial(workspace_id=workspace_id, role_id=role_id)
+            running_job = (
+                job
+                if job.state is JobState.RUNNING
+                else mark_running(job, at=self._clock())
+            )
+            failed = mark_failed(
+                running_job,
+                at=self._clock(),
+                error=JobError(
+                    code=code,
+                    message="Analysis failed during this stage.",
+                ),
+            )
+            self._jobs[job_id] = failed
+            self._roles[role_id] = replace(role, status=RoleStatus.FAILED)
+            return failed

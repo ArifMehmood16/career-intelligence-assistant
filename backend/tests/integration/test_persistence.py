@@ -15,6 +15,7 @@ from career_assistant.adapters.persistence.models import (
     RoleRow,
     ScoreExplanationRow,
 )
+from career_assistant.adapters.persistence.schema import APP_SCHEMA
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.settings import DatabaseSettings
@@ -100,12 +101,18 @@ def test_hard_delete_removes_document_bytes_and_spans(
 
     with session_factory() as session:
         remaining = session.execute(
-            text("SELECT count(*) FROM documents WHERE id = CAST(:id AS uuid)"),
+            text(
+                f"SELECT count(*) FROM {APP_SCHEMA}.documents "
+                "WHERE id = CAST(:id AS uuid)"
+            ),
             {"id": stored.id},
         ).scalar_one()
         assert remaining == 0
         span_count = session.execute(
-            text("SELECT count(*) FROM spans WHERE document_id = CAST(:id AS uuid)"),
+            text(
+                f"SELECT count(*) FROM {APP_SCHEMA}.spans "
+                "WHERE document_id = CAST(:id AS uuid)"
+            ),
             {"id": stored.id},
         ).scalar_one()
         assert span_count == 0

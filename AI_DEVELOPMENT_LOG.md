@@ -262,3 +262,21 @@ Never record a command output, metric, date or commit hash that was not observed
   the invariant keeps judgement in domain arithmetic, not the LLM.
 - Human validation: nine focused mapping/scoring tests green; hermetic pytest
   (~84%), ruff, mypy green.
+
+### 016 — Phase 8 analysis jobs (TDD, red commits first)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 8.1–8.7
+- Prompt intent: continue Phase 8 with team TDD — test commits before
+  implementation.
+- Suggestion: domain job lifecycle; `AnalysisService` orchestration with fakes;
+  Alembic job/role columns; SQL role/job/analysis repos; transactional publish and
+  fail discard; CV-replace reanalysis enqueue.
+- Outcome: accepted.
+- Reason: exit gate needs immediate enqueue, ready-on-success, failed-with-no-
+  partials; Postgres is the system of record for jobs.
+- Human validation: unit domain + pipeline green; integration persistence green
+  (`-m integration`); hermetic pytest (~84%), ruff, mypy green.
+- Process note: standing instruction — for future work, commit failing tests
+  before implementation commits; assume concurrent teammates.

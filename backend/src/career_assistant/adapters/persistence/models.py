@@ -198,6 +198,7 @@ class RoleRow(Base):
         nullable=False,
     )
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="analysing")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -369,7 +370,10 @@ class ScoreExplanationRow(Base):
 
 class AnalysisJobRow(Base):
     __tablename__ = "analysis_jobs"
-    __table_args__ = (Index("ix_analysis_jobs_workspace_id", "workspace_id"),)
+    __table_args__ = (
+        Index("ix_analysis_jobs_workspace_id", "workspace_id"),
+        Index("ix_analysis_jobs_workspace_state", "workspace_id", "state"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     workspace_id: Mapped[uuid.UUID] = mapped_column(
@@ -382,7 +386,19 @@ class AnalysisJobRow(Base):
         ForeignKey("roles.id", ondelete="CASCADE"),
         nullable=False,
     )
-    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="role_analysis"
+    )
+    state: Mapped[str] = mapped_column(String(32), nullable=False)
+    stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

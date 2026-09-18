@@ -62,7 +62,11 @@ source = ["career_assistant"]
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
-omit = ["*/migrations/*"]
+omit = [
+    "*/migrations/*",
+    # Exercised by pytest -m integration; hermetic gate stays deterministic offline.
+    "*/adapters/persistence/analysis_repos.py",
+]
 
 [tool.ruff]
 src = ["src", "tests"]
