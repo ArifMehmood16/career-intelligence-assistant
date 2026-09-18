@@ -21,7 +21,6 @@ from career_assistant.domain.jobs import (
     recover_stale_running,
 )
 
-
 FIXED_NOW = datetime(2026, 9, 18, 12, 0, tzinfo=UTC)
 
 
