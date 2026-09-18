@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getFitBreakdown, getRequirements, getRole } from "@/api/client";
+import {
+  ApiError,
+  getFitBreakdown,
+  getRequirements,
+  getRole,
+  getSpan,
+} from "@/api/client";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { RequirementTable } from "@/components/role/RequirementTable";
@@ -34,6 +40,14 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     queryFn: () => getRequirements(roleId),
   });
 
+  const spanId = selected?.evidence?.spanId ?? null;
+  const spanQuery = useQuery({
+    queryKey: ["span", spanId],
+    queryFn: () => getSpan(spanId!),
+    enabled: panelOpen && Boolean(spanId),
+    retry: false,
+  });
+
   const requirements = useMemo(
     () => requirementsQuery.data ?? [],
     [requirementsQuery.data],
@@ -60,6 +74,22 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       : requirements.length === 0
         ? "empty"
         : "ready";
+
+  const resolveState =
+    !panelOpen || !spanId
+      ? "ready"
+      : spanQuery.isPending
+        ? "loading"
+        : spanQuery.isError
+          ? "error"
+          : "ready";
+
+  const resolveError =
+    spanQuery.error instanceof ApiError
+      ? `This citation could not be resolved (${spanQuery.error.code}).`
+      : spanQuery.isError
+        ? "This citation could not be resolved."
+        : null;
 
   return (
     <div className="space-y-6">
@@ -106,7 +136,11 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         open={panelOpen}
         title={selected?.text ?? ""}
         status={selected?.status ?? "missing"}
-        evidence={selected?.evidence ?? null}
+        evidence={
+          spanId ? (spanQuery.data ?? null) : (selected?.evidence ?? null)
+        }
+        resolveState={resolveState}
+        resolveError={resolveError}
         onOpenChange={setPanelOpen}
       />
     </div>

@@ -18,6 +18,8 @@ export interface RolesPanelProps {
   sortDirection: SortDirection;
   onSort: (key: RolesSortKey) => void;
   onRetry: () => void;
+  onReanalyse?: (roleId: string) => void;
+  failureReasons?: Record<string, string>;
   addRoleSlot: ReactNode;
   layout?: RolesLayout;
 }
@@ -30,6 +32,51 @@ const COLUMNS: { key: RolesSortKey; label: string; numeric: boolean }[] = [
   { key: "missing", label: "Missing", numeric: true },
 ];
 
+function FitCell({
+  role,
+  failureReason,
+  onReanalyse,
+}: {
+  role: Role;
+  failureReason?: string | undefined;
+  onReanalyse?: ((roleId: string) => void) | undefined;
+}) {
+  if (role.status === "analysing") {
+    return <span className="text-muted-foreground">Analysing</span>;
+  }
+  if (role.status === "failed") {
+    return (
+      <div className="space-y-1">
+        <span className="text-muted-foreground">Failed</span>
+        {failureReason ? (
+          <p className="text-sm text-muted-foreground">{failureReason}</p>
+        ) : null}
+        {onReanalyse ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onReanalyse(role.id);
+            }}
+          >
+            Retry analysis
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+  return (
+    <>
+      <span className="font-mono">{role.fitScore}</span>
+      <span className="text-muted-foreground"> / 100</span>
+      <span className="ml-2 text-muted-foreground">{role.bandLabel}</span>
+    </>
+  );
+}
+
 export function RolesPanel({
   state,
   roles,
@@ -37,6 +84,8 @@ export function RolesPanel({
   sortDirection,
   onSort,
   onRetry,
+  onReanalyse,
+  failureReasons = {},
   addRoleSlot,
   layout = "responsive",
 }: RolesPanelProps) {
@@ -118,7 +167,6 @@ export function RolesPanel({
 
       {state === "ready" && (
         <>
-          {/* Table at 900px and above (or forced via layout) */}
           <div className={tableClass}>
             <table className="w-full border-collapse text-left">
               <thead>
@@ -188,20 +236,20 @@ export function RolesPanel({
                       </span>
                     </th>
                     <td className="py-2 pr-4">
-                      <span className="font-mono">{role.fitScore}</span>
-                      <span className="text-muted-foreground"> / 100</span>
-                      <span className="ml-2 text-muted-foreground">
-                        {role.bandLabel}
-                      </span>
+                      <FitCell
+                        role={role}
+                        failureReason={failureReasons[role.id]}
+                        onReanalyse={onReanalyse}
+                      />
                     </td>
                     <td className="py-2 text-right font-mono">
-                      {role.counts.met}
+                      {role.status === "ready" ? role.counts.met : "—"}
                     </td>
                     <td className="py-2 text-right font-mono">
-                      {role.counts.partial}
+                      {role.status === "ready" ? role.counts.partial : "—"}
                     </td>
                     <td className="py-2 text-right font-mono">
-                      {role.counts.missing}
+                      {role.status === "ready" ? role.counts.missing : "—"}
                     </td>
                   </tr>
                 ))}
@@ -209,7 +257,6 @@ export function RolesPanel({
             </table>
           </div>
 
-          {/* Stacked cards below 900px (or forced via layout) */}
           <ul className={cardsClass}>
             {roles.map((role) => (
               <li key={role.id}>
@@ -223,26 +270,28 @@ export function RolesPanel({
                     {role.company}
                   </span>
                   <span className="mt-2 block">
-                    <span className="font-mono">{role.fitScore}</span>
-                    <span className="text-muted-foreground">
-                      {" "}
-                      / 100 · {role.bandLabel}
-                    </span>
+                    <FitCell
+                      role={role}
+                      failureReason={failureReasons[role.id]}
+                      onReanalyse={onReanalyse}
+                    />
                   </span>
-                  <span className="mt-1 block text-muted-foreground">
-                    Met{" "}
-                    <span className="font-mono text-foreground">
-                      {role.counts.met}
-                    </span>{" "}
-                    · Partial{" "}
-                    <span className="font-mono text-foreground">
-                      {role.counts.partial}
-                    </span>{" "}
-                    · Missing{" "}
-                    <span className="font-mono text-foreground">
-                      {role.counts.missing}
+                  {role.status === "ready" ? (
+                    <span className="mt-1 block text-muted-foreground">
+                      Met{" "}
+                      <span className="font-mono text-foreground">
+                        {role.counts.met}
+                      </span>{" "}
+                      · Partial{" "}
+                      <span className="font-mono text-foreground">
+                        {role.counts.partial}
+                      </span>{" "}
+                      · Missing{" "}
+                      <span className="font-mono text-foreground">
+                        {role.counts.missing}
+                      </span>
                     </span>
-                  </span>
+                  ) : null}
                 </Link>
               </li>
             ))}

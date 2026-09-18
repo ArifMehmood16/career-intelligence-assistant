@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CoverLettersCardContainer } from "@/components/workspace/CoverLettersCardContainer";
 import { CvCardContainer } from "@/components/workspace/CvCardContainer";
 import { RolesPanelContainer } from "@/components/workspace/RolesPanelContainer";
 
@@ -29,8 +30,9 @@ function WorkspacePage() {
     <div className="space-y-6">
       <h1 className="text-xl">Workspace</h1>
       <div className="flex flex-col gap-6 min-[900px]:flex-row min-[900px]:items-start">
-        <div className="min-[900px]:w-[380px] min-[900px]:shrink-0">
+        <div className="space-y-6 min-[900px]:w-[380px] min-[900px]:shrink-0">
           <CvCardContainer />
+          <CoverLettersCardContainer />
         </div>
         <div className="min-w-0 flex-1">
           <RolesPanelContainer />
