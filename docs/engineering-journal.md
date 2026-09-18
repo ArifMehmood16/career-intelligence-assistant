@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.12 wired screen states)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test` (frontend) — 76 passed across 21 files
+  - `bun run lint` — clean
+  - `bunx tsc --noEmit` — clean
+- Observed result:
+  - Prop-driven state coverage for RolesPanel, CvCard, CoverLettersCard,
+    FitBreakdown, RequirementTable, RoleHeader, ChatView, ProviderSettings
+    (loading / empty / error / ready as applicable), plus prior EvidencePanel
+    resolve states.
+- Decisions made: none beyond the task.
+- Problems hit and how they were resolved:
+  - RequirementTable ready row text appears in table and card layouts; tests click
+    `getAllByText(...)[0]`.
+- Carried forward: Phase 12 exit gate against a running backend.
+
 ## Phase 12 — Frontend integration (12.11 error mapping)
 
 - Date: 2026-09-18

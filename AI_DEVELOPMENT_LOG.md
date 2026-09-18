@@ -538,6 +538,21 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 044 — Phase 12.12 wired screen component states (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.12
+- Prompt intent: continue TDD with regular commits through Phase 12.
+- Suggestion: prop-driven Vitest coverage for every wired presentational screen
+  state (loading/empty/error/ready and analysis-status variants).
+- Outcome: accepted.
+- Reason: PLAN 12.12 requires component tests driven by props before the exit gate.
+- Rejected alternatives: only container integration tests (would couple UI copy to
+  network timing).
+- Human validation: focused component tests green; full frontend vitest 76;
+  typecheck/lint green.
+
 ### 043 — Phase 12.11 API error code → actionable UI (TDD)
 
 - Date: 2026-09-18

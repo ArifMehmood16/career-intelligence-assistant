@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration in progress — 12.1–12.11
-landed. Next: 12.12 component tests for wired screens.
+**Current position:** Phase 12 frontend integration — 12.1–12.12 landed. Next:
+exit gate (full UI against real backend with fixtures; no mock data in client).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -511,7 +511,7 @@ The screens exist. This phase makes them real. See
       hosted confirmation, and the re-index warning when the index provider changes.
 - [x] **12.11** Error handling across the app: every documented error code maps to a
       state the user can act on. Unknown codes fail visibly, not silently.
-- [ ] **12.12** Component tests for every state of every wired screen, driven by props.
+- [x] **12.12** Component tests for every state of every wired screen, driven by props.
 
 **Exit gate:** the full existing UI runs against the real backend with fixtures
 loaded, including the failure paths. No mock data remains in `src/api/client.ts`.

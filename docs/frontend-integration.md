@@ -35,15 +35,16 @@ configuration anywhere in this repository.
 **Open — expected to change:**
 
 - `src/api/client.ts`. Real HTTP client with multipart uploads, job/span helpers,
-  and `postMessageStream` for Ask SSE (Phase 12.3–12.9). Remaining: settings
-  wiring polish if any.
+  `postMessageStream`, settings egress/re-index acknowledgement, and
+  `describeApiError` (Phase 12.3–12.11). No fixture data remains in the client.
+- Wired presentational screens have prop-driven state tests (Phase 12.12). Exit gate:
+  exercise the full UI against a running backend with fixtures, including failure
+  paths.
 - `src/api/__fixtures__/`. Test and `/dev/states` gallery data only; no component
   imports (Phase 12.4).
 - `src/types/index.ts`. Additive types landed (Phase 12.5); keep existing shapes stable.
 - New routes and components for the features that have no screen yet: gaps, prepare,
   letter, ranking, compare.
-- Everything absent: byte-level upload progress bar, full error-code map across
-  screens, accessibility fixes, full component coverage.
 
 ## What is missing from the Lovable output
 
