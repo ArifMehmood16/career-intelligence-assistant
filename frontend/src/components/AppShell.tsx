@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { CiaMark } from "@/components/CiaMark";
+import { BrandMark } from "@/components/BrandMark";
 import { ProviderBadge } from "@/components/ProviderBadge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Provider } from "@/types";
@@ -31,13 +31,13 @@ export function AppShell({
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link
             to="/"
-            aria-label="CIA — Career Intelligence Assistant"
+            aria-label="Career Intelligence — home"
             className={`inline-flex items-center gap-2 text-sm font-semibold tracking-tight ${linkFocus}`}
           >
-            <CiaMark className="size-6 shrink-0 text-foreground" />
-            <span>CIA</span>
-            <span className="hidden font-normal text-muted-foreground sm:inline">
-              Career Intelligence
+            <BrandMark className="size-6 shrink-0 text-foreground" />
+            <span>Career Intelligence</span>
+            <span className="hidden font-normal text-muted-foreground lg:inline">
+              Match your CV to a role, and see the evidence
             </span>
           </Link>
 
