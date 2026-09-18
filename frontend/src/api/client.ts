@@ -11,6 +11,7 @@ import type {
   CvDocument,
   Evidence,
   GapPlan,
+  InterviewPack,
   Provider,
   ProviderChoice,
   Requirement,
@@ -27,6 +28,7 @@ import {
   errorEnvelopeSchema,
   evidenceSchema,
   gapPlanSchema,
+  interviewPackSchema,
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
@@ -309,6 +311,48 @@ export function createBulletDraft(
     body: { requirementId },
     schema: bulletDraftSchema,
   });
+}
+
+export function getInterviewPack(roleId: string): Promise<InterviewPack> {
+  return request(`/api/roles/${roleId}/interview-pack`, {
+    schema: interviewPackSchema,
+  });
+}
+
+export type ExportArtefact =
+  "gap-plan" | "interview-pack" | "cover-letter" | "bullets";
+
+/** Download Markdown for a role artefact; returns the raw text. */
+export async function exportRoleArtefact(
+  roleId: string,
+  artefact: ExportArtefact,
+): Promise<string> {
+  const response = await fetch(`/api/roles/${roleId}/export/${artefact}.md`, {
+    method: "GET",
+    headers: { Accept: "text/markdown, text/plain, */*" },
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    let code = "internal_error";
+    let message = "Export failed.";
+    let correlationId = response.headers.get("X-Correlation-Id") ?? "unknown";
+    try {
+      const payload: unknown = await response.json();
+      const parsed = errorEnvelopeSchema.safeParse(payload);
+      if (parsed.success) {
+        code = parsed.data.error.code;
+        message = parsed.data.error.message;
+        correlationId = parsed.data.error.correlationId || correlationId;
+      }
+    } catch {
+      // keep defaults
+    }
+    throw new ApiError(code, message, {
+      correlationId,
+      status: response.status,
+    });
+  }
+  return response.text();
 }
 
 export function getSpan(spanId: string): Promise<Evidence> {

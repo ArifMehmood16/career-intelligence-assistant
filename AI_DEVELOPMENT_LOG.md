@@ -538,6 +538,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 050 — Phase 13.4 Prepare / interview pack (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.4
+- Prompt intent: continue Phase 13 after bullet drafts.
+- Suggestion: PreparePanel with four sections from GET /interview-pack; evidence
+  opens EvidencePanel; Export Markdown via GET /export/interview-pack.md.
+- Outcome: accepted.
+- Reason: matches features.md Prepare flow; export is a download, not a new store.
+- Rejected alternatives: inventing probe questions in the client.
+- Human validation: PreparePanel tests 2 green; full frontend vitest; tsc/lint.
+
 ### 049 — Phase 13.3 bullet draft panel (TDD)
 
 - Date: 2026-09-18

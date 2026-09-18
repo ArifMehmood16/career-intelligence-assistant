@@ -192,6 +192,38 @@ export const bulletDraftSchema = z.object({
   provenance: draftProvenanceSchema,
 });
 
+export const interviewProbeSchema = z.object({
+  requirementId: z.string(),
+  question: z.string(),
+  status: z.enum(["met", "partial", "missing"]),
+});
+
+export const interviewLeadWithSchema = z.object({
+  requirementId: z.string(),
+  evidence: evidenceSchema,
+  note: z.string(),
+});
+
+export const interviewThinAreaSchema = z.object({
+  requirementId: z.string(),
+  requirementText: z.string(),
+  nearest: evidenceSchema.nullable(),
+});
+
+export const interviewAskThemSchema = z.object({
+  question: z.string(),
+  requirementId: z.string().nullable(),
+});
+
+export const interviewPackSchema = z.object({
+  roleId: z.string(),
+  probes: z.array(interviewProbeSchema),
+  leadWith: z.array(interviewLeadWithSchema),
+  thinAreas: z.array(interviewThinAreaSchema),
+  askThem: z.array(interviewAskThemSchema),
+  provenance: draftProvenanceSchema,
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),

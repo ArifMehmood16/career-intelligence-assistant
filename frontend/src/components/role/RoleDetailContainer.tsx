@@ -3,8 +3,10 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   createBulletDraft,
+  exportRoleArtefact,
   getFitBreakdown,
   getGapPlan,
+  getInterviewPack,
   getRequirements,
   getRole,
   getSpan,
@@ -14,6 +16,7 @@ import { EvidencePanel } from "@/components/EvidencePanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { GapsPanel } from "@/components/role/GapsPanel";
+import { PreparePanel } from "@/components/role/PreparePanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import {
@@ -77,6 +80,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     queryKey: ["gap-plan", roleId],
     queryFn: () => getGapPlan(roleId),
   });
+  const interviewPackQuery = useQuery({
+    queryKey: ["interview-pack", roleId],
+    queryFn: () => getInterviewPack(roleId),
+  });
 
   const bulletMutation = useMutation({
     mutationFn: (requirementId: string) =>
@@ -136,6 +143,29 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         : bulletMutation.data
           ? "ready"
           : "empty";
+
+  const pack = interviewPackQuery.data ?? null;
+  const prepareState: AsyncState = interviewPackQuery.isPending
+    ? "loading"
+    : interviewPackQuery.isError
+      ? "error"
+      : pack === null ||
+          (pack.probes.length === 0 &&
+            pack.leadWith.length === 0 &&
+            pack.thinAreas.length === 0 &&
+            pack.askThem.length === 0)
+        ? "empty"
+        : "ready";
+
+  const downloadMarkdown = async (filename: string, body: string) => {
+    const blob = new Blob([body], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const openEvidence = (
     title: string,
@@ -270,7 +300,23 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         }}
         fit={fitPane}
         gaps={gapsPane}
-        prepare={<ComingSoon feature="Prepare" />}
+        prepare={
+          <PreparePanel
+            state={prepareState}
+            pack={pack}
+            onRetry={() => {
+              void interviewPackQuery.refetch();
+            }}
+            onSelectEvidence={(evidence) => {
+              openEvidence("Interview evidence", "met", evidence);
+            }}
+            onExport={() => {
+              void exportRoleArtefact(roleId, "interview-pack").then((body) =>
+                downloadMarkdown(`interview-pack-${roleId}.md`, body),
+              );
+            }}
+          />
+        }
         letter={<ComingSoon feature="Letter" />}
       />
 

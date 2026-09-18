@@ -18,6 +18,18 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Prepare / interview pack (13.4)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/PreparePanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: Prepare tab shows probes, lead-with, thin areas, ask-them;
+  evidence is clickable; Export Markdown downloads the artefact.
+- Decisions made: empty when all four sections are empty arrays.
+- Problems hit: none material.
+- Carried forward: 13.5 Letter tab.
+
 ## Phase 13 — Bullet drafts (13.3)
 
 - Date: 2026-09-18
