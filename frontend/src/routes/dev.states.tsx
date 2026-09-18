@@ -3,18 +3,33 @@ import { useState, type ReactNode } from "react";
 import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
+import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
+import { GapsPanel } from "@/components/role/GapsPanel";
+import { LetterPanel } from "@/components/role/LetterPanel";
+import { PreparePanel } from "@/components/role/PreparePanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
+import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import { ProviderSettings } from "@/components/settings/ProviderSettings";
+import { ComparePanel } from "@/components/workspace/ComparePanel";
+import { CoverLettersCard } from "@/components/workspace/CoverLettersCard";
 import { CvCard } from "@/components/workspace/CvCard";
+import { RankingPanel } from "@/components/workspace/RankingPanel";
 import { RolesPanel } from "@/components/workspace/RolesPanel";
 import { Button } from "@/components/ui/button";
 import type {
+  BulletDraft,
   ChatMessage,
+  Comparison,
+  CoverLetterDraft,
   CvDocument,
   Evidence,
+  GapItem,
+  InterviewPack,
   Provider,
+  RankedRole,
   Requirement,
   Role,
+  SupportingDocument,
 } from "@/types";
 
 export const Route = createFileRoute("/dev/states")({
@@ -240,6 +255,207 @@ const chatNoops = {
   onRetry: noop,
 };
 
+const sampleGapItems: GapItem[] = [
+  {
+    requirementId: "req-missing",
+    requirementText: "Hands-on Terraform for infrastructure as code",
+    type: "must",
+    status: "missing",
+    reason: "no_related_claim",
+    adjacentEvidence: null,
+    scoreDelta: 12,
+    action: "learn_it",
+    canDraftBullet: false,
+  },
+  {
+    requirementId: "req-partial",
+    requirementText: "Owns a production dbt project end to end",
+    type: "must",
+    status: "partial",
+    reason: "adjacent_claim_only",
+    adjacentEvidence: matchedEvidence,
+    scoreDelta: 9,
+    action: "evidence_it",
+    canDraftBullet: true,
+  },
+];
+
+const sampleBulletDraft: BulletDraft = {
+  id: "bullet-demo",
+  version: 1,
+  createdAt: "2026-09-18T12:00:00.000Z",
+  requirementId: "req-partial",
+  bullets: [
+    {
+      text: "- Introduced dbt for a subset of warehouse models covering a third of reporting tables.",
+      spanIds: ["span-cv-demo-dbt"],
+      evidence: [
+        {
+          spanId: "span-cv-demo-dbt",
+          documentId: "cv-demo",
+          page: 2,
+          paragraph:
+            "Later I introduced dbt for a subset of the warehouse models, covering roughly a third of the reporting tables before I moved on.",
+          highlight: "covering roughly a third of the reporting tables",
+        },
+      ],
+    },
+  ],
+  provenance: {
+    provider: "hermetic",
+    model: null,
+    leftMachine: false,
+    generatedAt: "2026-09-18T12:00:00.000Z",
+    grounded: true,
+    fallback: "template",
+  },
+};
+
+const sampleInterviewPack: InterviewPack = {
+  roleId: "role-kestrel",
+  probes: [
+    {
+      requirementId: "req-met",
+      question: "Walk me through your production SQL work.",
+      status: "met",
+    },
+  ],
+  leadWith: [
+    {
+      requirementId: "req-met",
+      evidence: matchedEvidence,
+      note: "Lead with the warehouse SQL story.",
+    },
+  ],
+  thinAreas: [
+    {
+      requirementId: "req-missing",
+      requirementText: "Hands-on Terraform for infrastructure as code",
+      nearest: null,
+    },
+  ],
+  askThem: [
+    {
+      question: "What does ownership of the analytics platform look like here?",
+      requirementId: null,
+    },
+  ],
+  provenance: {
+    provider: "hermetic",
+    model: null,
+    leftMachine: false,
+    generatedAt: "2026-09-18T12:00:00.000Z",
+    grounded: true,
+    fallback: "template",
+  },
+};
+
+const sampleCoverLetter: CoverLetterDraft = {
+  id: "cl-demo",
+  version: 1,
+  createdAt: "2026-09-18T12:00:00.000Z",
+  roleId: "role-kestrel",
+  paragraphs: [
+    {
+      text: "I am applying for the Analytics Engineer role at Kestrel Systems.",
+      requirementIds: ["req-met"],
+      spanIds: ["span-cv-demo-sql"],
+    },
+  ],
+  omittedReason: null,
+  provenance: {
+    provider: "hermetic",
+    model: null,
+    leftMachine: false,
+    generatedAt: "2026-09-18T12:00:00.000Z",
+    grounded: true,
+    fallback: "template",
+  },
+};
+
+const sampleSupporting: SupportingDocument = {
+  id: "sup-demo",
+  kind: "cover_letter",
+  filename: "previous-cover-letter.docx",
+  mediaType:
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  byteLength: 2400,
+  pageCount: 1,
+  parsedAt: "2026-09-18T11:00:00.000Z",
+  createdAt: "2026-09-18T11:00:00.000Z",
+};
+
+const sampleRanked: RankedRole[] = [
+  {
+    role: sampleRoles[0]!,
+    rank: 1,
+    tied: false,
+    because: ["5+ years of advanced SQL in a production warehouse"],
+  },
+  {
+    role: sampleRoles[1]!,
+    rank: 2,
+    tied: true,
+    because: ["Owns a production dbt project end to end"],
+  },
+  {
+    role: sampleRoles[2]!,
+    rank: 2,
+    tied: true,
+    because: ["Hands-on Terraform for infrastructure as code"],
+  },
+];
+
+const sampleComparison: Comparison = {
+  a: sampleRoles[0]!,
+  b: sampleRoles[1]!,
+  shared: [
+    {
+      text: "Advanced SQL in a production warehouse",
+      aStatus: "met",
+      bStatus: "partial",
+    },
+  ],
+  onlyInA: [sampleRequirements[2]!],
+  onlyInB: [sampleRequirements[0]!],
+  differentiator: "Advanced SQL in a production warehouse",
+};
+
+/** Section titles rendered on /dev/states — kept for the gallery smoke test. */
+export const DEV_STATE_SECTION_TITLES = [
+  "CV card: empty",
+  "CV card: parsing",
+  "CV card: parsed",
+  "CV card: error",
+  "Roles table: loading",
+  "Roles table: empty",
+  "Roles table: error",
+  "Roles table: populated",
+  "Roles stacked cards: populated",
+  "Requirement table: all three status groups",
+  "Requirement table: mobile card variant",
+  "Evidence panel: matched requirement",
+  "Evidence panel: missing requirement",
+  "Chat: empty with starter chips",
+  "Chat: streaming",
+  "Chat: answered with citations",
+  "Chat: insufficient evidence",
+  "Provider cards: available, selected, and each unavailable reason",
+  "Egress dialog: open",
+  "Provider badge: local",
+  "Provider badge: hosted",
+  "Cover letters card: ready",
+  "Role detail tabs",
+  "Gaps panel: ready",
+  "Gaps panel: empty",
+  "Bullet draft: template fallback",
+  "Prepare panel: ready",
+  "Letter panel: refusal next step",
+  "Letter panel: generated draft",
+  "Ranking panel: ties",
+  "Compare panel: ready",
+] as const;
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-3 border-b border-border pb-8">
@@ -249,7 +465,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function DevStatesPage() {
+export function DevStatesPage() {
   const [evidenceKind, setEvidenceKind] = useState<
     "matched" | "missing" | null
   >("matched");
@@ -588,6 +804,134 @@ function DevStatesPage() {
         <ProviderBadge
           provider={providerAnthropicAvailable}
           model="claude-sonnet-4"
+        />
+      </Section>
+
+      <Section title="Cover letters card: ready">
+        <CoverLettersCard
+          state="ready"
+          documents={[sampleSupporting]}
+          errorMessage={null}
+          uploading={false}
+          onUpload={noop}
+          onDelete={noop}
+          onRetry={noop}
+        />
+      </Section>
+
+      <Section title="Role detail tabs">
+        <RoleDetailTabs
+          value="fit"
+          onValueChange={noop}
+          fit={<p className="text-sm text-muted-foreground">Fit pane</p>}
+          gaps={<p className="text-sm text-muted-foreground">Gaps pane</p>}
+          prepare={
+            <p className="text-sm text-muted-foreground">Prepare pane</p>
+          }
+          letter={<p className="text-sm text-muted-foreground">Letter pane</p>}
+        />
+      </Section>
+
+      <Section title="Gaps panel: ready">
+        <GapsPanel
+          state="ready"
+          currentScore={61}
+          items={sampleGapItems}
+          onRetry={noop}
+          onSelectEvidence={noop}
+          onDraftBullet={noop}
+        />
+      </Section>
+
+      <Section title="Gaps panel: empty">
+        <GapsPanel
+          state="empty"
+          currentScore={100}
+          items={[]}
+          onRetry={noop}
+          onSelectEvidence={noop}
+          onDraftBullet={noop}
+        />
+      </Section>
+
+      <Section title="Bullet draft: template fallback">
+        <BulletDraftPanel
+          state="ready"
+          draft={sampleBulletDraft}
+          onRetry={noop}
+          onCopy={noop}
+          onCitation={noop}
+          onDismiss={noop}
+        />
+      </Section>
+
+      <Section title="Prepare panel: ready">
+        <PreparePanel
+          state="ready"
+          pack={sampleInterviewPack}
+          onRetry={noop}
+          onSelectEvidence={noop}
+          onExport={noop}
+        />
+      </Section>
+
+      <Section title="Letter panel: refusal next step">
+        <LetterPanel
+          tone="plain"
+          includeGapLine={false}
+          generating={false}
+          draft={null}
+          versions={[]}
+          refusal={{
+            message:
+              "Fewer than two must-have requirements are met. Use the gap plan instead.",
+          }}
+          supportingDocuments={[sampleSupporting]}
+          onToneChange={noop}
+          onIncludeGapLineChange={noop}
+          onGenerate={noop}
+          onSelectVersion={noop}
+          onExport={noop}
+          onCitation={noop}
+          onOpenGaps={noop}
+        />
+      </Section>
+
+      <Section title="Letter panel: generated draft">
+        <LetterPanel
+          tone="warm"
+          includeGapLine={true}
+          generating={false}
+          draft={sampleCoverLetter}
+          versions={[sampleCoverLetter]}
+          refusal={null}
+          supportingDocuments={[]}
+          onToneChange={noop}
+          onIncludeGapLineChange={noop}
+          onGenerate={noop}
+          onSelectVersion={noop}
+          onExport={noop}
+          onCitation={noop}
+          onOpenGaps={noop}
+        />
+      </Section>
+
+      <Section title="Ranking panel: ties">
+        <RankingPanel state="ready" ranked={sampleRanked} onRetry={noop} />
+      </Section>
+
+      <Section title="Compare panel: ready">
+        <ComparePanel
+          roles={sampleRoles}
+          roleAId={sampleRoles[0]!.id}
+          roleBId={sampleRoles[1]!.id}
+          state="ready"
+          comparison={sampleComparison}
+          onRoleAChange={noop}
+          onRoleBChange={noop}
+          onCompare={noop}
+          onRetry={noop}
+          onOpenGaps={noop}
         />
       </Section>
     </div>

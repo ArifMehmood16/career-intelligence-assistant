@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — /dev/states gallery (13.8)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/routes/dev.states.test.tsx` — 1 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: gallery lists Phase 13 surfaces; smoke test asserts every
+  DEV_STATE_SECTION_TITLES h2 is present.
+- Decisions made: export DevStatesPage + title list for the smoke test.
+- Problems hit: getByRole heading name matching was flaky vs nested content;
+  smoke test uses h2 text selector.
+- Carried forward: 13.9 Accessibility.
+
 ## Phase 13 — Compare (13.7)
 
 - Date: 2026-09-18

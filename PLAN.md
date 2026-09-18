@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 frontend features in progress — through 13.7 Compare.
-Next: 13.8 `/dev/states` gallery.
+**Current position:** Phase 13 frontend features in progress — through 13.8
+`/dev/states`. Next: 13.9 Accessibility.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -544,7 +544,7 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
       shown as ties.
 - [x] **13.7** **Compare**: two roles side by side, shared and unique requirements,
       the differentiator.
-- [ ] **13.8** Fill `/dev/states`: every component state on one page, rendered from
+- [x] **13.8** Fill `/dev/states`: every component state on one page, rendered from
       props.
 - [ ] **13.9** Accessibility: keyboard path through upload, tabs, table, drafts and
       chat; labels, focus management and live regions for streaming and job progress,

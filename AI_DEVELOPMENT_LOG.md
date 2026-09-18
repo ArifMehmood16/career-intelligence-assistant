@@ -538,6 +538,20 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 054 — Phase 13.8 /dev/states gallery fill (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.8
+- Prompt intent: continue Phase 13 after Compare.
+- Suggestion: add Gaps/Bullet/Prepare/Letter/Ranking/Compare/tabs/cover-letter
+  states to /dev/states; export DEV_STATE_SECTION_TITLES; gallery smoke test.
+- Outcome: accepted.
+- Reason: exit gate requires every gallery state to have a test; component unit
+  tests already cover behaviours, gallery test locks the section list.
+- Rejected alternatives: omitting gallery coverage for Phase 13 surfaces.
+- Human validation: gallery test 1 green; full frontend vitest; tsc/lint.
+
 ### 053 — Phase 13.7 Compare panel (TDD)
 
 - Date: 2026-09-18
