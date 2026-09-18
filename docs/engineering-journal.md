@@ -18,6 +18,20 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Role detail tabs (13.1)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/role/RoleDetailTabs.test.tsx` — 3 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: role detail has Fit/Gaps/Prepare/Letter tabs; `?tab=gaps`
+  deep-links; arrow keys move focus across the tablist.
+- Decisions made: optional search param `tab` (default Fit); later panes are
+  placeholders until 13.2–13.5.
+- Problems hit: macOS case-insensitive clash between RoleDetailTabs.tsx and
+  roleDetailTabs.ts — renamed constants module to role-detail-tabs.ts.
+- Carried forward: 13.2 Gaps content.
+
 ## Phase 13 — SQL supporting cover letters (carry-forward)
 
 - Date: 2026-09-18

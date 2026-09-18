@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   getFitBreakdown,
@@ -10,6 +11,11 @@ import { describeApiError, formatDescribedError } from "@/api/errors";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { RequirementTable } from "@/components/role/RequirementTable";
+import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
+import {
+  isRoleDetailTabId,
+  type RoleDetailTabId,
+} from "@/components/role/role-detail-tabs";
 import { RoleHeader } from "@/components/role/RoleHeader";
 import type { Requirement, RequirementStatus } from "@/types";
 
@@ -17,7 +23,22 @@ export interface RoleDetailContainerProps {
   roleId: string;
 }
 
+function ComingSoon({ feature }: { feature: string }) {
+  return (
+    <p className="rounded-md border border-dashed border-border px-5 py-8 text-sm text-muted-foreground">
+      {feature} will appear here in a later Phase 13 slice.
+    </p>
+  );
+}
+
 export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
+  const navigate = useNavigate({ from: "/roles/$id" });
+  const search = useSearch({ from: "/roles/$id" });
+  const activeTab: RoleDetailTabId =
+    search.tab !== undefined && isRoleDetailTabId(search.tab)
+      ? search.tab
+      : "fit";
+
   const [expandedRowIds, setExpandedRowIds] = useState<string[]>([]);
   // The gaps are the point of this screen: Missing is open, the rest collapsed.
   const [collapsedGroups, setCollapsedGroups] = useState<RequirementStatus[]>([
@@ -89,10 +110,8 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       ? formatDescribedError(describeApiError(spanQuery.error))
       : null;
 
-  return (
+  const fitPane = (
     <div className="space-y-6">
-      <RoleHeader role={roleQuery.data ?? null} loading={roleQuery.isPending} />
-
       <FitBreakdown
         state={breakdownState}
         rows={breakdownRows}
@@ -140,6 +159,26 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         resolveState={resolveState}
         resolveError={resolveError}
         onOpenChange={setPanelOpen}
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <RoleHeader role={roleQuery.data ?? null} loading={roleQuery.isPending} />
+
+      <RoleDetailTabs
+        value={activeTab}
+        onValueChange={(tab) => {
+          void navigate({
+            search: (prev) => ({ ...prev, tab }),
+            replace: true,
+          });
+        }}
+        fit={fitPane}
+        gaps={<ComingSoon feature="Gaps" />}
+        prepare={<ComingSoon feature="Prepare" />}
+        letter={<ComingSoon feature="Letter" />}
       />
     </div>
   );

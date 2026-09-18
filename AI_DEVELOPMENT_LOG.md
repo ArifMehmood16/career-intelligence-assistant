@@ -538,6 +538,20 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 047 — Phase 13.1 role detail tabs (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.1
+- Prompt intent: continue Phase 13 after SQL supporting store.
+- Suggestion: Fit/Gaps/Prepare/Letter tabs with `?tab=` deep-link search param;
+  Gaps/Prepare/Letter placeholders until later slices.
+- Outcome: accepted.
+- Reason: matches features.md navigation; Fit keeps existing breakdown + table.
+- Rejected alternatives: path segments per tab (search param is enough and keeps
+  one route file).
+- Human validation: RoleDetailTabs tests 3 green; full frontend vitest; tsc/lint.
+
 ### 046 — Phase 13 carry-forward: SQL supporting cover letters (TDD)
 
 - Date: 2026-09-18

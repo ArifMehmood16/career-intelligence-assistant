@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 frontend features in progress. SQL supporting
-cover-letter store landed (Phase 12 carry-forward). Next: 13.1 role detail tabs.
+**Current position:** Phase 13 frontend features in progress — SQL supporting
+store and 13.1 role tabs landed. Next: 13.2 Gaps panel.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -528,7 +528,7 @@ is Phase 16.5.
 New screens, built in the existing design language. No new tokens, no new visual
 patterns. See [docs/features.md](docs/features.md) for what each one shows.
 
-- [ ] **13.1** Role detail gains tabs: Fit, Gaps, Prepare, Letter. Keyboard
+- [x] **13.1** Role detail gains tabs: Fit, Gaps, Prepare, Letter. Keyboard
       navigable, deep-linkable.
 - [ ] **13.2** **Gaps**: ordered gap list with reason, adjacent evidence, score delta
       and action. "Draft a bullet" where the evidence exists.
