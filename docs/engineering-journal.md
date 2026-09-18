@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (foundation: 11.1, 11.2, 11.4–11.6)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/ -q --no-cov`
+  - `pytest tests/unit/test_persistence_boundary.py -q --no-cov`
+  - `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - `ApiModel` serialises snake_case → camelCase; every route declares `response_model`.
+  - `workspace` cookie issued HttpOnly / SameSite=Lax; invalid values replaced.
+  - `X-Correlation-Id` echoed or minted on every response.
+  - Error envelope `{error:{code,message,correlationId}}`; unhandled exceptions do not
+    leak paths or provider payloads.
+  - `GET /api/ready` returns provider/database/migration status; 503 when unhealthy.
+- Decisions made: SQL readiness probe lives in `adapters/persistence/readiness.py`;
+  HTTP package keeps the protocol only. Upload size rejection (11.3) waits for CV
+  routes.
+- Problems hit: FastAPI 0.141 nests routes under `_IncludedRouter` — tests walk
+  `original_router`.
+- Carried forward: 11.3, 11.7–11.13 feature and message routes.
+
 ## Phase 10 — Grounded generation (complete, including 10.9)
 
 - Date: 2026-09-18
