@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 3 (document intake and spans) exit gate is satisfied.
-Next work is Phase 4 — persistence.
+**Current position:** Phase 4 (persistence) exit gate is satisfied.
+Next work is Phase 5 — requirement extraction.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -198,67 +198,67 @@ text. Malformed, encrypted and oversized files are rejected safely.
 
 ## Phase 4 — Persistence
 
-- [ ] **4.1 Database topology and configuration contract.** PostgreSQL 16 with
+- [x] **4.1 Database topology and configuration contract.** PostgreSQL 16 with
       pgvector is the only production persistence implementation. `make run`, Alembic
       and `make test-integration` use the local instance named by `DATABASE_URL`
       (documented default `localhost:5432`). Compose API containers use the `db`
       service on port 5432. Fakes are test-only; no SQLite, filesystem or in-memory
       production fallback.
-- [ ] **4.2 Database packages and Alembic baseline migration.** Add the minimum
+- [x] **4.2 Database packages and Alembic baseline migration.** Add the minimum
       SQLAlchemy 2, Alembic, psycopg 3 and pgvector packages to the runtime lock. Create
       `vector` and the tables for workspaces; documents; spans; chunks; embeddings;
       roles; requirements; claims; mappings and score explanations; analysis jobs;
       conversations; questions; answers; answer citations; generated drafts and draft
       citations; provider settings; and provider-call accounting.
-- [ ] **4.3 Original document storage.** `documents` records `kind` (`cv`,
+- [x] **4.3 Original document storage.** `documents` records `kind` (`cv`,
       `job_description`, `cover_letter`), filename, sniffed media type, byte length,
       SHA-256, original bytes in bounded `bytea`, normalised text, parse status and
       timestamps. Pasted text is stored as UTF-8 bytes. Rejected or unreadable input
       is not retained. Uploaded cover letters are supporting documents: queryable and
       citable, but never evidence for claims, fit mappings or scores.
-- [ ] **4.4 Relational integrity and indexes.** UUID primary keys; UTC timestamps;
+- [x] **4.4 Relational integrity and indexes.** UUID primary keys; UTC timestamps;
       foreign keys with deliberate delete behaviour; a partial unique constraint for
       one active CV per workspace; uniqueness for one role analysis version; indexes
       beginning with `workspace_id`; vector dimensions tied to the recorded embedding
       provider/model. Migration upgrade and downgrade are tested from an empty
       database.
-- [ ] **4.5 Repository adapters behind application ports.** Application and domain
+- [x] **4.5 Repository adapters behind application ports.** Application and domain
       code depend on narrow repositories; SQLAlchemy models do not cross the adapter
       boundary. A guard test proves no non-adapter import of SQLAlchemy. Every API and
       worker read after Phase 4 comes from PostgreSQL, not process memory.
-- [ ] **4.6 Transaction boundaries.** An admitted upload, its document metadata,
+- [x] **4.6 Transaction boundaries.** An admitted upload, its document metadata,
       original bytes and parsed spans commit atomically. Establish an explicit
       SQLAlchemy unit-of-work for later analysis and answering use cases. A failed
       parse leaves no half-readable document. Phase 8 and Phase 9 add forced-failure
       tests for their complete mapping and answer transactions.
-- [ ] **4.7 Workspace scoping.** Every repository method requires `workspace_id` and
+- [x] **4.7 Workspace scoping.** Every repository method requires `workspace_id` and
       every query filters it. Integration tests attempt cross-workspace reads and
       mutations for documents, roles, spans, drafts, conversations and messages.
-- [ ] **4.8 Hard delete and retention graph.** Deleting a CV, uploaded cover letter or
+- [x] **4.8 Hard delete and retention graph.** Deleting a CV, uploaded cover letter or
       role removes its original bytes, spans, chunks, embeddings, claims,
       requirements, mappings, scores, jobs, generated drafts, questions/answers and
       citations that depend on it. Deleting chat history removes questions, answers
       and citations. Integration tests assert zero orphaned personal data.
-- [ ] **4.9 Provider and provenance persistence.** Store the workspace provider
+- [x] **4.9 Provider and provenance persistence.** Store the workspace provider
       preference plus provider, model tag, `left_machine`, token counts and timing on
       each extraction, answer and generated draft. Never store keys or raw provider
       payloads.
-- [ ] **4.10 CV replacement transaction.** Replacing the CV stores the new admitted
+- [x] **4.10 CV replacement transaction.** Replacing the CV stores the new admitted
       document, makes it active and invalidates every existing role mapping, score and
       draft atomically; the old CV and its dependent records are hard-deleted only
       after the replacement succeeds. Phase 8 adds re-analysis job creation to this
       same unit of work.
-- [ ] **4.11 Conversation schema contract.** Enforce foreign keys, a workspace-scoped
+- [x] **4.11 Conversation schema contract.** Enforce foreign keys, a workspace-scoped
       unique `client_request_id` on each question, at most one final answer per
       question, and unique `(answer_id, span_id)` citations. Phase 9 adds the
       repositories/use case once the answer domain behaviour exists; partial streaming
       tokens and provider payloads have no persistence column.
-- [ ] **4.12 Local database workflow.** Add `make db-check`, `make db-migrate` and a
+- [x] **4.12 Local database workflow.** Add `make db-check`, `make db-migrate` and a
       migration step to `make run`; they use the developer's local PostgreSQL and fail
       clearly when PostgreSQL, the target database or pgvector is unavailable.
       `TEST_DATABASE_URL` must name a separate database and integration tests refuse
       to run when it equals `DATABASE_URL`.
-- [ ] **4.13 Connection safety.** Configure bounded pooling, connection health checks,
+- [x] **4.13 Connection safety.** Configure bounded pooling, connection health checks,
       statement/lock timeouts and UTC sessions. Dispose sessions at each unit-of-work
       boundary. SQL logging is off by default and must never print bound values that
       could contain document, question or answer text.

@@ -189,3 +189,19 @@ Never record a command output, metric, date or commit hash that was not observed
   drafts linked to cited CV spans.
 - Human validation: pending review of the documentation diff. Automated consistency
   checks and existing quality gates are recorded in the task report.
+
+### 011 — Phase 4 PostgreSQL persistence (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 4.1–4.13
+- Prompt intent: continue with the next incomplete PLAN work (Phase 4 persistence).
+- Suggestion: red tests for DatabaseSettings and the adapter boundary; then SQLAlchemy
+  models, Alembic baseline, repository unit-of-work, integration suite, and Make
+  db-check/db-migrate targets.
+- Outcome: accepted.
+- Reason: exit gate requires migrations and scoped document/conversation round-trips
+  on real PostgreSQL with no production SQLite/memory fallback.
+- Human validation: hermetic pytest (~82% coverage), ruff, mypy green; eight
+  integration tests green against local pgvector; `make db-check` and `make db-migrate`
+  observed green.

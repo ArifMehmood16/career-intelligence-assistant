@@ -10,6 +10,7 @@ from enum import StrEnum
 class DocumentKind(StrEnum):
     CV = "cv"
     JOB_DESCRIPTION = "job_description"
+    COVER_LETTER = "cover_letter"
 
 
 class DocumentFormat(StrEnum):
