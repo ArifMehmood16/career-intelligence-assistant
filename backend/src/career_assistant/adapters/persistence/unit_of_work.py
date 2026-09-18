@@ -31,6 +31,7 @@ from career_assistant.application.ports.persistence import (
     AnswerRecord,
     ConversationRepository,
     DocumentRepository,
+    HistoryMessage,
     NewDocument,
     ParseStatus,
     QuestionRecord,
@@ -282,6 +283,95 @@ class SqlConversationRepository:
             left_machine=row.left_machine,
             created_at=row.created_at or datetime.now(UTC),
         )
+
+    def get_by_client_request_id(
+        self, workspace_id: str, client_request_id: str
+    ) -> tuple[QuestionRecord, AnswerRecord] | None:
+        question = self._session.scalar(
+            select(QuestionRow).where(
+                QuestionRow.workspace_id == _as_uuid(workspace_id),
+                QuestionRow.client_request_id == client_request_id,
+            )
+        )
+        if question is None:
+            return None
+        answer = self._session.scalar(
+            select(AnswerRow).where(
+                AnswerRow.workspace_id == _as_uuid(workspace_id),
+                AnswerRow.question_id == question.id,
+            )
+        )
+        if answer is None:
+            return None
+        return (
+            QuestionRecord(
+                id=str(question.id),
+                workspace_id=str(question.workspace_id),
+                conversation_id=str(question.conversation_id),
+                client_request_id=question.client_request_id,
+                text=question.text,
+                created_at=question.created_at or datetime.now(UTC),
+            ),
+            AnswerRecord(
+                id=str(answer.id),
+                workspace_id=str(answer.workspace_id),
+                question_id=str(answer.question_id),
+                body=answer.body,
+                provider=answer.provider,
+                model_tag=answer.model_tag,
+                left_machine=answer.left_machine,
+                created_at=answer.created_at or datetime.now(UTC),
+            ),
+        )
+
+    def list_answer_citations(
+        self, workspace_id: str, answer_id: str
+    ) -> tuple[str, ...]:
+        rows = self._session.scalars(
+            select(AnswerCitationRow).where(
+                AnswerCitationRow.workspace_id == _as_uuid(workspace_id),
+                AnswerCitationRow.answer_id == _as_uuid(answer_id),
+            )
+        ).all()
+        return tuple(str(row.span_id) for row in rows)
+
+    def list_history(
+        self, workspace_id: str, conversation_id: str
+    ) -> tuple[HistoryMessage, ...]:
+        questions = self._session.scalars(
+            select(QuestionRow)
+            .where(
+                QuestionRow.workspace_id == _as_uuid(workspace_id),
+                QuestionRow.conversation_id == _as_uuid(conversation_id),
+            )
+            .order_by(QuestionRow.created_at.asc(), QuestionRow.id.asc())
+        ).all()
+        messages: list[HistoryMessage] = []
+        for question in questions:
+            messages.append(
+                HistoryMessage(
+                    id=str(question.id),
+                    kind="question",
+                    content=question.text,
+                    created_at=question.created_at or datetime.now(UTC),
+                )
+            )
+            answer = self._session.scalar(
+                select(AnswerRow).where(AnswerRow.question_id == question.id)
+            )
+            if answer is not None:
+                messages.append(
+                    HistoryMessage(
+                        id=str(answer.id),
+                        kind="answer",
+                        content=answer.body,
+                        created_at=answer.created_at or datetime.now(UTC),
+                        provider=answer.provider,
+                        model_tag=answer.model_tag,
+                        left_machine=answer.left_machine,
+                    )
+                )
+        return tuple(messages)
 
     def hard_delete_history(self, workspace_id: str, conversation_id: str) -> None:
         row = self._session.scalar(
