@@ -66,6 +66,7 @@ omit = [
     "*/migrations/*",
     # Exercised by pytest -m integration; hermetic gate stays deterministic offline.
     "*/adapters/persistence/analysis_repos.py",
+    "*/adapters/persistence/draft_repos.py",
 ]
 
 [tool.ruff]

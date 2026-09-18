@@ -322,3 +322,17 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: ADR 007 requires fail-closed validation before any draft reaches a user;
   hermetic templates keep the feature model-free.
 - Human validation: focused unit suites green; hermetic pytest (~84%), ruff, mypy.
+
+### 020 — Phase 10.9 artefact persistence (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 10.9
+- Prompt intent: continue after Phase 10.1–10.8 merge; finish artefact store.
+- Suggestion: red integration specs for save/versioning/reject-FAIL; migration for
+  version + groundedness provenance; `DraftRepository` + `SqlDraftRepository` on UoW.
+- Outcome: accepted.
+- Reason: only PASS (or template-fallback that still passes validation) content may
+  persist; regenerations must be immutable versions, not in-place updates.
+- Human validation: draft persistence integration green; full `-m integration` green;
+  hermetic pytest (~84%), ruff, mypy.

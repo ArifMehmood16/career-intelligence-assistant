@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 10 — Grounded generation (complete, including 10.9)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_draft_persistence.py -m integration -q --no-cov`
+  - `make db-migrate` (revision `71f0c6b9147f`)
+  - `pytest -m integration -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - Drafts persist body, citations, provider/model, `left_machine`, groundedness,
+    template-fallback flag and regeneration count.
+  - Regeneration allocates immutable `version` per `(role, kind)`; FAIL groundedness
+    rejected at save.
+- Decisions made: SQL draft repo omitted from hermetic coverage (integration-proven);
+  HTTP draft routes remain Phase 11.
+- Problems hit: none material.
+- Carried forward: Phase 11 API contracts.
+
 ## Phase 10 — Grounded generation (10.1–10.8)
 
 - Date: 2026-09-18
@@ -33,7 +50,7 @@ Nothing predicted, nothing rounded up.
   - Pipeline: validate → one regenerate → template fallback with counters.
   - Hermetic bullets; cover letter refuses below two met must-haves.
   - Interview pack sections from mapping; markdown export byte-stable.
-- Decisions made: 10.9 PostgreSQL artefact versions deferred to Phase 11 wiring.
+- Decisions made: 10.9 PostgreSQL artefact versions deferred to a follow-up slice.
 - Problems hit: none material.
 - Carried forward: 10.9 persistence; Phase 11 API routes.
 
