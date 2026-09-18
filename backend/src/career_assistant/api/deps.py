@@ -8,6 +8,8 @@ from typing import Annotated
 from fastapi import Cookie, Depends, Request, Response
 
 WORKSPACE_COOKIE = "workspace"
+CORRELATION_HEADER = "X-Correlation-Id"
+_MAX_CORRELATION_LEN = 128
 
 
 def resolve_workspace_id(raw: str | None) -> str:
@@ -22,6 +24,20 @@ def resolve_workspace_id(raw: str | None) -> str:
 
 def workspace_cookie_needs_set(raw: str | None, resolved: str) -> bool:
     return raw != resolved
+
+
+def resolve_correlation_id(raw: str | None) -> str:
+    """Echo a safe client correlation id, or mint one when absent/invalid."""
+    if raw is None:
+        return str(uuid.uuid4())
+    cleaned = raw.strip()
+    if (
+        not cleaned
+        or len(cleaned) > _MAX_CORRELATION_LEN
+        or any(ord(ch) < 32 for ch in cleaned)
+    ):
+        return str(uuid.uuid4())
+    return cleaned
 
 
 async def get_workspace_id(

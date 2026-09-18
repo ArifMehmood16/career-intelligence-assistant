@@ -1,4 +1,4 @@
-"""Issue or refresh the workspace cookie on every API response."""
+"""Cross-cutting HTTP middleware for workspace identity and correlation ids."""
 
 from __future__ import annotations
 
@@ -9,7 +9,9 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from career_assistant.api.deps import (
+    CORRELATION_HEADER,
     WORKSPACE_COOKIE,
+    resolve_correlation_id,
     resolve_workspace_id,
     workspace_cookie_needs_set,
 )
@@ -33,4 +35,19 @@ class WorkspaceCookieMiddleware(BaseHTTPMiddleware):
                 samesite="lax",
                 path="/",
             )
+        return response
+
+
+class CorrelationIdMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        correlation_id = resolve_correlation_id(
+            request.headers.get(CORRELATION_HEADER)
+        )
+        request.state.correlation_id = correlation_id
+        response = await call_next(request)
+        response.headers[CORRELATION_HEADER] = correlation_id
         return response
