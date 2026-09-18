@@ -172,3 +172,153 @@ def draft_cover_letter(
         cited_span_ids=tuple(dict.fromkeys(cited)),
         met_requirement_ids=tuple(met_ids),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class InterviewProbe:
+    requirement_id: str
+    question: str
+    status: MappingStatus
+
+
+@dataclass(frozen=True, slots=True)
+class InterviewLead:
+    requirement_id: str
+    note: str
+    span_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InterviewThinArea:
+    requirement_id: str
+    requirement_text: str
+    nearest_span_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InterviewAskThem:
+    question: str
+    requirement_id: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class InterviewPack:
+    probes: tuple[InterviewProbe, ...]
+    lead_with: tuple[InterviewLead, ...]
+    thin_areas: tuple[InterviewThinArea, ...]
+    ask_them: tuple[InterviewAskThem, ...]
+
+
+def build_interview_pack(
+    requirements: tuple[Requirement, ...] | list[Requirement],
+    mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
+    claims: tuple[Claim, ...] | list[Claim],
+) -> InterviewPack:
+    """Section membership from the mapping; phrasing is template-only here."""
+    del claims  # claims available for future evidence notes; spans come from mappings
+    by_req = {r.id: r for r in requirements}
+    probes: list[InterviewProbe] = []
+    lead_with: list[InterviewLead] = []
+    thin_areas: list[InterviewThinArea] = []
+    ask_them: list[InterviewAskThem] = []
+
+    for mapping in mappings:
+        req = by_req.get(mapping.requirement_id)
+        if req is None:
+            continue
+        if mapping.status is MappingStatus.MET:
+            probes.append(
+                InterviewProbe(
+                    requirement_id=req.id,
+                    question=f"Walk me through your experience with {req.text}.",
+                    status=mapping.status,
+                )
+            )
+            lead_with.append(
+                InterviewLead(
+                    requirement_id=req.id,
+                    note=f"Lead with evidence for {req.text}.",
+                    span_ids=mapping.justifying_span_ids,
+                )
+            )
+        elif mapping.status is MappingStatus.PARTIAL:
+            probes.append(
+                InterviewProbe(
+                    requirement_id=req.id,
+                    question=f"Tell me about {req.text} in more depth.",
+                    status=mapping.status,
+                )
+            )
+            thin_areas.append(
+                InterviewThinArea(
+                    requirement_id=req.id,
+                    requirement_text=req.text,
+                    nearest_span_ids=mapping.justifying_span_ids,
+                )
+            )
+        else:
+            probes.append(
+                InterviewProbe(
+                    requirement_id=req.id,
+                    question=f"How would you approach {req.text}?",
+                    status=mapping.status,
+                )
+            )
+            thin_areas.append(
+                InterviewThinArea(
+                    requirement_id=req.id,
+                    requirement_text=req.text,
+                    nearest_span_ids=(),
+                )
+            )
+        if req.is_vague or req.extraction_confidence < 0.7:
+            ask_them.append(
+                InterviewAskThem(
+                    question=f"What does success look like for “{req.text}”?",
+                    requirement_id=req.id,
+                )
+            )
+
+    return InterviewPack(
+        probes=tuple(probes),
+        lead_with=tuple(lead_with),
+        thin_areas=tuple(thin_areas),
+        ask_them=tuple(ask_them),
+    )
+
+
+def export_markdown(artefact: str, payload: object) -> str:
+    """Deterministic markdown for screen-identical export."""
+    if artefact == "gap-plan" and isinstance(payload, GapPlan):
+        lines = [
+            "# Gap plan",
+            "",
+            f"Current score: {payload.current_score:.0f}",
+            "",
+        ]
+        for item in payload.items:
+            lines.append(
+                f"- **{item.requirement_text}** "
+                f"({item.status.value}, Δ{item.score_delta:.1f}, "
+                f"{item.action.value})"
+            )
+        lines.append("")
+        return "\n".join(lines)
+    if artefact == "interview-pack" and isinstance(payload, InterviewPack):
+        lines = ["# Interview pack", "", "## Probes", ""]
+        for probe in payload.probes:
+            lines.append(f"- [{probe.status.value}] {probe.question}")
+        lines.extend(["", "## Lead with", ""])
+        for lead in payload.lead_with:
+            lines.append(f"- {lead.note}")
+        lines.extend(["", "## Thin areas", ""])
+        for thin in payload.thin_areas:
+            lines.append(f"- {thin.requirement_text}")
+        lines.extend(["", "## Ask them", ""])
+        for ask in payload.ask_them:
+            lines.append(f"- {ask.question}")
+        lines.append("")
+        return "\n".join(lines)
+    if artefact == "cover-letter" and isinstance(payload, CoverLetterDraft):
+        return payload.body if payload.body.endswith("\n") else payload.body + "\n"
+    raise ValueError(f"unsupported artefact export: {artefact!r}")
