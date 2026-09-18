@@ -7,12 +7,14 @@ from career_assistant.adapters.persistence.engine import (
     ping_database,
     session_scope,
 )
+from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.schema import APP_SCHEMA
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 
 __all__ = [
     "APP_SCHEMA",
     "SqlCvStore",
+    "SqlRoleStore",
     "SqlUnitOfWork",
     "create_db_engine",
     "create_session_factory",

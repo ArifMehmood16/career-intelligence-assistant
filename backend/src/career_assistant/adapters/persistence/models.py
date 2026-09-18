@@ -192,6 +192,7 @@ class RoleRow(Base):
         nullable=False,
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False)
+    company: Mapped[str] = mapped_column(String(512), nullable=False, default="")
     job_description_document_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("documents.id", ondelete="RESTRICT"),

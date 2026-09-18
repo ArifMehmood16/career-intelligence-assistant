@@ -61,6 +61,7 @@ class RoleRecord:
     id: str
     workspace_id: str
     title: str
+    company: str
     job_description_document_id: str
     analysis_version: int
     status: RoleStatus
@@ -114,6 +115,10 @@ class DocumentRepository(Protocol):
     def get_active_cv(self, workspace_id: str) -> StoredDocument | None: ...
 
     def list_spans(self, workspace_id: str, document_id: str) -> tuple[Span, ...]: ...
+
+    def ensure_spans(
+        self, workspace_id: str, document_id: str, spans: tuple[Span, ...]
+    ) -> None: ...
 
     def hard_delete(self, workspace_id: str, document_id: str) -> None: ...
 
@@ -170,6 +175,7 @@ class RoleRepository(Protocol):
         workspace_id: str,
         role_id: str,
         title: str,
+        company: str,
         job_description_document_id: str,
         status: RoleStatus,
     ) -> RoleRecord: ...

@@ -83,11 +83,12 @@ def create_app(
     limits: LimitSettings | None = None,
     providers: ProviderSettings | None = None,
     cv_store: CvStore | None = None,
+    role_store: object | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
-    Default ``cv_store`` is in-memory for hermetic API tests. Production and
-    integration runs inject ``SqlCvStore`` (see adapters.persistence.cv_store).
+    Default stores are in-memory for hermetic API tests. Production and
+    integration runs inject ``SqlCvStore`` / ``SqlRoleStore``.
     """
     upload_limits = limits or LimitSettings()
     app = FastAPI(
@@ -107,8 +108,13 @@ def create_app(
     app.state.limits = upload_limits
     app.state.providers = providers
     app.state.provider_choices = {}
-    app.state.cv_store = cv_store if cv_store is not None else InMemoryCvStore()
-    app.state.role_store = InMemoryRoleStore(cv_store=app.state.cv_store)
+    resolved_cv = cv_store if cv_store is not None else InMemoryCvStore()
+    app.state.cv_store = resolved_cv
+    app.state.role_store = (
+        role_store
+        if role_store is not None
+        else InMemoryRoleStore(cv_store=resolved_cv)
+    )
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
     app.include_router(cv_router, prefix="/api")

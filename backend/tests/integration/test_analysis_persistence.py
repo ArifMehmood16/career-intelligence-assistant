@@ -56,6 +56,7 @@ def _seed_workspace_with_role(
             workspace_id=workspace_id,
             role_id=role_id,
             title="Analytics Engineer",
+            company="Acme",
             job_description_document_id=stored_jd.id,
             status=RoleStatus.ANALYSING,
         )

@@ -33,6 +33,7 @@ def _seed_role_with_span(uow: SqlUnitOfWork) -> tuple[str, str, str]:
             workspace_id=workspace_id,
             role_id=role_id,
             title="Analytics Engineer",
+            company="Acme",
             job_description_document_id=stored_jd.id,
             status=RoleStatus.READY,
         )

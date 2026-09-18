@@ -10,7 +10,7 @@ from career_assistant.adapters.extraction.claims_rules import RulesClaimExtracto
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.claims import Claim
-from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.mapping import RequirementMapping, map_requirements
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation, score_fit
@@ -27,39 +27,37 @@ class AnalysisBundle:
     explanation: ScoreExplanation
     jd_document_id: str
     cv_document_id: str
+    jd_spans: tuple[Span, ...] = ()
+    cv_claim_spans: tuple[Span, ...] = ()
 
 
 def analyse_hermetic(
     *, cv_text: str, cv_document_id: str, jd_text: str
 ) -> AnalysisBundle:
     jd_id = str(uuid.uuid4())
-    requirements = (
-        RulesRequirementExtractor()
-        .extract(
-            document_id=jd_id,
-            document_kind=DocumentKind.JOB_DESCRIPTION,
-            normalised_text=jd_text,
-        )
-        .requirements
+    req_result = RulesRequirementExtractor().extract(
+        document_id=jd_id,
+        document_kind=DocumentKind.JOB_DESCRIPTION,
+        normalised_text=jd_text,
     )
-    claims = (
-        RulesClaimExtractor()
-        .extract(
-            document_id=cv_document_id,
-            document_kind=DocumentKind.CV,
-            normalised_text=cv_text,
-        )
-        .claims
+    claim_result = RulesClaimExtractor().extract(
+        document_id=cv_document_id,
+        document_kind=DocumentKind.CV,
+        normalised_text=cv_text,
     )
-    mappings = map_requirements(requirements, claims)
-    explanation = score_fit(requirements, mappings, claims, _RUBRIC)
+    mappings = map_requirements(req_result.requirements, claim_result.claims)
+    explanation = score_fit(
+        req_result.requirements, mappings, claim_result.claims, _RUBRIC
+    )
     return AnalysisBundle(
-        requirements=requirements,
-        claims=claims,
+        requirements=req_result.requirements,
+        claims=claim_result.claims,
         mappings=mappings,
         explanation=explanation,
         jd_document_id=jd_id,
         cv_document_id=cv_document_id,
+        jd_spans=req_result.spans,
+        cv_claim_spans=claim_result.spans,
     )
 
 

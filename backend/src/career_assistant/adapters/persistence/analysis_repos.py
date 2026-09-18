@@ -47,6 +47,7 @@ def _to_role(row: RoleRow) -> RoleRecord:
         id=str(row.id),
         workspace_id=str(row.workspace_id),
         title=row.title,
+        company=row.company,
         job_description_document_id=str(row.job_description_document_id),
         analysis_version=row.analysis_version,
         status=RoleStatus(row.status),
@@ -113,6 +114,7 @@ class SqlRoleRepository:
         workspace_id: str,
         role_id: str,
         title: str,
+        company: str,
         job_description_document_id: str,
         status: RoleStatus,
     ) -> RoleRecord:
@@ -120,6 +122,7 @@ class SqlRoleRepository:
             id=_as_uuid(role_id),
             workspace_id=_as_uuid(workspace_id),
             title=title,
+            company=company,
             job_description_document_id=_as_uuid(job_description_document_id),
             analysis_version=1,
             status=status.value,
