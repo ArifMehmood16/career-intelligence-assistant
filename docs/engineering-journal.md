@@ -18,6 +18,18 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Compare (13.7)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/workspace/ComparePanel.test.tsx` — 2 passed
+  - `bun run test` / `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: workspace Compare picks two roles, shows shared/unique/
+  differentiator, and links into Gaps.
+- Decisions made: only ready roles appear in the selectors.
+- Problems hit: none material.
+- Carried forward: 13.8 `/dev/states`.
+
 ## Phase 13 — Ranking (13.6)
 
 - Date: 2026-09-18

@@ -8,6 +8,7 @@ import type {
   BulletDraft,
   ChatMessage,
   Citation,
+  Comparison,
   CoverLetterDraft,
   CvDocument,
   Evidence,
@@ -26,6 +27,7 @@ import {
   bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
+  comparisonSchema,
   coverLetterDraftSchema,
   cvDocumentSchema,
   errorEnvelopeSchema,
@@ -286,6 +288,24 @@ export async function getRanking(): Promise<RankedRole[]> {
     tied: row.tied,
     because: row.because,
   }));
+}
+
+export async function getComparison(
+  roleAId: string,
+  roleBId: string,
+): Promise<Comparison> {
+  const params = new URLSearchParams({ a: roleAId, b: roleBId });
+  const row = await request(`/api/compare?${params.toString()}`, {
+    schema: comparisonSchema,
+  });
+  return {
+    a: mapRole(row.a),
+    b: mapRole(row.b),
+    shared: row.shared,
+    onlyInA: row.onlyInA,
+    onlyInB: row.onlyInB,
+    differentiator: row.differentiator,
+  };
 }
 
 export async function getRole(id: string): Promise<Role | null> {

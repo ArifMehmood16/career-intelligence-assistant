@@ -247,6 +247,21 @@ export const rankedRoleSchema = z.object({
   because: z.array(z.string()),
 });
 
+export const comparisonSharedSchema = z.object({
+  text: z.string(),
+  aStatus: z.enum(["met", "partial", "missing"]),
+  bStatus: z.enum(["met", "partial", "missing"]),
+});
+
+export const comparisonSchema = z.object({
+  a: roleSchema,
+  b: roleSchema,
+  shared: z.array(comparisonSharedSchema),
+  onlyInA: z.array(requirementSchema),
+  onlyInB: z.array(requirementSchema),
+  differentiator: z.string(),
+});
+
 export const errorEnvelopeSchema = z.object({
   error: z.object({
     code: z.string(),
