@@ -23,9 +23,10 @@ def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
 
 
 def _assert_response_model(model: object, *, route: APIRoute) -> None:
-    assert model is not None, (
-        f"{route.methods} {route.path} must declare response_model"
-    )
+    # 204 No Content routes may omit a body model.
+    if model is None:
+        assert route.status_code == 204 or 204 in (route.status_code or (),)
+        return
     assert model is not dict, f"{route.methods} {route.path} must not use bare dict"
     origin = get_origin(model)
     if origin is list:
@@ -35,6 +36,13 @@ def _assert_response_model(model: object, *, route: APIRoute) -> None:
         )
         assert issubclass(args[0], BaseModel), (
             f"{route.methods} {route.path} list item must be a Pydantic model"
+        )
+        return
+    if origin is not None:
+        args = [arg for arg in get_args(model) if arg is not type(None)]
+        assert args, f"{route.methods} {route.path} union response_model is empty"
+        assert issubclass(args[0], BaseModel), (
+            f"{route.methods} {route.path} union item must be a Pydantic model"
         )
         return
     assert isinstance(model, type) and issubclass(model, BaseModel), (

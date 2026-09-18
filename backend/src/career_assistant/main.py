@@ -19,8 +19,10 @@ from career_assistant.api.readiness import (
     ReadinessProbe,
     StaticReadiness,
 )
+from career_assistant.api.routes_cv import router as cv_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
 from career_assistant.settings import LimitSettings, ProviderSettings
 
 router = APIRouter(prefix="/api")
@@ -76,6 +78,7 @@ def create_app(
     readiness: ReadinessProbe | None = None,
     limits: LimitSettings | None = None,
     providers: ProviderSettings | None = None,
+    cv_store: CvStore | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own."""
     upload_limits = limits or LimitSettings()
@@ -96,8 +99,10 @@ def create_app(
     app.state.limits = upload_limits
     app.state.providers = providers
     app.state.provider_choices = {}
+    app.state.cv_store = cv_store if cv_store is not None else InMemoryCvStore()
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
+    app.include_router(cv_router, prefix="/api")
     return app
 
 

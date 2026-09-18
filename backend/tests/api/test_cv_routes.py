@@ -93,7 +93,8 @@ def test_unreadable_paste_maps_to_document_unreadable() -> None:
 
 
 def test_oversized_paste_maps_to_document_too_large() -> None:
-    limits = LimitSettings(max_upload_bytes=32, max_document_chars=32)
+    # Keep Content-Length under the ASGI gate so admission enforces the char cap.
+    limits = LimitSettings(max_upload_bytes=10_000, max_document_chars=32)
     response = _client(limits=limits).post(
         "/api/cv",
         json={"text": "x" * 64, "filename": "big.txt"},

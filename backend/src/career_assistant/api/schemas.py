@@ -35,6 +35,26 @@ class ReadyResponse(ApiModel):
     hosted_egress: bool
 
 
+class CvPasteRequest(ApiModel):
+    text: str
+    filename: str = "pasted.txt"
+
+
+class CvDocumentResponse(ApiModel):
+    id: str
+    filename: str
+    page_count: int
+    parsed_at: str
+
+
+class ReanalysisInfo(ApiModel):
+    job_ids: list[str]
+
+
+class CvUploadResponse(CvDocumentResponse):
+    reanalysis: ReanalysisInfo
+
+
 class ProviderSupportsModel(ApiModel):
     completion: bool
     embedding: bool
