@@ -179,3 +179,61 @@ def test_role_http_routes_persist_via_sql_stores(
     requirements = client.get(f"/api/roles/{role_id}/requirements")
     assert requirements.status_code == 200
     assert requirements.json()
+
+
+def test_cover_letter_and_bullets_persist_across_store_instances(
+    session_factory: sessionmaker[Session],
+) -> None:
+    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    cv_store = SqlCvStore(uow_factory)
+    role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    role_id = client.post(
+        "/api/roles",
+        json={
+            "title": "Analytics Engineer",
+            "company": "Acme",
+            "description": _JD,
+        },
+    ).json()["role"]["id"]
+
+    requirements = client.get(f"/api/roles/{role_id}/requirements").json()
+    requirement_id = requirements[0]["id"]
+
+    bullets = client.post(
+        f"/api/roles/{role_id}/bullets",
+        json={"requirementId": requirement_id},
+    )
+    assert bullets.status_code == 200
+    bullet_id = bullets.json()["id"]
+
+    letter = client.post(
+        f"/api/roles/{role_id}/cover-letter",
+        json={"tone": "plain", "includeGapLine": False},
+    )
+    assert letter.status_code == 200, letter.text
+    letter_id = letter.json()["id"]
+
+    # Fresh store instance — only PostgreSQL may satisfy this.
+    role_store_b = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    listed_letters = role_store_b.list_cover_letters(
+        client.cookies["workspace"], role_id
+    )
+    assert len(listed_letters) == 1
+    assert listed_letters[0].id == letter_id  # type: ignore[attr-defined]
+
+    listed_bullets = role_store_b.list_bullet_drafts(
+        client.cookies["workspace"], role_id
+    )
+    assert len(listed_bullets) == 1
+    assert listed_bullets[0].id == bullet_id  # type: ignore[attr-defined]
+
+    client_b = TestClient(create_app(cv_store=cv_store, role_store=role_store_b))
+    client_b.cookies.set("workspace", client.cookies["workspace"])
+    http_letters = client_b.get(f"/api/roles/{role_id}/cover-letters")
+    assert http_letters.status_code == 200
+    assert len(http_letters.json()) == 1
+    assert http_letters.json()[0]["id"] == letter_id
+    assert http_letters.json()[0]["provenance"]["leftMachine"] is False
