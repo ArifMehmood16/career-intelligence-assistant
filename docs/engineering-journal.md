@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 6 — Evidence extraction
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_claim_extraction.py -q --no-cov`
+  - `pytest -q`, `ruff check`, `mypy`
+- Observed result:
+  - Domain `Claim` plus pure `derive_recency_signal` / `derive_duration_signal`.
+  - Rules extractor reads EXPERIENCE bullets with role date ranges; undated stays
+    undated; dated-experience Spark claims are not recent.
+  - Span validation drops bad refs; cover letters rejected; model path keeps only
+    span-backed texts.
+- Decisions made:
+  - Recency uses injectable `as_of` for deterministic tests (default `date.today()`).
+- Problems hit and how they were resolved: none material.
+- Carried forward: Phase 7 mapping and scoring.
+
 ## Phase 5 — Requirement extraction
 
 - Date: 2026-09-18
