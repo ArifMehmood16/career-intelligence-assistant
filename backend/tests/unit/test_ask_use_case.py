@@ -67,7 +67,11 @@ class _MemStore:
         if q is None:
             return None
         a = next(
-            (m for m in self.messages if m.author == "assistant" and m.id == f"a-{q.id}"),
+            (
+                m
+                for m in self.messages
+                if m.author == "assistant" and m.id == f"a-{q.id}"
+            ),
             None,
         )
         if a is None:
@@ -128,8 +132,11 @@ class _MemStore:
             )
         )
 
-    def list_history(self, workspace_id: str, conversation_id: str) -> tuple[_MemMessage, ...]:
-        return tuple(sorted(self.messages, key=lambda m: (m.created_at, m.id)))
+    def list_history(
+        self, workspace_id: str, conversation_id: str
+    ) -> tuple[_MemMessage, ...]:
+        # Insertion order is creation order for this in-memory double.
+        return tuple(self.messages)
 
     def hard_delete(self, workspace_id: str, conversation_id: str) -> None:
         self.messages.clear()
@@ -212,7 +219,10 @@ def _service(
     completion: CompletionPort | None = None,
 ) -> tuple[AskService, _MemStore, _TrackingCompletion]:
     mem = store if isinstance(store, _MemStore) else _MemStore()
-    comp = completion if isinstance(completion, _TrackingCompletion) else _TrackingCompletion()
+    if isinstance(completion, _TrackingCompletion):
+        comp = completion
+    else:
+        comp = _TrackingCompletion()
     service = AskService(
         store=mem,
         completion=comp,
