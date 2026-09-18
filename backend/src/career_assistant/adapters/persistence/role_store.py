@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -19,7 +20,9 @@ from career_assistant.adapters.persistence.models import (
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import CvStore
 from career_assistant.application.ports.persistence import (
+    GeneratedDraftRecord,
     NewDocument,
+    NewGeneratedDraft,
     ParseStatus,
     RoleRecord,
 )
@@ -36,6 +39,7 @@ from career_assistant.application.roles.store import (
 )
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import (
     JobStage,
     RoleStatus,
@@ -60,8 +64,6 @@ class SqlRoleStore:
     ) -> None:
         self.cv_store = cv_store
         self._uow_factory = uow_factory
-        self.cover_letters: dict[str, dict[str, list[object]]] = {}
-        self.bullet_drafts: dict[str, dict[str, list[object]]] = {}
 
     def create_role(
         self,
@@ -178,8 +180,6 @@ class SqlRoleStore:
             uow.roles.delete(workspace_id, role_id)
             uow.documents.hard_delete(workspace_id, jd_id)
             uow.commit()
-        self.cover_letters.get(workspace_id, {}).pop(role_id, None)
-        self.bullet_drafts.get(workspace_id, {}).pop(role_id, None)
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         cv = self.cv_store.get_active(workspace_id)
@@ -327,28 +327,80 @@ class SqlRoleStore:
             return self._load_bundle(uow, workspace_id, record)
 
     def save_cover_letter(self, workspace_id: str, role_id: str, draft: object) -> None:
-        self.cover_letters.setdefault(workspace_id, {}).setdefault(role_id, []).append(
-            draft
+        self._save_draft(
+            workspace_id=workspace_id,
+            role_id=role_id,
+            draft=draft,
+            kind="cover-letter",
+            body=_cover_letter_body(draft),
+            citation_span_ids=_paragraph_span_ids(draft),
         )
 
-    def list_cover_letters(self, workspace_id: str, role_id: str) -> tuple[object, ...]:
-        if self.get_role(workspace_id, role_id) is None:
-            raise RoleOperationRejected(
-                "role_not_found", "No role with that id.", status_code=404
-            )
-        return tuple(self.cover_letters.get(workspace_id, {}).get(role_id, []))
+    def list_cover_letters(
+        self, workspace_id: str, role_id: str
+    ) -> tuple[GeneratedDraftRecord, ...]:
+        return self._list_drafts(workspace_id, role_id, kind="cover-letter")
 
     def save_bullet_draft(self, workspace_id: str, role_id: str, draft: object) -> None:
-        self.bullet_drafts.setdefault(workspace_id, {}).setdefault(role_id, []).append(
-            draft
+        self._save_draft(
+            workspace_id=workspace_id,
+            role_id=role_id,
+            draft=draft,
+            kind="bullets",
+            body=_bullet_body(draft),
+            citation_span_ids=_bullet_span_ids(draft),
         )
 
-    def list_bullet_drafts(self, workspace_id: str, role_id: str) -> tuple[object, ...]:
-        if self.get_role(workspace_id, role_id) is None:
-            raise RoleOperationRejected(
-                "role_not_found", "No role with that id.", status_code=404
+    def list_bullet_drafts(
+        self, workspace_id: str, role_id: str
+    ) -> tuple[GeneratedDraftRecord, ...]:
+        return self._list_drafts(workspace_id, role_id, kind="bullets")
+
+    def _save_draft(
+        self,
+        *,
+        workspace_id: str,
+        role_id: str,
+        draft: object,
+        kind: str,
+        body: str,
+        citation_span_ids: tuple[str, ...],
+    ) -> None:
+        provider, model_tag, left_machine, _grounded, fallback = _provenance_bits(draft)
+        with self._uow_factory() as uow:
+            record = uow.roles.get(workspace_id, role_id)
+            if record is None:
+                raise RoleOperationRejected(
+                    "role_not_found", "No role with that id.", status_code=404
+                )
+            uow.drafts.save(
+                NewGeneratedDraft(
+                    id=str(getattr(draft, "id")),
+                    workspace_id=workspace_id,
+                    role_id=role_id,
+                    kind=kind,
+                    body=body,
+                    analysis_version=record.analysis_version,
+                    citation_span_ids=citation_span_ids,
+                    provider=provider,
+                    model_tag=model_tag or "rules-v1",
+                    left_machine=left_machine,
+                    groundedness=GroundednessVerdict.PASS,
+                    used_template_fallback=fallback == "template",
+                    regeneration_count=0,
+                )
             )
-        return tuple(self.bullet_drafts.get(workspace_id, {}).get(role_id, []))
+            uow.commit()
+
+    def _list_drafts(
+        self, workspace_id: str, role_id: str, *, kind: str
+    ) -> tuple[GeneratedDraftRecord, ...]:
+        with self._uow_factory() as uow:
+            if uow.roles.get(workspace_id, role_id) is None:
+                raise RoleOperationRejected(
+                    "role_not_found", "No role with that id.", status_code=404
+                )
+            return uow.drafts.list_for_role(workspace_id, role_id, kind=kind)
 
     def ranked(
         self, workspace_id: str
@@ -509,3 +561,64 @@ class SqlRoleStore:
             jd_document_id=record.job_description_document_id,
             cv_document_id=cv.id if cv is not None else "",
         )
+
+
+def _provenance_bits(
+    draft: object,
+) -> tuple[str, str | None, bool, bool, str]:
+    prov = getattr(draft, "provenance", None)
+    if prov is None:
+        return "hermetic", "rules-v1", False, True, "template"
+    return (
+        str(getattr(prov, "provider", "hermetic")),
+        getattr(prov, "model", None),
+        bool(getattr(prov, "left_machine", False)),
+        bool(getattr(prov, "grounded", True)),
+        str(getattr(prov, "fallback", "template")),
+    )
+
+
+def _cover_letter_body(draft: object) -> str:
+    return json.dumps(
+        {
+            "paragraphs": list(getattr(draft, "paragraphs", [])),
+            "omitted_reason": getattr(draft, "omitted_reason", None),
+            "generated_at": getattr(
+                getattr(draft, "provenance", None), "generated_at", None
+            ),
+        }
+    )
+
+
+def _bullet_body(draft: object) -> str:
+    return json.dumps(
+        {
+            "requirement_id": getattr(draft, "requirement_id", None),
+            "bullets": list(getattr(draft, "bullets", [])),
+            "generated_at": getattr(
+                getattr(draft, "provenance", None), "generated_at", None
+            ),
+        }
+    )
+
+
+def _paragraph_span_ids(draft: object) -> tuple[str, ...]:
+    ids: list[str] = []
+    for paragraph in getattr(draft, "paragraphs", []):
+        if not isinstance(paragraph, dict):
+            continue
+        raw = paragraph.get("spanIds", paragraph.get("span_ids", []))
+        if isinstance(raw, list):
+            ids.extend(str(item) for item in raw)
+    return tuple(dict.fromkeys(ids))
+
+
+def _bullet_span_ids(draft: object) -> tuple[str, ...]:
+    ids: list[str] = []
+    for bullet in getattr(draft, "bullets", []):
+        if not isinstance(bullet, dict):
+            continue
+        raw = bullet.get("spanIds", bullet.get("span_ids", []))
+        if isinstance(raw, list):
+            ids.extend(str(item) for item in raw)
+    return tuple(dict.fromkeys(ids))

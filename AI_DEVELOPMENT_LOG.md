@@ -450,3 +450,16 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: finish role lifecycle persistence before draft durability.
 - Human validation: 4 SqlRoleStore integration tests green; hermetic API and
   analysis persistence green; ruff/mypy clean.
+
+### 029 — Phase 11.8 durable drafts on SqlRoleStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — durable generated drafts)
+- Prompt intent: continue Phase 11 with TDD.
+- Suggestion: persist cover-letter/bullets through DraftRepository; prove survival
+  across a fresh SqlRoleStore; reconstruct wires in analysis routes.
+- Outcome: accepted; production SQL create_app default still deferred.
+- Reason: generated artefacts must outlive the process like CV/roles.
+- Human validation: durable-draft integration green; full SqlRoleStore + draft
+  persistence suites green; hermetic API green; mypy/ruff clean.

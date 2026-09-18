@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 durable drafts on SqlRoleStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py::test_cover_letter_and_bullets_persist_across_store_instances -m integration`
+  - `pytest tests/integration/test_sql_role_store.py tests/integration/test_draft_persistence.py -m integration`
+  - `pytest tests/api/ -q --no-cov`
+  - `ruff` / `mypy`
+- Observed result:
+  - Cover letter and bullets persist in `generated_drafts` and reload via a fresh
+    SqlRoleStore instance and HTTP list.
+  - Routes reconstruct CoverLetterDraftWire / BulletDraftWire from
+    GeneratedDraftRecord JSON bodies.
+- Decisions made: draft body stores structured JSON; citations taken from paragraph/
+  bullet spanIds; hermetic InMemoryRoleStore unchanged.
+- Problems hit: none after green.
+- Carried forward: production SQL create_app default; 11.9 SSE.
+
 ## Phase 11 — API contracts (11.8 SqlRoleStore delete/reanalyse)
 
 - Date: 2026-09-18

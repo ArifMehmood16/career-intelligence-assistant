@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,6 +34,7 @@ from career_assistant.application.intake.resolve_span import (
     SpanNotFoundError,
     resolve_span,
 )
+from career_assistant.application.ports.persistence import GeneratedDraftRecord
 from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
@@ -128,6 +130,65 @@ def _require_bundle(
         return _roles(request).require_analysis(workspace_id, role_id)
     except RoleOperationRejected as exc:
         raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
+
+
+def _as_cover_letter_wire(draft: object) -> CoverLetterDraftWire:
+    if isinstance(draft, CoverLetterDraftWire):
+        return draft
+    if isinstance(draft, GeneratedDraftRecord):
+        payload = json.loads(draft.body)
+        created = draft.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        generated_at = payload.get("generated_at") or created.isoformat().replace(
+            "+00:00", "Z"
+        )
+        return CoverLetterDraftWire(
+            id=draft.id,
+            version=draft.version,
+            created_at=created.isoformat().replace("+00:00", "Z"),
+            role_id=draft.role_id,
+            paragraphs=list(payload.get("paragraphs", [])),
+            omitted_reason=payload.get("omitted_reason"),
+            provenance=DraftProvenanceWire(
+                provider=draft.provider,
+                model=draft.model_tag,
+                left_machine=draft.left_machine,
+                generated_at=str(generated_at),
+                grounded=True,
+                fallback="template" if draft.used_template_fallback else "none",
+            ),
+        )
+    raise TypeError(f"unsupported cover letter draft type: {type(draft)!r}")
+
+
+def _as_bullet_wire(draft: object) -> BulletDraftWire:
+    if isinstance(draft, BulletDraftWire):
+        return draft
+    if isinstance(draft, GeneratedDraftRecord):
+        payload = json.loads(draft.body)
+        created = draft.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        generated_at = payload.get("generated_at") or created.isoformat().replace(
+            "+00:00", "Z"
+        )
+        return BulletDraftWire(
+            id=draft.id,
+            version=draft.version,
+            created_at=created.isoformat().replace("+00:00", "Z"),
+            requirement_id=str(payload.get("requirement_id") or ""),
+            bullets=list(payload.get("bullets", [])),
+            provenance=DraftProvenanceWire(
+                provider=draft.provider,
+                model=draft.model_tag,
+                left_machine=draft.left_machine,
+                generated_at=str(generated_at),
+                grounded=True,
+                fallback="template" if draft.used_template_fallback else "none",
+            ),
+        )
+    raise TypeError(f"unsupported bullet draft type: {type(draft)!r}")
 
 
 @router.get("/roles/{role_id}/requirements", response_model=list[RequirementWire])
@@ -392,7 +453,7 @@ def list_cover_letters(
         drafts = _roles(request).list_cover_letters(workspace_id, role_id)
     except RoleOperationRejected as exc:
         raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
-    return [draft for draft in drafts if isinstance(draft, CoverLetterDraftWire)]
+    return [_as_cover_letter_wire(draft) for draft in drafts]
 
 
 @router.get(
@@ -428,8 +489,7 @@ def export_artefact(
                 "No cover letter draft to export for this role.",
                 status_code=422,
             )
-        latest = drafts[-1]
-        assert isinstance(latest, CoverLetterDraftWire)
+        latest = _as_cover_letter_wire(drafts[-1])
         paragraphs = [
             str(para.get("text", ""))
             for para in latest.paragraphs
@@ -446,8 +506,8 @@ def export_artefact(
             )
         lines = ["# CV bullets", ""]
         for draft in drafts:
-            assert isinstance(draft, BulletDraftWire)
-            for bullet in draft.bullets:
+            wire = _as_bullet_wire(draft)
+            for bullet in wire.bullets:
                 if isinstance(bullet, dict) and bullet.get("text"):
                     lines.append(str(bullet["text"]))
         lines.append("")
