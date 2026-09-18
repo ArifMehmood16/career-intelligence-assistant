@@ -3,9 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — upload limit (11.3) and
-provider routes (11.7) landed. Next: feature routes (11.8+) and remaining contract
-items.
+**Current position:** Phase 11 API contracts in progress — CV, span, role and job
+routes landed (11.8 partial). Next: remaining 11.8 artefacts (gap/interview/drafts/
+export/ranking/compare), then 11.9–11.13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -444,6 +444,9 @@ disagree, the file is corrected first and the change is deliberate.
       without `acknowledgedEgress`, so the confirmation is not only a UI convention.
 - [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
       compare and span routes.
+      - Done so far: CV paste lifecycle, `GET /api/spans/{id}`, roles create/list/get,
+        `GET /api/jobs/{id}` (hermetic in-memory stores). Remaining: gap/interview/
+        drafts/export/ranking/compare and SQL-backed persistence.
 - [ ] **11.9** SSE answer stream with the documented event sequence.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.

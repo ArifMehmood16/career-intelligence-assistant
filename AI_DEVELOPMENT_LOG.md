@@ -366,3 +366,16 @@ Never record a command output, metric, date or commit hash that was not observed
   not be UI-only.
 - Human validation: API upload + provider suites green; hermetic pytest (~83%),
   ruff, mypy.
+
+### 023 — Phase 11.8 partial CV/span/role/job routes (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial)
+- Prompt intent: continue on updated main with TDD after PR #22.
+- Suggestion: CV paste lifecycle; span Evidence with spanId; roles requiring CV and
+  returning queued jobs — hermetic in-memory stores first.
+- Outcome: accepted as a contract slice; SQL persistence and remaining 11.8 artefacts
+  deferred.
+- Reason: prove workspace-scoped HTTP contracts before wiring the analysis worker.
+- Human validation: focused API suites green; hermetic pytest (~84%), ruff, mypy.

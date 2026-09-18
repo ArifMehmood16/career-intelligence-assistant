@@ -18,6 +18,21 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 partial: CV, spans, roles, jobs)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_cv_routes.py tests/api/test_span_routes.py tests/api/test_role_routes.py -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - CV paste upload/get/delete with intake error mapping.
+  - Span evidence includes `spanId`; unknown span → `span_not_found`.
+  - Role create requires CV (`cv_required`); returns 202 with queued job; list/get work.
+- Decisions made: hermetic in-memory CV/role stores for API contract tests; SQL UoW
+  wiring and analysis worker execution deferred. Multipart CV upload deferred.
+- Problems hit: none material after response_model union/204 guard update.
+- Carried forward: gap/interview/drafts/export/ranking/compare; durable persistence.
+
 ## Phase 11 — API contracts (11.3 upload limit, 11.7 providers)
 
 - Date: 2026-09-18
