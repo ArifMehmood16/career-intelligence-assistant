@@ -18,7 +18,7 @@ def test_first_request_issues_httponly_samesite_workspace_cookie() -> None:
     raw = response.headers.get("set-cookie", "")
     assert "workspace=" in raw
     assert "HttpOnly" in raw
-    assert "SameSite=lax" in raw.lower()
+    assert "samesite=lax" in raw.lower()
     workspace_id = response.cookies["workspace"]
     uuid.UUID(workspace_id)
 
@@ -30,10 +30,11 @@ def test_existing_workspace_cookie_is_reused() -> None:
 
     response = client.get("/api/health")
 
-    assert response.cookies.get("workspace") == existing
-    # Re-issuing the same value is fine; changing it is not.
+    assert response.status_code == 200
+    assert client.cookies.get("workspace") == existing
     set_cookie = response.headers.get("set-cookie", "")
-    if set_cookie:
+    # Valid cookies must not be replaced with a different id.
+    if set_cookie and "workspace=" in set_cookie:
         assert existing in set_cookie
 
 

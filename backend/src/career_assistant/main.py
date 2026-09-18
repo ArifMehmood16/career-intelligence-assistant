@@ -8,6 +8,7 @@ from typing import Literal
 
 from fastapi import APIRouter, FastAPI
 
+from career_assistant.api.middleware import WorkspaceCookieMiddleware
 from career_assistant.api.schemas import ApiModel
 
 router = APIRouter(prefix="/api")
@@ -32,6 +33,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+    app.add_middleware(WorkspaceCookieMiddleware)
     app.include_router(router)
     return app
 
