@@ -4,13 +4,13 @@ import { ProviderSettingsContainer } from "@/components/settings/ProviderSetting
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — CIA" },
+      { title: "Settings — Career Intelligence" },
       {
         name: "description",
         content:
           "Choose the answering and indexing providers used for CV analysis.",
       },
-      { property: "og:title", content: "Settings — CIA" },
+      { property: "og:title", content: "Settings — Career Intelligence" },
       {
         property: "og:description",
         content:

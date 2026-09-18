@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CIA">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Career Intelligence">
   <rect width="32" height="32" rx="6" fill="#171717"/>
-  <path fill="none" stroke="#fafafa" stroke-width="2.2" stroke-linecap="round" d="M12.5 10.2a6 6 0 1 0 0 11.6"/>
-  <path fill="none" stroke="#fafafa" stroke-width="2.2" stroke-linecap="round" d="M16.5 10.5v11"/>
-  <path fill="none" stroke="#fafafa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M20 21.5l2.6-11 2.6 11M20.8 17.8h3.6"/>
+  <path fill="none" stroke="#fafafa" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M9.5 15.4 13.9 19.8 22.5 10.2"/>
+  <path fill="none" stroke="#fafafa" stroke-width="2.4" stroke-linecap="round" d="M10 23.8h12"/>
 </svg>
