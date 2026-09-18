@@ -34,9 +34,7 @@ def test_ready_returns_camel_case_status_payload() -> None:
 
 
 def test_ready_returns_503_when_database_unavailable() -> None:
-    client = TestClient(
-        create_app(readiness=_FakeReadiness(database="unavailable"))
-    )
+    client = TestClient(create_app(readiness=_FakeReadiness(database="unavailable")))
 
     response = client.get("/api/ready")
 

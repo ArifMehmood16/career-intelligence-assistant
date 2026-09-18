@@ -6,14 +6,19 @@ browser never holds an API origin. See docs/api-contract.md.
 
 from typing import Literal
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request, Response
 
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
     WorkspaceCookieMiddleware,
 )
-from career_assistant.api.schemas import ApiModel
+from career_assistant.api.readiness import (
+    ReadinessProbe,
+    SettingsReadiness,
+    StaticReadiness,
+)
+from career_assistant.api.schemas import ApiModel, ReadyResponse
 
 router = APIRouter(prefix="/api")
 
@@ -29,7 +34,41 @@ def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-def create_app() -> FastAPI:
+def _readiness_snapshot(probe: ReadinessProbe) -> StaticReadiness:
+    check = getattr(probe, "check", None)
+    if callable(check):
+        result = check()
+        if isinstance(result, StaticReadiness):
+            return result
+    return StaticReadiness(
+        database=probe.database,
+        migrations=probe.migrations,
+        completion_provider=probe.completion_provider,
+        embedding_provider=probe.embedding_provider,
+        hosted_egress=probe.hosted_egress,
+    )
+
+
+@router.get("/ready", response_model=ReadyResponse, tags=["ops"])
+def ready(request: Request, response: Response) -> ReadyResponse:
+    probe: ReadinessProbe | None = getattr(request.app.state, "readiness", None)
+    if probe is None:
+        probe = SettingsReadiness()
+        request.app.state.readiness = probe
+    snap = _readiness_snapshot(probe)
+    payload = ReadyResponse(
+        database=snap.database,
+        migrations=snap.migrations,
+        completion_provider=snap.completion_provider,
+        embedding_provider=snap.embedding_provider,
+        hosted_egress=snap.hosted_egress,
+    )
+    if snap.database != "ok" or snap.migrations != "current":
+        response.status_code = 503
+    return payload
+
+
+def create_app(*, readiness: ReadinessProbe | None = None) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own."""
     app = FastAPI(
         title="Career Intelligence Assistant",
@@ -41,6 +80,7 @@ def create_app() -> FastAPI:
     app.add_middleware(WorkspaceCookieMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     install_exception_handlers(app)
+    app.state.readiness = readiness
     app.include_router(router)
     return app
 

@@ -25,3 +25,11 @@ class ErrorBody(ApiModel):
 
 class ErrorEnvelope(ApiModel):
     error: ErrorBody
+
+
+class ReadyResponse(ApiModel):
+    database: str
+    migrations: str
+    completion_provider: str
+    embedding_provider: str
+    hosted_egress: bool
