@@ -8,6 +8,56 @@ import { describe, expect, it, vi } from "vitest";
 import { CvCard } from "./CvCard";
 
 describe("CvCard", () => {
+  it("shows the empty upload prompt", () => {
+    render(
+      <CvCard
+        state="empty"
+        document={null}
+        errorMessage={null}
+        onUpload={vi.fn()}
+        onReplace={vi.fn()}
+        onDelete={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Upload your CV/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Browse" })).toBeInTheDocument();
+  });
+
+  it("shows a parsing state while upload is in flight", () => {
+    render(
+      <CvCard
+        state="parsing"
+        document={null}
+        errorMessage={null}
+        onUpload={vi.fn()}
+        onReplace={vi.fn()}
+        onDelete={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/parsing/i)).toBeInTheDocument();
+  });
+
+  it("shows an actionable error message", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    render(
+      <CvCard
+        state="error"
+        document={null}
+        errorMessage="That file type is not supported. Upload a PDF, DOCX, or plain-text document."
+        onUpload={vi.fn()}
+        onReplace={vi.fn()}
+        onDelete={vi.fn()}
+        onRetry={onRetry}
+      />,
+    );
+    expect(screen.getByText(/not supported/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalled();
+  });
+
   it("asks for confirmation before replace and delete", async () => {
     const user = userEvent.setup();
     const onReplace = vi.fn();

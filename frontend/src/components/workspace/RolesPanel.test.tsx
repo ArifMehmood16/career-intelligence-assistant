@@ -44,6 +44,38 @@ const failedRole: Role = {
   status: "failed",
 };
 
+describe("RolesPanel screen states", () => {
+  const panelProps = {
+    roles: [] as Role[],
+    sortKey: "fit" as const,
+    sortDirection: "desc" as const,
+    onSort: vi.fn(),
+    onRetry: vi.fn(),
+    addRoleSlot: null,
+    layout: "table" as const,
+  };
+
+  it("shows inert, empty, loading and error states", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    const { rerender } = render(
+      <RolesPanel {...panelProps} state="inert" onRetry={onRetry} />,
+    );
+    expect(screen.getByText(/add your cv first/i)).toBeInTheDocument();
+
+    rerender(<RolesPanel {...panelProps} state="empty" onRetry={onRetry} />);
+    expect(screen.getByText(/no roles yet/i)).toBeInTheDocument();
+
+    rerender(<RolesPanel {...panelProps} state="loading" onRetry={onRetry} />);
+    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
+
+    rerender(<RolesPanel {...panelProps} state="error" onRetry={onRetry} />);
+    expect(screen.getByText(/roles could not be loaded/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalled();
+  });
+});
+
 describe("RolesPanel analysis status", () => {
   it("shows Analysing instead of a score while status is analysing", () => {
     render(

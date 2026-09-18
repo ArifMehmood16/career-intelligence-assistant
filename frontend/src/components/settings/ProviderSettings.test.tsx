@@ -56,6 +56,26 @@ const baseProps = {
 };
 
 describe("ProviderSettings", () => {
+  it("shows loading and error states", async () => {
+    const user = userEvent.setup();
+    const onRetry = vi.fn();
+    const { rerender, container } = render(
+      <ProviderSettings {...baseProps} state="loading" onRetry={onRetry} />,
+    );
+    expect(
+      container.querySelectorAll("[class*='animate-pulse']").length,
+    ).toBeGreaterThan(0);
+
+    rerender(
+      <ProviderSettings {...baseProps} state="error" onRetry={onRetry} />,
+    );
+    expect(
+      screen.getByText(/provider list could not be loaded/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalled();
+  });
+
   it("shows real unavailable reasons for providers that are down", () => {
     render(<ProviderSettings {...baseProps} />);
     expect(
