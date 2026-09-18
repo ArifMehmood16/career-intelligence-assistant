@@ -6,6 +6,7 @@ import {
   getProviders,
   setProviderChoice,
 } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import {
   ProviderSettings,
   type PendingReindex,
@@ -15,9 +16,8 @@ import {
 import type { Provider, ProviderChoice } from "@/types";
 
 function mutationErrorMessage(error: unknown): string | null {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error && error.message) return error.message;
-  return null;
+  if (!error) return null;
+  return formatDescribedError(describeApiError(error));
 }
 
 export function ProviderSettingsContainer() {

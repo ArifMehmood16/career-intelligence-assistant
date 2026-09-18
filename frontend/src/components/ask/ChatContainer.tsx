@@ -8,6 +8,7 @@ import {
   getSpan,
   postMessageStream,
 } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import { ChatView, type ChatViewState } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import type { ChatMessage, Citation } from "@/types";
@@ -129,10 +130,10 @@ export function ChatContainer() {
       if (error instanceof DOMException && error.name === "AbortError") {
         void queryClient.invalidateQueries({ queryKey: ["messages"] });
       } else if (error instanceof ApiError) {
-        setSendError(error.message);
+        setSendError(formatDescribedError(describeApiError(error)));
         void queryClient.invalidateQueries({ queryKey: ["messages"] });
       } else if (error instanceof Error) {
-        setSendError(error.message);
+        setSendError(formatDescribedError(describeApiError(error)));
         void queryClient.invalidateQueries({ queryKey: ["messages"] });
       }
     } finally {
@@ -209,8 +210,8 @@ export function ChatContainer() {
         }
         resolveState={resolveState}
         resolveError={
-          spanQuery.error instanceof ApiError
-            ? `This citation could not be resolved (${spanQuery.error.code}).`
+          spanQuery.error != null
+            ? formatDescribedError(describeApiError(spanQuery.error))
             : null
         }
         onOpenChange={setPanelOpen}

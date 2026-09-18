@@ -1,12 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, deleteCv, getCv, uploadCv } from "@/api/client";
+import { deleteCv, getCv, uploadCv } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import { CvCard, type CvCardState } from "@/components/workspace/CvCard";
-
-function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 export function CvCardContainer() {
   const queryClient = useQueryClient();
@@ -22,6 +17,7 @@ export function CvCardContainer() {
 
   const failed = cvQuery.isError || upload.isError || remove.isError;
   const busy = cvQuery.isPending || upload.isPending || remove.isPending;
+  const failure = upload.error ?? remove.error ?? cvQuery.error;
 
   const state: CvCardState = failed
     ? "error"
@@ -36,12 +32,7 @@ export function CvCardContainer() {
       state={state}
       document={cvQuery.data ?? null}
       errorMessage={
-        failed
-          ? errorMessage(
-              upload.error ?? remove.error ?? cvQuery.error,
-              "That CV could not be parsed. Try uploading it again.",
-            )
-          : null
+        failed ? formatDescribedError(describeApiError(failure)) : null
       }
       onUpload={(file) => upload.mutate(file)}
       onReplace={(file) => upload.mutate(file)}

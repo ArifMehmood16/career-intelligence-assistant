@@ -1,20 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ApiError,
   deleteCoverLetter,
   getCoverLetters,
   uploadCoverLetter,
 } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import {
   CoverLettersCard,
   type CoverLettersCardState,
 } from "@/components/workspace/CoverLettersCard";
-
-function errorMessage(error: unknown, fallback: string): string {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
 
 export function CoverLettersCardContainer() {
   const queryClient = useQueryClient();
@@ -37,6 +31,7 @@ export function CoverLettersCardContainer() {
   });
 
   const failed = listQuery.isError || upload.isError || remove.isError;
+  const failure = upload.error ?? remove.error ?? listQuery.error;
   const state: CoverLettersCardState = failed
     ? "error"
     : listQuery.isPending
@@ -48,12 +43,7 @@ export function CoverLettersCardContainer() {
       state={state}
       documents={listQuery.data ?? []}
       errorMessage={
-        failed
-          ? errorMessage(
-              upload.error ?? remove.error ?? listQuery.error,
-              "Cover letters could not be loaded.",
-            )
-          : null
+        failed ? formatDescribedError(describeApiError(failure)) : null
       }
       uploading={upload.isPending}
       onUpload={(file) => upload.mutate(file)}

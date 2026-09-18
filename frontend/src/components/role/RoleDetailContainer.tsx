@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ApiError,
   getFitBreakdown,
   getRequirements,
   getRole,
   getSpan,
 } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { RequirementTable } from "@/components/role/RequirementTable";
@@ -85,11 +85,9 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           : "ready";
 
   const resolveError =
-    spanQuery.error instanceof ApiError
-      ? `This citation could not be resolved (${spanQuery.error.code}).`
-      : spanQuery.isError
-        ? "This citation could not be resolved."
-        : null;
+    spanQuery.error != null
+      ? formatDescribedError(describeApiError(spanQuery.error))
+      : null;
 
   return (
     <div className="space-y-6">

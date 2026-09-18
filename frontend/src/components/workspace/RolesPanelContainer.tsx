@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ApiError,
-  addRole,
-  getCv,
-  getJob,
-  getRoles,
-  reanalyseRole,
-} from "@/api/client";
+import { addRole, getCv, getJob, getRoles, reanalyseRole } from "@/api/client";
+import { describeApiError, formatDescribedError } from "@/api/errors";
 import { AddRoleDialog } from "@/components/workspace/AddRoleDialog";
 import {
   RolesPanel,
@@ -35,9 +29,8 @@ function compare(a: Role, b: Role, key: RolesSortKey): number {
 }
 
 function mutationErrorMessage(error: unknown): string | null {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error && error.message) return error.message;
-  return null;
+  if (!error) return null;
+  return formatDescribedError(describeApiError(error));
 }
 
 export function RolesPanelContainer() {
