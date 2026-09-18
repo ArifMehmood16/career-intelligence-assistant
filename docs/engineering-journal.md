@@ -18,6 +18,218 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (complete)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_supporting_documents.py` (red→green)
+  - `pytest tests/api/test_message_history.py` (red→green)
+  - `pytest tests/api -q --no-cov`
+  - `pytest tests/api/test_error_table_coverage.py`
+  - `make lint`
+- Observed result:
+  - Supporting cover letters: list/upload/delete + safe document download.
+  - Messages: GET history, DELETE hard-delete, JSON/SSE share answer id on retry.
+  - Full API suite green; lint/mypy/frontend typecheck green.
+- Decisions made: hermetic InMemorySupportingDocumentStore (CV download bridge);
+  conversation store remains process-local for API tests (SQL ask store deferred).
+- Problems hit: download route needed response_class for the response_model gate;
+  SSE replay omitted messageId until fixed.
+- Carried forward: Phase 12; SQL supporting/ask stores; rate_limited/provider_failed
+  HTTP surfaces when those controls exist.
+
+## Phase 11 — API contracts (11.11 OpenAPI↔TS types)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/contract/test_openapi_frontend_types.py -q --no-cov` (red then green)
+  - `make lint` / frontend `tsc` / `eslint`
+- Observed result:
+  - Shared models assert required camelCase fields on both OpenAPI and
+    `frontend/src/types/index.ts`.
+  - `Evidence.spanId` added to TS; fixtures and mock client updated.
+  - `ChatMessage.leftMachine` (+ question kind) aligned with the wire contract.
+- Decisions made: required-field intersection test (API may add fields); bring
+  spanId forward from the Phase 12.5 note into 11.11 as PLAN requires.
+- Problems hit: none after fixture/client updates.
+- Carried forward: 11.12 supporting documents; 11.13 GET/DELETE messages + SQL.
+
+## Phase 11 — API contracts (11.10 answer/draft provenance)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_provenance_responses.py -q --no-cov` (red then green)
+  - `pytest tests/api tests/unit/test_ask_use_case.py -q --no-cov`
+  - `make lint`
+- Observed result:
+  - SSE meta carries provider, model, leftMachine.
+  - JSON Accept on POST /messages returns ChatMessageWire with the same fields.
+  - Interview pack, bullets, cover-letter provenance already present — locked by
+    regression.
+- Decisions made: extend AskEvent/SSE meta with leftMachine; document it in
+  api-contract.md; JSON ask path added early for provenance (GET/DELETE still 11.13).
+- Problems hit: none after green.
+- Carried forward: 11.11 OpenAPI↔TS; 11.12 supporting docs; 11.13 history/delete.
+
+## Phase 11 — API contracts (11.9 SSE ask stream)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_message_sse.py -q --no-cov` (red then green)
+  - `pytest tests/api -q --no-cov`
+  - `make lint`
+- Observed result:
+  - `POST /api/messages` with `Accept: text/event-stream` returns
+    meta → token(s) → citations → done over hermetic AskService.
+  - Response-model gate allows StreamingResponse alongside PlainTextResponse.
+- Decisions made: SSE framing in `api/sse.py`; in-memory conversation store for
+  hermetic API; JSON Accept deferred to 11.13 with GET/DELETE.
+- Problems hit: none after response_model exemption.
+- Carried forward: 11.10 provenance; 11.13 full message routes + SQL conversation.
+
+## Phase 11 — API contracts (11.8 production SQL app wiring)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_production_app_wiring.py -q --no-cov` (red then green)
+  - `pytest tests/api -q --no-cov`
+  - `make lint`
+- Observed result:
+  - Module `career_assistant.main:app` exposes SqlCvStore + SqlRoleStore.
+  - `create_app()` without injection still uses in-memory stores for hermetic API
+    tests (51 API tests green).
+- Decisions made: `create_production_app` + `build_sql_stores` for the process
+  entrypoint; keep `create_app` hermetic for test factories. Engine is lazy until
+  first request.
+- Problems hit: none.
+- Carried forward: 11.9 SSE answer stream.
+
+## Phase 11 — API contracts (11.8 durable drafts on SqlRoleStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py::test_cover_letter_and_bullets_persist_across_store_instances -m integration`
+  - `pytest tests/integration/test_sql_role_store.py tests/integration/test_draft_persistence.py -m integration`
+  - `pytest tests/api/ -q --no-cov`
+  - `ruff` / `mypy`
+- Observed result:
+  - Cover letter and bullets persist in `generated_drafts` and reload via a fresh
+    SqlRoleStore instance and HTTP list.
+  - Routes reconstruct CoverLetterDraftWire / BulletDraftWire from
+    GeneratedDraftRecord JSON bodies.
+- Decisions made: draft body stores structured JSON; citations taken from paragraph/
+  bullet spanIds; hermetic InMemoryRoleStore unchanged.
+- Problems hit: none after green.
+- Carried forward: production SQL create_app default; 11.9 SSE.
+
+## Phase 11 — API contracts (11.8 SqlRoleStore delete/reanalyse)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `pytest tests/integration/test_analysis_persistence.py -m integration -q --no-cov`
+  - `ruff` / `mypy` on changed persistence modules
+- Observed result:
+  - delete removes role (cascade) and JD document; get returns None.
+  - reanalyse bumps analysis_version, publishes new hermetic results, new job id.
+  - list_mappings scoped to current analysis_version.
+  - HTTP delete/reanalyse against injected SQL stores green (4 SqlRoleStore tests).
+- Decisions made: JD document deleted after role (RESTRICT FK); drafts still
+  process-memory on SqlRoleStore.
+- Problems hit: none after green.
+- Carried forward: durable drafts; production SQL create_app default; 11.9 SSE.
+
+## Phase 11 — API contracts (11.8 SqlRoleStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_role_store.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `pytest tests/integration/test_analysis_persistence.py
+    tests/integration/test_draft_persistence.py … -m integration`
+  - `ruff` / `mypy` on role_store
+- Observed result:
+  - SqlRoleStore create publishes hermetic analysis into PostgreSQL; role ready,
+    job succeeded; require_analysis reloads requirements/mappings/score.
+  - HTTP create role + requirements work with injected SqlCvStore + SqlRoleStore.
+  - Migration `a1b2c3d4e5f6` adds `roles.company`.
+- Decisions made: claim/requirement spans from hermetic extractors are ensured in
+  the spans table before publish; drafts remain process-memory on SqlRoleStore for
+  now; create_app still defaults to in-memory stores.
+- Problems hit: none after green.
+- Carried forward: SQL delete/reanalyse; durable drafts; production SQL default;
+  11.9 SSE.
+
+## Phase 11 — API contracts (11.8 SqlCvStore)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/integration/test_sql_cv_store.py tests/integration/test_cv_http_sql.py -m integration -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`
+  - `ruff` / `mypy` on `adapters/persistence/cv_store.py`
+- Observed result:
+  - SqlCvStore upload/get/span/delete round-trip via CvStore port against
+    `TEST_DATABASE_URL`.
+  - `create_app(cv_store=SqlCvStore(...))` serves CV + span HTTP routes from Postgres.
+  - Hermetic API suite still green on InMemoryCvStore default.
+- Decisions made: keep in-memory as create_app default for hermetic tests; inject
+  SqlCvStore for SQL-backed runs. Roles/analysis SQL wiring deferred.
+- Problems hit: none after green.
+- Carried forward: SqlRoleStore / analysis persistence behind API; 11.9 SSE.
+
+## Phase 11 — API contracts (11.8 hermetic lifecycle + draft list)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_role_lifecycle_routes.py -q --no-cov` (red then green)
+  - `pytest tests/api/ -q --no-cov` → 51 passed
+  - `ruff check` / `mypy` on changed modules
+- Observed result:
+  - DELETE role → 204 and subsequent get → `role_not_found`.
+  - POST reanalyse → 202 with new succeeded job; role stays `ready`.
+  - `analysis_incomplete` 409 when store marks role analysing.
+  - Cover letters persisted and listed; bullets/cover-letter markdown export works.
+- Decisions made: hermetic reanalyse remains synchronous; `mark_incomplete` is a
+  store test helper, not an HTTP route.
+- Problems hit: none after green.
+- Carried forward: SQL-backed CV/role/analysis/draft persistence; 11.9 SSE.
+
+## Phase 11 — API contracts (11.8 hermetic analysis artefacts)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_role_analysis_routes.py tests/api/test_role_routes.py -q --no-cov`
+  - `ruff check` / `ruff format` on changed analysis modules
+- Observed result:
+  - Role create now runs hermetic rules extract→map→score synchronously; status
+    `ready`, job `succeeded`.
+  - Requirements, breakdown, gap-plan, interview-pack, bullets, cover-letter (or
+    `insufficient_matched_requirements`), markdown export, ranking and compare
+    routes pass the focused API suite (7 analysis + role tests).
+- Decisions made: keep in-memory stores for hermetic API contracts; domain
+  generation helpers remain the source of gap/interview/draft text; drafts stamp
+  hermetic provenance with `leftMachine: false`.
+- Problems hit: focused pytest hit the global 80% coverage gate — use `--no-cov`
+  for slice runs; suite-wide coverage still via full `pytest`.
+- Carried forward: SQL-backed CV/role/analysis persistence; generated cover-letter
+  list; SSE ask (11.9); OpenAPI/frontend type agreement (11.11).
+
+## Phase 11 — API contracts (11.8 partial: CV, spans, roles, jobs)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_cv_routes.py tests/api/test_span_routes.py tests/api/test_role_routes.py -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - CV paste upload/get/delete with intake error mapping.
+  - Span evidence includes `spanId`; unknown span → `span_not_found`.
+  - Role create requires CV (`cv_required`); returns 202 with queued job; list/get work.
+- Decisions made: hermetic in-memory CV/role stores for API contract tests; SQL UoW
+  wiring and analysis worker execution deferred. Multipart CV upload deferred.
+- Problems hit: none material after response_model union/204 guard update.
+- Carried forward: gap/interview/drafts/export/ranking/compare; durable persistence.
+
 ## Phase 11 — API contracts (11.3 upload limit, 11.7 providers)
 
 - Date: 2026-09-18

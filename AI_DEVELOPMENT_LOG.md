@@ -366,3 +366,174 @@ Never record a command output, metric, date or commit hash that was not observed
   not be UI-only.
 - Human validation: API upload + provider suites green; hermetic pytest (~83%),
   ruff, mypy.
+
+### 023 — Phase 11.8 partial CV/span/role/job routes (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial)
+- Prompt intent: continue on updated main with TDD after PR #22.
+- Suggestion: CV paste lifecycle; span Evidence with spanId; roles requiring CV and
+  returning queued jobs — hermetic in-memory stores first.
+- Outcome: accepted as a contract slice; SQL persistence and remaining 11.8 artefacts
+  deferred.
+- Reason: prove workspace-scoped HTTP contracts before wiring the analysis worker.
+- Human validation: focused API suites green; hermetic pytest (~84%), ruff, mypy.
+
+### 024 — Phase 11.8 hermetic analysis output routes (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — analysis artefacts)
+- Prompt intent: continue Phase 11 in the same PR; green the analysis/ranking reds.
+- Suggestion: sync hermetic analyse on role create; routes for requirements,
+  breakdown, gap-plan, interview-pack, bullets, cover-letter, export, ranking,
+  compare using domain generation + scoring rubric.
+- Outcome: accepted for hermetic API contracts; SQL persistence still deferred.
+- Reason: artefact routes need a finished analysis; sync hermetic path keeps tests
+  deterministic without a worker.
+- Human validation: `pytest tests/api/test_role_analysis_routes.py
+  tests/api/test_role_routes.py -q --no-cov` green (7 tests); ruff clean on changed
+  files.
+
+### 025 — Phase 11.8 hermetic role lifecycle and draft list (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — lifecycle / drafts)
+- Prompt intent: continue Phase 11 in the same PR.
+- Suggestion: delete, reanalyse, cover-letter list, bullets/cover-letter export,
+  analysis_incomplete coverage on the in-memory store.
+- Outcome: accepted; SQL persistence still deferred.
+- Reason: finish hermetic wire contracts before swapping stores for PostgreSQL.
+- Human validation: lifecycle red→green; `pytest tests/api/ -q --no-cov` → 51
+  passed; ruff and mypy clean on changed modules.
+
+### 026 — Phase 11.8 SqlCvStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL CV persistence)
+- Prompt intent: continue Phase 11; first SQL slice for API stores.
+- Suggestion: SqlCvStore implementing CvStore over SqlUnitOfWork; integration tests
+  for port + HTTP CV/span routes with injected store.
+- Outcome: accepted; create_app still defaults to InMemoryCvStore for hermetic
+  API tests.
+- Reason: production CV data must hit PostgreSQL without breaking offline contract
+  tests; injection keeps both paths.
+- Human validation: integration SqlCvStore + CV HTTP SQL tests green; hermetic
+  `tests/api/` green; ruff/mypy clean.
+
+### 027 — Phase 11.8 SqlRoleStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL role/analysis persistence)
+- Prompt intent: continue Phase 11 SQL slice after SqlCvStore.
+- Suggestion: SqlRoleStore create/list/get/require_analysis publishing hermetic
+  analysis; roles.company migration; create_app(role_store=…) injection.
+- Outcome: accepted; delete/reanalyse/durable drafts deferred.
+- Reason: prove role analysis rows round-trip through PostgreSQL before widening
+  the store surface.
+- Human validation: SqlRoleStore integration (2) green; related analysis/draft
+  integration green; hermetic `tests/api/` green; ruff/mypy clean.
+
+### 028 — Phase 11.8 SqlRoleStore delete and reanalyse (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — SQL role lifecycle)
+- Prompt intent: continue Phase 11 with TDD.
+- Suggestion: RoleRepository.delete + bump_analysis_version; SqlRoleStore
+  delete/reanalyse; version-scoped list_mappings; HTTP integration coverage.
+- Outcome: accepted; durable drafts and production SQL default still deferred.
+- Reason: finish role lifecycle persistence before draft durability.
+- Human validation: 4 SqlRoleStore integration tests green; hermetic API and
+  analysis persistence green; ruff/mypy clean.
+
+### 029 — Phase 11.8 durable drafts on SqlRoleStore (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — durable generated drafts)
+- Prompt intent: continue Phase 11 with TDD.
+- Suggestion: persist cover-letter/bullets through DraftRepository; prove survival
+  across a fresh SqlRoleStore; reconstruct wires in analysis routes.
+- Outcome: accepted; production SQL create_app default still deferred.
+- Reason: generated artefacts must outlive the process like CV/roles.
+- Human validation: durable-draft integration green; full SqlRoleStore + draft
+  persistence suites green; hermetic API green; mypy/ruff clean.
+
+### 030 — Phase 11.8 production SQL app wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (complete — production entrypoint)
+- Prompt intent: continue Phase 11; wire SQL as the uvicorn/Docker default.
+- Suggestion: `build_sql_stores` + `create_production_app`; keep `create_app()`
+  hermetic for API tests; unit-test module `app` store types.
+- Outcome: accepted; 11.8 checked off in PLAN.md.
+- Reason: AGENTS forbids process-memory as a production persistence path;
+  Docker/Make run `career_assistant.main:app`.
+- Rejected alternatives: changing `create_app()` default to SQL (would force
+  every hermetic API test onto Postgres).
+- Human validation: production wiring unit tests green; API suite green;
+  `make lint` green.
+
+### 031 — Phase 11.9 SSE answer stream (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.9
+- Prompt intent: continue Phase 11 after production SQL wiring.
+- Suggestion: API test for documented SSE sequence; `format_ask_sse` +
+  `POST /api/messages` over AskService.stream; InMemoryConversationStore.
+- Outcome: accepted; JSON Accept / GET / DELETE left for 11.13.
+- Reason: Phase 9 already owns stream/non-stream parity in the use case; 11.9 is
+  the HTTP transport framing only.
+- Human validation: message SSE API test green; full API suite green; `make lint`
+  green.
+
+### 032 — Phase 11.10 answer and draft provenance (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.10
+- Prompt intent: continue Phase 11 after SSE stream.
+- Suggestion: API regression for provider/model/leftMachine on SSE meta, JSON
+  ChatMessage, and draft/interview-pack provenance; extend AskEvent + SSE framing;
+  add JSON Accept path sharing AskService.ask.
+- Outcome: accepted; api-contract meta event updated with leftMachine.
+- Reason: AGENTS requires every answer/artefact to record provider, model tag and
+  egress; drafts already had DraftProvenanceWire.
+- Human validation: provenance API tests green; API + ask use-case suites green;
+  `make lint` green.
+
+### 033 — Phase 11.11 OpenAPI and TypeScript type parity (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.11
+- Prompt intent: continue Phase 11 after provenance.
+- Suggestion: contract test mapping shared TS interfaces to OpenAPI components;
+  require Evidence.spanId on both sides; update fixtures/client for the new fields.
+- Outcome: accepted; PLAN 12.5 note adjusted so spanId is not re-added later.
+- Reason: citations cannot open stored spans without spanId; contract file is the
+  authority when halves disagree.
+- Human validation: contract tests green; frontend typecheck/lint green; make lint
+  green.
+
+### 034 — Phase 11.12–11.13 supporting docs and message history (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.12, 11.13 (Phase 11 exit)
+- Prompt intent: complete Phase 11 with TDD.
+- Suggestion: supporting cover-letter CRUD + safe download; GET/DELETE messages;
+  SSE replay messageId; error-table intake/provider coverage tests.
+- Outcome: accepted; Phase 11 checked complete in PLAN.md.
+- Reason: closes the remaining API contract surface before frontend integration.
+- Rejected alternatives: SQL supporting/ask stores in this slice (hermetic first,
+  matching prior Phase 11 pattern).
+- Human validation: supporting + message history API tests green; full API suite
+  green; make lint green.

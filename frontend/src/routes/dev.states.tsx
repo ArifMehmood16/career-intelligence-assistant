@@ -77,6 +77,7 @@ const sampleRoles: Role[] = [
 ];
 
 const matchedEvidence: Evidence = {
+  spanId: "span-cv-demo-sql",
   documentId: "cv-demo",
   page: 1,
   paragraph:
@@ -100,6 +101,7 @@ const sampleRequirements: Requirement[] = [
     type: "must",
     status: "partial",
     evidence: {
+      spanId: "span-cv-demo-dbt",
       documentId: "cv-demo",
       page: 2,
       paragraph:
@@ -128,6 +130,7 @@ const answeredMessage: ChatMessage = {
       id: "cit-1",
       label: "CV p.2",
       evidence: {
+        spanId: "span-cv-demo-dbt-2",
         documentId: "cv-demo",
         page: 2,
         paragraph:
@@ -143,6 +146,7 @@ const answeredMessage: ChatMessage = {
   ],
   model: "built-in-offline",
   provider: "builtin",
+  leftMachine: false,
 };
 
 const insufficientMessage: ChatMessage = {
@@ -154,6 +158,7 @@ const insufficientMessage: ChatMessage = {
   citations: [],
   model: "built-in-offline",
   provider: "builtin",
+  leftMachine: false,
 };
 
 const streamingMessage: ChatMessage = {
@@ -164,6 +169,7 @@ const streamingMessage: ChatMessage = {
   citations: [],
   model: "built-in-offline",
   provider: "builtin",
+  leftMachine: false,
 };
 
 const providerLocal: Provider = {
@@ -458,10 +464,11 @@ function DevStatesPage() {
                 id: "msg-user",
                 author: "user",
                 content: "Where is the strongest evidence for this role?",
-                kind: "answer",
+                kind: "question",
                 citations: [],
                 model: null,
                 provider: null,
+                leftMachine: false,
               },
               streamingMessage,
             ]}
@@ -484,10 +491,11 @@ function DevStatesPage() {
                 id: "msg-user-2",
                 author: "user",
                 content: "Where does my CV fall short for Kestrel?",
-                kind: "answer",
+                kind: "question",
                 citations: [],
                 model: null,
                 provider: null,
+                leftMachine: false,
               },
               answeredMessage,
             ]}

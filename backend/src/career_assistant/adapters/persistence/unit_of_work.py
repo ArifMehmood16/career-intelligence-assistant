@@ -158,6 +158,28 @@ class SqlDocumentRepository:
             for row in rows
         )
 
+    def ensure_spans(
+        self, workspace_id: str, document_id: str, spans: tuple[Span, ...]
+    ) -> None:
+        wid = _as_uuid(workspace_id)
+        doc_id = _as_uuid(document_id)
+        for span in spans:
+            existing = self._session.get(SpanRow, _as_uuid(span.id))
+            if existing is not None:
+                continue
+            self._session.add(
+                SpanRow(
+                    id=_as_uuid(span.id),
+                    workspace_id=wid,
+                    document_id=doc_id,
+                    page_number=span.page_number,
+                    start_offset=span.start_offset,
+                    end_offset=span.end_offset,
+                    text=span.text,
+                )
+            )
+        self._session.flush()
+
     def hard_delete(self, workspace_id: str, document_id: str) -> None:
         row = self._session.scalar(
             select(DocumentRow).where(

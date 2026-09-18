@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import get_args, get_origin
 
+from fastapi.responses import PlainTextResponse, Response, StreamingResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 from starlette.routing import BaseRoute
@@ -22,10 +23,26 @@ def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
             yield from _iter_api_routes(list(route.original_router.routes))
 
 
+def _is_non_json_body_route(route: APIRoute) -> bool:
+    response_class = route.response_class
+    if not isinstance(response_class, type):
+        return False
+    if issubclass(response_class, (PlainTextResponse, StreamingResponse)):
+        return True
+    # Binary document download returns raw bytes with Content-Disposition.
+    return route.path.endswith("/download") and issubclass(response_class, Response)
+
+
 def _assert_response_model(model: object, *, route: APIRoute) -> None:
-    assert model is not None, (
-        f"{route.methods} {route.path} must declare response_model"
-    )
+    # 204 No Content routes may omit a body model.
+    # Markdown export and SSE ask routes use non-JSON response classes.
+    if model is None:
+        assert (
+            route.status_code == 204
+            or 204 in (route.status_code or (),)
+            or _is_non_json_body_route(route)
+        ), f"{route.methods} {route.path} needs an explicit response_model"
+        return
     assert model is not dict, f"{route.methods} {route.path} must not use bare dict"
     origin = get_origin(model)
     if origin is list:
@@ -35,6 +52,13 @@ def _assert_response_model(model: object, *, route: APIRoute) -> None:
         )
         assert issubclass(args[0], BaseModel), (
             f"{route.methods} {route.path} list item must be a Pydantic model"
+        )
+        return
+    if origin is not None:
+        args = [arg for arg in get_args(model) if arg is not type(None)]
+        assert args, f"{route.methods} {route.path} union response_model is empty"
+        assert issubclass(args[0], BaseModel), (
+            f"{route.methods} {route.path} union item must be a Pydantic model"
         )
         return
     assert isinstance(model, type) and issubclass(model, BaseModel), (

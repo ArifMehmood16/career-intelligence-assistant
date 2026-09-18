@@ -6,6 +6,7 @@ export interface CvDocument {
 }
 
 export interface Evidence {
+  spanId: string;
   documentId: string;
   page: number;
   paragraph: string;
@@ -49,12 +50,15 @@ export interface Citation {
 
 export interface ChatMessage {
   id: string;
+  conversationId?: string;
   author: "user" | "assistant";
   content: string;
-  kind: "answer" | "insufficient";
+  kind: "question" | "answer" | "insufficient";
   citations: Citation[];
   model: string | null;
   provider: string | null;
+  leftMachine: boolean;
+  createdAt?: string;
 }
 
 export interface Provider {

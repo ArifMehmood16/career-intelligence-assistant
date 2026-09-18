@@ -3,9 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — upload limit (11.3) and
-provider routes (11.7) landed. Next: feature routes (11.8+) and remaining contract
-items.
+**Current position:** Phase 11 API contracts complete. Next: Phase 12 frontend
+integration (proxy spike first).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -442,24 +441,34 @@ disagree, the file is corrected first and the change is deliberate.
 - [x] **11.7** Provider endpoints: list with availability and the reason any is
       unavailable; set the workspace choice. Hosted selection is rejected server-side
       without `acknowledgedEgress`, so the confirmation is not only a UI convention.
-- [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
-      compare and span routes.
-- [ ] **11.9** SSE answer stream with the documented event sequence.
-- [ ] **11.10** Every answer and every draft response carries the provider, the model
-      tag and whether content left the machine.
-- [ ] **11.11** Contract test: the generated OpenAPI schema and
+- [x] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
+      compare and span routes. Hermetic in-memory API surface; SqlCvStore /
+      SqlRoleStore (create/list/get/delete/reanalyse + durable drafts);
+      `create_production_app` wires SQL stores for uvicorn/Docker while
+      `create_app()` stays hermetic for API tests.
+- [x] **11.9** SSE answer stream with the documented event sequence
+      (`meta` → `token`* → `citations` → `done`) on `POST /api/messages` with
+      `Accept: text/event-stream`, driven by the existing AskService (not a second
+      implementation). JSON Accept and GET/DELETE remain for 11.13.
+- [x] **11.10** Every answer and every draft response carries the provider, the model
+      tag and whether content left the machine. SSE `meta` includes `leftMachine`;
+      JSON `POST /api/messages` returns `ChatMessage` with the same fields; draft and
+      interview-pack `provenance` covered by API regression.
+- [x] **11.11** Contract test: the generated OpenAPI schema and
       `frontend/src/types/index.ts` agree on every shared model, including the
       `spanId` required to open every `Evidence` citation.
-- [ ] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
+- [x] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
       and download an original document by id, all workspace-scoped. Responses expose
       metadata, never database paths or storage internals. Generated cover-letter
       routes remain role-scoped and distinct.
-- [ ] **11.13** Message routes expose persisted conversation history. `POST` requires
+- [x] **11.13** Message routes expose persisted conversation history. `POST` requires
       `clientRequestId`; both JSON and SSE transports return the same stored final
       answer id. `DELETE` performs the hard-delete contract.
 
 **Exit gate:** OpenAPI is accurate; API tests cover each status path in the error
-table.
+table. (`rate_limited` and `provider_failed` have no dedicated HTTP surface yet —
+mapped in SSE framing / deferred until a rate-limit middleware and live provider
+failure path land.)
 
 ## Phase 12 — Frontend integration
 
@@ -482,8 +491,8 @@ The screens exist. This phase makes them real. See
 - [ ] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
       `GapPlan`, `GapItem`, `InterviewPack`, `BulletDraft`, `CoverLetterDraft`,
       `RankedRole`, `Comparison`, `DraftProvenance`, persisted message fields and
-      supporting documents. Add `spanId` to `Evidence`; this is a necessary correction
-      because the current shape cannot open an exact stored span.
+      supporting documents. (`Evidence.spanId` and `ChatMessage.leftMachine` already
+      landed in 11.11.)
 - [ ] **12.6** Wire the workspace: CV upload with real progress and real rejection
       messages, supporting cover-letter upload/list/delete, add role, delete and
       replace-CV confirmation. Make clear that cover letters are not score evidence.

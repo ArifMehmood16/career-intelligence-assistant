@@ -65,7 +65,3 @@ export function StatusMark({ status }: StatusMarkProps) {
     </span>
   );
 }
-
-export function statusLabel(status: RequirementStatus): string {
-  return LABELS[status];
-}

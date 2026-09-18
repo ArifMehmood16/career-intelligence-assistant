@@ -9,6 +9,7 @@ from typing import Literal
 from fastapi import APIRouter, FastAPI, Request, Response
 
 from career_assistant.adapters.persistence.readiness import SettingsReadiness
+from career_assistant.adapters.persistence.wiring import build_sql_stores
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
@@ -19,8 +20,20 @@ from career_assistant.api.readiness import (
     ReadinessProbe,
     StaticReadiness,
 )
+from career_assistant.api.routes_analysis import router as analysis_router
+from career_assistant.api.routes_cv import router as cv_router
+from career_assistant.api.routes_documents import router as documents_router
+from career_assistant.api.routes_messages import router as messages_router
 from career_assistant.api.routes_providers import router as providers_router
+from career_assistant.api.routes_roles import router as roles_router
+from career_assistant.api.routes_spans import router as spans_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.documents.supporting import (
+    InMemorySupportingDocumentStore,
+    SupportingDocumentStore,
+)
+from career_assistant.application.roles.store import InMemoryRoleStore
 from career_assistant.settings import LimitSettings, ProviderSettings
 
 router = APIRouter(prefix="/api")
@@ -76,8 +89,15 @@ def create_app(
     readiness: ReadinessProbe | None = None,
     limits: LimitSettings | None = None,
     providers: ProviderSettings | None = None,
+    cv_store: CvStore | None = None,
+    role_store: object | None = None,
+    supporting_store: SupportingDocumentStore | None = None,
 ) -> FastAPI:
-    """Build the application. Kept a factory so tests construct their own."""
+    """Build the application. Kept a factory so tests construct their own.
+
+    Default stores are in-memory for hermetic API tests. The module-level
+    ``app`` used by uvicorn/Docker is built with ``create_production_app``.
+    """
     upload_limits = limits or LimitSettings()
     app = FastAPI(
         title="Career Intelligence Assistant",
@@ -96,9 +116,44 @@ def create_app(
     app.state.limits = upload_limits
     app.state.providers = providers
     app.state.provider_choices = {}
+    resolved_cv = cv_store if cv_store is not None else InMemoryCvStore()
+    app.state.cv_store = resolved_cv
+    app.state.role_store = (
+        role_store
+        if role_store is not None
+        else InMemoryRoleStore(cv_store=resolved_cv)
+    )
+    app.state.supporting_store = (
+        supporting_store
+        if supporting_store is not None
+        else InMemorySupportingDocumentStore(cv_store=resolved_cv)
+    )
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
+    app.include_router(cv_router, prefix="/api")
+    app.include_router(documents_router, prefix="/api")
+    app.include_router(spans_router, prefix="/api")
+    app.include_router(roles_router, prefix="/api")
+    app.include_router(analysis_router, prefix="/api")
+    app.include_router(messages_router, prefix="/api")
     return app
 
 
-app = create_app()
+def create_production_app(
+    *,
+    readiness: ReadinessProbe | None = None,
+    limits: LimitSettings | None = None,
+    providers: ProviderSettings | None = None,
+) -> FastAPI:
+    """Wire SQL stores for the process entrypoint (uvicorn / Docker CMD)."""
+    cv_store, role_store = build_sql_stores()
+    return create_app(
+        readiness=readiness if readiness is not None else SettingsReadiness(),
+        limits=limits,
+        providers=providers,
+        cv_store=cv_store,
+        role_store=role_store,
+    )
+
+
+app = create_production_app()
