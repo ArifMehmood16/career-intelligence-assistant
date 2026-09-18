@@ -18,6 +18,28 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 8 — Analysis jobs
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_analysis_job_domain.py -q --no-cov` (red then green)
+  - `pytest tests/unit/test_analysis_pipeline.py -q --no-cov` (red then green)
+  - `pytest tests/integration/test_analysis_persistence.py -m integration -q --no-cov`
+  - `pytest -m integration -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - Domain job lifecycle with stages, safe errors, stale-running recovery.
+  - `AnalysisService` enqueues immediately, bounds concurrency, publishes only on
+    success, discards on failure; CV-replace reanalysis covered in unit + SQL.
+  - Migration `34b3a0846d82` adds role `status` and full job columns; SQL repos
+    publish requirements/claims/mappings/score + terminal job atomically.
+- Decisions made:
+  - Red tests committed before each green implementation (team TDD).
+  - SQL analysis repos omitted from hermetic coverage; proven by integration.
+- Problems hit and how they were resolved:
+  - Duplicate test module basename (`test_analysis_jobs.py`); renamed unit vs
+    integration modules.
+- Carried forward: Phase 9 question answering; HTTP role/job routes in Phase 11.
+
 ## Phase 7 — Mapping and scoring
 
 - Date: 2026-09-18

@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 7 (mapping and scoring) exit gate is satisfied.
-Next work is Phase 8 — analysis jobs.
+**Current position:** Phase 8 (analysis jobs) exit gate is satisfied.
+Next work is Phase 9 — question answering.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -334,23 +334,23 @@ explanation and correct deltas, with no model call.
 Extraction against a local or hosted model takes seconds to minutes. Making the user
 wait on a request is the wrong shape, and so is pretending it is instant.
 
-- [ ] **8.1** Job domain type and states: `queued`, `running`, `succeeded`, `failed`,
+- [x] **8.1** Job domain type and states: `queued`, `running`, `succeeded`, `failed`,
       with a stage and an error reason.
-- [ ] **8.2** In-process worker with a bounded dispatcher and PostgreSQL-backed job
+- [x] **8.2** In-process worker with a bounded dispatcher and PostgreSQL-backed job
       records. No Celery or Redis. On startup, persisted `queued` jobs are dispatched;
       stale `running` jobs are deterministically failed or re-queued according to an
       explicit timeout policy; no job remains permanently running after a process
       restart.
-- [ ] **8.3** Role analysis pipeline as a job: parse → extract requirements → extract
+- [x] **8.3** Role analysis pipeline as a job: parse → extract requirements → extract
       claims → map → score, each stage recorded.
-- [ ] **8.4** Failure attribution: a failed job names the stage and a safe reason.
+- [x] **8.4** Failure attribution: a failed job names the stage and a safe reason.
       Partial results are discarded, not shown as a low score.
-- [ ] **8.5** Re-analysis: replacing the CV or changing the index provider enqueues
+- [x] **8.5** Re-analysis: replacing the CV or changing the index provider enqueues
       re-analysis for every affected role in the same database transaction that
       invalidates the stale mapping.
-- [ ] **8.6** Idempotence: the same role analysed twice produces the same stored
+- [x] **8.6** Idempotence: the same role analysed twice produces the same stored
       mapping, and a duplicate enqueue does not double-run.
-- [ ] **8.7** Publish analysis results transactionally: requirements, claims,
+- [x] **8.7** Publish analysis results transactionally: requirements, claims,
       mappings, score explanation and terminal job state become visible together.
       Readers never see partial results as a low score.
 

@@ -8,6 +8,11 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from career_assistant.adapters.persistence.analysis_repos import (
+    SqlAnalysisJobRepository,
+    SqlAnalysisResultRepository,
+    SqlRoleRepository,
+)
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
@@ -21,12 +26,15 @@ from career_assistant.adapters.persistence.models import (
     WorkspaceRow,
 )
 from career_assistant.application.ports.persistence import (
+    AnalysisJobRepository,
+    AnalysisResultRepository,
     AnswerRecord,
     ConversationRepository,
     DocumentRepository,
     NewDocument,
     ParseStatus,
     QuestionRecord,
+    RoleRepository,
     StoredDocument,
     WorkspaceRepository,
 )
@@ -290,17 +298,25 @@ class SqlConversationRepository:
 
 class SqlUnitOfWork:
     def __init__(self, factory: sessionmaker[Session]) -> None:
-        self._factory = factory
+        self._session_factory = factory
         self._session: Session | None = None
         self.workspaces: WorkspaceRepository
         self.documents: DocumentRepository
         self.conversations: ConversationRepository
+        self.roles: RoleRepository
+        self.jobs: AnalysisJobRepository
+        self.analysis: AnalysisResultRepository
 
     def __enter__(self) -> SqlUnitOfWork:
-        self._session = self._factory()
+        self._session = self._session_factory()
         self.workspaces = SqlWorkspaceRepository(self._session)
         self.documents = SqlDocumentRepository(self._session)
         self.conversations = SqlConversationRepository(self._session)
+        self.roles = SqlRoleRepository(self._session)
+        self.jobs = SqlAnalysisJobRepository(self._session, self.roles)
+        self.analysis = SqlAnalysisResultRepository(
+            self._session, self.roles, self.jobs
+        )
         return self
 
     def __exit__(self, *exc: object) -> None:
