@@ -538,6 +538,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 042 — Phase 12.10 provider settings wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.10
+- Prompt intent: continue TDD with regular commits.
+- Suggestion: re-index warning dialog; keep hosted confirm; show unavailableReason;
+  setProviderChoice acknowledgedEgress + optional reindex response.
+- Outcome: accepted.
+- Reason: matches api-contract egress ack and index-change invalidation warning.
+- Rejected alternatives: silent index changes without user confirmation.
+- Human validation: ProviderSettings tests green; full vitest 56; typecheck/lint.
+
 ### 041 — Phase 12.9 Ask SSE wiring (TDD)
 
 - Date: 2026-09-18

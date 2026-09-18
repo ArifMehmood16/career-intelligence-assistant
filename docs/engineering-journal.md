@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.10 settings)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/components/settings/ProviderSettings.test.tsx` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - Unavailable reasons rendered from the API; hosted egress dialog retained;
+    re-index confirmation when index provider/model changes; save errors surfaced
+    from ApiError; setProviderChoice returns optional reindex job id.
+  - Frontend vitest 56 green.
+- Decisions made: warn before PUT on index changes (UI gate); hosted still requires
+  acknowledgement; acknowledgedEgress only when a hosted provider is in the choice.
+- Problems hit: duplicate reason text across answer/index selectors in tests.
+- Carried forward: 12.11 error-code mapping across the app.
+
 ## Phase 12 — Frontend integration (12.9 Ask SSE)
 
 - Date: 2026-09-18

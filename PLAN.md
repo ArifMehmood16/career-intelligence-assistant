@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration in progress — 12.1–12.9
-landed (through Ask SSE). Next: 12.10 wire settings.
+**Current position:** Phase 12 frontend integration in progress — 12.1–12.10
+landed (through settings). Next: 12.11 app-wide error handling.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -507,7 +507,7 @@ The screens exist. This phase makes them real. See
 - [x] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
       insufficient-evidence state, persisted history after reload, delete-history and
       the provider stamp. Client retries reuse the same `clientRequestId`.
-- [ ] **12.10** Wire settings: provider list with real availability reasons, the
+- [x] **12.10** Wire settings: provider list with real availability reasons, the
       hosted confirmation, and the re-index warning when the index provider changes.
 - [ ] **12.11** Error handling across the app: every documented error code maps to a
       state the user can act on. Unknown codes fail visibly, not silently.
