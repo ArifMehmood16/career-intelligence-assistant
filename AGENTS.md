@@ -106,6 +106,12 @@ removed.
   Adding a fifth must require no change outside `adapters/` and the configuration.
 - Configuration is injected. Domain code does not read environment variables.
 - Persistence models do not become domain models by convenience.
+- PostgreSQL 16 + pgvector is the production system of record for original uploads,
+  parsed documents, roles, mappings, generated artefacts and chat history. Fakes are
+  test-only; do not add a SQLite, filesystem or process-memory persistence fallback.
+- Uploaded cover letters are supporting documents, not candidate evidence. They may
+  be retrieved and cited for direct questions, but must never produce claims or affect
+  fit mappings and scores.
 - Scoring lives in `domain/`, is pure, and is unit tested without a database or a
   model.
 - Frontend stays feature-oriented. No global state unless genuinely shared.
@@ -149,9 +155,10 @@ untrusted.
 - Enforce configurable limits on file size, page/character count, question length,
   context size and model output.
 - Allowlist accepted file types. Reject on content inspection, not extension alone.
-- Job-description and CV text cannot issue instructions to the application or
-  override the system prompt. Retrieved text is delimited and labelled untrusted in
-  every prompt. Add a regression test for an injection attempt in a job description.
+- Job-description, CV and cover-letter text cannot issue instructions to the
+  application or override the system prompt. Retrieved text is delimited and labelled
+  untrusted in every prompt. Add a regression test for an injection attempt in a job
+  description.
 - Validate model output against a schema and verify every span reference against
   stored server-side spans before it reaches the user.
 - Escape document excerpts in the browser. Never inject them as raw HTML.
@@ -168,10 +175,11 @@ untrusted.
   and whether content left the machine. Removing that attribution is a security change.
 - Never branch on a provider's name in the application. Read the capability descriptor
   and degrade deterministically.
-- Do not log document text, raw uploads, embeddings, full prompts, credentials or
-  model responses.
-- Personal data: implement hard delete that removes documents, chunks, embeddings,
-  extracted claims, mappings and generated drafts. Test that nothing survives it.
+- Do not log document text, raw uploads, questions, answers, embeddings, full prompts,
+  credentials or model responses.
+- Personal data: implement hard delete that removes original document bytes, parsed
+  text, chunks, embeddings, extracted claims, mappings, generated drafts, questions,
+  answers and citations. Test that nothing survives it.
 - Secrets in environment variables locally, a secret manager in production.
 
 Update `docs/threat-model.md` when a trust boundary or control changes.
