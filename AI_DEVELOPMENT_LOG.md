@@ -538,6 +538,26 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 057 — Phase 13A.1 quality baseline (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13A.1
+- Prompt intent: restore `make lint` after the observed Ruff format failure on
+  `application/ports/persistence.py`, then run the exact quality targets.
+- Suggestion: collapse `list_cover_letters` to one line; keep Alembic migrations
+  outside Ruff's `backend/src backend/tests` target; record FastAPI/Starlette
+  TestClient deprecation warnings as a Phase 15 risk instead of silencing them.
+- Outcome: accepted.
+- Reason: the lint miss was formatting only; adding `httpx2` or `filterwarnings`
+  would weaken the gate. Installed versions observed: FastAPI 0.141.1, Starlette
+  1.6.0, httpx 0.28.1, anyio 4.15.1.
+- Rejected alternatives: installing `httpx2`; widening `fastapi>=0.141,<0.142`;
+  adding pytest `filterwarnings`.
+- Human validation: `make lint`, `make typecheck`, `make test` (230 passed, 3
+  skipped, 29 deselected; frontend 100 passed), `make test-integration` (29
+  passed). Two third-party warnings remain and are recorded in PLAN Phase 15.
+
 ### 056 — Post-Phase-13 logic and production-wiring audit
 
 - Date: 2026-09-18

@@ -18,6 +18,28 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.1 — Restore the complete quality baseline
+
+- Date: 2026-09-18
+- Commands run:
+  - `backend/.venv/bin/ruff format --check backend/src backend/tests` — 168 files
+    already formatted after collapsing `list_cover_letters` in
+    `application/ports/persistence.py`
+  - `make lint` — ruff check/format green; mypy "Success: no issues found in 111
+    source files"; frontend `tsc --noEmit` and `eslint .` green
+  - `make typecheck` — mypy 111 files; frontend `tsc --noEmit` green
+  - `make test` — backend 230 passed, 3 skipped, 29 deselected, 2 warnings;
+    coverage 80.58%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 29 passed against local PostgreSQL; same 2 warnings
+- Observed result: exact Make quality targets are green without changing Ruff's
+  `backend/src backend/tests` scope. Alembic versions remain in
+  `backend/migrations/`, outside that target.
+- Decisions made: carry the two TestClient deprecation warnings as a Phase 15
+  maintenance risk rather than adding `httpx2`, widening FastAPI, or filtering
+  warnings.
+- Problems hit: `list_cover_letters` was the only unformatted signature.
+- Carried forward: 13A.2 SQL-backed chat and provider settings.
+
 ## Phase 13 — Accessibility and escaped text (13.9–13.10) + exit gate
 
 - Date: 2026-09-18

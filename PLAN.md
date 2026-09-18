@@ -564,7 +564,7 @@ contracts exist in isolated domain/repository tests without being used by the
 production HTTP path. Close these gaps before Phase 14 so evaluation measures the
 real application.
 
-- [ ] **13A.1 Restore the complete quality baseline.** Format
+- [x] **13A.1 Restore the complete quality baseline.** Format
       `application/ports/persistence.py`, then run the exact repository lint,
       typecheck, hermetic and PostgreSQL integration targets. Keep generated Alembic
       migrations outside Ruff's hand-written-source target; do not broaden or weaken
@@ -666,6 +666,16 @@ are deterministic and covered at API and component level. Only then begin Phase 
 ## Phase 15 — Observability and security pass
 
 Kept light. No vendor APM, no dashboards.
+
+**Maintenance risk carried from 13A.1 (do not silence):** FastAPI 0.141.1 /
+Starlette 1.6.0 TestClient emits two third-party warnings on the hermetic and
+integration suites — `StarletteDeprecationWarning` that `httpx` with
+`starlette.testclient` is deprecated in favour of `httpx2`, and
+`DeprecationWarning` that `anyio.abc.BlockingPortal` should be
+`anyio.from_thread.BlockingPortal`. They originate in site-packages, not
+application code. Do not add `httpx2`, widen the FastAPI pin, or add
+`filterwarnings` to obtain green output. Revisit on a compatible FastAPI /
+Starlette upgrade that still fits Python 3.14 and the existing constraints.
 
 - [ ] **15.1** Structured operation events: document ingested, job stage completed,
       requirements extracted, mapping computed, question answered, draft generated,
