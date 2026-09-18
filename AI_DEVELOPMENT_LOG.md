@@ -352,3 +352,17 @@ Never record a command output, metric, date or commit hash that was not observed
   safe errors before CV/role handlers land.
 - Human validation: focused API suites green; hermetic pytest (~83%), ruff, mypy;
   persistence boundary test green after moving SettingsReadiness into adapters.
+
+### 022 — Phase 11.3 upload limit and 11.7 providers (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.3, 11.7
+- Prompt intent: continue on updated main after PR #21; keep TDD.
+- Suggestion: pure ASGI Content-Length gate; provider catalogue + choice routes with
+  server-side egress acknowledgement; redaction assertion for API keys.
+- Outcome: accepted; durable SQL provider_settings deferred.
+- Reason: pre-buffer rejection is the contract requirement; hosted confirmation must
+  not be UI-only.
+- Human validation: API upload + provider suites green; hermetic pytest (~83%),
+  ruff, mypy.

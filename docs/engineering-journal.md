@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.3 upload limit, 11.7 providers)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_upload_size_limit.py -q --no-cov`
+  - `pytest tests/api/test_provider_routes.py -q --no-cov`
+  - `pytest tests/api/ -q --no-cov`, `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - ASGI Content-Length gate returns 413 `document_too_large` without calling `receive()`.
+  - Provider catalogue reports availability/reasons; PUT enforces `egress_not_acknowledged`
+    and `egress_not_permitted`; API keys absent from response bodies.
+- Decisions made: workspace provider choice is process-memory for this slice
+  (keyed by workspace cookie); SQL `provider_settings` wiring follows with CV/role
+  persistence routes. Ollama listed available without a live reachability probe.
+- Problems hit: FastAPI `list[Model]` response models broke the issubclass guard;
+  renamed API provider test module to avoid colliding with `tests/unit/test_providers.py`.
+- Carried forward: 11.8+ feature routes; durable provider_settings persistence.
+
 ## Phase 11 — API contracts (foundation: 11.1, 11.2, 11.4–11.6)
 
 - Date: 2026-09-18

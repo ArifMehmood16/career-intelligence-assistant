@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import get_args, get_origin
 
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
@@ -19,6 +20,26 @@ def _iter_api_routes(routes: list[BaseRoute]) -> Iterator[APIRoute]:
             yield from _iter_api_routes(list(route.routes))
         elif hasattr(route, "original_router"):
             yield from _iter_api_routes(list(route.original_router.routes))
+
+
+def _assert_response_model(model: object, *, route: APIRoute) -> None:
+    assert model is not None, (
+        f"{route.methods} {route.path} must declare response_model"
+    )
+    assert model is not dict, f"{route.methods} {route.path} must not use bare dict"
+    origin = get_origin(model)
+    if origin is list:
+        args = get_args(model)
+        assert args, (
+            f"{route.methods} {route.path} list response_model needs an item type"
+        )
+        assert issubclass(args[0], BaseModel), (
+            f"{route.methods} {route.path} list item must be a Pydantic model"
+        )
+        return
+    assert isinstance(model, type) and issubclass(model, BaseModel), (
+        f"{route.methods} {route.path} response_model must be a Pydantic model"
+    )
 
 
 def test_api_model_serialises_snake_case_fields_as_camel_case() -> None:
@@ -58,15 +79,7 @@ def test_every_route_declares_an_explicit_response_model() -> None:
     assert api_routes, "expected at least one API route"
 
     for route in api_routes:
-        assert route.response_model is not None, (
-            f"{route.methods} {route.path} must declare response_model"
-        )
-        assert route.response_model is not dict, (
-            f"{route.methods} {route.path} must not use bare dict"
-        )
-        assert issubclass(route.response_model, BaseModel), (
-            f"{route.methods} {route.path} response_model must be a Pydantic model"
-        )
+        _assert_response_model(route.response_model, route=route)
 
 
 def test_health_response_inherits_shared_api_model() -> None:

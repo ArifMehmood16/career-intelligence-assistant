@@ -12,13 +12,16 @@ from career_assistant.adapters.persistence.readiness import SettingsReadiness
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
+    UploadSizeLimitMiddleware,
     WorkspaceCookieMiddleware,
 )
 from career_assistant.api.readiness import (
     ReadinessProbe,
     StaticReadiness,
 )
+from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.settings import LimitSettings, ProviderSettings
 
 router = APIRouter(prefix="/api")
 
@@ -68,8 +71,14 @@ def ready(request: Request, response: Response) -> ReadyResponse:
     return payload
 
 
-def create_app(*, readiness: ReadinessProbe | None = None) -> FastAPI:
+def create_app(
+    *,
+    readiness: ReadinessProbe | None = None,
+    limits: LimitSettings | None = None,
+    providers: ProviderSettings | None = None,
+) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own."""
+    upload_limits = limits or LimitSettings()
     app = FastAPI(
         title="Career Intelligence Assistant",
         version="0.1.0",
@@ -79,9 +88,16 @@ def create_app(*, readiness: ReadinessProbe | None = None) -> FastAPI:
     # Last added runs first for requests.
     app.add_middleware(WorkspaceCookieMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
+    app.add_middleware(
+        UploadSizeLimitMiddleware, max_upload_bytes=upload_limits.max_upload_bytes
+    )
     install_exception_handlers(app)
     app.state.readiness = readiness
+    app.state.limits = upload_limits
+    app.state.providers = providers
+    app.state.provider_choices = {}
     app.include_router(router)
+    app.include_router(providers_router, prefix="/api")
     return app
 
 
