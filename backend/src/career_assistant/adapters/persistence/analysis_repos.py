@@ -163,6 +163,32 @@ class SqlRoleRepository:
         self._session.flush()
         return _to_role(row)
 
+    def bump_analysis_version(self, workspace_id: str, role_id: str) -> RoleRecord:
+        row = self._session.scalar(
+            select(RoleRow).where(
+                RoleRow.workspace_id == _as_uuid(workspace_id),
+                RoleRow.id == _as_uuid(role_id),
+            )
+        )
+        if row is None:
+            raise KeyError(role_id)
+        row.analysis_version += 1
+        row.status = RoleStatus.ANALYSING.value
+        self._session.flush()
+        return _to_role(row)
+
+    def delete(self, workspace_id: str, role_id: str) -> None:
+        row = self._session.scalar(
+            select(RoleRow).where(
+                RoleRow.workspace_id == _as_uuid(workspace_id),
+                RoleRow.id == _as_uuid(role_id),
+            )
+        )
+        if row is None:
+            raise KeyError(role_id)
+        self._session.delete(row)
+        self._session.flush()
+
 
 class SqlAnalysisJobRepository:
     def __init__(self, session: Session, roles: SqlRoleRepository) -> None:
@@ -389,10 +415,14 @@ class SqlAnalysisResultRepository:
     def list_mappings(
         self, workspace_id: str, role_id: str
     ) -> tuple[RequirementMapping, ...]:
+        role = self._roles.get(workspace_id, role_id)
+        if role is None:
+            return ()
         rows = self._session.scalars(
             select(MappingRow).where(
                 MappingRow.workspace_id == _as_uuid(workspace_id),
                 MappingRow.role_id == _as_uuid(role_id),
+                MappingRow.analysis_version == role.analysis_version,
                 MappingRow.invalidated.is_(False),
             )
         ).all()

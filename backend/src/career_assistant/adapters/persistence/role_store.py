@@ -122,9 +122,7 @@ class SqlRoleStore:
         with self._uow_factory() as uow:
             uow.workspaces.ensure(workspace_id)
             uow.documents.save_admitted(workspace_id, jd_document)
-            uow.documents.ensure_spans(
-                workspace_id, cv.view.id, bundle.cv_claim_spans
-            )
+            uow.documents.ensure_spans(workspace_id, cv.view.id, bundle.cv_claim_spans)
             uow.roles.create(
                 workspace_id=workspace_id,
                 role_id=role_id,
@@ -151,6 +149,118 @@ class SqlRoleStore:
             id=role_id,
             title=title,
             company=company,
+            fit_score=int(round(bundle.explanation.score)),
+            band_label=band_label(bundle.explanation.band),
+            counts=count_statuses(bundle.mappings),
+            status="ready",
+            updated_at=now,
+            description=description,
+        )
+        job = JobView(
+            id=job_id,
+            kind=terminal.kind.value,
+            state=terminal.state.value,
+            stage=terminal.stage.value if terminal.stage else None,
+            started_at=terminal.started_at,
+            finished_at=terminal.finished_at,
+            error=None,
+        )
+        return role, job
+
+    def delete_role(self, workspace_id: str, role_id: str) -> None:
+        with self._uow_factory() as uow:
+            record = uow.roles.get(workspace_id, role_id)
+            if record is None:
+                raise RoleOperationRejected(
+                    "role_not_found", "No role with that id.", status_code=404
+                )
+            jd_id = record.job_description_document_id
+            uow.roles.delete(workspace_id, role_id)
+            uow.documents.hard_delete(workspace_id, jd_id)
+            uow.commit()
+        self.cover_letters.get(workspace_id, {}).pop(role_id, None)
+        self.bullet_drafts.get(workspace_id, {}).pop(role_id, None)
+
+    def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
+        cv = self.cv_store.get_active(workspace_id)
+        if cv is None:
+            raise RoleOperationRejected(
+                "cv_required",
+                "Upload a CV before reanalysing a role.",
+                status_code=409,
+            )
+        with self._uow_factory() as uow:
+            record = uow.roles.get(workspace_id, role_id)
+            if record is None:
+                raise RoleOperationRejected(
+                    "role_not_found", "No role with that id.", status_code=404
+                )
+            jd = uow.documents.get(workspace_id, record.job_description_document_id)
+            if jd is None:
+                raise RoleOperationRejected(
+                    "role_not_found",
+                    "Job description for this role is missing.",
+                    status_code=404,
+                )
+            description = jd.normalised_text
+
+        bundle = analyse_hermetic(
+            cv_text=cv.normalised_text,
+            cv_document_id=cv.view.id,
+            jd_text=description,
+        )
+        now = datetime.now(UTC)
+        job_id = str(uuid.uuid4())
+        queued = new_role_analysis_job(
+            job_id=job_id,
+            workspace_id=workspace_id,
+            role_id=role_id,
+            created_at=now,
+        )
+        terminal = mark_succeeded(
+            mark_stage(mark_running(queued, at=now), JobStage.SCORING),
+            at=now,
+        )
+
+        with self._uow_factory() as uow:
+            bumped = uow.roles.bump_analysis_version(workspace_id, role_id)
+            uow.documents.ensure_spans(workspace_id, cv.view.id, bundle.cv_claim_spans)
+            # JD spans may be new ids from a fresh hermetic extract — persist them.
+            uow.documents.ensure_spans(
+                workspace_id, record.job_description_document_id, bundle.jd_spans
+            )
+            # Re-bind requirement source_span_ids onto the existing JD document id.
+            requirements = tuple(
+                Requirement(
+                    id=req.id,
+                    text=req.text,
+                    competency=req.competency,
+                    seniority_signal=req.seniority_signal,
+                    must_have=req.must_have,
+                    source_span_id=req.source_span_id,
+                    extraction_confidence=req.extraction_confidence,
+                    is_vague=req.is_vague,
+                )
+                for req in bundle.requirements
+            )
+            uow.jobs.enqueue(queued)
+            uow.analysis.publish(
+                workspace_id=workspace_id,
+                role_id=role_id,
+                analysis_version=bumped.analysis_version,
+                cv_document_id=cv.view.id,
+                requirements=requirements,
+                claims=bundle.claims,
+                mappings=bundle.mappings,
+                explanation=bundle.explanation,
+                job=terminal,
+            )
+            uow.commit()
+
+        role = RoleView(
+            id=role_id,
+            title=record.title,
+            company=record.company,
             fit_score=int(round(bundle.explanation.score)),
             band_label=band_label(bundle.explanation.band),
             counts=count_statuses(bundle.mappings),
@@ -277,6 +387,7 @@ class SqlRoleStore:
             select(ScoreExplanationRow).where(
                 ScoreExplanationRow.workspace_id == uuid.UUID(workspace_id),
                 ScoreExplanationRow.role_id == uuid.UUID(record.id),
+                ScoreExplanationRow.analysis_version == record.analysis_version,
                 ScoreExplanationRow.invalidated.is_(False),
             )
         )
@@ -360,6 +471,7 @@ class SqlRoleStore:
             select(ScoreExplanationRow).where(
                 ScoreExplanationRow.workspace_id == wid,
                 ScoreExplanationRow.role_id == rid,
+                ScoreExplanationRow.analysis_version == record.analysis_version,
                 ScoreExplanationRow.invalidated.is_(False),
             )
         )
