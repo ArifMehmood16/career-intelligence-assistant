@@ -21,6 +21,8 @@ export const KNOWN_ERROR_CODES = [
   "provider_failed",
   "rate_limited",
   "internal_error",
+  "misconfigured",
+  "csrf_rejected",
 ] as const;
 
 export type KnownErrorCode = (typeof KNOWN_ERROR_CODES)[number];
@@ -102,6 +104,16 @@ const GUIDANCE: Record<KnownErrorCode, { title: string; nextStep: string }> = {
   internal_error: {
     title: "Something went wrong",
     nextStep: "Retry. If it keeps failing, note the correlation id below.",
+  },
+  misconfigured: {
+    title: "The web server is misconfigured",
+    nextStep:
+      "API_BASE_URL must be set for the Start proxy (make run loads config/app.env). Restart the web process.",
+  },
+  csrf_rejected: {
+    title: "That request was blocked",
+    nextStep:
+      "Reload from the app origin (default http://localhost:3000) and try again.",
   },
 };
 

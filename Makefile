@@ -123,11 +123,13 @@ down: config
 	$(COMPOSE) down
 
 # Host API + web. Creates DB if missing, migrates schema, then starts.
+# bun --env-file loads API_BASE_URL into the Start proxy process (shell export alone
+# is not enough for the Vinxi/Nitro worker). Port is 3000 to match WEB_ORIGIN.
 run: config db-migrate db-check
 	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
 	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)
 	$(LOAD_ENV) && \
-	echo "Web http://localhost:3000  API http://localhost:8000/docs" && \
+	echo "Web http://localhost:$${WEB_PORT:-3000}  API http://localhost:$${API_PORT:-8000}/docs" && \
 	trap 'kill 0' EXIT && \
-	$(BACKEND_BIN)/uvicorn career_assistant.main:app --reload --host 127.0.0.1 --port 8000 & \
-	cd $(FRONTEND) && bun run dev
+	$(BACKEND_BIN)/uvicorn career_assistant.main:app --reload --host 127.0.0.1 --port $${API_PORT:-8000} & \
+	cd $(FRONTEND) && bun --env-file=../$(ENV_FILE) run dev -- --host 127.0.0.1 --port $${WEB_PORT:-3000} --strictPort

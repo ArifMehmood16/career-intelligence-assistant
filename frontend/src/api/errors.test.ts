@@ -13,6 +13,7 @@ describe("describeApiError", () => {
       [
         "analysis_incomplete",
         "cover_letter_not_found",
+        "csrf_rejected",
         "cv_not_found",
         "cv_required",
         "document_too_large",
@@ -21,6 +22,7 @@ describe("describeApiError", () => {
         "egress_not_acknowledged",
         "egress_not_permitted",
         "internal_error",
+        "misconfigured",
         "provider_failed",
         "provider_unavailable",
         "rate_limited",
@@ -29,6 +31,18 @@ describe("describeApiError", () => {
         "validation_failed",
       ].sort(),
     );
+  });
+
+  it("guides the operator when the Start proxy lacks API_BASE_URL", () => {
+    const described = describeApiError(
+      new ApiError("misconfigured", "API_BASE_URL is not set on the server.", {
+        correlationId: "proxy",
+        status: 500,
+      }),
+    );
+    expect(described.known).toBe(true);
+    expect(described.title).toMatch(/misconfigured/i);
+    expect(described.nextStep).toMatch(/API_BASE_URL/i);
   });
 
   it("returns an actionable title and next step for known codes", () => {

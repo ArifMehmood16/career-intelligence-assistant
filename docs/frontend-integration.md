@@ -75,7 +75,10 @@ browser ──/api/roles──> Start server (Nitro) ──> FastAPI /api/roles
 
 - The browser has no API base URL, no CORS preflight, no second origin.
 - `API_BASE_URL` is a **server** environment variable. It is never a `VITE_*` value,
-  because anything prefixed `VITE_` is compiled into browser code.
+  because anything prefixed `VITE_` is compiled into browser code. `make run` starts
+  the web process with `bun --env-file=config/app.env` so the proxy worker sees it.
+- Local host port is **3000** (`WEB_PORT`, matching `WEB_ORIGIN`). Lovable’s Vite
+  helper otherwise defaults to 8080; `vite.config.ts` overrides that for host runs.
 - The route forwards method, headers, body and the workspace cookie unchanged, and
   returns the upstream response including its stream. Streaming answers and multipart
   uploads both pass through it.

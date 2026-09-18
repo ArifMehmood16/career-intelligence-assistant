@@ -58,6 +58,8 @@ Every non-2xx response:
 | `provider_failed` | 502 | Upstream provider error after retries |
 | `rate_limited` | 429 | Local request limit |
 | `internal_error` | 500 | Anything else, logged with the correlation id |
+| `misconfigured` | 500 | Start proxy only — `API_BASE_URL` missing or invalid (`correlationId` may be `proxy`) |
+| `csrf_rejected` | 403 | Start proxy only — non-GET without a matching same-origin `Origin` |
 
 ---
 
