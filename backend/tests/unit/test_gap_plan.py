@@ -50,9 +50,7 @@ def test_gap_plan_orders_by_score_delta_descending() -> None:
         _req("cuda", "CUDA experience"),
         _req("looker", "Looker dashboards", must_have=False),
     )
-    claims = (
-        _claim("c1", "dbt", "Owned dbt models in production."),
-    )
+    claims = (_claim("c1", "dbt", "Owned dbt models in production."),)
     mappings = map_requirements(requirements, claims)
     plan = build_gap_plan(requirements, mappings, claims, RUBRIC)
     assert [item.requirement_id for item in plan.items] == ["cuda", "looker"]
