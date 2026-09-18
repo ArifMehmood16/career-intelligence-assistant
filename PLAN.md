@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 10 (grounded generation) domain/application exit criteria
-are satisfied; artefact persistence (10.9) and HTTP routes remain for Phase 11.
+**Current position:** Phase 10 (grounded generation) complete including artefact
+persistence (10.9). Next: Phase 11 API contracts.
 Next work is Phase 11 — API contracts (including storing generated drafts).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
@@ -417,7 +417,7 @@ the validator first; the features are built against it, not retrofitted to it.
       shows.
 - [x] **10.8** Counters: validator failures, regenerations and template fallbacks, per
       provider. These are the numbers Phase 14 reports.
-- [ ] **10.9** Store every final generated artefact in PostgreSQL with its input role
+- [x] **10.9** Store every final generated artefact in PostgreSQL with its input role
       analysis version, cited spans, groundedness result and provenance. Regeneration
       creates a new immutable version; only validated or template-fallback content is
       persisted. Uploaded cover letters remain separate `documents`.
