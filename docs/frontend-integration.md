@@ -34,16 +34,15 @@ configuration anywhere in this repository.
 
 **Open — expected to change:**
 
-- `src/api/client.ts`. It is a fixture store today and becomes a real HTTP client.
-  Nothing outside that file knows where data comes from, which is exactly why this
-  swap is cheap.
-- `src/api/fixtures.ts`. It stops being the data source and becomes test fixtures.
-- `src/types/index.ts`. Additive only — the existing types stay byte-identical so
-  every component keeps compiling.
+- `src/api/client.ts`. Real HTTP client with multipart uploads, `getJob`, and
+  `reanalyseRole` (Phase 12.3–12.7). Remaining: SSE stream helper.
+- `src/api/__fixtures__/`. Test and `/dev/states` gallery data only; no component
+  imports (Phase 12.4).
+- `src/types/index.ts`. Additive types landed (Phase 12.5); keep existing shapes stable.
 - New routes and components for the features that have no screen yet: gaps, prepare,
   letter, ranking, compare.
-- Everything absent: tests, error handling on real failures, loading behaviour tied to
-  real latency, accessibility fixes.
+- Everything absent: byte-level upload progress bar, full error-code map across
+  screens, accessibility fixes, full component coverage.
 
 ## What is missing from the Lovable output
 

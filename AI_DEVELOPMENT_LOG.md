@@ -538,6 +538,79 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 040 — Phase 12.8 role detail span resolution (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.8
+- Prompt intent: continue Phase 12 after job polling.
+- Suggestion: getSpan client; EvidencePanel loading/error resolve states;
+  RoleDetailContainer fetches span when panel opens.
+- Outcome: accepted.
+- Reason: api-contract requires unresolved citations to fail visibly.
+- Rejected alternatives: rendering inline requirement.evidence without a span GET.
+- Human validation: spans + EvidencePanel tests green; full vitest 49; typecheck/lint.
+
+### 039 — Phase 12.7 analysis job polling (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.7
+- Prompt intent: continue Phase 12 after workspace wiring.
+- Suggestion: getJob/reanalyseRole; RolesPanel Analysing/Failed/Retry; react-query
+  refetchInterval on roles and jobs.
+- Outcome: accepted.
+- Reason: matches api-contract polling model without inventing a job list endpoint.
+- Rejected alternatives: polling only the roles list (loses failure reason from job).
+- Human validation: jobs + RolesPanel tests green; full frontend vitest 45;
+  typecheck/lint green.
+
+### 038 — Phase 12.6 workspace upload wiring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.6
+- Prompt intent: continue Phase 12 in TDD after additive types.
+- Suggestion: multipart `uploadCv`/`uploadCoverLetter`; backend multipart routes;
+  confirmations; cover-letter “not score evidence” card; ApiError messages in UI.
+- Outcome: accepted; added `python-multipart` dependency.
+- Reason: api-contract already required multipart; paste-only could not admit PDF/DOCX.
+- Rejected alternatives: reading PDF client-side into paste JSON; deferring multipart
+  to a later phase.
+- Human validation: upload + component tests green; CV/supporting API tests green;
+  frontend typecheck/lint green; locks regenerated.
+
+### 037 — Phase 12.5 additive frontend types (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.5
+- Prompt intent: continue Phase 12 in TDD style after 12.3–12.4.
+- Suggestion: additive types from api-contract; Role.status/updatedAt; extend
+  OpenAPI↔TS contract suite.
+- Outcome: accepted.
+- Reason: screens for gaps/prepare/letter need typed contracts before wiring.
+- Rejected alternatives: optional Role.status (API always returns it; required
+  keeps the list UI honest for 12.7 polling).
+- Human validation: additive + client tests green; full frontend vitest 33 green;
+  OpenAPI contract pytest green; typecheck/lint green.
+
+### 036 — Phase 12.3–12.4 real HTTP client and fixture move (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 12.3, 12.4
+- Prompt intent: continue Phase 12 in TDD style.
+- Suggestion: zod schemas + `request()`/`ApiError` client; move fixtures to
+  `__fixtures__/`; ban fixture imports from components.
+- Outcome: accepted.
+- Reason: screens already call `@/api/client`; swapping the implementation keeps
+  signatures and removes mock data from the production path.
+- Rejected alternatives: keeping fixtures co-located with `client.ts`; CORS
+  browser client (proxy already proven).
+- Human validation: client tests 6 green; fixtures + eslint-guard tests green;
+  typecheck and lint green.
+
 ### 035 — Phase 12.1–12.2 API proxy spike and catch-all (TDD)
 
 - Date: 2026-09-18

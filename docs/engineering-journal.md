@@ -18,6 +18,64 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 12 — Frontend integration (12.8 role detail + span resolve)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/spans.test.ts src/components/EvidencePanel.test.tsx`
+    (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `getSpan` client helper; role detail resolves selected evidence via
+    `GET /api/spans/{id}`; unresolvable spans show a visible error (not the empty
+    “no supporting text” copy).
+  - Frontend vitest 49 green.
+- Decisions made: always re-fetch by `spanId` when present rather than trusting
+  inline requirement evidence alone.
+- Problems hit: none after prettier fix.
+- Carried forward: 12.9 Ask SSE wiring.
+
+## Phase 12 — Frontend integration (12.7 analysis job polling)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/jobs.test.ts src/components/workspace/RolesPanel.test.tsx`
+    (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+- Observed result:
+  - `getJob` / `reanalyseRole` client helpers; roles query refetches while any role
+    is `analysing`; job query polls while `queued`/`running`.
+  - Roles list shows Analysing / Failed (+ reason + Retry analysis).
+  - Frontend vitest 45 green.
+- Decisions made: map OpenAPI string `AnalysisJob.error` to
+  `{ code: "analysis_failed", message }` on the client; track role→jobId in
+  container state from create/reanalyse responses.
+- Problems hit: none material after exactOptionalPropertyTypes FitCell fix.
+- Carried forward: 12.8 wire role detail.
+
+## Phase 12 — Frontend integration (12.3–12.6 client, types, workspace)
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/api/client.test.ts` / `src/api/upload.test.ts` /
+    `src/types/additive.test.ts` (red then green)
+  - `bun run test` / `bun run typecheck` / `bun run lint`
+  - `backend/.venv/bin/pytest tests/contract/test_openapi_frontend_types.py -q --no-cov`
+  - `backend/.venv/bin/pytest tests/api/test_cv_routes.py tests/api/test_supporting_documents.py -q --no-cov`
+  - `make lock` (python-multipart)
+- Observed result:
+  - Real HTTP client with zod; fixtures under `__fixtures__/`; additive types;
+    multipart CV/cover-letter upload on API + frontend; workspace shows ApiError
+    rejection messages, replace/delete confirmations, supporting cover letters with
+    “not score evidence” notice.
+  - Frontend vitest 39 green; CV/supporting API tests green.
+- Decisions made: add `python-multipart` for Starlette form parsing; keep paste
+  JSON path alongside multipart; upload progress UI uses parsing busy state (byte
+  progress deferred until XHR helper if needed).
+- Problems hit: nested-brace TS parser for Role; exactOptionalPropertyTypes on
+  fetch init / ChatMessage mapping.
+- Carried forward: 12.7 analysis job polling.
+
 ## Phase 12 — Frontend integration (12.1–12.2 proxy spike and catch-all)
 
 - Date: 2026-09-18

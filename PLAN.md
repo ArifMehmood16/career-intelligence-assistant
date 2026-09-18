@@ -3,9 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 12 frontend integration in progress — 12.1 spike
-passed (SSE + upload unbuffered through fetch proxy); 12.2 catch-all `/api/$`
-landed. Next: 12.3 real HTTP client.
+**Current position:** Phase 12 frontend integration in progress — 12.1–12.8
+landed (through role-detail span resolution). Next: 12.9 wire Ask SSE.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -488,22 +487,22 @@ The screens exist. This phase makes them real. See
 - [x] **12.2** Catch-all server route proxying `/api/**` to `API_BASE_URL`, forwarding
       method, headers, body, cookie and stream. `Origin` checked on every non-`GET`.
       `API_BASE_URL` is a server variable, never `VITE_*`.
-- [ ] **12.3** Replace `src/api/client.ts` with a real HTTP client keeping the existing
+- [x] **12.3** Replace `src/api/client.ts` with a real HTTP client keeping the existing
       exported signatures: one `request()`, the typed `ApiError` carrying `code` and
       `correlationId`, and zod validation of every response.
-- [ ] **12.4** Move fixtures to `src/api/__fixtures__/` for tests and the state
+- [x] **12.4** Move fixtures to `src/api/__fixtures__/` for tests and the state
       gallery. No component imports a fixture.
-- [ ] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
+- [x] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
       `GapPlan`, `GapItem`, `InterviewPack`, `BulletDraft`, `CoverLetterDraft`,
       `RankedRole`, `Comparison`, `DraftProvenance`, persisted message fields and
       supporting documents. (`Evidence.spanId` and `ChatMessage.leftMachine` already
       landed in 11.11.)
-- [ ] **12.6** Wire the workspace: CV upload with real progress and real rejection
+- [x] **12.6** Wire the workspace: CV upload with real progress and real rejection
       messages, supporting cover-letter upload/list/delete, add role, delete and
       replace-CV confirmation. Make clear that cover letters are not score evidence.
-- [ ] **12.7** Analysis job polling with react-query; the role list shows `Analysing`,
+- [x] **12.7** Analysis job polling with react-query; the role list shows `Analysing`,
       then the score, or `Failed` with the reason and a retry.
-- [ ] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
+- [x] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
       spans through `GET /api/spans/{id}`.
 - [ ] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
       insufficient-evidence state, persisted history after reload, delete-history and
