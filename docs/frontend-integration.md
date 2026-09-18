@@ -56,6 +56,8 @@ Named, so none of it is discovered late:
 | The API proxy route | Phase 12 |
 | Polling for the analysis job | Phase 12 |
 | Streaming answers — the chat renders a stream it never receives | Phase 12 |
+| PostgreSQL-backed chat history, idempotent retries and delete-history | Phase 12 |
+| Supporting cover-letter upload/list/delete and the “not score evidence” notice | Phase 12 |
 | Screens for gaps, prepare, letter, ranking, compare | Phase 13 |
 | `src/routes/dev.states.tsx` — a stub heading, no gallery | Phase 13 |
 | Two lockfiles: `bun.lock` and `package-lock.json` | Phase 1 — keep `bun.lock`, delete the other |
@@ -109,11 +111,17 @@ The new client adds, in the same file:
   `src/types/index.ts` — the frontend does not trust the API's shape merely because
   TypeScript says so;
 - `postMessageStream()` for the SSE answer stream;
+- a stable `clientRequestId` per user send, reused on network retry, plus
+  `getMessages()` and `deleteMessages()` for PostgreSQL-backed history;
+- `getCoverLetters()`, `uploadCoverLetter()` and `deleteCoverLetter()` for supporting
+  documents, kept separate from role-generated cover-letter versions;
 - `getJob()` for analysis polling.
 
 react-query is already installed and already wraps the app. Query keys are namespaced
 per resource, mutations invalidate the queries they affect, and the analysis job query
-polls while the job is live and stops on a terminal state.
+polls while the job is live and stops on a terminal state. Chat history is server
+state: page reload reads it from PostgreSQL rather than treating the browser cache as
+the source of truth.
 
 Fixtures move to `src/api/__fixtures__/` and are used by component tests and by the
 `/dev/states` gallery. **No component imports a fixture.** That rule was in the brief

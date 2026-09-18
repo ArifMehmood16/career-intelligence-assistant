@@ -1,7 +1,8 @@
 # Threat model
 
-Everything crossing a boundary is untrusted: uploaded files, document text, user
-questions, retrieved spans, model output and generated drafts.
+Everything crossing a boundary is untrusted: uploaded CVs, job descriptions and cover
+letters, document text, user questions, retrieved spans, model output and generated
+drafts.
 
 ## Trust boundaries
 
@@ -9,26 +10,31 @@ questions, retrieved spans, model output and generated drafts.
 |---|---|---|
 | Browser to API | Uploads, questions | Type sniffing, size and page caps, schema validation, safe errors |
 | File to parser | PDF/DOCX structure | Bounded parsing, no macro or embedded-object execution, resource limits |
-| Document text to prompt | CV and job-description content | Delimited and labelled untrusted; instructions in the text are data |
+| Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence |
 | Model to application | Extraction JSON, answer text | Schema validation, span verification, drop unresolvable output |
 | Generated draft to browser | Model-phrased or template prose | Groundedness validator against cited spans; template fallback; provenance on every artefact |
 | Application to browser | Excerpts and drafts | Escaped text rendering, no raw HTML |
-| Application to model provider | Prompts built from CV and job-description text | Egress gate; provider allowlist of hermetic, Ollama, OpenAI and Anthropic; per-provider timeout and breaker; keys never logged or returned |
-| Application to database | Queries; stored personal data | Parameterised access, workspace scoping, hard delete of documents and derived records |
-| Application to logs | Everything | Redaction; no document text, prompts, embeddings, draft bodies or credentials |
+| Application to model provider | Prompts built from application documents and questions | Egress gate; explicit acknowledgement covering every data kind; provider allowlist of hermetic, Ollama, OpenAI and Anthropic; per-provider timeout and breaker; keys never logged or returned |
+| Application to database | SQL parameters; original uploads; parsed personal data; questions, answers and drafts | Parameterised access, least-privilege database role, workspace scoping, explicit transactions, foreign keys and hard delete of originals plus derived records |
+| Database container to storage | PostgreSQL data directory and backups | Private network in deployment, required non-default credentials, persistent volume, documented backup/restore and backup rotation |
+| Application to logs | Everything | Redaction; no document, question, answer, prompt, embedding, draft body or credential content |
 
 ## Named risks
 
 | Risk | Control | Residual |
 |---|---|---|
-| Prompt injection in a job description | Untrusted delimiting, schema validation, span verification, regression test | A crafted document may still degrade extraction quality |
+| Prompt injection in a job description or supporting cover letter | Untrusted delimiting, schema validation, span verification, document-kind policy and regression tests | A crafted document may still degrade extraction or retrieval quality |
 | Fabricated experience in an answer | Every claim requires a resolvable span | Extraction may mis-attribute a real span |
 | Fabricated experience in a generated draft | Groundedness validator; regenerate once; hermetic template fallback; refusal when evidence is thin | Validator false positives become template fallbacks |
 | Malicious PDF or DOCX | Bounded parsing, no embedded execution, size and page caps | Parser library vulnerabilities; mitigated by dependency scanning |
 | Resource exhaustion | Caps on size, pages, characters, context and output | A slow parse can still occupy a worker; timeouts TBD |
-| Personal data retention | Hard delete of documents, spans, chunks, embeddings, claims, mappings and generated drafts; configurable retention window | Database backups retain data until they rotate |
+| Personal data retention | Hard delete of original bytes, parsed text, spans, chunks, embeddings, claims, mappings, generated drafts, questions, answers and citations; configurable retention window | Database backups retain data until they rotate |
+| Original-file disclosure | Bounded originals stored in PostgreSQL `bytea`; workspace-scoped download; no filesystem path; database not publicly exposed in deployment | A database or backup compromise exposes the original documents; volume encryption and host security remain deployment responsibilities |
 | Cross-workspace leakage | Workspace scoping on every query, integration test | No authentication yet — see below |
-| CV text reaching a third party | Hermetic and local providers by default; hosted adapters unreachable unless egress is enabled and a key is present; the selection is shown to the user and recorded on every artefact | A user who enables a hosted provider accepts that vendor's retention terms; the product makes that visible, it cannot make it safe |
+| Cover-letter claims treated as experience | Document kind is enforced; uploaded and generated cover letters are excluded from claim extraction, mappings and scoring by regression tests | A user may still copy unsupported claims into a replacement CV; the system can only reason over submitted evidence |
+| Partial or duplicate chat history | Persist the question first; store one final validated answer under a workspace-scoped idempotency key; never persist SSE token fragments | A client can abandon a request and leave a safely failed question record |
+| SQL injection or accidental unscoped mutation | SQLAlchemy parameterisation; repository methods require workspace id; cross-workspace read and mutation tests | A future raw-SQL escape hatch would need separate review |
+| Application data reaching a third party | Hermetic and local providers by default; hosted adapters unreachable unless egress is enabled and a key is present; the notice covers CVs, job descriptions, cover letters and questions; selection is recorded on every artefact | A user who enables a hosted provider accepts that vendor's retention terms; the product makes that visible, it cannot make it safe |
 | Leaked API key | Keys read at construction, never logged, never returned by any route including masked; redaction test | A compromised host still exposes the environment |
 | Hosted provider outage or rate limit | Bounded retry on 429 and 5xx, timeout, breaker, safe error; no silent fallback to a different model | A degraded answer is still possible if fallback is explicitly enabled |
 
@@ -41,3 +47,6 @@ Stated as a decision, not an oversight:
 - Network hardening, WAF, rate limiting at a gateway.
 - Malware scanning of uploads.
 - Audit logging and incident response process.
+- Application-level encryption of individual database fields. Deployment is
+  responsible for encrypted disks/volumes, TLS where traffic leaves a host, database
+  credentials and encrypted backup storage.

@@ -59,8 +59,8 @@ Approved for the initial implementation. A change requires an ADR and human appr
 | Backend | Python 3.14+, FastAPI, Pydantic | Typed API, mature AI ecosystem | Node/NestJS |
 | Frontend | TanStack Start (React 19, Vite, strict TS), as designed in Lovable | The design is the deliverable; the Start server carries the API proxy | Vite SPA |
 | Frontend packages | `bun` | Lovable maintains `bun.lock` | npm |
-| Store | PostgreSQL 16 + pgvector | Structured mapping and vectors in one store | Dedicated vector DB |
-| Persistence | SQLAlchemy 2, Alembic | Explicit schema, repeatable migrations | Raw SQL |
+| Store | PostgreSQL 16 + pgvector as the system of record | Original uploads, parsed documents, roles, mappings, drafts, questions, answers and vectors stay transactionally consistent | Dedicated vector DB or split object storage |
+| Persistence | SQLAlchemy 2, Alembic; bounded originals in `bytea` | Explicit schema and migrations; the configured limits keep database-backed files small enough for this portfolio workload | Raw SQL or filesystem uploads |
 | Model integration | Narrow ports with four adapters: hermetic, Ollama, OpenAI, Anthropic | Prove the abstraction, not one vendor | A single vendor SDK in the application |
 | Provider selection | Runtime workspace setting; hosted behind an explicit egress gate | The person asking should know where their text went | Deploy-time-only configuration |
 | Credentials | Server configuration only; never accepted or returned by any route | A key in the browser is a key in a log | Bring-your-own-key in the UI |
@@ -69,7 +69,8 @@ Approved for the initial implementation. A change requires an ADR and human appr
 | Scoring | Deterministic rubric in domain code | Reproducible and explainable | Model-emitted score |
 | Generated prose | Bound to cited spans, validated server-side, hermetic template fallback | A draft a person signs cannot contain invented facts | Prompt instructions alone |
 | Extraction contract | JSON schema validated, spans verified server-side | Blocks fabricated experience | Free-text answers |
-| Local run | Docker Compose and Make | Reproducible command surface | Kubernetes |
+| Local run | Make uses the developer's local PostgreSQL through `DATABASE_URL`; Compose uses its PostgreSQL container | Both paths exercise the same migrations and adapters without silently starting a second database | SQLite or in-memory persistence |
+| Deployment database | PostgreSQL 16 + pgvector container with a persistent volume, private network and required credentials | Matches development semantics while keeping database state outside disposable application containers | Embedded database |
 | Tests | pytest, Vitest, React Testing Library, Playwright | Layered behaviour tests | — |
 
 Model tags are configuration values, never hard-coded. Tests stay provider
@@ -197,21 +198,76 @@ text. Malformed, encrypted and oversized files are rejected safely.
 
 ## Phase 4 — Persistence
 
-- [ ] **4.1** Alembic baseline migration: workspaces, documents, spans, chunks,
-      embeddings, requirements, claims, mappings, jobs, generated drafts, provider
-      settings.
-- [ ] **4.2** Repository adapters behind application ports.
-- [ ] **4.3** Workspace scoping on every query. Integration test proves a query cannot
-      read another workspace's rows.
-- [ ] **4.4** Hard delete: removing a document or a role removes its spans, chunks,
-      embeddings, claims, mappings and generated drafts. Integration test asserts zero
-      residue.
-- [ ] **4.5** Workspace provider preference persisted, with the provider and model tag
-      that produced each stored extraction recorded alongside it.
-- [ ] **4.6** Replacing the CV invalidates every mapping and score rather than leaving
-      stale ones readable.
+- [ ] **4.1 Database topology and configuration contract.** PostgreSQL 16 with
+      pgvector is the only production persistence implementation. `make run`, Alembic
+      and `make test-integration` use the local instance named by `DATABASE_URL`
+      (documented default `localhost:5432`). Compose API containers use the `db`
+      service on port 5432. Fakes are test-only; no SQLite, filesystem or in-memory
+      production fallback.
+- [ ] **4.2 Database packages and Alembic baseline migration.** Add the minimum
+      SQLAlchemy 2, Alembic, psycopg 3 and pgvector packages to the runtime lock. Create
+      `vector` and the tables for workspaces; documents; spans; chunks; embeddings;
+      roles; requirements; claims; mappings and score explanations; analysis jobs;
+      conversations; questions; answers; answer citations; generated drafts and draft
+      citations; provider settings; and provider-call accounting.
+- [ ] **4.3 Original document storage.** `documents` records `kind` (`cv`,
+      `job_description`, `cover_letter`), filename, sniffed media type, byte length,
+      SHA-256, original bytes in bounded `bytea`, normalised text, parse status and
+      timestamps. Pasted text is stored as UTF-8 bytes. Rejected or unreadable input
+      is not retained. Uploaded cover letters are supporting documents: queryable and
+      citable, but never evidence for claims, fit mappings or scores.
+- [ ] **4.4 Relational integrity and indexes.** UUID primary keys; UTC timestamps;
+      foreign keys with deliberate delete behaviour; a partial unique constraint for
+      one active CV per workspace; uniqueness for one role analysis version; indexes
+      beginning with `workspace_id`; vector dimensions tied to the recorded embedding
+      provider/model. Migration upgrade and downgrade are tested from an empty
+      database.
+- [ ] **4.5 Repository adapters behind application ports.** Application and domain
+      code depend on narrow repositories; SQLAlchemy models do not cross the adapter
+      boundary. A guard test proves no non-adapter import of SQLAlchemy. Every API and
+      worker read after Phase 4 comes from PostgreSQL, not process memory.
+- [ ] **4.6 Transaction boundaries.** An admitted upload, its document metadata,
+      original bytes and parsed spans commit atomically. Establish an explicit
+      SQLAlchemy unit-of-work for later analysis and answering use cases. A failed
+      parse leaves no half-readable document. Phase 8 and Phase 9 add forced-failure
+      tests for their complete mapping and answer transactions.
+- [ ] **4.7 Workspace scoping.** Every repository method requires `workspace_id` and
+      every query filters it. Integration tests attempt cross-workspace reads and
+      mutations for documents, roles, spans, drafts, conversations and messages.
+- [ ] **4.8 Hard delete and retention graph.** Deleting a CV, uploaded cover letter or
+      role removes its original bytes, spans, chunks, embeddings, claims,
+      requirements, mappings, scores, jobs, generated drafts, questions/answers and
+      citations that depend on it. Deleting chat history removes questions, answers
+      and citations. Integration tests assert zero orphaned personal data.
+- [ ] **4.9 Provider and provenance persistence.** Store the workspace provider
+      preference plus provider, model tag, `left_machine`, token counts and timing on
+      each extraction, answer and generated draft. Never store keys or raw provider
+      payloads.
+- [ ] **4.10 CV replacement transaction.** Replacing the CV stores the new admitted
+      document, makes it active and invalidates every existing role mapping, score and
+      draft atomically; the old CV and its dependent records are hard-deleted only
+      after the replacement succeeds. Phase 8 adds re-analysis job creation to this
+      same unit of work.
+- [ ] **4.11 Conversation schema contract.** Enforce foreign keys, a workspace-scoped
+      unique `client_request_id` on each question, at most one final answer per
+      question, and unique `(answer_id, span_id)` citations. Phase 9 adds the
+      repositories/use case once the answer domain behaviour exists; partial streaming
+      tokens and provider payloads have no persistence column.
+- [ ] **4.12 Local database workflow.** Add `make db-check`, `make db-migrate` and a
+      migration step to `make run`; they use the developer's local PostgreSQL and fail
+      clearly when PostgreSQL, the target database or pgvector is unavailable.
+      `TEST_DATABASE_URL` must name a separate database and integration tests refuse
+      to run when it equals `DATABASE_URL`.
+- [ ] **4.13 Connection safety.** Configure bounded pooling, connection health checks,
+      statement/lock timeouts and UTC sessions. Dispose sessions at each unit-of-work
+      boundary. SQL logging is off by default and must never print bound values that
+      could contain document, question or answer text.
 
-**Exit gate:** `make test-integration` green against a real Postgres with pgvector.
+**Exit gate:** migrations upgrade and downgrade on a clean PostgreSQL 16 + pgvector
+database; integration tests prove scoped round-trips for original CV and cover-letter
+bytes plus spans, replacement invalidation, conversation/message constraints and
+zero-residue document deletion. `make run` uses the local PostgreSQL instance; no
+production path falls back to memory or SQLite.
 
 ## Phase 5 — Requirement extraction
 
@@ -229,6 +285,9 @@ text. Malformed, encrypted and oversized files are rejected safely.
       signal the description never quantifies is marked as such. This feeds
       "what to ask them" in the interview pack, so it is data, not a heuristic in the
       view.
+- [ ] **5.7** Requirements are extracted only from the stored job-description
+      document for that role. An uploaded cover letter cannot contribute a requirement
+      or alter a role analysis.
 
 **Exit gate:** six fixture job descriptions produce requirement sets; every
 requirement resolves to a real span; the injection fixture changes nothing.
@@ -242,6 +301,9 @@ requirement resolves to a real span; the injection fixture changes nothing.
 - [ ] **6.3** Span verification identical to 5.4.
 - [ ] **6.4** Recency and duration derived from dates in the CV, in domain code, not
       by the model. Undated experience is treated as undated, never assumed recent.
+- [ ] **6.5** Candidate claims are extracted only from the active stored CV. Uploaded
+      or generated cover letters are self-authored prose, not independent evidence,
+      and are excluded from claims, mappings and scores by a regression test.
 
 **Exit gate:** fixture CVs produce claim sets with resolvable spans and derived
 recency, including the dated-experience fixture.
@@ -274,16 +336,23 @@ wait on a request is the wrong shape, and so is pretending it is instant.
 
 - [ ] **8.1** Job domain type and states: `queued`, `running`, `succeeded`, `failed`,
       with a stage and an error reason.
-- [ ] **8.2** In-process worker with a bounded queue. No Celery, no Redis — stated as
-      a limit in the README rather than hidden.
+- [ ] **8.2** In-process worker with a bounded dispatcher and PostgreSQL-backed job
+      records. No Celery or Redis. On startup, persisted `queued` jobs are dispatched;
+      stale `running` jobs are deterministically failed or re-queued according to an
+      explicit timeout policy; no job remains permanently running after a process
+      restart.
 - [ ] **8.3** Role analysis pipeline as a job: parse → extract requirements → extract
       claims → map → score, each stage recorded.
 - [ ] **8.4** Failure attribution: a failed job names the stage and a safe reason.
       Partial results are discarded, not shown as a low score.
 - [ ] **8.5** Re-analysis: replacing the CV or changing the index provider enqueues
-      re-analysis for every affected role and invalidates the stale mapping first.
+      re-analysis for every affected role in the same database transaction that
+      invalidates the stale mapping.
 - [ ] **8.6** Idempotence: the same role analysed twice produces the same stored
       mapping, and a duplicate enqueue does not double-run.
+- [ ] **8.7** Publish analysis results transactionally: requirements, claims,
+      mappings, score explanation and terminal job state become visible together.
+      Readers never see partial results as a low score.
 
 **Exit gate:** adding a role returns immediately; the job completes and the role
 becomes `ready`; a forced failure leaves the role `failed` with a reason and no
@@ -303,10 +372,22 @@ partial mapping.
       scores, with the differentiating requirements named.
 - [ ] **9.7** Streaming: the same use case serves a streamed and a non-streamed
       response, with citations validated after the text completes.
+- [ ] **9.8** Persist the user question before processing, then persist exactly one
+      final validated answer or insufficient-evidence result with citations,
+      provider/model provenance and `left_machine`. Never persist partial SSE tokens
+      as the answer. A repeated `clientRequestId` returns the existing result.
+- [ ] **9.9** Stored history survives an API restart and is returned in deterministic
+      order. Deleting history hard-deletes the conversation, questions, answers and
+      citations. Failed attempts retain only a safe status/code, never provider
+      payloads or partial generated text.
+- [ ] **9.10** Open-question retrieval may cite uploaded cover letters when the user
+      asks about them, but those spans remain excluded from fit scoring and candidate
+      evidence. Role-scoped questions cannot retrieve another role's description.
 
 **Exit gate:** the example questions in `README.md` answer correctly on fixtures, each
 with resolvable citations; an unanswerable question returns insufficient evidence; the
-streamed and non-streamed answers to the same question agree.
+streamed and non-streamed answers to the same question agree; persisted history and
+citations survive an API restart; retrying a request does not duplicate it.
 
 ## Phase 10 — Grounded generation
 
@@ -335,6 +416,10 @@ the validator first; the features are built against it, not retrofitted to it.
       shows.
 - [ ] **10.8** Counters: validator failures, regenerations and template fallbacks, per
       provider. These are the numbers Phase 14 reports.
+- [ ] **10.9** Store every final generated artefact in PostgreSQL with its input role
+      analysis version, cited spans, groundedness result and provenance. Regeneration
+      creates a new immutable version; only validated or template-fallback content is
+      persisted. Uploaded cover letters remain separate `documents`.
 
 **Exit gate:** every artefact generates on fixtures under the hermetic default with no
 model; the adversarial validator fixtures all fail closed; the cover letter refuses
@@ -362,7 +447,15 @@ disagree, the file is corrected first and the change is deliberate.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.
 - [ ] **11.11** Contract test: the generated OpenAPI schema and
-      `frontend/src/types/index.ts` agree on every shared model.
+      `frontend/src/types/index.ts` agree on every shared model, including the
+      `spanId` required to open every `Evidence` citation.
+- [ ] **11.12** Supporting-document routes: list/upload/delete uploaded cover letters
+      and download an original document by id, all workspace-scoped. Responses expose
+      metadata, never database paths or storage internals. Generated cover-letter
+      routes remain role-scoped and distinct.
+- [ ] **11.13** Message routes expose persisted conversation history. `POST` requires
+      `clientRequestId`; both JSON and SSE transports return the same stored final
+      answer id. `DELETE` performs the hard-delete contract.
 
 **Exit gate:** OpenAPI is accurate; API tests cover each status path in the error
 table.
@@ -387,15 +480,19 @@ The screens exist. This phase makes them real. See
       gallery. No component imports a fixture.
 - [ ] **12.5** Additive types in `src/types/index.ts` — `RoleStatus`, `AnalysisJob`,
       `GapPlan`, `GapItem`, `InterviewPack`, `BulletDraft`, `CoverLetterDraft`,
-      `RankedRole`, `Comparison`, `DraftProvenance`. Existing types unchanged.
+      `RankedRole`, `Comparison`, `DraftProvenance`, persisted message fields and
+      supporting documents. Add `spanId` to `Evidence`; this is a necessary correction
+      because the current shape cannot open an exact stored span.
 - [ ] **12.6** Wire the workspace: CV upload with real progress and real rejection
-      messages, add role, delete, replace-CV confirmation.
+      messages, supporting cover-letter upload/list/delete, add role, delete and
+      replace-CV confirmation. Make clear that cover letters are not score evidence.
 - [ ] **12.7** Analysis job polling with react-query; the role list shows `Analysing`,
       then the score, or `Failed` with the reason and a retry.
 - [ ] **12.8** Wire role detail: requirements, breakdown, evidence panel resolving
       spans through `GET /api/spans/{id}`.
 - [ ] **12.9** Wire Ask against the SSE stream, including stop, citation chips,
-      insufficient-evidence state and the provider stamp.
+      insufficient-evidence state, persisted history after reload, delete-history and
+      the provider stamp. Client retries reuse the same `clientRequestId`.
 - [ ] **12.10** Wire settings: provider list with real availability reasons, the
       hosted confirmation, and the re-index warning when the index provider changes.
 - [ ] **12.11** Error handling across the app: every documented error code maps to a
@@ -419,7 +516,9 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
 - [ ] **13.4** **Prepare**: the four sections, each evidence line clickable to its
       span, export.
 - [ ] **13.5** **Letter**: tone and gap-line controls, paragraphs with citations,
-      export, and the refusal state rendered as a next step rather than an error.
+      persisted version history, export, and the refusal state rendered as a next step
+      rather than an error. Uploaded cover letters are shown separately as supporting
+      documents, never as generated versions.
 - [ ] **13.6** **Ranking** on the workspace: roles ordered with the reason named, ties
       shown as ties.
 - [ ] **13.7** **Compare**: two roles side by side, shared and unique requirements,
@@ -450,6 +549,8 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
 - [ ] **14.6** Generation comparison: groundedness violation rate and template
       fallback rate per provider. A provider that drafts beautifully and fails the
       validator is reported as exactly that.
+- [ ] **14.7** Add a regression case proving an uploaded cover letter can be retrieved
+      and cited for a direct question but cannot improve a fit mapping or score.
 
 **Exit gate:** numbers recorded from an observed run, not estimated.
 
@@ -460,11 +561,13 @@ Kept light. No vendor APM, no dashboards.
 - [ ] **15.1** Structured operation events: document ingested, job stage completed,
       requirements extracted, mapping computed, question answered, draft generated,
       draft rejected by the validator. Counts and durations only.
-- [ ] **15.2** Redaction test: no document text, prompt, embedding, draft body or
-      credential appears in any log line.
+- [ ] **15.2** Redaction test: no document, question, answer, prompt, embedding, draft
+      body or credential content appears in any log line.
 - [ ] **15.3** `make security`: Bandit, pip-audit, `bun audit`, Gitleaks, Trivy.
 - [ ] **15.4** Retention: configurable window and a documented deletion path,
-      including generated drafts.
+      including original CV/job-description/cover-letter bytes, parsed text,
+      embeddings, questions, answers, citations and generated drafts. Expiry is a
+      hard delete and its database transaction is integration tested.
 - [ ] **15.5** Rate limiting on upload, analysis and generation routes.
 - [ ] **15.6** Update `docs/threat-model.md` with residual risks.
 
@@ -478,19 +581,40 @@ Kept light. No vendor APM, no dashboards.
       that wrote them. Building both images and running the stack is what closes this
       task — treat the frontend build output path and the Nitro preset as the two
       things most likely to need a fix.*
-- [ ] **16.2** Clean-room walkthrough: fresh clone, follow the README exactly, fix
-      every step that does not work.
-- [ ] **16.3** Playwright end-to-end following the session walkthrough in
+- [ ] **16.2** Database deployment profile: PostgreSQL 16 + pgvector container on a
+      private Compose network, no published database port, required non-default
+      credentials, immutable image version/digest, persistent named volume, health
+      check, migration job before API readiness, graceful shutdown and documented
+      resource limits. Development Compose may publish
+      `${POSTGRES_HOST_PORT:-5433}` without changing the API's internal `db:5432`
+      connection.
+- [ ] **16.3** Backup and restore: documented `pg_dump`/`pg_restore` commands and an
+      observed restore smoke test that includes one original document, one generated
+      cover letter and one cited answer. State explicitly that deleting the volume is
+      destructive and that backups retain personal data until rotation.
+- [ ] **16.4** Two clean-room walkthroughs: (a) fresh clone with `make run` against a
+      developer-managed local PostgreSQL on `localhost:5432`; (b) fresh clone with
+      Compose-managed PostgreSQL. Run the same migrations and critical workflow on
+      both and fix every divergence.
+- [ ] **16.5** Playwright end-to-end following the session walkthrough in
       `docs/features.md`: upload CV, add a role, wait for analysis, read the mapping,
-      open a gap, draft a bullet, open a citation, generate a letter, ask a question.
-- [ ] **16.4** A second end-to-end run with a hosted provider selected, asserting the
+      open a gap, draft a bullet, upload a supporting cover letter, open a citation,
+      generate a letter, ask a question, restart the API and verify history persists.
+- [ ] **16.6** A second end-to-end run with a hosted provider selected, asserting the
       confirmation is required and the provenance is recorded. Skipped without a key,
       and skipping is reported rather than silent.
-- [ ] **16.5** Screenshots into `docs/screenshots/`, referenced from the README.
-- [ ] **16.6** README pass: commands, limitations and productionisation table accurate
+- [ ] **16.7** Screenshots into `docs/screenshots/`, referenced from the README.
+- [ ] **16.8** README pass: commands, database topology, backup/restore, persistence
+      guarantees, limitations and productionisation table accurate
       against the built system.
+- [ ] **16.9** Deployment remains private/single-user until authentication and
+      authorization exist. The deployment guide must not present the workspace cookie
+      as protection suitable for an Internet-facing service.
 
-**Exit gate:** someone who has never seen the repository can run it from the README.
+**Exit gate:** someone who has never seen the repository can run it from the README
+against either a local or Compose PostgreSQL instance; original uploads, generated
+drafts and cited chat history survive application-container recreation and an observed
+backup/restore round trip.
 
 ## Phase 17 — Final review
 
@@ -500,6 +624,9 @@ Kept light. No vendor APM, no dashboards.
       one rejected suggestion, each with the human decision named — including how the
       Lovable output was used and what in it was not kept.
 - [ ] **17.4** Record the honest limitations list in the README.
+- [ ] **17.5** Inspect the final schema, foreign keys and deletion tests against the
+      personal-data inventory. Confirm there is no filesystem or process-memory source
+      of truth and no orphaned upload, question, answer, citation or draft path.
 
 **Exit gate:** ready to show.
 

@@ -80,7 +80,7 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `docker compose --profile ollama` documented in `compose.yaml`,
   the README quick start and `make help`.
 
-### 002 — Backend Python bumped to 3.14
+### 004 — Backend Python bumped to 3.14
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -98,7 +98,7 @@ Never record a command output, metric, date or commit hash that was not observed
   succeeds. Regenerated stale `frontend/bun.lock` so the frozen install step
   could pass.
 
-### 003 — Phase 0 repository baseline
+### 005 — Phase 0 repository baseline
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -114,7 +114,7 @@ Never record a command output, metric, date or commit hash that was not observed
   observed red then green; full hermetic `pytest` passed with 100% package coverage
   on the existing skeleton.
 
-### 004 — Phase 1 frontend quality gates
+### 006 — Phase 1 frontend quality gates
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -128,7 +128,7 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `bunx vitest run` (5 passed, including red-then-green ESLint
   guards), `make typecheck`, `make lint`, and `make test` all observed green.
 
-### 005 — Phase 2 model providers
+### 007 — Phase 2 model providers
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -142,7 +142,7 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `pytest` hermetic suite green (coverage ≥80%), ruff and mypy
   clean on the package.
 
-### 006 — Remove Lovable branding and telemetry from the frontend
+### 008 — Remove Lovable branding and telemetry from the frontend
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -156,7 +156,7 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `bun run test` (6 passed), `bun run lint` (warnings only),
   `bun run typecheck` green.
 
-### 007 — Phase 3 document intake and spans (TDD)
+### 009 — Phase 3 document intake and spans (TDD)
 
 - Date: 2026-09-18
 - Tool / model: Composer, agent session
@@ -169,3 +169,23 @@ Never record a command output, metric, date or commit hash that was not observed
   bad uploads; tests encode that before parsers land.
 - Human validation: intake tests red then green; full hermetic pytest, ruff, mypy
   observed green.
+
+### 010 — PostgreSQL persistence design review
+
+- Date: 2026-09-18
+- Tool / model: Codex
+- Plan task: Unplanned design review before Phase 4
+- Prompt intent: inspect the remaining plan for gaps and make PostgreSQL the explicit
+  source of truth for uploaded CVs and cover letters, questions and answers, with a
+  local database for Make and a container database for Compose/deployment.
+- Suggestion: expand Phase 4 onward with bounded original-file storage, conversation
+  and citation tables, transaction/idempotency rules, local/test database separation,
+  container persistence and backup/restore; amend the controlling ADR, API contract,
+  feature specification and threat model.
+- Outcome: changed
+- Reason: uploaded cover letters are stored and queryable as requested, but are
+  deliberately excluded from candidate claims and fit scoring because self-authored
+  prose is not independent evidence. Generated letters remain provenance-bearing
+  drafts linked to cited CV spans.
+- Human validation: pending review of the documentation diff. Automated consistency
+  checks and existing quality gates are recorded in the task report.
