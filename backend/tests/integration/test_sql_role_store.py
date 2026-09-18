@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +12,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
-from career_assistant.application.documents.cv import admission_limits_from, upload_pasted_cv
+from career_assistant.application.documents.cv import (
+    admission_limits_from,
+    upload_pasted_cv,
+)
 from career_assistant.main import create_app
 from career_assistant.settings import LimitSettings
 
@@ -31,10 +35,19 @@ Nice to have
 """
 
 
+def _uow_factory_for(
+    session_factory: sessionmaker[Session],
+) -> Callable[[], SqlUnitOfWork]:
+    def factory() -> SqlUnitOfWork:
+        return SqlUnitOfWork(session_factory)
+
+    return factory
+
+
 def test_sql_role_store_create_list_get_and_analysis(
     session_factory: sessionmaker[Session],
 ) -> None:
-    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     workspace_id = str(uuid.uuid4())
@@ -75,7 +88,7 @@ def test_sql_role_store_create_list_get_and_analysis(
 def test_sql_role_store_delete_and_reanalyse(
     session_factory: sessionmaker[Session],
 ) -> None:
-    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     workspace_id = str(uuid.uuid4())
@@ -94,7 +107,8 @@ def test_sql_role_store_delete_and_reanalyse(
         description=_JD,
     )
     first_score = role.fit_score
-    first_req_count = len(role_store.require_analysis(workspace_id, role.id).requirements)
+    bundle_before = role_store.require_analysis(workspace_id, role.id)
+    first_req_count = len(bundle_before.requirements)
 
     updated, new_job = role_store.reanalyse(workspace_id, role.id)
     assert updated.id == role.id
@@ -114,7 +128,7 @@ def test_sql_role_store_delete_and_reanalyse(
 def test_role_http_delete_and_reanalyse_via_sql_stores(
     session_factory: sessionmaker[Session],
 ) -> None:
-    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
@@ -145,7 +159,7 @@ def test_role_http_delete_and_reanalyse_via_sql_stores(
 def test_role_http_routes_persist_via_sql_stores(
     session_factory: sessionmaker[Session],
 ) -> None:
-    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
@@ -184,7 +198,7 @@ def test_role_http_routes_persist_via_sql_stores(
 def test_cover_letter_and_bullets_persist_across_store_instances(
     session_factory: sessionmaker[Session],
 ) -> None:
-    uow_factory = lambda: SqlUnitOfWork(session_factory)
+    uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
@@ -222,13 +236,13 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
         client.cookies["workspace"], role_id
     )
     assert len(listed_letters) == 1
-    assert listed_letters[0].id == letter_id  # type: ignore[attr-defined]
+    assert listed_letters[0].id == letter_id
 
     listed_bullets = role_store_b.list_bullet_drafts(
         client.cookies["workspace"], role_id
     )
     assert len(listed_bullets) == 1
-    assert listed_bullets[0].id == bullet_id  # type: ignore[attr-defined]
+    assert listed_bullets[0].id == bullet_id
 
     client_b = TestClient(create_app(cv_store=cv_store, role_store=role_store_b))
     client_b.cookies.set("workspace", client.cookies["workspace"])

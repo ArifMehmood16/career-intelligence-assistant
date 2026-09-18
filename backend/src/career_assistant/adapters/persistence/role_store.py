@@ -5,8 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
+from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -51,6 +52,24 @@ from career_assistant.domain.jobs import (
 from career_assistant.domain.mapping import MappingStatus
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
+
+
+class _ProvenanceLike(Protocol):
+    provider: object
+    model: object
+    left_machine: object
+    grounded: object
+    fallback: object
+    generated_at: object
+
+
+class _DraftLike(Protocol):
+    id: object
+    provenance: _ProvenanceLike | None
+    paragraphs: Sequence[object]
+    bullets: Sequence[object]
+    requirement_id: object
+    omitted_reason: object
 
 
 class SqlRoleStore:
@@ -326,7 +345,9 @@ class SqlRoleStore:
                 )
             return self._load_bundle(uow, workspace_id, record)
 
-    def save_cover_letter(self, workspace_id: str, role_id: str, draft: object) -> None:
+    def save_cover_letter(
+        self, workspace_id: str, role_id: str, draft: _DraftLike
+    ) -> None:
         self._save_draft(
             workspace_id=workspace_id,
             role_id=role_id,
@@ -341,7 +362,9 @@ class SqlRoleStore:
     ) -> tuple[GeneratedDraftRecord, ...]:
         return self._list_drafts(workspace_id, role_id, kind="cover-letter")
 
-    def save_bullet_draft(self, workspace_id: str, role_id: str, draft: object) -> None:
+    def save_bullet_draft(
+        self, workspace_id: str, role_id: str, draft: _DraftLike
+    ) -> None:
         self._save_draft(
             workspace_id=workspace_id,
             role_id=role_id,
@@ -361,7 +384,7 @@ class SqlRoleStore:
         *,
         workspace_id: str,
         role_id: str,
-        draft: object,
+        draft: _DraftLike,
         kind: str,
         body: str,
         citation_span_ids: tuple[str, ...],
@@ -375,7 +398,7 @@ class SqlRoleStore:
                 )
             uow.drafts.save(
                 NewGeneratedDraft(
-                    id=str(getattr(draft, "id")),
+                    id=str(draft.id),
                     workspace_id=workspace_id,
                     role_id=role_id,
                     kind=kind,
@@ -564,47 +587,46 @@ class SqlRoleStore:
 
 
 def _provenance_bits(
-    draft: object,
+    draft: _DraftLike,
 ) -> tuple[str, str | None, bool, bool, str]:
-    prov = getattr(draft, "provenance", None)
+    prov = draft.provenance
     if prov is None:
         return "hermetic", "rules-v1", False, True, "template"
+    model = prov.model
     return (
-        str(getattr(prov, "provider", "hermetic")),
-        getattr(prov, "model", None),
-        bool(getattr(prov, "left_machine", False)),
-        bool(getattr(prov, "grounded", True)),
-        str(getattr(prov, "fallback", "template")),
+        str(prov.provider),
+        str(model) if model is not None else None,
+        bool(prov.left_machine),
+        bool(prov.grounded),
+        str(prov.fallback),
     )
 
 
-def _cover_letter_body(draft: object) -> str:
+def _cover_letter_body(draft: _DraftLike) -> str:
+    generated_at = None if draft.provenance is None else draft.provenance.generated_at
     return json.dumps(
         {
-            "paragraphs": list(getattr(draft, "paragraphs", [])),
-            "omitted_reason": getattr(draft, "omitted_reason", None),
-            "generated_at": getattr(
-                getattr(draft, "provenance", None), "generated_at", None
-            ),
+            "paragraphs": list(draft.paragraphs),
+            "omitted_reason": draft.omitted_reason,
+            "generated_at": generated_at,
         }
     )
 
 
-def _bullet_body(draft: object) -> str:
+def _bullet_body(draft: _DraftLike) -> str:
+    generated_at = None if draft.provenance is None else draft.provenance.generated_at
     return json.dumps(
         {
-            "requirement_id": getattr(draft, "requirement_id", None),
-            "bullets": list(getattr(draft, "bullets", [])),
-            "generated_at": getattr(
-                getattr(draft, "provenance", None), "generated_at", None
-            ),
+            "requirement_id": draft.requirement_id,
+            "bullets": list(draft.bullets),
+            "generated_at": generated_at,
         }
     )
 
 
-def _paragraph_span_ids(draft: object) -> tuple[str, ...]:
+def _paragraph_span_ids(draft: _DraftLike) -> tuple[str, ...]:
     ids: list[str] = []
-    for paragraph in getattr(draft, "paragraphs", []):
+    for paragraph in draft.paragraphs:
         if not isinstance(paragraph, dict):
             continue
         raw = paragraph.get("spanIds", paragraph.get("span_ids", []))
@@ -613,9 +635,9 @@ def _paragraph_span_ids(draft: object) -> tuple[str, ...]:
     return tuple(dict.fromkeys(ids))
 
 
-def _bullet_span_ids(draft: object) -> tuple[str, ...]:
+def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
     ids: list[str] = []
-    for bullet in getattr(draft, "bullets", []):
+    for bullet in draft.bullets:
         if not isinstance(bullet, dict):
             continue
         raw = bullet.get("spanIds", bullet.get("span_ids", []))
