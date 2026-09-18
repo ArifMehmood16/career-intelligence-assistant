@@ -59,9 +59,8 @@ export default tseslint.config(
     ignores: [
       "src/**/*.{test,spec}.{ts,tsx}",
       "src/test/**",
-      "src/api/client.ts",
-      "src/api/fixtures.ts",
       "src/routes/dev.states.tsx",
+      "src/api/__fixtures__/**",
     ],
     rules: {
       "no-restricted-imports": [
@@ -75,6 +74,11 @@ export default tseslint.config(
             },
             {
               name: "@/api/fixtures",
+              message:
+                "Fixtures belong in tests and /dev/states, not production UI modules.",
+            },
+            {
+              name: "@/api/__fixtures__/fixtures",
               message:
                 "Fixtures belong in tests and /dev/states, not production UI modules.",
             },

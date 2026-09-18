@@ -1,7 +1,7 @@
 /**
  * Design and fixture guards — prove the ESLint rules fail closed.
- * PLAN 1.8: no hex / raw Tailwind palette in components; no fixture imports
- * outside tests (and outside the temporary API fixture client).
+ * PLAN 1.8 / 12.4: no hex / raw Tailwind palette in components; no fixture
+ * imports outside tests and /dev/states.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -39,10 +39,19 @@ describe("frontend design guards", () => {
     expect(result?.errorCount ?? 0).toBeGreaterThan(0);
   });
 
-  it("rejects a fixture import from a component", async () => {
+  it("rejects a legacy fixture import from a component", async () => {
     const result = await lintVirtual(
       path.join(frontendRoot, "src/components/offender.tsx"),
       `import { rolesFixture } from "@/api/fixtures";\nexport function Offender() {\n  return <div>{rolesFixture.length}</div>;\n}\n`,
+    );
+    expect(result?.errorCount ?? 0).toBeGreaterThan(0);
+    expect(JSON.stringify(result?.messages ?? [])).toMatch(/fixture/i);
+  });
+
+  it("rejects an __fixtures__ import from a component", async () => {
+    const result = await lintVirtual(
+      path.join(frontendRoot, "src/components/offender.tsx"),
+      `import { rolesFixture } from "@/api/__fixtures__/fixtures";\nexport function Offender() {\n  return <div>{rolesFixture.length}</div>;\n}\n`,
     );
     expect(result?.errorCount ?? 0).toBeGreaterThan(0);
     expect(JSON.stringify(result?.messages ?? [])).toMatch(/fixture/i);

@@ -57,6 +57,8 @@ const sampleRoles: Role[] = [
     fitScore: 82,
     bandLabel: "Strong match",
     counts: { met: 6, partial: 2, missing: 1 },
+    status: "ready",
+    updatedAt: "2026-09-12T10:00:00.000Z",
   },
   {
     id: "role-kestrel",
@@ -65,6 +67,8 @@ const sampleRoles: Role[] = [
     fitScore: 61,
     bandLabel: "Partial match",
     counts: { met: 4, partial: 3, missing: 3 },
+    status: "ready",
+    updatedAt: "2026-09-12T10:05:00.000Z",
   },
   {
     id: "role-halden",
@@ -73,6 +77,8 @@ const sampleRoles: Role[] = [
     fitScore: 34,
     bandLabel: "Limited match",
     counts: { met: 2, partial: 2, missing: 5 },
+    status: "ready",
+    updatedAt: "2026-09-12T10:10:00.000Z",
   },
 ];
 
