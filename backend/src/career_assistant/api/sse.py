@@ -16,6 +16,7 @@ def format_ask_sse(event: AskEvent) -> str:
             "intent": None if event.intent is None else event.intent.value,
             "provider": event.provider,
             "model": event.model,
+            "leftMachine": bool(event.left_machine),
         }
     elif event.type == "token":
         data = {"text": event.text or ""}

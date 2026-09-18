@@ -38,12 +38,13 @@ class AskRequest:
 
 @dataclass(frozen=True, slots=True)
 class AskEvent:
-    type: str  # meta | token | citations | done
+    type: str  # meta | token | citations | done | error
     text: str | None = None
     kind: str | None = None
     intent: Intent | None = None
     provider: str | None = None
     model: str | None = None
+    left_machine: bool | None = None
     question_id: str | None = None
     message_id: str | None = None
     citations: tuple[AnswerCitation, ...] | None = None
@@ -158,6 +159,7 @@ class AskService:
             intent=intent,
             provider=provider,
             model=model,
+            left_machine=left,
         )
         # Stream tokens only; persist the final validated answer after completion.
         for chunk in _chunk_text(result.content):
@@ -208,11 +210,23 @@ class AskService:
 
     def _replay(self, result: AnswerResult, request: AskRequest) -> Iterator[AskEvent]:
         intent = result.intent
+        provider = "mapping" if intent is not Intent.OPEN_QUESTION else "hermetic"
+        model = "stored"
+        left_machine = False
+        found = self._store.find_by_client_request_id(
+            request.workspace_id, request.client_request_id
+        )
+        if found is not None:
+            _question, answer = found
+            provider = str(getattr(answer, "provider", None) or provider)
+            model = str(getattr(answer, "model", None) or model)
+            left_machine = bool(getattr(answer, "left_machine", False))
         yield AskEvent(
             type="meta",
             intent=intent,
-            provider="mapping" if intent is not Intent.OPEN_QUESTION else "hermetic",
-            model="stored",
+            provider=provider,
+            model=model,
+            left_machine=left_machine,
         )
         for chunk in _chunk_text(result.content):
             yield AskEvent(type="token", text=chunk)

@@ -191,6 +191,25 @@ class MessageCreateRequest(ApiModel):
     role_id: str | None = None
 
 
+class CitationWire(ApiModel):
+    id: str
+    label: str
+    evidence: EvidenceResponse | None = None
+
+
+class ChatMessageWire(ApiModel):
+    id: str
+    conversation_id: str
+    author: str
+    content: str
+    kind: str
+    citations: list[CitationWire]
+    model: str | None
+    provider: str | None
+    left_machine: bool
+    created_at: str
+
+
 class RankedRoleWire(ApiModel):
     role: RoleResponse
     rank: int

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Iterator
+from datetime import UTC
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -13,14 +14,21 @@ from career_assistant.adapters.providers.hermetic.completion import (
 )
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
-from career_assistant.api.schemas import MessageCreateRequest
+from career_assistant.api.schemas import (
+    ChatMessageWire,
+    CitationWire,
+    MessageCreateRequest,
+)
 from career_assistant.api.sse import format_ask_sse
-from career_assistant.application.ask.memory import InMemoryConversationStore
+from career_assistant.application.ask.memory import (
+    InMemoryConversationStore,
+    MemoryMessage,
+)
 from career_assistant.application.ask.service import AskRequest, AskService
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
 from career_assistant.application.roles.store import InMemoryRoleStore, RoleView
-from career_assistant.domain.ask import RoleAnalysisView
+from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.prompts import RetrievedSpan
 
@@ -135,33 +143,78 @@ def _build_ask_request(
     )
 
 
-@router.post("/messages", response_class=StreamingResponse)
+def _citations_wire(result: AnswerResult) -> list[CitationWire]:
+    return [
+        CitationWire(id=citation.span_id, label=citation.label, evidence=None)
+        for citation in result.citations
+    ]
+
+
+def _assistant_message_wire(
+    *,
+    result: AnswerResult,
+    answer: MemoryMessage,
+) -> ChatMessageWire:
+    created = answer.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=UTC)
+    return ChatMessageWire(
+        id=answer.id,
+        conversation_id=answer.conversation_id,
+        author="assistant",
+        content=result.content,
+        kind=result.kind.value,
+        citations=_citations_wire(result),
+        model=answer.model,
+        provider=answer.provider,
+        left_machine=answer.left_machine,
+        created_at=created.isoformat().replace("+00:00", "Z"),
+    )
+
+
+@router.post("/messages", response_model=ChatMessageWire)
 def post_message(
     request: Request,
     workspace_id: WorkspaceId,
     body: MessageCreateRequest,
-) -> StreamingResponse:
-    """Stream the ask event sequence when Accept prefers text/event-stream."""
+) -> ChatMessageWire | StreamingResponse:
+    """Ask via SSE or JSON — both paths share AskService."""
     accept = request.headers.get("accept", "")
-    if "text/event-stream" not in accept:
-        raise AppError(
-            "validation_failed",
-            "Accept: text/event-stream is required for this slice.",
-            status_code=406,
-        )
     roles = _roles_for_ask(request, workspace_id, body.role_id)
     ask_request = _build_ask_request(request, workspace_id, body, roles)
     service = _ask_service(request, workspace_id, roles)
 
-    def event_stream() -> Iterator[str]:
-        for event in service.stream(ask_request):
-            yield format_ask_sse(event)
+    if "text/event-stream" in accept:
 
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
+        def event_stream() -> Iterator[str]:
+            for event in service.stream(ask_request):
+                yield format_ask_sse(event)
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    if "application/json" not in accept and "*/*" not in accept and accept.strip():
+        raise AppError(
+            "validation_failed",
+            "Accept must be text/event-stream or application/json.",
+            status_code=406,
+        )
+
+    result = service.ask(ask_request)
+    found = _conversation_store(request).find_by_client_request_id(
+        workspace_id, ask_request.client_request_id
     )
+    if found is None:
+        raise AppError(
+            "internal_error",
+            "Answer was not persisted.",
+            status_code=500,
+        )
+    _question, answer = found
+    return _assistant_message_wire(result=result, answer=answer)

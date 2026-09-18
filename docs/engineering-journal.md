@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.10 answer/draft provenance)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_provenance_responses.py -q --no-cov` (red then green)
+  - `pytest tests/api tests/unit/test_ask_use_case.py -q --no-cov`
+  - `make lint`
+- Observed result:
+  - SSE meta carries provider, model, leftMachine.
+  - JSON Accept on POST /messages returns ChatMessageWire with the same fields.
+  - Interview pack, bullets, cover-letter provenance already present — locked by
+    regression.
+- Decisions made: extend AskEvent/SSE meta with leftMachine; document it in
+  api-contract.md; JSON ask path added early for provenance (GET/DELETE still 11.13).
+- Problems hit: none after green.
+- Carried forward: 11.11 OpenAPI↔TS; 11.12 supporting docs; 11.13 history/delete.
+
 ## Phase 11 — API contracts (11.9 SSE ask stream)
 
 - Date: 2026-09-18

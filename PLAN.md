@@ -3,9 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — 11.9 SSE ask stream
-landed on `POST /api/messages`. Next: 11.10 provenance on answers/drafts, then
-11.11–11.13.
+**Current position:** Phase 11 API contracts in progress — 11.10 provenance on
+answers and drafts complete. Next: 11.11 OpenAPI↔TS contract test, then 11.12–11.13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -451,8 +450,10 @@ disagree, the file is corrected first and the change is deliberate.
       (`meta` → `token`* → `citations` → `done`) on `POST /api/messages` with
       `Accept: text/event-stream`, driven by the existing AskService (not a second
       implementation). JSON Accept and GET/DELETE remain for 11.13.
-- [ ] **11.10** Every answer and every draft response carries the provider, the model
-      tag and whether content left the machine.
+- [x] **11.10** Every answer and every draft response carries the provider, the model
+      tag and whether content left the machine. SSE `meta` includes `leftMachine`;
+      JSON `POST /api/messages` returns `ChatMessage` with the same fields; draft and
+      interview-pack `provenance` covered by API regression.
 - [ ] **11.11** Contract test: the generated OpenAPI schema and
       `frontend/src/types/index.ts` agree on every shared model, including the
       `spanId` required to open every `Evidence` citation.

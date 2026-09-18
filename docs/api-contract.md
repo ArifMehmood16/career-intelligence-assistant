@@ -372,7 +372,7 @@ not a second implementation.
 Event sequence:
 
 ```text
-event: meta      data: { "questionId": "...", "messageId": "...", "intent": "gaps", "provider": "ollama", "model": "..." }
+event: meta      data: { "questionId": "...", "messageId": "...", "intent": "gaps", "provider": "ollama", "model": "...", "leftMachine": false }
 event: token     data: { "text": "..." }            (repeated)
 event: citations data: { "citations": [ ... ] }     (after the text, once)
 event: done      data: { "kind": "answer" | "insufficient" }

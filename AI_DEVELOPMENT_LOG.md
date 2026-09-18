@@ -493,3 +493,18 @@ Never record a command output, metric, date or commit hash that was not observed
   the HTTP transport framing only.
 - Human validation: message SSE API test green; full API suite green; `make lint`
   green.
+
+### 032 — Phase 11.10 answer and draft provenance (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.10
+- Prompt intent: continue Phase 11 after SSE stream.
+- Suggestion: API regression for provider/model/leftMachine on SSE meta, JSON
+  ChatMessage, and draft/interview-pack provenance; extend AskEvent + SSE framing;
+  add JSON Accept path sharing AskService.ask.
+- Outcome: accepted; api-contract meta event updated with leftMachine.
+- Reason: AGENTS requires every answer/artefact to record provider, model tag and
+  egress; drafts already had DraftProvenanceWire.
+- Human validation: provenance API tests green; API + ask use-case suites green;
+  `make lint` green.
