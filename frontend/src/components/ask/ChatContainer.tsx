@@ -1,20 +1,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMessages, getProviders, sendMessage } from "@/api/client";
+import {
+  ApiError,
+  deleteMessages,
+  getMessages,
+  getProviders,
+  getSpan,
+  postMessageStream,
+} from "@/api/client";
 import { ChatView, type ChatViewState } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
-import type { Citation } from "@/types";
-
-const TOKEN_MS = 28;
+import type { ChatMessage, Citation } from "@/types";
 
 export function ChatContainer() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [citation, setCitation] = useState<Citation | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [lastClientRequestId, setLastClientRequestId] = useState<string | null>(
+    null,
+  );
+  const [lastFailedContent, setLastFailedContent] = useState<string | null>(
+    null,
+  );
+  const abortRef = useRef<AbortController | null>(null);
 
   const messagesQuery = useQuery({
     queryKey: ["messages"],
@@ -25,33 +38,110 @@ export function ChatContainer() {
     queryFn: getProviders,
   });
 
+  const spanId = citation?.evidence?.spanId ?? null;
+  const spanQuery = useQuery({
+    queryKey: ["span", spanId],
+    queryFn: () => getSpan(spanId!),
+    enabled: panelOpen && Boolean(spanId),
+    retry: false,
+  });
+
+  const clearHistory = useMutation({
+    mutationFn: deleteMessages,
+    onSuccess: () => {
+      queryClient.setQueryData(["messages"], []);
+    },
+  });
+
   const stopStream = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
+    abortRef.current?.abort();
+    abortRef.current = null;
     setStreamingId(null);
     setStreamingText("");
+    setSending(false);
   };
 
   useEffect(() => () => stopStream(), []);
 
-  const send = useMutation({
-    mutationFn: sendMessage,
-    onSuccess: (next) => {
-      queryClient.setQueryData(["messages"], next);
-      const last = next[next.length - 1];
-      if (!last || last.author !== "assistant") return;
+  const runStream = async (content: string, clientRequestId?: string) => {
+    setSending(true);
+    setSendError(null);
+    const requestId = clientRequestId ?? crypto.randomUUID();
+    setLastClientRequestId(requestId);
+    setLastFailedContent(content);
 
-      const tokens = last.content.split(/(\s+)/);
-      let index = 0;
-      setStreamingId(last.id);
+    const optimisticUser: ChatMessage = {
+      id: `local-user-${requestId}`,
+      author: "user",
+      content,
+      kind: "question",
+      citations: [],
+      model: null,
+      provider: null,
+      leftMachine: false,
+    };
+    queryClient.setQueryData<ChatMessage[]>(["messages"], (current) => [
+      ...(current ?? []),
+      optimisticUser,
+    ]);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      await postMessageStream({
+        content,
+        clientRequestId: requestId,
+        signal: controller.signal,
+        onEvent: (event) => {
+          if (event.type === "meta") {
+            setStreamingId(event.messageId);
+            setStreamingText("");
+            const placeholder: ChatMessage = {
+              id: event.messageId,
+              author: "assistant",
+              content: "",
+              kind: "answer",
+              citations: [],
+              model: event.model,
+              provider: event.provider,
+              leftMachine: event.leftMachine,
+            };
+            queryClient.setQueryData<ChatMessage[]>(["messages"], (current) => {
+              const withoutDupes = (current ?? []).filter(
+                (row) =>
+                  row.id !== optimisticUser.id && row.id !== event.messageId,
+              );
+              return [...withoutDupes, optimisticUser, placeholder];
+            });
+          }
+          if (event.type === "token") {
+            setStreamingText((text) => text + event.text);
+          }
+        },
+      });
+
+      const history = await getMessages();
+      queryClient.setQueryData(["messages"], history);
+      setLastFailedContent(null);
+      setSendError(null);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        void queryClient.invalidateQueries({ queryKey: ["messages"] });
+      } else if (error instanceof ApiError) {
+        setSendError(error.message);
+        void queryClient.invalidateQueries({ queryKey: ["messages"] });
+      } else if (error instanceof Error) {
+        setSendError(error.message);
+        void queryClient.invalidateQueries({ queryKey: ["messages"] });
+      }
+    } finally {
+      abortRef.current = null;
+      setStreamingId(null);
       setStreamingText("");
-      timerRef.current = setInterval(() => {
-        index += 1;
-        setStreamingText(tokens.slice(0, index).join(""));
-        if (index >= tokens.length) stopStream();
-      }, TOKEN_MS);
-    },
-  });
+      setSending(false);
+    }
+  };
 
   const providerNameById = useMemo(
     () =>
@@ -67,6 +157,15 @@ export function ChatContainer() {
       ? "error"
       : "ready";
 
+  const resolveState =
+    !panelOpen || !spanId
+      ? "ready"
+      : spanQuery.isPending
+        ? "loading"
+        : spanQuery.isError
+          ? "error"
+          : "ready";
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ChatView
@@ -75,16 +174,23 @@ export function ChatContainer() {
         streamingId={streamingId}
         streamingText={streamingText}
         draft={draft}
-        sending={send.isPending}
+        sending={sending}
+        sendError={sendError}
+        canClear={(messagesQuery.data?.length ?? 0) > 0 && !sending}
         providerNameById={providerNameById}
         onDraftChange={setDraft}
         onSend={() => {
           const content = draft.trim();
-          if (!content || send.isPending) return;
+          if (!content || sending) return;
           setDraft("");
-          send.mutate(content);
+          void runStream(content);
+        }}
+        onRetrySend={() => {
+          if (!lastFailedContent || !lastClientRequestId || sending) return;
+          void runStream(lastFailedContent, lastClientRequestId);
         }}
         onStop={stopStream}
+        onClear={() => clearHistory.mutate()}
         onCitation={(next) => {
           setCitation(next);
           setPanelOpen(true);
@@ -98,7 +204,15 @@ export function ChatContainer() {
         open={panelOpen}
         title={citation?.label ?? ""}
         status={null}
-        evidence={citation?.evidence ?? null}
+        evidence={
+          spanId ? (spanQuery.data ?? null) : (citation?.evidence ?? null)
+        }
+        resolveState={resolveState}
+        resolveError={
+          spanQuery.error instanceof ApiError
+            ? `This citation could not be resolved (${spanQuery.error.code}).`
+            : null
+        }
         onOpenChange={setPanelOpen}
       />
     </div>

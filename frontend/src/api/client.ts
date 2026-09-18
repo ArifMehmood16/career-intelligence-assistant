@@ -6,6 +6,7 @@ import type {
   AnalysisJob,
   BreakdownRow,
   ChatMessage,
+  Citation,
   CvDocument,
   Evidence,
   Provider,
@@ -18,6 +19,7 @@ import {
   analysisJobSchema,
   breakdownRowSchema,
   chatMessageSchema,
+  citationSchema,
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
@@ -29,7 +31,7 @@ import {
   roleSchema,
   supportingDocumentSchema,
 } from "./schemas";
-import type { z } from "zod";
+import { z } from "zod";
 
 export class ApiError extends Error {
   readonly code: string;
@@ -337,6 +339,215 @@ export async function getMessages(): Promise<ChatMessage[]> {
     schema: chatMessageSchema.array(),
   });
   return rows.map(mapMessage);
+}
+
+export type MessageStreamEvent =
+  | {
+      type: "meta";
+      questionId: string;
+      messageId: string;
+      intent: string;
+      provider: string;
+      model: string | null;
+      leftMachine: boolean;
+    }
+  | { type: "token"; text: string }
+  | { type: "citations"; citations: Citation[] }
+  | { type: "done"; kind: "answer" | "insufficient" }
+  | { type: "error"; code: string; message: string };
+
+export interface MessageStreamResult {
+  messageId: string | null;
+  questionId: string | null;
+  text: string;
+  kind: "answer" | "insufficient" | null;
+  citations: Citation[];
+  provider: string | null;
+  model: string | null;
+  leftMachine: boolean;
+  clientRequestId: string;
+}
+
+export async function postMessageStream(options: {
+  content: string;
+  roleId?: string;
+  clientRequestId?: string;
+  signal?: AbortSignal;
+  onEvent: (event: MessageStreamEvent) => void;
+}): Promise<MessageStreamResult> {
+  const clientRequestId = options.clientRequestId ?? crypto.randomUUID();
+  const headers = new Headers({
+    Accept: "text/event-stream",
+    "Content-Type": "application/json",
+  });
+  const body: Record<string, string> = {
+    content: options.content,
+    clientRequestId,
+  };
+  if (options.roleId !== undefined) {
+    body["roleId"] = options.roleId;
+  }
+
+  const init: RequestInit = {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    credentials: "same-origin",
+  };
+  if (options.signal !== undefined) {
+    init.signal = options.signal;
+  }
+
+  const response = await fetch("/api/messages", init);
+  const correlationHeader = response.headers.get("X-Correlation-Id") ?? "";
+
+  if (!response.ok) {
+    let code = "internal_error";
+    let message = "Request failed.";
+    let correlationId = correlationHeader || "unknown";
+    try {
+      const payload: unknown = await response.json();
+      const parsed = errorEnvelopeSchema.safeParse(payload);
+      if (parsed.success) {
+        code = parsed.data.error.code;
+        message = parsed.data.error.message;
+        correlationId = parsed.data.error.correlationId || correlationId;
+      }
+    } catch {
+      // keep defaults
+    }
+    throw new ApiError(code, message, {
+      correlationId,
+      status: response.status,
+    });
+  }
+
+  if (!response.body) {
+    throw new ApiError("internal_error", "Stream response had no body.", {
+      correlationId: correlationHeader || "unknown",
+      status: response.status,
+    });
+  }
+
+  const result: MessageStreamResult = {
+    messageId: null,
+    questionId: null,
+    text: "",
+    kind: null,
+    citations: [],
+    provider: null,
+    model: null,
+    leftMachine: false,
+    clientRequestId,
+  };
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  const handleBlock = (block: string) => {
+    const lines = block.split(/\r?\n/);
+    let eventName = "message";
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith("event:")) {
+        eventName = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).trim());
+      }
+    }
+    if (dataLines.length === 0) return;
+    const raw = dataLines.join("\n");
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+
+    if (eventName === "meta") {
+      const event: MessageStreamEvent = {
+        type: "meta",
+        questionId: String(data["questionId"] ?? ""),
+        messageId: String(data["messageId"] ?? ""),
+        intent: String(data["intent"] ?? ""),
+        provider: String(data["provider"] ?? ""),
+        model: data["model"] == null ? null : String(data["model"]),
+        leftMachine: Boolean(data["leftMachine"]),
+      };
+      result.messageId = event.messageId;
+      result.questionId = event.questionId;
+      result.provider = event.provider;
+      result.model = event.model;
+      result.leftMachine = event.leftMachine;
+      options.onEvent(event);
+      return;
+    }
+
+    if (eventName === "token") {
+      const text = String(data["text"] ?? "");
+      result.text += text;
+      options.onEvent({ type: "token", text });
+      return;
+    }
+
+    if (eventName === "citations") {
+      const parsed = z.array(citationSchema).safeParse(data["citations"] ?? []);
+      const citations = parsed.success
+        ? parsed.data.map((citation) => ({
+            id: citation.id,
+            label: citation.label,
+            evidence: citation.evidence ?? {
+              spanId: citation.id,
+              documentId: "",
+              page: 1,
+              paragraph: citation.label,
+              highlight: citation.label,
+            },
+          }))
+        : [];
+      result.citations = citations;
+      options.onEvent({ type: "citations", citations });
+      return;
+    }
+
+    if (eventName === "done") {
+      const kind = data["kind"] === "insufficient" ? "insufficient" : "answer";
+      result.kind = kind;
+      options.onEvent({ type: "done", kind });
+      return;
+    }
+
+    if (eventName === "error") {
+      const code = String(data["code"] ?? "provider_failed");
+      const message = String(data["message"] ?? "Provider failed.");
+      options.onEvent({ type: "error", code, message });
+      throw new ApiError(code, message, {
+        correlationId: correlationHeader || "unknown",
+        status: 502,
+      });
+    }
+  };
+
+  while (true) {
+    if (options.signal?.aborted) {
+      await reader.cancel();
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split(/\n\n/);
+    buffer = parts.pop() ?? "";
+    for (const block of parts) {
+      if (block.trim()) handleBlock(block);
+    }
+  }
+  if (buffer.trim()) {
+    handleBlock(buffer);
+  }
+
+  return result;
 }
 
 export async function sendMessage(content: string): Promise<ChatMessage[]> {
