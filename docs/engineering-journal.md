@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 11 — API contracts (11.8 hermetic lifecycle + draft list)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/api/test_role_lifecycle_routes.py -q --no-cov` (red then green)
+  - `pytest tests/api/ -q --no-cov` → 51 passed
+  - `ruff check` / `mypy` on changed modules
+- Observed result:
+  - DELETE role → 204 and subsequent get → `role_not_found`.
+  - POST reanalyse → 202 with new succeeded job; role stays `ready`.
+  - `analysis_incomplete` 409 when store marks role analysing.
+  - Cover letters persisted and listed; bullets/cover-letter markdown export works.
+- Decisions made: hermetic reanalyse remains synchronous; `mark_incomplete` is a
+  store test helper, not an HTTP route.
+- Problems hit: none after green.
+- Carried forward: SQL-backed CV/role/analysis/draft persistence; 11.9 SSE.
+
 ## Phase 11 — API contracts (11.8 hermetic analysis artefacts)
 
 - Date: 2026-09-18

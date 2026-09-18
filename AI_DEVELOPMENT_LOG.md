@@ -395,3 +395,16 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `pytest tests/api/test_role_analysis_routes.py
   tests/api/test_role_routes.py -q --no-cov` green (7 tests); ruff clean on changed
   files.
+
+### 025 — Phase 11.8 hermetic role lifecycle and draft list (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 11.8 (partial — lifecycle / drafts)
+- Prompt intent: continue Phase 11 in the same PR.
+- Suggestion: delete, reanalyse, cover-letter list, bullets/cover-letter export,
+  analysis_incomplete coverage on the in-memory store.
+- Outcome: accepted; SQL persistence still deferred.
+- Reason: finish hermetic wire contracts before swapping stores for PostgreSQL.
+- Human validation: lifecycle red→green; `pytest tests/api/ -q --no-cov` → 51
+  passed; ruff and mypy clean on changed modules.

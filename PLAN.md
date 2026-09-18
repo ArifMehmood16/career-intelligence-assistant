@@ -3,9 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — hermetic 11.8 analysis
-routes landed (gap/interview/drafts/export/ranking/compare on in-memory stores).
-Next: SQL-backed persistence for CV/roles/analysis, then 11.9–11.13.
+**Current position:** Phase 11 API contracts in progress — hermetic 11.8 routes
+complete for CV/spans/roles/jobs/analysis/drafts/ranking (in-memory). Next:
+SQL-backed persistence for those stores, then 11.9–11.13.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -444,10 +444,11 @@ disagree, the file is corrected first and the change is deliberate.
       without `acknowledgedEgress`, so the confirmation is not only a UI convention.
 - [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
       compare and span routes.
-      - Done so far (hermetic in-memory): CV paste lifecycle, spans, roles, jobs,
-        requirements, breakdown, gap-plan, interview-pack, bullets, cover-letter,
-        markdown export, ranking and compare. Remaining: SQL-backed persistence,
-        generated cover-letter list, and any status paths not yet covered.
+      - Done so far (hermetic in-memory): CV paste lifecycle, spans, roles (create/
+        list/get/delete/reanalyse), jobs, requirements, breakdown, gap-plan,
+        interview-pack, bullets, cover-letter (+ list), markdown export (gap/
+        interview/bullets/cover-letter), ranking, compare, and
+        `analysis_incomplete`. Remaining: SQL-backed persistence.
 - [ ] **11.9** SSE answer stream with the documented event sequence.
 - [ ] **11.10** Every answer and every draft response carries the provider, the model
       tag and whether content left the machine.
