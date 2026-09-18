@@ -246,3 +246,19 @@ Never record a command output, metric, date or commit hash that was not observed
 - Reason: exit gate requires fixture CVs with resolvable spans and dated-experience
   recency that is not assumed recent.
 - Human validation: eight focused claim tests green; hermetic pytest, ruff, mypy.
+
+### 015 — Phase 7 mapping and scoring (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 7.1–7.6
+- Prompt intent: continue with the next phase (mapping and scoring) under TDD.
+- Suggestion: pure `domain/mapping.py` policy with reason codes; similarity as
+  candidate hint only; `domain/scoring.py` + `application/scoring/rubric_loader`
+  reading `config/scoring_rubric.toml`; property and counterfactual tests; fixture
+  CV×JD exit-gate test with no model call.
+- Outcome: accepted.
+- Reason: exit gate requires a stable explained score and deltas without a model;
+  the invariant keeps judgement in domain arithmetic, not the LLM.
+- Human validation: nine focused mapping/scoring tests green; hermetic pytest
+  (~84%), ruff, mypy green.

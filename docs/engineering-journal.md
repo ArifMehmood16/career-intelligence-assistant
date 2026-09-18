@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 7 — Mapping and scoring
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_mapping_scoring.py -q --no-cov`
+  - `pytest -q`, `ruff check`, `ruff format`, `mypy`
+- Observed result:
+  - Domain `map_requirement` / `map_requirements` → `met` / `partial` / `missing`
+    with reason codes and justifying span/claim ids; no I/O.
+  - Optional similarity scores may surface candidates; high similarity alone never
+    forces `met`.
+  - `score_fit` reads `config/scoring_rubric.toml` via `load_scoring_rubric`;
+    components and bands are deterministic; counterfactual delta is pure.
+  - Fixture JD + CV (rules extractors) produce a stable score with no model call.
+- Decisions made:
+  - Mapping and scoring stay pure in `domain/`; rubric loading is application-layer
+    configuration, not domain env access.
+- Problems hit and how they were resolved:
+  - Ruff E501 on long policy lines; reformatted with wrapped conditions / key helper.
+- Carried forward: Phase 8 analysis jobs.
+
 ## Phase 6 — Evidence extraction
 
 - Date: 2026-09-18
