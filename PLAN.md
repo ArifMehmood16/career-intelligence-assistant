@@ -3,8 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 9 (question answering) exit gate is satisfied at the
-domain/application layer. Next work is Phase 10 — grounded generation.
+**Current position:** Phase 10 (grounded generation) domain/application exit criteria
+are satisfied; artefact persistence (10.9) and HTTP routes remain for Phase 11.
+Next work is Phase 11 — API contracts (including storing generated drafts).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -394,27 +395,27 @@ citations survive an API restart; retrying a request does not duplicate it.
 Everything here is governed by [ADR 007](docs/adr/007-grounded-generation.md). Build
 the validator first; the features are built against it, not retrofitted to it.
 
-- [ ] **10.1** Groundedness validator in `domain/`: given draft text and the cited
+- [x] **10.1** Groundedness validator in `domain/`: given draft text and the cited
       spans, extract every number, date, duration, percentage, employer, product and
       technology token from the draft and assert each appears in the spans after
       normalisation. Pure, unit tested against adversarial fixtures — a changed
       figure, an added technology, an inflated duration, a renamed employer.
-- [ ] **10.2** Generation pipeline: build input from stored claims and spans → phrase
+- [x] **10.2** Generation pipeline: build input from stored claims and spans → phrase
       through the completion port → validate → regenerate once on failure → fall back
       to template. Provenance recorded at every step.
-- [ ] **10.3** **Gap plan** — fully deterministic, no model. Ordered by `scoreDelta`,
+- [x] **10.3** **Gap plan** — fully deterministic, no model. Ordered by `scoreDelta`,
       with reason code, adjacent evidence and action category.
-- [ ] **10.4** **CV bullets** — per requirement, from the claims that relate to it.
+- [x] **10.4** **CV bullets** — per requirement, from the claims that relate to it.
       Hermetic template path first, then the model-phrased path through 10.2.
-- [ ] **10.5** **Interview pack** — probes, evidence to lead with, thin areas, and
+- [x] **10.5** **Interview pack** — probes, evidence to lead with, thin areas, and
       questions to ask them. Section membership decided in domain code from the
       mapping and from 5.6; phrasing may come from the model.
-- [ ] **10.6** **Cover letter** — structured from met requirements, one paragraph per
+- [x] **10.6** **Cover letter** — structured from met requirements, one paragraph per
       requirement with its spans, optional honest gap line. Refuses below two met
       must-haves with `insufficient_matched_requirements`.
-- [ ] **10.7** Markdown export for every artefact, byte-identical to what the screen
+- [x] **10.7** Markdown export for every artefact, byte-identical to what the screen
       shows.
-- [ ] **10.8** Counters: validator failures, regenerations and template fallbacks, per
+- [x] **10.8** Counters: validator failures, regenerations and template fallbacks, per
       provider. These are the numbers Phase 14 reports.
 - [ ] **10.9** Store every final generated artefact in PostgreSQL with its input role
       analysis version, cited spans, groundedness result and provenance. Regeneration

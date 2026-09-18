@@ -308,3 +308,17 @@ Never record a command output, metric, date or commit hash that was not observed
   idempotent clientRequestId without storing partial tokens.
 - Human validation: unit ask use-case green; integration ask persistence green;
   full `-m integration` green; hermetic pytest (~84%), ruff, mypy.
+
+### 019 — Phase 10 grounded generation (TDD, 10.9 deferred)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 10.1–10.8
+- Prompt intent: continue with TDD after Phase 9 persistence merged to main.
+- Suggestion: groundedness validator; gap plan; generate_draft pipeline with
+  counters; hermetic bullets; cover letter refuse; interview pack; markdown export
+  — red commits before each green slice.
+- Outcome: accepted for generation behaviour; 10.9 store deferred.
+- Reason: ADR 007 requires fail-closed validation before any draft reaches a user;
+  hermetic templates keep the feature model-free.
+- Human validation: focused unit suites green; hermetic pytest (~84%), ruff, mypy.
