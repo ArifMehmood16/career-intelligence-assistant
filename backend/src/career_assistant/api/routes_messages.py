@@ -27,7 +27,11 @@ from career_assistant.application.ask.memory import (
 from career_assistant.application.ask.service import AskRequest, AskService
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
-from career_assistant.application.roles.store import InMemoryRoleStore, RoleView
+from career_assistant.application.roles.store import (
+    InMemoryRoleStore,
+    RoleOperationRejected,
+    RoleView,
+)
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.prompts import RetrievedSpan
@@ -62,7 +66,10 @@ def _conversation_store(request: Request) -> InMemoryConversationStore:
 def _view_for_role(
     store: InMemoryRoleStore, workspace_id: str, role: RoleView
 ) -> RoleAnalysisView:
-    bundle = store.require_analysis(workspace_id, role.id)
+    try:
+        bundle = store.require_analysis(workspace_id, role.id)
+    except RoleOperationRejected as exc:
+        raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
     return role_analysis_view(role_id=role.id, title=role.title, bundle=bundle)
 
 
