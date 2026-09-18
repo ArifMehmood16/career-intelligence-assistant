@@ -18,6 +18,25 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 10 — Grounded generation (10.1–10.8)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_groundedness.py -q --no-cov`
+  - `pytest tests/unit/test_gap_plan.py -q --no-cov`
+  - `pytest tests/unit/test_generation_pipeline.py -q --no-cov`
+  - `pytest tests/unit/test_interview_export.py -q --no-cov`
+  - `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - Adversarial groundedness fixtures fail closed; case variants pass.
+  - Gap plan ordered by scoreDelta; evidence_it vs learn_it/accept_it.
+  - Pipeline: validate → one regenerate → template fallback with counters.
+  - Hermetic bullets; cover letter refuses below two met must-haves.
+  - Interview pack sections from mapping; markdown export byte-stable.
+- Decisions made: 10.9 PostgreSQL artefact versions deferred to Phase 11 wiring.
+- Problems hit: none material.
+- Carried forward: 10.9 persistence; Phase 11 API routes.
+
 ## Phase 9 — Question answering (complete)
 
 - Date: 2026-09-18

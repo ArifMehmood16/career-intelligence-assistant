@@ -6,9 +6,9 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** phase 9 complete. Ask routes intents, answers from mappings or
-> untrusted prompts, streams via the same use case, and persists idempotent
-> question/answer history. Grounded generation is next.
+> **Status:** phase 10 generation complete (validator, gap plan, bullets, interview
+> pack, cover letter, export). Artefact rows in PostgreSQL (10.9) and HTTP routes
+> are next with Phase 11.
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
 > protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 
