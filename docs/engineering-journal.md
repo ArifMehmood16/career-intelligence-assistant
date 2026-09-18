@@ -18,6 +18,26 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 9 — Question answering (domain slice)
+
+- Date: 2026-09-18
+- Commands run:
+  - `pytest tests/unit/test_intent_router.py -q --no-cov`
+  - `pytest tests/unit/test_structured_ask.py -q --no-cov`
+  - `pytest tests/unit/test_open_question_prompt.py -q --no-cov`
+  - `pytest -q`, `ruff`, `mypy`
+- Observed result:
+  - Deterministic `route_intent` for gaps/fit/compare/evidence/interview/open.
+  - `answer_structured` builds answers from mappings only; bad citations →
+    insufficient.
+  - Open-question span selection respects cover-letter ask + role JD isolation;
+    prompts delimit untrusted text and enforce budgets.
+- Decisions made:
+  - TDD red commits before each green slice; Phase 9 exit gate still needs
+    streaming + persistence (9.7–9.9).
+- Problems hit and how they were resolved: mypy loop-variable shadowing in compare.
+- Carried forward: 9.7–9.9 application/API persistence and streaming.
+
 ## Phase 8 — Analysis jobs
 
 - Date: 2026-09-18

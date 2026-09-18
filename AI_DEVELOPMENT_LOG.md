@@ -280,3 +280,17 @@ Never record a command output, metric, date or commit hash that was not observed
   (`-m integration`); hermetic pytest (~84%), ruff, mypy green.
 - Process note: standing instruction — for future work, commit failing tests
   before implementation commits; assume concurrent teammates.
+
+### 017 — Phase 9 ask domain (TDD, partial)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 9.1–9.6, 9.10 (9.7–9.9 deferred)
+- Prompt intent: continue with TDD-style development on the next phase.
+- Suggestion: intent router; structured mapping answers + citation validation;
+  open-question retrieval rules and untrusted prompt budgets — each as red then
+  green commits.
+- Outcome: accepted for the domain slice; streaming/persistence left open.
+- Reason: structured intents must not use vector search; citations must resolve
+  or become insufficient before any HTTP surface exists.
+- Human validation: focused unit suites green; hermetic pytest (~84%), ruff, mypy.
