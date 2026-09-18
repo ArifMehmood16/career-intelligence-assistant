@@ -84,7 +84,11 @@ def create_app(
     providers: ProviderSettings | None = None,
     cv_store: CvStore | None = None,
 ) -> FastAPI:
-    """Build the application. Kept a factory so tests construct their own."""
+    """Build the application. Kept a factory so tests construct their own.
+
+    Default ``cv_store`` is in-memory for hermetic API tests. Production and
+    integration runs inject ``SqlCvStore`` (see adapters.persistence.cv_store).
+    """
     upload_limits = limits or LimitSettings()
     app = FastAPI(
         title="Career Intelligence Assistant",

@@ -1,5 +1,6 @@
 """PostgreSQL persistence adapters."""
 
+from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.engine import (
     create_db_engine,
     create_session_factory,
@@ -11,6 +12,7 @@ from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 
 __all__ = [
     "APP_SCHEMA",
+    "SqlCvStore",
     "SqlUnitOfWork",
     "create_db_engine",
     "create_session_factory",
