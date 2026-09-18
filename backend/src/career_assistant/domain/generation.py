@@ -92,3 +92,83 @@ def _action_for(mapping: RequirementMapping, req: Requirement) -> GapAction:
     if not req.must_have and mapping.status is MappingStatus.MISSING:
         return GapAction.ACCEPT_IT
     return GapAction.LEARN_IT
+
+
+def draft_cv_bullet_template(claim: Claim) -> str:
+    """Hermetic bullet: restructure the claim sentence without inventing facts."""
+    text = claim.context.strip().rstrip(".")
+    if not text:
+        return "- "
+    # Prefer past-tense ownership phrasing when the claim already starts that way.
+    return f"- {text}."
+
+
+@dataclass(frozen=True, slots=True)
+class CoverLetterRefusal:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
+class CoverLetterDraft:
+    body: str
+    cited_span_ids: tuple[str, ...]
+    met_requirement_ids: tuple[str, ...]
+
+
+def draft_cover_letter(
+    *,
+    role_title: str,
+    company: str,
+    requirements: tuple[Requirement, ...] | list[Requirement],
+    mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
+    claims: tuple[Claim, ...] | list[Claim],
+) -> CoverLetterDraft | CoverLetterRefusal:
+    """Template cover letter from met must-haves; refuses below two."""
+    by_req = {r.id: r for r in requirements}
+    by_claim = {c.id: c for c in claims}
+    met: list[tuple[Requirement, RequirementMapping]] = []
+    for mapping in mappings:
+        req = by_req.get(mapping.requirement_id)
+        if req is None or not req.must_have:
+            continue
+        if mapping.status is MappingStatus.MET:
+            met.append((req, mapping))
+    if len(met) < 2:
+        return CoverLetterRefusal(
+            code="insufficient_matched_requirements",
+            message=(
+                "A cover letter needs at least two met must-have requirements. "
+                "Use the gap plan until more evidence is mapped."
+            ),
+        )
+    paragraphs = [
+        f"I am writing to apply for the {role_title} role at {company}.",
+    ]
+    cited: list[str] = []
+    met_ids: list[str] = []
+    for req, mapping in met:
+        met_ids.append(req.id)
+        claim_bits: list[str] = []
+        for claim_id in mapping.justifying_claim_ids:
+            claim = by_claim.get(claim_id)
+            if claim is not None:
+                claim_bits.append(claim.context.rstrip("."))
+        cited.extend(mapping.justifying_span_ids)
+        evidence = "; ".join(claim_bits) if claim_bits else req.text
+        paragraphs.append(f"Regarding {req.text}: {evidence}.")
+    missing = [
+        by_req[m.requirement_id].text
+        for m in mappings
+        if m.status is not MappingStatus.MET
+        and by_req.get(m.requirement_id) is not None
+        and by_req[m.requirement_id].must_have
+    ]
+    if missing:
+        paragraphs.append("I am still building depth in: " + "; ".join(missing) + ".")
+    paragraphs.append("Thank you for your consideration.")
+    return CoverLetterDraft(
+        body="\n\n".join(paragraphs),
+        cited_span_ids=tuple(dict.fromkeys(cited)),
+        met_requirement_ids=tuple(met_ids),
+    )

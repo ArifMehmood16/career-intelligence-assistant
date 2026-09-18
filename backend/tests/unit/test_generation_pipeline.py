@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 from career_assistant.application.generation.pipeline import (
-    DraftProvenance,
     GenerationCounters,
     generate_draft,
 )
-from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -16,8 +14,8 @@ from career_assistant.application.ports.types import (
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.generation import (
     CoverLetterRefusal,
-    draft_cv_bullet_template,
     draft_cover_letter,
+    draft_cv_bullet_template,
 )
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.mapping import (
