@@ -3,8 +3,9 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 11 API contracts in progress — wire foundation landed
-(11.1, 11.2, 11.4–11.6). Next: upload limits (11.3) and feature routes (11.7+).
+**Current position:** Phase 11 API contracts in progress — upload limit (11.3) and
+provider routes (11.7) landed. Next: feature routes (11.8+) and remaining contract
+items.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -433,12 +434,12 @@ disagree, the file is corrected first and the change is deliberate.
 - [x] **11.1** Explicit Pydantic response models for every route, camelCase on the
       wire. No bare `dict`.
 - [x] **11.2** Workspace cookie issuance and scoping on every route.
-- [ ] **11.3** Reject oversized uploads before buffering the whole body.
+- [x] **11.3** Reject oversized uploads before buffering the whole body.
 - [x] **11.4** Safe error mapping to the documented code table: no stack traces,
       prompts, file paths or provider payloads.
 - [x] **11.5** Readiness endpoint reporting database, migration and provider state.
 - [x] **11.6** Correlation id on every request, echoed in responses and logs.
-- [ ] **11.7** Provider endpoints: list with availability and the reason any is
+- [x] **11.7** Provider endpoints: list with availability and the reason any is
       unavailable; set the workspace choice. Hosted selection is rejected server-side
       without `acknowledgedEgress`, so the confirmation is not only a UI convention.
 - [ ] **11.8** Job, gap plan, interview pack, bullets, cover letter, export, ranking,
