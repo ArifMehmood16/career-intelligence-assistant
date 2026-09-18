@@ -538,6 +538,21 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 055 — Phase 13.9–13.10 a11y live regions and escaped text (TDD)
+
+- Date: 2026-09-18
+- Tool / model: Composer, agent session
+- Plan task: 13.9, 13.10
+- Prompt intent: close Phase 13 exit gate after /dev/states.
+- Suggestion: polite aria-live for parsing, analysing, and streaming chat; regression
+  tests that XSS-looking excerpts never become DOM nodes.
+- Outcome: accepted.
+- Reason: progress must be announced; React text children already escape — tests
+  lock that property.
+- Rejected alternatives: aria-live=assertive for streaming (too noisy).
+- Human validation: a11y 3 green; escaped-text 2 green; full frontend vitest 100;
+  tsc/lint.
+
 ### 054 — Phase 13.8 /dev/states gallery fill (TDD)
 
 - Date: 2026-09-18

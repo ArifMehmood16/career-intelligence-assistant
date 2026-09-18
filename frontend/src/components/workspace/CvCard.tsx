@@ -97,7 +97,13 @@ export function CvCard({
             <Skeleton className="h-8 w-20" />
             <Skeleton className="h-8 w-20" />
           </div>
-          <p className="text-sm text-muted-foreground">Parsing…</p>
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-sm text-muted-foreground"
+          >
+            Parsing…
+          </p>
         </div>
       )}
 

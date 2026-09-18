@@ -42,7 +42,11 @@ function FitCell({
   onReanalyse?: ((roleId: string) => void) | undefined;
 }) {
   if (role.status === "analysing") {
-    return <span className="text-muted-foreground">Analysing</span>;
+    return (
+      <span role="status" aria-live="polite" className="text-muted-foreground">
+        Analysing
+      </span>
+    );
   }
   if (role.status === "failed") {
     return (

@@ -18,6 +18,21 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13 — Accessibility and escaped text (13.9–13.10) + exit gate
+
+- Date: 2026-09-18
+- Commands run:
+  - `bun run test src/a11y/phase13-accessibility.test.tsx` — 3 passed
+  - `bun run test src/a11y/phase13-escaped-text.test.tsx` — 2 passed
+  - `bun run test` — 100 passed / 32 files
+  - `bun run lint` / `bunx tsc --noEmit` — green
+- Observed result: live regions on parsing, analysing, streaming; XSS strings stay
+  text; Phase 13 exit gate met for frontend quality checks.
+- Decisions made: polite live regions only.
+- Problems hit: duplicate Analysing status in table+cards layouts — tests use
+  getAllByRole.
+- Carried forward: Phase 14 Evaluation.
+
 ## Phase 13 — /dev/states gallery (13.8)
 
 - Date: 2026-09-18

@@ -3,8 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 frontend features in progress — through 13.8
-`/dev/states`. Next: 13.9 Accessibility.
+**Current position:** Phase 13 complete (exit gate: frontend lint/tsc/component
+tests). Next: Phase 14 Evaluation.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -546,10 +546,10 @@ patterns. See [docs/features.md](docs/features.md) for what each one shows.
       the differentiator.
 - [x] **13.8** Fill `/dev/states`: every component state on one page, rendered from
       props.
-- [ ] **13.9** Accessibility: keyboard path through upload, tabs, table, drafts and
+- [x] **13.9** Accessibility: keyboard path through upload, tabs, table, drafts and
       chat; labels, focus management and live regions for streaming and job progress,
       tested.
-- [ ] **13.10** Excerpts and generated text rendered as escaped text, never HTML.
+- [x] **13.10** Excerpts and generated text rendered as escaped text, never HTML.
 
 **Exit gate:** `bun run lint`, `tsc --noEmit` and component tests pass; every state in
 `/dev/states` has a test.
