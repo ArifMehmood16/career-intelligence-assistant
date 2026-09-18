@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint test test-integration test-evaluation test-e2e security verify run run-docker down logs
+.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -22,7 +22,8 @@ help:
 	@echo ""
 	@echo "Check"
 	@echo "  make lint               Ruff, mypy, TypeScript, ESLint"
-	@echo "  make test               Hermetic backend tests (frontend tests join at PLAN 1.4)"
+	@echo "  make typecheck          Backend mypy and frontend tsc --noEmit"
+	@echo "  make test               Hermetic backend and frontend unit tests"
 	@echo "  make test-integration   Postgres/pgvector tests (PLAN phase 4)"
 	@echo "  make test-evaluation    Fixture extraction and mapping baseline (PLAN phase 14)"
 	@echo "  make test-e2e           Playwright walkthrough (PLAN phase 16)"
@@ -63,12 +64,17 @@ lint:
 	$(BACKEND_BIN)/ruff check backend/src backend/tests
 	$(BACKEND_BIN)/ruff format --check backend/src backend/tests
 	cd backend && .venv/bin/mypy
-	cd $(FRONTEND) && bunx tsc --noEmit
+	cd $(FRONTEND) && bun run typecheck
 	cd $(FRONTEND) && bun run lint
+
+typecheck:
+	cd backend && .venv/bin/mypy
+	cd $(FRONTEND) && bun run typecheck
 
 # Hermetic: no database, no key, no model download.
 test:
 	cd backend && .venv/bin/pytest
+	cd $(FRONTEND) && bun run test
 
 test-integration:
 	# Narrow Postgres suite; the default coverage gate does not apply to it.

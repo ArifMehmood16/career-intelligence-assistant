@@ -111,7 +111,11 @@ export function ChatView({
               Stop
             </Button>
           ) : (
-            <Button type="button" onClick={onSend} disabled={sending || !draft.trim()}>
+            <Button
+              type="button"
+              onClick={onSend}
+              disabled={sending || !draft.trim()}
+            >
               Send
             </Button>
           )}
@@ -171,8 +175,8 @@ function MessageBubble({
 
       {insufficient && !streaming ? (
         <p>
-          Next step: add the detail to your CV, or ask about something the parsed document
-          covers.
+          Next step: add the detail to your CV, or ask about something the
+          parsed document covers.
         </p>
       ) : null}
 
@@ -195,7 +199,7 @@ function MessageBubble({
         <p className="font-mono text-[11px] text-muted-foreground">
           {message.model}{" "}
           {message.provider
-            ? providerNameById[message.provider] ?? message.provider
+            ? (providerNameById[message.provider] ?? message.provider)
             : "unknown provider"}
         </p>
       ) : null}

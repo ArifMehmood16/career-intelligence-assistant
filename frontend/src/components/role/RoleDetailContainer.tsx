@@ -21,7 +21,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [selected, setSelected] = useState<Requirement | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  const roleQuery = useQuery({ queryKey: ["role", roleId], queryFn: () => getRole(roleId) });
+  const roleQuery = useQuery({
+    queryKey: ["role", roleId],
+    queryFn: () => getRole(roleId),
+  });
   const breakdownQuery = useQuery({
     queryKey: ["breakdown", roleId],
     queryFn: () => getFitBreakdown(roleId),
@@ -31,7 +34,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     queryFn: () => getRequirements(roleId),
   });
 
-  const requirements = useMemo(() => requirementsQuery.data ?? [], [requirementsQuery.data]);
+  const requirements = useMemo(
+    () => requirementsQuery.data ?? [],
+    [requirementsQuery.data],
+  );
   const requirementsById = useMemo(
     () => Object.fromEntries(requirements.map((item) => [item.id, item])),
     [requirements],
@@ -66,7 +72,9 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         expandedRowIds={expandedRowIds}
         onToggleRow={(id) =>
           setExpandedRowIds((current) =>
-            current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+            current.includes(id)
+              ? current.filter((item) => item !== id)
+              : [...current, id],
           )
         }
         onRetry={() => {

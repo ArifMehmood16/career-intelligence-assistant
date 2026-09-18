@@ -16,8 +16,14 @@ export function ChatContainer() {
   const [panelOpen, setPanelOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const messagesQuery = useQuery({ queryKey: ["messages"], queryFn: getMessages });
-  const providersQuery = useQuery({ queryKey: ["providers"], queryFn: getProviders });
+  const messagesQuery = useQuery({
+    queryKey: ["messages"],
+    queryFn: getMessages,
+  });
+  const providersQuery = useQuery({
+    queryKey: ["providers"],
+    queryFn: getProviders,
+  });
 
   const stopStream = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -49,7 +55,9 @@ export function ChatContainer() {
 
   const providerNameById = useMemo(
     () =>
-      Object.fromEntries((providersQuery.data ?? []).map((item) => [item.id, item.name])),
+      Object.fromEntries(
+        (providersQuery.data ?? []).map((item) => [item.id, item.name]),
+      ),
     [providersQuery.data],
   );
 

@@ -19,7 +19,11 @@ export interface AddRoleDialogProps {
   disabled: boolean;
   submitting: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (input: { title: string; company: string; description: string }) => void;
+  onSubmit: (input: {
+    title: string;
+    company: string;
+    description: string;
+  }) => void;
 }
 
 export function AddRoleDialog({
@@ -106,17 +110,23 @@ export function AddRoleDialog({
                 id="role-file"
                 type="file"
                 accept=".pdf,.docx,.txt"
-                onChange={(event) => setFilename(event.target.files?.[0]?.name ?? "")}
+                onChange={(event) =>
+                  setFilename(event.target.files?.[0]?.name ?? "")
+                }
               />
             </div>
             {filename ? (
-              <p className="font-mono text-sm text-muted-foreground">{filename}</p>
+              <p className="font-mono text-sm text-muted-foreground">
+                {filename}
+              </p>
             ) : null}
             <DialogFooter>
               <Button
                 type="button"
                 onClick={() => submit("file")}
-                disabled={submitting || !title.trim() || !company.trim() || !filename}
+                disabled={
+                  submitting || !title.trim() || !company.trim() || !filename
+                }
               >
                 {submitting ? "Adding…" : "Add role"}
               </Button>
@@ -139,7 +149,10 @@ export function AddRoleDialog({
                 type="button"
                 onClick={() => submit("text")}
                 disabled={
-                  submitting || !title.trim() || !company.trim() || !description.trim()
+                  submitting ||
+                  !title.trim() ||
+                  !company.trim() ||
+                  !description.trim()
                 }
               >
                 {submitting ? "Adding…" : "Add role"}

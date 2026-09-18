@@ -29,7 +29,10 @@ export function RoleHeader({ role, loading }: RoleHeaderProps) {
             </div>
             <p>
               <span className="font-mono text-xl">{role.fitScore}</span>
-              <span className="text-muted-foreground"> / 100 · {role.bandLabel}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                / 100 · {role.bandLabel}
+              </span>
             </p>
           </>
         )}

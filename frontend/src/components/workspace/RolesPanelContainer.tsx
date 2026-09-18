@@ -44,21 +44,24 @@ export function RolesPanelContainer() {
 
   const roles = useMemo(() => {
     const list = [...(rolesQuery.data ?? [])];
-    list.sort((a, b) => (sortDirection === "asc" ? compare(a, b, sortKey) : compare(b, a, sortKey)));
+    list.sort((a, b) =>
+      sortDirection === "asc" ? compare(a, b, sortKey) : compare(b, a, sortKey),
+    );
     return list;
   }, [rolesQuery.data, sortKey, sortDirection]);
 
   const hasCv = Boolean(cvQuery.data);
 
-  const state: RolesPanelState = cvQuery.isPending || rolesQuery.isPending
-    ? "loading"
-    : !hasCv
-      ? "inert"
-      : rolesQuery.isError
-        ? "error"
-        : roles.length === 0
-          ? "empty"
-          : "ready";
+  const state: RolesPanelState =
+    cvQuery.isPending || rolesQuery.isPending
+      ? "loading"
+      : !hasCv
+        ? "inert"
+        : rolesQuery.isError
+          ? "error"
+          : roles.length === 0
+            ? "empty"
+            : "ready";
 
   return (
     <RolesPanel

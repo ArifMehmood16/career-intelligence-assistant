@@ -23,7 +23,10 @@ export function FitBreakdown({
   onRetry,
 }: FitBreakdownProps) {
   return (
-    <section aria-label="Fit breakdown" className="rounded-md border border-border bg-surface p-5">
+    <section
+      aria-label="Fit breakdown"
+      className="rounded-md border border-border bg-surface p-5"
+    >
       <h2 className="mb-4 text-sm font-semibold">Breakdown</h2>
 
       {state === "loading" && (
@@ -39,7 +42,9 @@ export function FitBreakdown({
 
       {state === "error" && (
         <div className="space-y-3">
-          <p className="text-muted-foreground">The breakdown could not be loaded.</p>
+          <p className="text-muted-foreground">
+            The breakdown could not be loaded.
+          </p>
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Retry
           </Button>
@@ -47,7 +52,9 @@ export function FitBreakdown({
       )}
 
       {state === "empty" && (
-        <p className="text-muted-foreground">No breakdown is available for this role yet.</p>
+        <p className="text-muted-foreground">
+          No breakdown is available for this role yet.
+        </p>
       )}
 
       {state === "ready" && (
@@ -63,9 +70,15 @@ export function FitBreakdown({
                   className="flex w-full items-center gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {expanded ? (
-                    <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <ChevronDown
+                      className="size-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <ChevronRight
+                      className="size-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   )}
                   <span className="flex-1">{row.label}</span>
                   <span className="font-mono">{row.value}</span>
@@ -97,7 +110,9 @@ export function FitBreakdown({
                       </li>
                     ))}
                     {row.requirementIds.length === 0 && (
-                      <li className="text-muted-foreground">No requirements in this group.</li>
+                      <li className="text-muted-foreground">
+                        No requirements in this group.
+                      </li>
                     )}
                   </ul>
                 )}

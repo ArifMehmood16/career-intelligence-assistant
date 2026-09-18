@@ -59,7 +59,10 @@ export function RolesPanel({
     void navigate({ to: "/roles/$id", params: { id } });
   };
 
-  const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, id: string) => {
+  const onRowKeyDown = (
+    event: KeyboardEvent<HTMLTableRowElement>,
+    id: string,
+  ) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       openRole(id);
@@ -67,7 +70,10 @@ export function RolesPanel({
   };
 
   return (
-    <section aria-label="Roles" className="rounded-md border border-border bg-surface p-5">
+    <section
+      aria-label="Roles"
+      className="rounded-md border border-border bg-surface p-5"
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">Roles</h2>
         {addRoleSlot}
@@ -81,7 +87,9 @@ export function RolesPanel({
 
       {state === "error" && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Roles could not be loaded.</p>
+          <p className="text-sm text-muted-foreground">
+            Roles could not be loaded.
+          </p>
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Retry
           </Button>
@@ -146,7 +154,10 @@ export function RolesPanel({
                             (sortDirection === "asc" ? (
                               <ArrowUp className="size-3" aria-hidden="true" />
                             ) : (
-                              <ArrowDown className="size-3" aria-hidden="true" />
+                              <ArrowDown
+                                className="size-3"
+                                aria-hidden="true"
+                              />
                             ))}
                         </button>
                       </th>
@@ -172,16 +183,26 @@ export function RolesPanel({
                       >
                         {role.title}
                       </Link>
-                      <span className="block text-muted-foreground">{role.company}</span>
+                      <span className="block text-muted-foreground">
+                        {role.company}
+                      </span>
                     </th>
                     <td className="py-2 pr-4">
                       <span className="font-mono">{role.fitScore}</span>
                       <span className="text-muted-foreground"> / 100</span>
-                      <span className="ml-2 text-muted-foreground">{role.bandLabel}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {role.bandLabel}
+                      </span>
                     </td>
-                    <td className="py-2 text-right font-mono">{role.counts.met}</td>
-                    <td className="py-2 text-right font-mono">{role.counts.partial}</td>
-                    <td className="py-2 text-right font-mono">{role.counts.missing}</td>
+                    <td className="py-2 text-right font-mono">
+                      {role.counts.met}
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {role.counts.partial}
+                    </td>
+                    <td className="py-2 text-right font-mono">
+                      {role.counts.missing}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -198,15 +219,29 @@ export function RolesPanel({
                   className="block rounded-md border border-border bg-background p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span className="block font-medium">{role.title}</span>
-                  <span className="block text-muted-foreground">{role.company}</span>
+                  <span className="block text-muted-foreground">
+                    {role.company}
+                  </span>
                   <span className="mt-2 block">
                     <span className="font-mono">{role.fitScore}</span>
-                    <span className="text-muted-foreground"> / 100 · {role.bandLabel}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      / 100 · {role.bandLabel}
+                    </span>
                   </span>
                   <span className="mt-1 block text-muted-foreground">
-                    Met <span className="font-mono text-foreground">{role.counts.met}</span> ·
-                    Partial <span className="font-mono text-foreground">{role.counts.partial}</span> ·
-                    Missing <span className="font-mono text-foreground">{role.counts.missing}</span>
+                    Met{" "}
+                    <span className="font-mono text-foreground">
+                      {role.counts.met}
+                    </span>{" "}
+                    · Partial{" "}
+                    <span className="font-mono text-foreground">
+                      {role.counts.partial}
+                    </span>{" "}
+                    · Missing{" "}
+                    <span className="font-mono text-foreground">
+                      {role.counts.missing}
+                    </span>
                   </span>
                 </Link>
               </li>

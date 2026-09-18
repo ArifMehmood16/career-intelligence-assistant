@@ -99,7 +99,9 @@ export function RequirementTable({
 
       {state === "error" && (
         <div className="space-y-3">
-          <p className="text-muted-foreground">The requirements could not be loaded.</p>
+          <p className="text-muted-foreground">
+            The requirements could not be loaded.
+          </p>
           <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Retry
           </Button>
@@ -118,16 +120,28 @@ export function RequirementTable({
           <table className={tableClass}>
             <thead>
               <tr className="border-b border-border">
-                <th scope="col" className="py-2 pr-4 font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="py-2 pr-4 font-medium text-muted-foreground"
+                >
                   Requirement
                 </th>
-                <th scope="col" className="py-2 pr-4 font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="py-2 pr-4 font-medium text-muted-foreground"
+                >
                   Type
                 </th>
-                <th scope="col" className="py-2 pr-4 font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="py-2 pr-4 font-medium text-muted-foreground"
+                >
                   Status
                 </th>
-                <th scope="col" className="py-2 font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="py-2 font-medium text-muted-foreground"
+                >
                   Evidence
                 </th>
               </tr>
@@ -137,7 +151,11 @@ export function RequirementTable({
               return (
                 <tbody key={group.status}>
                   <tr className="border-b border-border">
-                    <th scope="colgroup" colSpan={4} className="py-2 font-medium">
+                    <th
+                      scope="colgroup"
+                      colSpan={4}
+                      className="py-2 font-medium"
+                    >
                       <button
                         type="button"
                         aria-expanded={!collapsed}
@@ -145,9 +163,15 @@ export function RequirementTable({
                         className="inline-flex items-center gap-2 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {collapsed ? (
-                          <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+                          <ChevronRight
+                            className="size-4 text-muted-foreground"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+                          <ChevronDown
+                            className="size-4 text-muted-foreground"
+                            aria-hidden="true"
+                          />
                         )}
                         {GROUP_LABEL[group.status]}
                         <span className="font-mono text-muted-foreground">
@@ -174,7 +198,9 @@ export function RequirementTable({
                         <td className="py-2 pr-4">
                           <StatusMark status={requirement.status} />
                         </td>
-                        <td className="py-2 text-muted-foreground">{excerpt(requirement)}</td>
+                        <td className="py-2 text-muted-foreground">
+                          {excerpt(requirement)}
+                        </td>
                       </tr>
                     ))}
                 </tbody>
@@ -195,12 +221,20 @@ export function RequirementTable({
                     className="mb-2 inline-flex items-center gap-2 rounded-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {collapsed ? (
-                      <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <ChevronRight
+                        className="size-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     ) : (
-                      <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <ChevronDown
+                        className="size-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                     )}
                     {GROUP_LABEL[group.status]}
-                    <span className="font-mono text-muted-foreground">{group.items.length}</span>
+                    <span className="font-mono text-muted-foreground">
+                      {group.items.length}
+                    </span>
                   </button>
                   {!collapsed && (
                     <ul className="space-y-2">
@@ -211,7 +245,9 @@ export function RequirementTable({
                             onClick={() => onSelect(requirement)}
                             className="block w-full rounded-md border border-border bg-background p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            <span className="block font-medium">{requirement.text}</span>
+                            <span className="block font-medium">
+                              {requirement.text}
+                            </span>
                             <span className="mt-2 flex items-center gap-3">
                               <TypeBadge type={requirement.type} />
                               <StatusMark status={requirement.status} />

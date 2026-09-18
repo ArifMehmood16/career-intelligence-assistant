@@ -25,7 +25,10 @@ export const Route = createFileRoute("/dev/states")({
         name: "description",
         content: "Gallery of every component state rendered from props alone.",
       },
-      { property: "og:title", content: "Component states — Career Intelligence" },
+      {
+        property: "og:title",
+        content: "Component states — Career Intelligence",
+      },
       {
         property: "og:description",
         content: "Gallery of every component state rendered from props alone.",
@@ -178,7 +181,8 @@ const providerLocalUnavailable: Provider = {
   kind: "local",
   models: ["llama3.1:8b", "qwen2.5:14b"],
   available: false,
-  unavailableReason: "Local model server not reachable at http://localhost:11434.",
+  unavailableReason:
+    "Local model server not reachable at http://localhost:11434.",
 };
 
 const providerOpenAi: Provider = {
@@ -234,7 +238,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function DevStatesPage() {
-  const [evidenceKind, setEvidenceKind] = useState<"matched" | "missing" | null>("matched");
+  const [evidenceKind, setEvidenceKind] = useState<
+    "matched" | "missing" | null
+  >("matched");
   const [egressOpen, setEgressOpen] = useState(true);
 
   return (
@@ -242,7 +248,8 @@ function DevStatesPage() {
       <div>
         <h1 className="text-xl">Component states</h1>
         <p className="mt-1 text-muted-foreground">
-          Every presentational component rendered from props alone. No data fetching.
+          Every presentational component rendered from props alone. No data
+          fetching.
         </p>
       </div>
 
@@ -341,7 +348,11 @@ function DevStatesPage() {
           sortDirection="desc"
           onSort={noop}
           onRetry={noop}
-          addRoleSlot={<Button type="button" size="sm">Add role</Button>}
+          addRoleSlot={
+            <Button type="button" size="sm">
+              Add role
+            </Button>
+          }
           layout="table"
         />
       </Section>
@@ -354,7 +365,11 @@ function DevStatesPage() {
           sortDirection="desc"
           onSort={noop}
           onRetry={noop}
-          addRoleSlot={<Button type="button" size="sm">Add role</Button>}
+          addRoleSlot={
+            <Button type="button" size="sm">
+              Add role
+            </Button>
+          }
           layout="cards"
         />
       </Section>
@@ -384,13 +399,23 @@ function DevStatesPage() {
       </Section>
 
       <Section title="Evidence panel: matched requirement">
-        <Button type="button" variant="outline" size="sm" onClick={() => setEvidenceKind("matched")}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setEvidenceKind("matched")}
+        >
           Open matched evidence
         </Button>
       </Section>
 
       <Section title="Evidence panel: missing requirement">
-        <Button type="button" variant="outline" size="sm" onClick={() => setEvidenceKind("missing")}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setEvidenceKind("missing")}
+        >
           Open missing evidence
         </Button>
       </Section>
@@ -509,7 +534,12 @@ function DevStatesPage() {
       </Section>
 
       <Section title="Egress dialog: open">
-        <Button type="button" variant="outline" size="sm" onClick={() => setEgressOpen(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setEgressOpen(true)}
+        >
           Re-open egress dialog
         </Button>
         <ProviderSettings
@@ -533,7 +563,10 @@ function DevStatesPage() {
       </Section>
 
       <Section title="Provider badge: hosted">
-        <ProviderBadge provider={providerAnthropicAvailable} model="claude-sonnet-4" />
+        <ProviderBadge
+          provider={providerAnthropicAvailable}
+          model="claude-sonnet-4"
+        />
       </Section>
     </div>
   );

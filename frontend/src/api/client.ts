@@ -117,7 +117,9 @@ export function getProviderChoice(): Promise<ProviderChoice> {
   return delay(clone(providerChoice));
 }
 
-export function setProviderChoice(choice: ProviderChoice): Promise<ProviderChoice> {
+export function setProviderChoice(
+  choice: ProviderChoice,
+): Promise<ProviderChoice> {
   providerChoice = clone(choice);
   return delay(clone(providerChoice));
 }

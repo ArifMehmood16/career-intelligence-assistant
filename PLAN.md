@@ -3,10 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 0 exit gate is satisfied (tasks 0.1–0.6). Next work is
-the remaining Phase 1 items: frontend hygiene (1.3), frontend test tooling (1.4),
-frontend colour/fixture guard (1.8) and CI (1.9). Tasks 1.1, 1.2, 1.5, 1.6 and 1.7
-and part of 16.1 already landed earlier.
+**Current position:** Phase 0 and Phase 1 exit gates are satisfied. Next work is
+Phase 2 — model providers (ports, hermetic adapters, egress gate).
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -121,20 +119,20 @@ independent.
 - [x] **1.2** Package skeleton `backend/src/career_assistant/` with `domain/`,
       `application/`, `adapters/`, `parsing/`, `matching/`, `generation/`,
       `evaluation/`, `ops/`.
-- [ ] **1.3** Frontend hygiene: delete `package-lock.json` (keep `bun.lock`), delete
+- [x] **1.3** Frontend hygiene: delete `package-lock.json` (keep `bun.lock`), delete
       the empty `src/app/` directories, confirm `tsc --noEmit` and `bun run lint` pass
       on the Lovable output as delivered. Record anything that does not.
-- [ ] **1.4** Frontend test tooling: Vitest, Testing Library, jsdom, coverage, and a
+- [x] **1.4** Frontend test tooling: Vitest, Testing Library, jsdom, coverage, and a
       first component test against a Lovable component rendered from props.
 - [x] **1.5** `Makefile` targets: `setup test lint typecheck run verify security`,
       covering both halves.
 - [x] **1.6** Liveness endpoint with an API test. First backend red-green cycle.
 - [x] **1.7** Architecture guard test: fail if `domain/` or `application/` imports
       FastAPI, SQLAlchemy or a provider SDK.
-- [ ] **1.8** Frontend guard: an ESLint rule failing the build on a hex colour or raw
+- [x] **1.8** Frontend guard: an ESLint rule failing the build on a hex colour or raw
       Tailwind palette class in `src/components/**`, and on a fixture import outside
       tests.
-- [ ] **1.9** CI workflow running lint, typecheck and the hermetic test suites on both
+- [x] **1.9** CI workflow running lint, typecheck and the hermetic test suites on both
       halves.
 
 **Exit gate:** `make lint`, `make typecheck` and `make test` pass on a clean clone
