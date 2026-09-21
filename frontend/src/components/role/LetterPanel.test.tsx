@@ -170,6 +170,38 @@ describe("LetterPanel", () => {
     expect(onExport).toHaveBeenCalledWith(v2);
   });
 
+  it("surfaces an export failure with a retryable control", async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+    const v2 = { ...draft, id: "cl-2", version: 2 };
+
+    render(
+      <LetterPanel
+        tone="warm"
+        includeGapLine={true}
+        generating={false}
+        draft={v2}
+        versions={[v2]}
+        refusal={null}
+        supportingDocuments={[]}
+        exportError="The cover letter could not be exported."
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={onExport}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/cover letter could not be exported/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /retry export/i }));
+    expect(onExport).toHaveBeenCalledWith(v2);
+  });
+
   it("does not treat a failed generated-letter query as empty history", async () => {
     const user = userEvent.setup();
     const onRetryGenerated = vi.fn();

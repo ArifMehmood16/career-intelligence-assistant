@@ -151,4 +151,26 @@ describe("PreparePanel", () => {
     await user.click(screen.getByRole("button", { name: /export markdown/i }));
     expect(onExport).toHaveBeenCalled();
   });
+
+  it("surfaces an export failure with a retryable control", async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+
+    render(
+      <PreparePanel
+        state="ready"
+        pack={pack}
+        exportError="The interview pack could not be exported."
+        onRetry={vi.fn()}
+        onSelectEvidence={vi.fn()}
+        onExport={onExport}
+      />,
+    );
+
+    expect(
+      screen.getByText(/interview pack could not be exported/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /retry export/i }));
+    expect(onExport).toHaveBeenCalled();
+  });
 });
