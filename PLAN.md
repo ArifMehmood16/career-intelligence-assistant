@@ -750,7 +750,7 @@ hits.
       and `responsibility` items reach the mapping, so a salary line, a benefit or a
       "this role is not" bullet can never be scored. The 5.5 injection fixture must
       still change nothing: verbatim verification is the defence.
-- [ ] **13C.3 Structured CV extraction.** The model returns roles with employer, title
+- [x] **13C.3 Structured CV extraction.** The model returns roles with employer, title
       and date range, and claims beneath them carrying competency, scope, technologies,
       outcome and a verbatim quote. Dates are parsed and recency and duration derived
       in domain code, never supplied by the model — 6.4 still holds. Every role in the

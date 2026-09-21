@@ -617,6 +617,32 @@ Never record a command output, metric, date or commit hash that was not observed
   hermetic run green. ruff clean on the changed files; mypy clean on the three
   source files.
 
+### 074 — Phase 13C.3 structured CV extraction with verified quotes (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.3
+- Prompt intent: continue 13C; extract every role, not only the first, with
+  dates parsed in domain code.
+- Suggestion: the model returns roles (employer, title, date-range quote) and
+  nested claims (quote, competency, scope, technologies, outcome). The server
+  locates each quote in the stored text. Recency and duration are derived from
+  `parse_date_range` on the verified date quote — a model-supplied recency
+  field is ignored. Employer and title are kept only when they appear in the
+  document.
+- Outcome: accepted.
+- Reason: the audit's claim extractor stopped at the second role and dated
+  nothing. Intersecting model output with the regex cannot recover a prose CV;
+  verifying quotes can. Claim gained optional structure fields with defaults
+  so every existing constructor stays valid.
+- Rejected alternatives: trusting a model-emitted recency signal. PLAN 6.4
+  forbids it. Invented employer names are blanked rather than attached to a
+  verified claim.
+- Human validation: 6 of 7 new tests failed against the old intersect-with-
+  rules extractor (the regex-finds-nothing baseline already passed). After
+  the change, focused claim tests 15 passed; full unit suite green; ruff and
+  mypy clean on the changed files.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21

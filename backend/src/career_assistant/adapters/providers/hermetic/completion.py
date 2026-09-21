@@ -100,6 +100,26 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
                 for item in requirements
             ]
         }
+    if isinstance(properties, dict) and "roles" in properties:
+        return {
+            "roles": [
+                {
+                    "employer": "",
+                    "title": "",
+                    "date_range_quote": "",
+                    "claims": [
+                        {
+                            "quote": item,
+                            "competency": "general",
+                            "scope": "",
+                            "technologies": [],
+                            "outcome": "",
+                        }
+                        for item in requirements
+                    ],
+                }
+            ]
+        }
     if isinstance(properties, dict) and "claims" in properties:
         return {"claims": [{"text": item} for item in requirements]}
     return {"items": requirements}
