@@ -745,24 +745,24 @@ def export_artefact(
         body = export_markdown(artefact, pack)
     elif artefact == "cover-letter":
         drafts = store.list_cover_letters(workspace_id, role_id)
-        wire = _pick_draft_version(drafts, version, _as_cover_letter_wire)
-        if wire is None:
+        letter = _pick_draft_version(drafts, version, _as_cover_letter_wire)
+        if letter is None:
             raise AppError(
                 "validation_failed",
                 "No cover letter draft to export for this role.",
                 status_code=422,
             )
-        body = _cover_letter_markdown(wire)
+        body = _cover_letter_markdown(letter)
     elif artefact == "bullets":
         drafts = store.list_bullet_drafts(workspace_id, role_id)
-        wire = _pick_draft_version(drafts, version, _as_bullet_wire)
-        if wire is None:
+        bullets = _pick_draft_version(drafts, version, _as_bullet_wire)
+        if bullets is None:
             raise AppError(
                 "validation_failed",
                 "No bullet drafts to export for this role.",
                 status_code=422,
             )
-        body = _bullets_markdown(wire)
+        body = _bullets_markdown(bullets)
     else:
         raise AppError(
             "validation_failed",

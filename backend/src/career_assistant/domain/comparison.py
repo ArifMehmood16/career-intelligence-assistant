@@ -98,29 +98,29 @@ def _differentiator(
     only_b: tuple[ComparedRequirement, ...],
 ) -> str:
     scored: list[tuple[int, int, str, str]] = []
-    for item in shared:
-        gap = _impact(item.must_have, item.a_status, item.b_status)
+    for shared_item in shared:
+        gap = _impact(shared_item.must_have, shared_item.a_status, shared_item.b_status)
         if gap == 0:
             continue
         phrase = (
-            f"{item.text} is {item.a_status.value} for {title_a} and "
-            f"{item.b_status.value} for {title_b}"
+            f"{shared_item.text} is {shared_item.a_status.value} for {title_a} and "
+            f"{shared_item.b_status.value} for {title_b}"
         )
-        scored.append((gap, 1, item.text.casefold(), phrase))
-    for item in only_a:
+        scored.append((gap, 1, shared_item.text.casefold(), phrase))
+    for unique_a in only_a:
         other = MappingStatus.MISSING
-        gap = _impact(item.requirement.must_have, item.status, other)
+        gap = _impact(unique_a.requirement.must_have, unique_a.status, other)
         if gap == 0:
             continue
-        phrase = f"{item.requirement.text} is required only for {title_a}"
-        scored.append((gap, 0, item.requirement.text.casefold(), phrase))
-    for item in only_b:
+        phrase = f"{unique_a.requirement.text} is required only for {title_a}"
+        scored.append((gap, 0, unique_a.requirement.text.casefold(), phrase))
+    for unique_b in only_b:
         other = MappingStatus.MISSING
-        gap = _impact(item.requirement.must_have, item.status, other)
+        gap = _impact(unique_b.requirement.must_have, unique_b.status, other)
         if gap == 0:
             continue
-        phrase = f"{item.requirement.text} is required only for {title_b}"
-        scored.append((gap, 0, item.requirement.text.casefold(), phrase))
+        phrase = f"{unique_b.requirement.text} is required only for {title_b}"
+        scored.append((gap, 0, unique_b.requirement.text.casefold(), phrase))
     if not scored:
         return "No clear differentiator"
     scored.sort(key=lambda row: (-row[0], -row[1], row[2]))
