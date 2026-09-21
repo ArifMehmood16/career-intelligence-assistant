@@ -276,3 +276,54 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
     assert len(http_letters.json()) == 1
     assert http_letters.json()[0]["id"] == letter_id
     assert http_letters.json()[0]["provenance"]["leftMachine"] is False
+
+
+def test_sql_role_store_persists_failed_template_fallback_verdict(
+    session_factory: sessionmaker[Session],
+) -> None:
+    from types import SimpleNamespace
+
+    from career_assistant.domain.groundedness import GroundednessVerdict
+
+    uow_factory = _uow_factory_for(session_factory)
+    cv_store = SqlCvStore(uow_factory)
+    role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
+    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    role_id = client.post(
+        "/api/roles",
+        json={
+            "title": "Analytics Engineer",
+            "company": "Acme",
+            "description": _JD,
+        },
+    ).json()["role"]["id"]
+    worker.drain()
+    workspace_id = client.cookies["workspace"]
+    draft_id = str(uuid.uuid4())
+    role_store.save_cover_letter(
+        workspace_id,
+        role_id,
+        SimpleNamespace(
+            id=draft_id,
+            paragraphs=[{"text": "Template fallback.", "spanIds": []}],
+            omitted_reason=None,
+            provenance=SimpleNamespace(
+                provider="hermetic",
+                model="rules-v1",
+                left_machine=False,
+                grounded=False,
+                fallback="template",
+                generated_at="2026-09-21T12:00:00Z",
+            ),
+        ),
+    )
+
+    stored = role_store.list_cover_letters(workspace_id, role_id)
+    assert stored[0].id == draft_id
+    assert stored[0].groundedness is GroundednessVerdict.FAIL
+    listed = client.get(f"/api/roles/{role_id}/cover-letters")
+    assert listed.status_code == 200
+    assert listed.json()[0]["id"] == draft_id
+    assert listed.json()[0]["provenance"]["grounded"] is False
