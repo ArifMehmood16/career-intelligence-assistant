@@ -29,7 +29,8 @@ PostgreSQL is the source of truth behind every route. Original document bytes, p
 spans, roles, generated artefacts, questions, final answers, citations and workspace
 provider choices are durable; the production API never falls back to process memory,
 SQLite or a filesystem upload directory. Hermetic `create_app()` tests may still use
-in-memory stores.
+in-memory stores. Which use case, provider resolver and SQL adapter each route uses
+is listed in [production-wiring.md](production-wiring.md).
 
 ---
 
@@ -397,8 +398,8 @@ ChatMessage {
 Citation { id; label; evidence: Evidence }
 ```
 
-This is the target shared contract. Phase 12 updates the existing frontend types to
-match it, including persisted-message fields and exact span ids.
+`frontend/src/types/index.ts` is the canonical TypeScript statement of this contract,
+including persisted-message fields and exact span ids.
 
 `POST /api/messages` body:
 `{ content, roleId?: string, clientRequestId: string }`. `clientRequestId` is unique
@@ -490,12 +491,6 @@ string of a configured key appears in no response body and no log line.
 ## Type parity
 
 `frontend/src/types/index.ts` is the canonical TypeScript statement of everything
-above. Phase 12 adds the persisted-message, supporting-document and draft-version
-types and makes one necessary correction to an existing shape: `Evidence` gains
-`spanId`, because a citation without the stored span identifier cannot open the exact
-source. Components and fixtures are updated together rather than preserving an
-incorrect contract.
-
-A contract test in Phase 11 asserts the generated OpenAPI schema and the TypeScript
-types agree on every shared model. When they disagree, this file is what they are both
+above. A contract test asserts the generated OpenAPI schema and the TypeScript types
+agree on every shared model. When they disagree, this file is what they are both
 wrong about.

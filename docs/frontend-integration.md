@@ -42,8 +42,8 @@ configuration anywhere in this repository.
 - `src/api/__fixtures__/`. Test and `/dev/states` gallery data only; no component
   imports (Phase 12.4).
 - `src/types/index.ts`. Additive types landed (Phase 12.5); keep existing shapes stable.
-- New routes and components for the features that have no screen yet: gaps, prepare,
-  letter, ranking, compare.
+- New routes and components for the features that have no screen yet: none remaining
+  in the Phase 13 feature set. Gaps, prepare, letter, ranking and compare are wired.
 
 ## What is missing from the Lovable output
 

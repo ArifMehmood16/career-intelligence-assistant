@@ -22,3 +22,6 @@ provider SDK. External systems are reached through narrow ports.
 - Any part can be extracted into a service later because the port already exists.
 - A single database transaction spans a whole use case, which keeps ingestion simple.
 - Horizontal scaling is process-level. Accepted at this size.
+- Production persistence is PostgreSQL via `build_sql_stores`. Default tests use
+  in-memory fakes through `create_app()`. The live map is
+  `docs/production-wiring.md`.

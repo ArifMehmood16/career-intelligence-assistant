@@ -93,5 +93,5 @@ def test_threat_model_and_api_contract_name_production_sql_wiring() -> None:
     assert "in-memory" in threat
     assert "postgresql" in threat
     contract = API_CONTRACT.read_text(encoding="utf-8")
-    assert "docs/production-wiring.md" in contract
+    assert "production-wiring.md" in contract
     assert "Phase 12 updates the existing frontend types" not in contract
