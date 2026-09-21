@@ -538,6 +538,85 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 066 — Frontend role hard-delete controls
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: none (human request after 13A.8)
+- Prompt intent: add delete buttons for roles and wire them on the frontend.
+- Suggestion: `deleteRole` client against existing `DELETE /api/roles/{id}`;
+  confirm-then-delete on the workspace table/cards and role header, matching CV
+  and cover-letter delete; invalidate roles/ranking and return to the workspace
+  after a header delete.
+- Outcome: accepted.
+- Reason: the API already hard-deleted a role; the UI only exposed CV and
+  supporting-letter delete.
+- Rejected alternatives: clicking either duplicate Delete in tests (table plus
+  CSS-hidden cards both stay in the accessibility tree without Tailwind);
+  passing `onDelete={undefined}` under `exactOptionalPropertyTypes`.
+- Human validation: focused vitest 24 passed; gallery smoke 1 passed;
+  `tsc --noEmit` and eslint on the changed files green. Browser: gallery
+  table Delete asked `Delete Senior Data Analyst? Its analysis, drafts and
+  mappings will be removed.` and cancelled; live workspace had no roles so
+  the wired delete path was not exercised against PostgreSQL in the browser.
+
+### 065 — Phase 13A.9 production wiring matrix and stale README (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.9
+- Prompt intent: continue remaining Phase 13A items.
+- Suggestion: fail tests on stale README claims and missing route rows; add
+  `docs/production-wiring.md`; update API contract, threat model, ADRs 001/007.
+- Outcome: accepted.
+- Reason: README still said Phase 10 and fixture UI; nothing listed which SQL
+  adapter each production route actually uses.
+- Rejected alternatives: walking `app.routes` (included routers are opaque mounts,
+  so an empty matrix would pass); requiring the `docs/` prefix inside files that
+  already live under `docs/`.
+- Human validation: focused docs tests red then green; `make test` 255 passed,
+  coverage 80.62%; frontend 113 passed; `make test-integration` 48 passed;
+  `make lint` green after ruff format.
+
+### 064 — Phase 13A.8 frontend async and failure states (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.8
+- Prompt intent: continue 13A with regular TDD commits.
+- Suggestion: explicit role-header states; tab-scoped fetches; retryable letter,
+  compare, role-list, clipboard and export failures instead of empty success.
+- Outcome: accepted.
+- Reason: analysing/failed/404 kept a skeleton and fired child queries; failed
+  generated/supporting letter and CV list queries looked empty; copy and export
+  swallowed errors.
+- Rejected alternatives: leaving child queries enabled and only hiding tabs
+  (they still 409 in the background); treating a failed CV query as inert Add
+  your CV first.
+- Human validation: each slice had a failing test then a green; `make test` 252
+  passed, coverage 80.62%; frontend 113 passed; `make test-integration` 48
+  passed; `make lint` green after moving `deriveRolesPanelState`.
+
+### 063 — Phase 13A.7 ranking, compare and versioned export (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.7
+- Prompt intent: continue work after 13A.6 in the same TDD style with regular commits.
+- Suggestion: competition ranks for equal scores; compare differentiator from a real
+  status gap; export the selected cover-letter/bullet version with API and component
+  regressions.
+- Outcome: accepted.
+- Reason: GET /ranking numbered ties 1 and 2; GET /compare returned the first shared
+  requirement alphabetically even when statuses matched; export always dumped latest
+  or every bullet version.
+- Rejected alternatives: dense ranking 1,1,2 (PLAN asked for competition ranking);
+  concatenating every bullet draft when version is omitted (the same latest-version
+  rule as cover letters).
+- Human validation: each slice had a failing test then a green; `make test` 252
+  passed, coverage 80.62%; frontend 101 passed; `make test-integration` 48 passed;
+  `make lint` green after the mypy rename.
+
 ### 062 — Phase 13A.6 grounded generation on HTTP and SQL (TDD)
 
 - Date: 2026-09-21

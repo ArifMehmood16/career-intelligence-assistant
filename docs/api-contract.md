@@ -29,7 +29,8 @@ PostgreSQL is the source of truth behind every route. Original document bytes, p
 spans, roles, generated artefacts, questions, final answers, citations and workspace
 provider choices are durable; the production API never falls back to process memory,
 SQLite or a filesystem upload directory. Hermetic `create_app()` tests may still use
-in-memory stores.
+in-memory stores. Which use case, provider resolver and SQL adapter each route uses
+is listed in [production-wiring.md](production-wiring.md).
 
 ---
 
@@ -271,6 +272,13 @@ GET  /api/roles/{id}/export/{artefact}.md → text/markdown
 
 `artefact` is one of `gap-plan`, `interview-pack`, `cover-letter`, `bullets`.
 
+`GET /api/roles/{id}/export/cover-letter.md` and `.../bullets.md` accept an optional
+`version` query matching the immutable draft `version` shown on screen. Omitted
+`version` exports the latest draft only. An unknown version is `422 validation_failed`.
+Gap-plan and interview-pack ignore `version`. The Letter tab always sends the selected
+cover-letter version so the file matches the paragraphs on screen. The same query is
+the rule for bullet versions.
+
 ```ts
 DraftProvenance {
   provider: string;          // provider id that produced it
@@ -343,6 +351,14 @@ Comparison {
 
 Both are derived from stored scores, so they cannot disagree with a role page.
 
+`rank` is standard competition ranking (1224): equal fit scores share a rank and the
+next distinct score skips. `tied` is true for every row in a shared-score group.
+
+`differentiator` names the largest mapping disagreement — a shared requirement whose
+status differs, otherwise a unique requirement that changes the comparison — not the
+first shared requirement alphabetically. When nothing distinguishes the two roles it
+is `"No clear differentiator"`.
+
 ---
 
 ## Spans
@@ -382,8 +398,8 @@ ChatMessage {
 Citation { id; label; evidence: Evidence }
 ```
 
-This is the target shared contract. Phase 12 updates the existing frontend types to
-match it, including persisted-message fields and exact span ids.
+`frontend/src/types/index.ts` is the canonical TypeScript statement of this contract,
+including persisted-message fields and exact span ids.
 
 `POST /api/messages` body:
 `{ content, roleId?: string, clientRequestId: string }`. `clientRequestId` is unique
@@ -475,12 +491,6 @@ string of a configured key appears in no response body and no log line.
 ## Type parity
 
 `frontend/src/types/index.ts` is the canonical TypeScript statement of everything
-above. Phase 12 adds the persisted-message, supporting-document and draft-version
-types and makes one necessary correction to an existing shape: `Evidence` gains
-`spanId`, because a citation without the stored span identifier cannot open the exact
-source. Components and fixtures are updated together rather than preserving an
-incorrect contract.
-
-A contract test in Phase 11 asserts the generated OpenAPI schema and the TypeScript
-types agree on every shared model. When they disagree, this file is what they are both
+above. A contract test asserts the generated OpenAPI schema and the TypeScript types
+agree on every shared model. When they disagree, this file is what they are both
 wrong about.

@@ -613,19 +613,19 @@ real application.
       through this validated path or remove the controls until they are real. Refuse
       a bullet when no cited claim supports it instead of persisting an uncited
       instruction as a grounded draft.
-- [ ] **13A.7 Correct ranking, comparison and immutable-version export.** Equal scores
+- [x] **13A.7 Correct ranking, comparison and immutable-version export.** Equal scores
       receive the same displayed rank with deterministic competition ranking; the
       comparison differentiator must identify an actual status/score distinction,
       not the first shared requirement alphabetically. Export the exact cover-letter
       version selected on screen (and define the same rule for bullet versions), with
       byte-for-byte API and component regressions.
-- [ ] **13A.8 Close frontend asynchronous and failure-state gaps.** Role detail must
+- [x] **13A.8 Close frontend asynchronous and failure-state gaps.** Role detail must
       render explicit not-found, failed and analysing states rather than an indefinite
       header skeleton plus failing child queries. Fetch tab-specific resources only
       when the role is ready and the tab is active. Surface generated/supporting
       letter, role-list/compare, clipboard and export failures with retryable UI
       states; do not show a successful empty state while its query failed.
-- [ ] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
+- [x] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
       stale README status, API contract, architecture/provenance documentation,
       threat model and engineering journal after the fixes are proven. Add a
       production-wiring matrix that names each route's application use case, provider

@@ -5,6 +5,8 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AsyncState } from "@/components/role/FitBreakdown";
 import type { CoverLetterDraft, SupportingDocument } from "@/types";
 
 export type LetterTone = "plain" | "warm";
@@ -21,11 +23,16 @@ export interface LetterPanelProps {
   versions: CoverLetterDraft[];
   refusal: LetterRefusal | null;
   supportingDocuments: SupportingDocument[];
+  generatedState?: AsyncState;
+  supportingState?: AsyncState;
+  onRetryGenerated?: () => void;
+  onRetrySupporting?: () => void;
+  exportError?: string | null;
   onToneChange: (tone: LetterTone) => void;
   onIncludeGapLineChange: (include: boolean) => void;
   onGenerate: () => void;
   onSelectVersion: (draft: CoverLetterDraft) => void;
-  onExport: () => void;
+  onExport: (draft: CoverLetterDraft) => void;
   onCitation: (spanId: string) => void;
   onOpenGaps: () => void;
 }
@@ -38,6 +45,11 @@ export function LetterPanel({
   versions,
   refusal,
   supportingDocuments,
+  generatedState = "ready",
+  supportingState = "ready",
+  onRetryGenerated,
+  onRetrySupporting,
+  exportError = null,
   onToneChange,
   onIncludeGapLineChange,
   onGenerate,
@@ -136,14 +148,33 @@ export function LetterPanel({
                   : "stayed local"}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onExport}
-            >
-              Export Markdown
-            </Button>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onExport(draft);
+                }}
+              >
+                Export Markdown
+              </Button>
+              {exportError ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{exportError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onExport(draft);
+                    }}
+                  >
+                    Retry export
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -172,7 +203,36 @@ export function LetterPanel({
         </section>
       ) : null}
 
-      {versions.length > 0 ? (
+      {generatedState === "loading" ? (
+        <section
+          aria-label="Version history"
+          className="rounded-md border border-border bg-surface p-5"
+        >
+          <div aria-busy="true" className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </section>
+      ) : generatedState === "error" ? (
+        <section
+          aria-label="Version history"
+          className="rounded-md border border-border bg-surface p-5"
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Generated letters could not be loaded.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRetryGenerated}
+            >
+              Retry generated letters
+            </Button>
+          </div>
+        </section>
+      ) : versions.length > 0 ? (
         <section
           aria-label="Version history"
           className="rounded-md border border-border bg-surface p-5"
@@ -205,7 +265,26 @@ export function LetterPanel({
         <p className="mb-3 text-sm text-muted-foreground">
           Shown separately as supporting documents, never as generated versions.
         </p>
-        {supportingDocuments.length === 0 ? (
+        {supportingState === "loading" ? (
+          <div aria-busy="true" className="space-y-2">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        ) : supportingState === "error" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Supporting letters could not be loaded.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRetrySupporting}
+            >
+              Retry supporting letters
+            </Button>
+          </div>
+        ) : supportingDocuments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No supporting cover letters uploaded on the workspace.
           </p>

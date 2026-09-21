@@ -25,6 +25,11 @@ export function ComparePanelContainer() {
   });
 
   const roles = rolesQuery.data ?? [];
+  const rolesState: AsyncState = rolesQuery.isPending
+    ? "loading"
+    : rolesQuery.isError
+      ? "error"
+      : "ready";
   const state: AsyncState = !requested
     ? "empty"
     : compareQuery.isPending
@@ -41,6 +46,7 @@ export function ComparePanelContainer() {
       roleAId={roleAId}
       roleBId={roleBId}
       state={state}
+      rolesState={rolesState}
       comparison={compareQuery.data ?? null}
       onRoleAChange={(id) => {
         setRequested(false);
@@ -59,6 +65,9 @@ export function ComparePanelContainer() {
       }}
       onRetry={() => {
         void compareQuery.refetch();
+      }}
+      onRetryRoles={() => {
+        void rolesQuery.refetch();
       }}
       onOpenGaps={(roleId) => {
         void navigate({

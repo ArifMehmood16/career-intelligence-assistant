@@ -52,7 +52,9 @@ wide without the system getting complicated: there is one hard problem, solved o
 4. Add a role: title, company, and the job description pasted or uploaded.
 5. The role appears immediately with the status `Analysing`. When the job finishes it
    carries a score, a band and met/partial/missing counts.
-6. Replace the CV at any time. Every role is re-analysed against the new one, and the
+6. Delete a role from the workspace table or the role header. Confirmation is required;
+   the role, its mappings, drafts and job description are hard-deleted.
+7. Replace the CV at any time. Every role is re-analysed against the new one, and the
    old mapping is deleted rather than kept alongside.
 
 **Rules**
@@ -72,7 +74,8 @@ wide without the system getting complicated: there is one hard problem, solved o
   image, too large, unsupported type). It is never half-ingested.
 
 **States the UI must carry:** empty (no CV), parsing, parsed, parse failed, no roles,
-role analysing, role failed, role ready.
+role analysing, role failed, role ready, role not found, role load failed. A failed
+query is an error with retry, never an empty success.
 
 ---
 
@@ -270,7 +273,9 @@ produced it. The product does not pretend to have written your CV.
 
 - The ranking is derived from stored scores. It is not a fresh model call, so it
   cannot disagree with the individual role pages.
-- Ties are shown as ties.
+- Equal scores share a displayed rank (1, 1, 3) and are labelled as ties.
+- The compare differentiator is the largest status distinction between the two
+  mappings, not whichever shared requirement sorts first.
 
 ---
 

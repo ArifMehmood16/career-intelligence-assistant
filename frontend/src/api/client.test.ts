@@ -7,6 +7,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   addRole,
+  deleteRole,
+  exportRoleArtefact,
   getCv,
   getProviders,
   getRoles,
@@ -184,5 +186,34 @@ describe("request helper", () => {
       return Response.json(null);
     });
     await request("/api/cv", { schema: null });
+  });
+});
+
+describe("deleteRole", () => {
+  it("hard-deletes a role by id", async () => {
+    stubFetch((input, init) => {
+      expect(String(input)).toBe("/api/roles/role-1");
+      expect(init?.method).toBe("DELETE");
+      return new Response(null, { status: 204 });
+    });
+
+    await expect(deleteRole("role-1")).resolves.toBeUndefined();
+  });
+});
+
+describe("exportRoleArtefact", () => {
+  it("pins markdown export to the selected draft version", async () => {
+    stubFetch((input) => {
+      const url = String(input);
+      expect(url).toBe("/api/roles/role-1/export/cover-letter.md?version=1");
+      return new Response("Version one letter\n", {
+        status: 200,
+        headers: { "Content-Type": "text/markdown; charset=utf-8" },
+      });
+    });
+
+    await expect(
+      exportRoleArtefact("role-1", "cover-letter", { version: 1 }),
+    ).resolves.toBe("Version one letter\n");
   });
 });

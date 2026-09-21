@@ -5,6 +5,7 @@ import {
   ApiError,
   createBulletDraft,
   createCoverLetterDraft,
+  deleteRole,
   exportRoleArtefact,
   getCoverLetters,
   getFitBreakdown,
@@ -14,6 +15,7 @@ import {
   getRequirements,
   getRole,
   getSpan,
+  reanalyseRole,
 } from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { EvidencePanel } from "@/components/EvidencePanel";
@@ -26,9 +28,10 @@ import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import {
   isRoleDetailTabId,
+  shouldFetchRoleTabResource,
   type RoleDetailTabId,
 } from "@/components/role/role-detail-tabs";
-import { RoleHeader } from "@/components/role/RoleHeader";
+import { RoleHeader, type RoleHeaderState } from "@/components/role/RoleHeader";
 import type {
   CoverLetterDraft,
   Evidence,
@@ -70,35 +73,103 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [letterRefusal, setLetterRefusal] = useState<{
     message: string;
   } | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [letterExportError, setLetterExportError] = useState<string | null>(
+    null,
+  );
+  const [prepareExportError, setPrepareExportError] = useState<string | null>(
+    null,
+  );
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
     queryFn: () => getRole(roleId),
+    refetchInterval: (query) =>
+      query.state.data?.status === "analysing" ? 1500 : false,
+    retry: false,
+  });
+  const roleStatus = roleQuery.data?.status;
+  const fetchFit = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "fit",
+  });
+  const fetchGaps = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "gaps",
+  });
+  const fetchPrepare = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "prepare",
+  });
+  const fetchLetter = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "letter",
   });
   const breakdownQuery = useQuery({
     queryKey: ["breakdown", roleId],
     queryFn: () => getFitBreakdown(roleId),
+    enabled: fetchFit,
   });
   const requirementsQuery = useQuery({
     queryKey: ["requirements", roleId],
     queryFn: () => getRequirements(roleId),
+    enabled: fetchFit,
   });
   const gapPlanQuery = useQuery({
     queryKey: ["gap-plan", roleId],
     queryFn: () => getGapPlan(roleId),
+    enabled: fetchGaps,
   });
   const interviewPackQuery = useQuery({
     queryKey: ["interview-pack", roleId],
     queryFn: () => getInterviewPack(roleId),
+    enabled: fetchPrepare,
   });
   const generatedLettersQuery = useQuery({
     queryKey: ["generated-cover-letters", roleId],
     queryFn: () => getGeneratedCoverLetters(roleId),
+    enabled: fetchLetter,
   });
   const supportingLettersQuery = useQuery({
     queryKey: ["cover-letters"],
     queryFn: () => getCoverLetters(),
+    enabled: fetchLetter,
   });
+
+  const reanalyse = useMutation({
+    mutationFn: () => reanalyseRole(roleId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: () => deleteRole(roleId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+      void queryClient.invalidateQueries({ queryKey: ["ranking"] });
+      void navigate({ to: "/" });
+    },
+  });
+
+  const headerState: RoleHeaderState = roleQuery.isPending
+    ? "loading"
+    : roleQuery.isError
+      ? roleQuery.error instanceof ApiError &&
+        roleQuery.error.code === "role_not_found"
+        ? "not-found"
+        : "error"
+      : roleQuery.data?.status === "analysing"
+        ? "analysing"
+        : roleQuery.data?.status === "failed"
+          ? "failed"
+          : roleQuery.data
+            ? "ready"
+            : "not-found";
 
   const bulletMutation = useMutation({
     mutationFn: (requirementId: string) =>
@@ -246,6 +317,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const requestBulletDraft = (requirementId: string) => {
     setDraftRequirementId(requirementId);
     setDraftVisible(true);
+    setCopyError(null);
     bulletMutation.mutate(requirementId);
   };
 
@@ -307,13 +379,17 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       <BulletDraftPanel
         state={draftState}
         draft={bulletMutation.data ?? null}
+        copyError={copyError}
         onRetry={() => {
           if (draftRequirementId) {
             bulletMutation.mutate(draftRequirementId);
           }
         }}
         onCopy={(text) => {
-          void navigator.clipboard.writeText(text);
+          void navigator.clipboard.writeText(text).then(
+            () => setCopyError(null),
+            () => setCopyError("The draft could not be copied."),
+          );
         }}
         onCitation={(evidence) => {
           openEvidence("Cited span", "partial", evidence);
@@ -322,6 +398,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           setDraftVisible(false);
           bulletMutation.reset();
           setDraftRequirementId(null);
+          setCopyError(null);
         }}
       />
     </div>
@@ -329,83 +406,138 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
 
   return (
     <div className="space-y-6">
-      <RoleHeader role={roleQuery.data ?? null} loading={roleQuery.isPending} />
-
-      <RoleDetailTabs
-        value={activeTab}
-        onValueChange={(tab) => {
-          void navigate({
-            search: (prev) => ({ ...prev, tab }),
-            replace: true,
-          });
+      <RoleHeader
+        role={roleQuery.data ?? null}
+        loading={headerState === "loading"}
+        state={headerState}
+        onRetry={() => {
+          if (headerState === "failed") {
+            reanalyse.mutate();
+            return;
+          }
+          void roleQuery.refetch();
         }}
-        fit={fitPane}
-        gaps={gapsPane}
-        prepare={
-          <PreparePanel
-            state={prepareState}
-            pack={pack}
-            onRetry={() => {
-              void interviewPackQuery.refetch();
-            }}
-            onSelectEvidence={(evidence) => {
-              openEvidence("Interview evidence", "met", evidence);
-            }}
-            onExport={() => {
-              void exportRoleArtefact(roleId, "interview-pack").then((body) =>
-                downloadMarkdown(`interview-pack-${roleId}.md`, body),
-              );
-            }}
-          />
-        }
-        letter={
-          <LetterPanel
-            tone={letterTone}
-            includeGapLine={includeGapLine}
-            generating={letterMutation.isPending}
-            draft={
-              selectedLetter ??
-              generatedLettersQuery.data?.[
-                (generatedLettersQuery.data?.length ?? 0) - 1
-              ] ??
-              null
-            }
-            versions={generatedLettersQuery.data ?? []}
-            refusal={letterRefusal}
-            supportingDocuments={supportingLettersQuery.data ?? []}
-            onToneChange={setLetterTone}
-            onIncludeGapLineChange={setIncludeGapLine}
-            onGenerate={() => {
-              setLetterRefusal(null);
-              letterMutation.mutate();
-            }}
-            onSelectVersion={(version) => {
-              setLetterRefusal(null);
-              setSelectedLetter(version);
-            }}
-            onExport={() => {
-              void exportRoleArtefact(roleId, "cover-letter").then((body) =>
-                downloadMarkdown(`cover-letter-${roleId}.md`, body),
-              );
-            }}
-            onCitation={(citationSpanId) => {
-              openEvidence("Cited span", "met", {
-                spanId: citationSpanId,
-                documentId: "",
-                page: 1,
-                paragraph: "",
-                highlight: "",
-              });
-            }}
-            onOpenGaps={() => {
-              void navigate({
-                search: (prev) => ({ ...prev, tab: "gaps" }),
-                replace: true,
-              });
-            }}
-          />
-        }
+        onDelete={() => remove.mutate()}
       />
+
+      {headerState === "ready" ? (
+        <RoleDetailTabs
+          value={activeTab}
+          onValueChange={(tab) => {
+            void navigate({
+              search: (prev) => ({ ...prev, tab }),
+              replace: true,
+            });
+          }}
+          fit={fitPane}
+          gaps={gapsPane}
+          prepare={
+            <PreparePanel
+              state={prepareState}
+              pack={pack}
+              exportError={prepareExportError}
+              onRetry={() => {
+                void interviewPackQuery.refetch();
+              }}
+              onSelectEvidence={(evidence) => {
+                openEvidence("Interview evidence", "met", evidence);
+              }}
+              onExport={() => {
+                void exportRoleArtefact(roleId, "interview-pack")
+                  .then((body) => {
+                    setPrepareExportError(null);
+                    return downloadMarkdown(
+                      `interview-pack-${roleId}.md`,
+                      body,
+                    );
+                  })
+                  .catch(() => {
+                    setPrepareExportError(
+                      "The interview pack could not be exported.",
+                    );
+                  });
+              }}
+            />
+          }
+          letter={
+            <LetterPanel
+              tone={letterTone}
+              includeGapLine={includeGapLine}
+              generating={letterMutation.isPending}
+              draft={
+                selectedLetter ??
+                generatedLettersQuery.data?.[
+                  (generatedLettersQuery.data?.length ?? 0) - 1
+                ] ??
+                null
+              }
+              versions={generatedLettersQuery.data ?? []}
+              refusal={letterRefusal}
+              supportingDocuments={supportingLettersQuery.data ?? []}
+              generatedState={
+                generatedLettersQuery.isPending
+                  ? "loading"
+                  : generatedLettersQuery.isError
+                    ? "error"
+                    : "ready"
+              }
+              supportingState={
+                supportingLettersQuery.isPending
+                  ? "loading"
+                  : supportingLettersQuery.isError
+                    ? "error"
+                    : "ready"
+              }
+              onRetryGenerated={() => {
+                void generatedLettersQuery.refetch();
+              }}
+              onRetrySupporting={() => {
+                void supportingLettersQuery.refetch();
+              }}
+              exportError={letterExportError}
+              onToneChange={setLetterTone}
+              onIncludeGapLineChange={setIncludeGapLine}
+              onGenerate={() => {
+                setLetterRefusal(null);
+                letterMutation.mutate();
+              }}
+              onSelectVersion={(version) => {
+                setLetterRefusal(null);
+                setSelectedLetter(version);
+              }}
+              onExport={(draft) => {
+                void exportRoleArtefact(roleId, "cover-letter", {
+                  version: draft.version,
+                })
+                  .then((body) => {
+                    setLetterExportError(null);
+                    return downloadMarkdown(`cover-letter-${roleId}.md`, body);
+                  })
+                  .catch(() => {
+                    setLetterExportError(
+                      "The cover letter could not be exported.",
+                    );
+                  });
+              }}
+              onCitation={(citationSpanId) => {
+                openEvidence("Cited span", "met", {
+                  spanId: citationSpanId,
+                  documentId: "",
+                  page: 1,
+                  paragraph: "",
+                  highlight: "",
+                });
+              }}
+              onOpenGaps={() => {
+                void navigate({
+                  search: (prev) => ({ ...prev, tab: "gaps" }),
+                  replace: true,
+                });
+              }}
+            />
+          }
+        />
+      ) : null}
 
       <EvidencePanel
         open={panelOpen}

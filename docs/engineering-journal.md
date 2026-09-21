@@ -18,6 +18,51 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.9 — Documentation reconciled with observed production wiring
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/unit/test_production_wiring_matrix.py -q --no-cov` — red first (stale README; missing `docs/production-wiring.md`); OpenAPI collection replaced nested-router walk; then green
+  - `make test` — 255 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 113 passed / 33 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff needed a format pass on the new test; then ruff, mypy 121 files, frontend tsc and eslint green
+- Observed result: README no longer describes Phase 10 or fixture-only UI. Every live `/api` route is named in `docs/production-wiring.md` with use case, provider resolver and SQL adapter. Threat model records `create_app()` in-memory stores as test-only. ADR 007 states HTTP drafts go through `generate_draft`. A new route without a matrix row fails the hermetic suite.
+- Decisions made: collect routes from OpenAPI because `app.routes` keeps included routers as mounts. Relative `production-wiring.md` links from `docs/` are enough; README uses the `docs/` path.
+- Problems hit: first route collector saw zero `/api` paths and would have let an empty matrix pass.
+- Carried forward: Phase 14 evaluation. Do not start it from this checkpoint.
+
+## Phase 13A.8 — Frontend asynchronous and failure-state gaps
+
+- Date: 2026-09-21
+- Commands run:
+  - `bun run test src/components/role/RoleHeader.test.tsx` — red first (not-found/analysing/failed absent); then green after `RoleHeaderState`
+  - `bun run test src/components/role/role-detail-tabs.test.ts` — red first (`shouldFetchRoleTabResource` missing); then green after ready-and-active `enabled` flags
+  - `bun run test src/components/role/LetterPanel.test.tsx src/components/workspace/ComparePanel.test.tsx src/components/workspace/RolesPanel.test.tsx` — red first (empty success copy on failed queries); then green after retryable list states
+  - `bun run test src/components/role/BulletDraftPanel.test.tsx src/components/role/LetterPanel.test.tsx src/components/role/PreparePanel.test.tsx` — red first (no clipboard/export retry); then green
+  - `make test` — 252 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 113 passed / 33 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff, mypy 121 files, frontend tsc green; eslint warning on exporting a helper from `RolesPanel.tsx` moved to `roles-panel-state.ts`
+- Observed result: a missing or failed role no longer keeps a header skeleton. Tabs stay hidden until analysis is ready, and tab queries only run when that tab is active. Failed generated/supporting letters, compare role list, and a failed CV fetch show retry, not empty success. Copy and markdown export failures stay on screen with retry.
+- Decisions made: header `onRetry` reanalyses a failed role and refetches otherwise. Disabled React Query flags are the fetch gate; hiding tabs alone would still fire child queries. Clipboard/export errors are component state, not query cache.
+- Problems hit: analysing header tests collided without `cleanup()`; eslint `react-refresh/only-export-components` after putting `deriveRolesPanelState` on the panel module.
+- Carried forward: 13A.9 documentation reconciliation. Do not start Phase 14.
+
+## Phase 13A.7 — Ranking, comparison and immutable-version export
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/unit/test_ranking.py tests/api/test_role_analysis_routes.py::test_ranking_assigns_shared_rank_to_equal_scores -q --no-cov` — red first (import missing, then ranks 1 vs 2); then green after competition ranking
+  - `pytest tests/api/test_role_analysis_routes.py::test_compare_differentiator_names_a_status_distinction -q --no-cov` — red first (`looker dashboards`); then green after status-gap differentiator
+  - `pytest tests/api/test_role_lifecycle_routes.py::test_export_cover_letter_uses_selected_version tests/api/test_role_lifecycle_routes.py::test_export_bullets_uses_selected_version -q --no-cov` — red first (unknown version 200; version=1 concatenated all bullets); then green
+  - `bun run test src/api/client.test.ts src/components/role/LetterPanel.test.tsx` — red first (unversioned URL; onExport received the click event); then green
+  - `make test` — 252 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 101 passed / 32 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff green; mypy 121 files after renaming reused loop/wire variables; frontend tsc and eslint green
+- Observed result: equal fit scores share a 1224 competition rank. Compare names the largest mapping disagreement instead of the first shared requirement alphabetically. Cover-letter and bullet markdown export pin to `?version=`; the Letter tab sends the on-screen version.
+- Decisions made: ranking and comparison live in `domain/` so hermetic and SQL stores cannot drift. Omitted export version still means latest; unknown version is 422. Bullets use the same version query even though the Gaps tab has no version picker yet.
+- Problems hit: first ranking test commit landed on `main` after PR #26 merged; moved to `feat/phase-13a-ranking-compare-export` and reset local `main` to `origin/main`. mypy failed on reused `item` / `wire` names across incompatible types.
+- Carried forward: 13A.8 frontend asynchronous and failure-state gaps.
+
 ## Phase 13A.6 — Generated prose through the grounded-generation use case
 
 - Date: 2026-09-21

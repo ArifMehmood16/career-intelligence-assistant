@@ -35,6 +35,11 @@ in code rather than in the prompt.
    to exist; the model only makes it read better.
 6. **Refusal is a supported outcome.** The cover letter refuses when fewer than two
    must-have requirements are met, and says why.
+7. **HTTP uses this path.** Bullet, interview-pack and cover-letter routes call
+   `generate_draft`. The SQL draft adapter persists the validator's real verdict and
+   never rewrites `FAIL` to `PASS`. Tone and honest-gap-line inputs change the
+   template that enters the pipeline. A bullet with no cited claim is refused, not
+   stored. The route map is `docs/production-wiring.md`.
 
 ## Consequences
 

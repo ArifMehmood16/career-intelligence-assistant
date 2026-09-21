@@ -167,6 +167,110 @@ describe("LetterPanel", () => {
     expect(onSelectVersion).toHaveBeenCalledWith(draft);
 
     await user.click(screen.getByRole("button", { name: /export markdown/i }));
-    expect(onExport).toHaveBeenCalled();
+    expect(onExport).toHaveBeenCalledWith(v2);
+  });
+
+  it("surfaces an export failure with a retryable control", async () => {
+    const user = userEvent.setup();
+    const onExport = vi.fn();
+    const v2 = { ...draft, id: "cl-2", version: 2 };
+
+    render(
+      <LetterPanel
+        tone="warm"
+        includeGapLine={true}
+        generating={false}
+        draft={v2}
+        versions={[v2]}
+        refusal={null}
+        supportingDocuments={[]}
+        exportError="The cover letter could not be exported."
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={onExport}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/cover letter could not be exported/i),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /retry export/i }));
+    expect(onExport).toHaveBeenCalledWith(v2);
+  });
+
+  it("does not treat a failed generated-letter query as empty history", async () => {
+    const user = userEvent.setup();
+    const onRetryGenerated = vi.fn();
+
+    render(
+      <LetterPanel
+        tone="plain"
+        includeGapLine={false}
+        generating={false}
+        draft={null}
+        versions={[]}
+        refusal={null}
+        supportingDocuments={[]}
+        generatedState="error"
+        onRetryGenerated={onRetryGenerated}
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={vi.fn()}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/generated letters could not be loaded/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /retry generated letters/i }),
+    );
+    expect(onRetryGenerated).toHaveBeenCalled();
+  });
+
+  it("does not treat a failed supporting-letter query as an empty upload list", async () => {
+    const user = userEvent.setup();
+    const onRetrySupporting = vi.fn();
+
+    render(
+      <LetterPanel
+        tone="plain"
+        includeGapLine={false}
+        generating={false}
+        draft={null}
+        versions={[]}
+        refusal={null}
+        supportingDocuments={[]}
+        supportingState="error"
+        onRetrySupporting={onRetrySupporting}
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={vi.fn()}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/supporting letters could not be loaded/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/no supporting cover letters uploaded/i),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /retry supporting letters/i }),
+    );
+    expect(onRetrySupporting).toHaveBeenCalled();
   });
 });

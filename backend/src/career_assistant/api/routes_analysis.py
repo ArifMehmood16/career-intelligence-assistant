@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Protocol
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import PlainTextResponse
@@ -58,6 +60,7 @@ from career_assistant.application.roles.store import (
     RoleView,
 )
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.domain.comparison import compare_requirement_sets
 from career_assistant.domain.generation import (
     CoverLetterRefusal,
     InterviewAskThem,
@@ -325,6 +328,39 @@ def _as_bullet_wire(draft: object) -> BulletDraftWire:
             ),
         )
     raise TypeError(f"unsupported bullet draft type: {type(draft)!r}")
+
+
+class _VersionedDraft(Protocol):
+    version: int
+
+
+def _pick_draft_version[T: _VersionedDraft](
+    drafts: Sequence[object],
+    version: int | None,
+    as_wire: Callable[[object], T],
+) -> T | None:
+    wires = [as_wire(item) for item in drafts]
+    if not wires:
+        return None
+    if version is None:
+        return wires[-1]
+    return next((item for item in wires if item.version == version), None)
+
+
+def _cover_letter_markdown(wire: CoverLetterDraftWire) -> str:
+    paragraphs = [
+        str(para.get("text", "")) for para in wire.paragraphs if isinstance(para, dict)
+    ]
+    return "\n\n".join(p for p in paragraphs if p) + "\n"
+
+
+def _bullets_markdown(wire: BulletDraftWire) -> str:
+    lines = ["# CV bullets", ""]
+    for bullet in wire.bullets:
+        if isinstance(bullet, dict) and bullet.get("text"):
+            lines.append(str(bullet["text"]))
+    lines.append("")
+    return "\n".join(lines)
 
 
 @router.get("/roles/{role_id}/requirements", response_model=list[RequirementWire])
@@ -693,6 +729,7 @@ def export_artefact(
     artefact: str,
     request: Request,
     workspace_id: WorkspaceId,
+    version: int | None = Query(default=None),
 ) -> PlainTextResponse:
     store = _roles(request)
     bundle = _require_bundle(request, workspace_id, role_id)
@@ -708,35 +745,24 @@ def export_artefact(
         body = export_markdown(artefact, pack)
     elif artefact == "cover-letter":
         drafts = store.list_cover_letters(workspace_id, role_id)
-        if not drafts:
+        letter = _pick_draft_version(drafts, version, _as_cover_letter_wire)
+        if letter is None:
             raise AppError(
                 "validation_failed",
                 "No cover letter draft to export for this role.",
                 status_code=422,
             )
-        latest = _as_cover_letter_wire(drafts[-1])
-        paragraphs = [
-            str(para.get("text", ""))
-            for para in latest.paragraphs
-            if isinstance(para, dict)
-        ]
-        body = "\n\n".join(p for p in paragraphs if p) + "\n"
+        body = _cover_letter_markdown(letter)
     elif artefact == "bullets":
         drafts = store.list_bullet_drafts(workspace_id, role_id)
-        if not drafts:
+        bullets = _pick_draft_version(drafts, version, _as_bullet_wire)
+        if bullets is None:
             raise AppError(
                 "validation_failed",
                 "No bullet drafts to export for this role.",
                 status_code=422,
             )
-        lines = ["# CV bullets", ""]
-        for draft in drafts:
-            wire = _as_bullet_wire(draft)
-            for bullet in wire.bullets:
-                if isinstance(bullet, dict) and bullet.get("text"):
-                    lines.append(str(bullet["text"]))
-        lines.append("")
-        body = "\n".join(lines)
+        body = _bullets_markdown(bullets)
     else:
         raise AppError(
             "validation_failed",
@@ -773,18 +799,14 @@ def compare_roles(
         raise AppError("role_not_found", "No role with that id.", status_code=404)
     bundle_a = _require_bundle(request, workspace_id, a)
     bundle_b = _require_bundle(request, workspace_id, b)
-    status_a = {m.requirement_id: m.status for m in bundle_a.mappings}
-    status_b = {m.requirement_id: m.status for m in bundle_b.mappings}
-    missing = MappingStatus.MISSING
-    text_a = {
-        r.text.lower(): (r, status_a.get(r.id, missing)) for r in bundle_a.requirements
-    }
-    text_b = {
-        r.text.lower(): (r, status_b.get(r.id, missing)) for r in bundle_b.requirements
-    }
-    shared_keys = sorted(set(text_a) & set(text_b))
-    only_a_keys = sorted(set(text_a) - set(text_b))
-    only_b_keys = sorted(set(text_b) - set(text_a))
+    comparison = compare_requirement_sets(
+        title_a=role_a.title,
+        title_b=role_b.title,
+        requirements_a=bundle_a.requirements,
+        mappings_a=bundle_a.mappings,
+        requirements_b=bundle_b.requirements,
+        mappings_b=bundle_b.mappings,
+    )
 
     def _req_wire(
         role_id: str, req: Requirement, status: MappingStatus
@@ -798,25 +820,22 @@ def compare_roles(
             evidence=None,
         )
 
-    shared = [
-        {
-            "text": text_a[key][0].text,
-            "aStatus": text_a[key][1].value,
-            "bStatus": text_b[key][1].value,
-        }
-        for key in shared_keys
-    ]
-    if shared:
-        differentiator = str(shared[0]["text"])
-    elif only_a_keys:
-        differentiator = text_a[only_a_keys[0]][0].text
-    else:
-        differentiator = "No clear differentiator"
     return ComparisonWire(
         a=_role_response(role_a),
         b=_role_response(role_b),
-        shared=shared,
-        only_in_a=[_req_wire(a, text_a[k][0], text_a[k][1]) for k in only_a_keys],
-        only_in_b=[_req_wire(b, text_b[k][0], text_b[k][1]) for k in only_b_keys],
-        differentiator=differentiator,
+        shared=[
+            {
+                "text": item.text,
+                "aStatus": item.a_status.value,
+                "bStatus": item.b_status.value,
+            }
+            for item in comparison.shared
+        ],
+        only_in_a=[
+            _req_wire(a, item.requirement, item.status) for item in comparison.only_a
+        ],
+        only_in_b=[
+            _req_wire(b, item.requirement, item.status) for item in comparison.only_b
+        ],
+        differentiator=comparison.differentiator,
     )

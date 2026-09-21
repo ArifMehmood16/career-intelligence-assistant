@@ -119,4 +119,27 @@ describe("BulletDraftPanel", () => {
     );
     expect(onDismiss).toHaveBeenCalled();
   });
+
+  it("surfaces a clipboard failure with a retryable copy control", async () => {
+    const user = userEvent.setup();
+    const onCopy = vi.fn();
+
+    render(
+      <BulletDraftPanel
+        state="ready"
+        draft={draft}
+        copyError="The draft could not be copied."
+        onRetry={vi.fn()}
+        onCopy={onCopy}
+        onCitation={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/draft could not be copied/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /retry copy/i }));
+    expect(onCopy).toHaveBeenCalledWith(
+      "- Migrated analytics pipelines onto Airflow DAGs.",
+    );
+  });
 });

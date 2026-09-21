@@ -308,6 +308,10 @@ export async function getComparison(
   };
 }
 
+export function deleteRole(roleId: string): Promise<void> {
+  return request(`/api/roles/${roleId}`, { method: "DELETE", schema: null });
+}
+
 export async function getRole(id: string): Promise<Role | null> {
   try {
     const row = await request(`/api/roles/${id}`, { schema: roleSchema });
@@ -384,12 +388,21 @@ export type ExportArtefact =
 export async function exportRoleArtefact(
   roleId: string,
   artefact: ExportArtefact,
+  options?: { version?: number },
 ): Promise<string> {
-  const response = await fetch(`/api/roles/${roleId}/export/${artefact}.md`, {
-    method: "GET",
-    headers: { Accept: "text/markdown, text/plain, */*" },
-    credentials: "same-origin",
-  });
+  const params = new URLSearchParams();
+  if (options?.version !== undefined) {
+    params.set("version", String(options.version));
+  }
+  const query = params.size > 0 ? `?${params.toString()}` : "";
+  const response = await fetch(
+    `/api/roles/${roleId}/export/${artefact}.md${query}`,
+    {
+      method: "GET",
+      headers: { Accept: "text/markdown, text/plain, */*" },
+      credentials: "same-origin",
+    },
+  );
   if (!response.ok) {
     let code = "internal_error";
     let message = "Export failed.";
