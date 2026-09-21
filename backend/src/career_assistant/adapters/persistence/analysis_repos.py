@@ -13,7 +13,6 @@ from career_assistant.adapters.persistence.models import (
     AnalysisJobRow,
     ClaimRow,
     ClaimSpanRow,
-    EmbeddingRow,
     MappingRow,
     MappingSpanRow,
     RequirementRow,
@@ -191,20 +190,6 @@ class SqlRoleRepository:
         )
         if row is None:
             raise KeyError(role_id)
-        requirement_ids = self._session.scalars(
-            select(RequirementRow.id).where(
-                RequirementRow.workspace_id == _as_uuid(workspace_id),
-                RequirementRow.role_id == _as_uuid(role_id),
-            )
-        ).all()
-        if requirement_ids:
-            self._session.execute(
-                delete(EmbeddingRow).where(
-                    EmbeddingRow.workspace_id == _as_uuid(workspace_id),
-                    EmbeddingRow.owner_kind == "requirement",
-                    EmbeddingRow.owner_id.in_(requirement_ids),
-                )
-            )
         self._session.delete(row)
         self._session.flush()
 
