@@ -129,3 +129,63 @@ def test_rejected_hosted_choice_makes_no_network_attempt() -> None:
     assert asked.status_code == 403
     assert asked.json()["error"]["code"] == "egress_not_permitted"
     assert transport.calls == []
+
+
+def _scripted_openai_extraction() -> ScriptedTransport:
+    claim = "Owned dbt models in production for the warehouse."
+    payload = {
+        "choices": [
+            {
+                "message": {
+                    "content": json.dumps(
+                        {
+                            "requirements": [
+                                {
+                                    "text": "Must have production dbt experience",
+                                    "must_have": True,
+                                }
+                            ],
+                            "claims": [{"text": claim}],
+                        }
+                    )
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 20},
+    }
+    return ScriptedTransport(
+        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
+    )
+
+
+def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
+    transport = _scripted_openai_extraction()
+    app = create_app(providers=_openai_settings())
+    app.state.http_transport = transport
+    client = TestClient(app)
+    created = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    assert created.status_code == 201
+    chosen = client.put(
+        "/api/settings/providers",
+        json={
+            "answerProviderId": "openai",
+            "answerModel": "gpt-4o-mini",
+            "indexProviderId": "hermetic",
+            "indexModel": "lexical-hash-v1",
+            "acknowledgedEgress": True,
+        },
+    )
+    assert chosen.status_code == 200
+
+    created_role = client.post(
+        "/api/roles",
+        json={"title": "AE", "company": "Acme", "description": _JD},
+    )
+    assert created_role.status_code == 202
+    assert transport.calls
+    assert any("/chat/completions" in url for _method, url in transport.calls)
+    role_id = created_role.json()["role"]["id"]
+    requirements = client.get(f"/api/roles/{role_id}/requirements")
+    assert requirements.status_code == 200
+    assert requirements.json()
