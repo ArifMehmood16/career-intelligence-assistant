@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi.routing import APIRoute
-
 from career_assistant.main import create_app
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -29,16 +27,21 @@ STALE_README_CLAIMS = (
 
 
 def _live_api_routes() -> list[str]:
-    app = create_app()
+    spec = create_app().openapi()
     found: list[str] = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
+    for path, operations in spec["paths"].items():
+        if not path.startswith("/api"):
             continue
-        if not route.path.startswith("/api"):
-            continue
-        for method in sorted(route.methods - {"HEAD", "OPTIONS"}):
-            found.append(f"{method} {route.path}")
-    return sorted(set(found))
+        for method, _op in operations.items():
+            if method.upper() not in {"GET", "POST", "PUT", "DELETE", "PATCH"}:
+                continue
+            found.append(f"{method.upper()} {path}")
+    routes = sorted(set(found))
+    if len(routes) < 20:
+        raise AssertionError(
+            f"expected at least 20 /api routes, found {len(routes)}: {routes}"
+        )
+    return routes
 
 
 def _matrix_rows(text: str) -> list[list[str]]:
