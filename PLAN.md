@@ -613,7 +613,7 @@ real application.
       through this validated path or remove the controls until they are real. Refuse
       a bullet when no cited claim supports it instead of persisting an uncited
       instruction as a grounded draft.
-- [ ] **13A.7 Correct ranking, comparison and immutable-version export.** Equal scores
+- [x] **13A.7 Correct ranking, comparison and immutable-version export.** Equal scores
       receive the same displayed rank with deterministic competition ranking; the
       comparison differentiator must identify an actual status/score distinction,
       not the first shared requirement alphabetically. Export the exact cover-letter

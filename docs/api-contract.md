@@ -271,6 +271,13 @@ GET  /api/roles/{id}/export/{artefact}.md → text/markdown
 
 `artefact` is one of `gap-plan`, `interview-pack`, `cover-letter`, `bullets`.
 
+`GET /api/roles/{id}/export/cover-letter.md` and `.../bullets.md` accept an optional
+`version` query matching the immutable draft `version` shown on screen. Omitted
+`version` exports the latest draft only. An unknown version is `422 validation_failed`.
+Gap-plan and interview-pack ignore `version`. The Letter tab always sends the selected
+cover-letter version so the file matches the paragraphs on screen. The same query is
+the rule for bullet versions.
+
 ```ts
 DraftProvenance {
   provider: string;          // provider id that produced it
@@ -342,6 +349,14 @@ Comparison {
 ```
 
 Both are derived from stored scores, so they cannot disagree with a role page.
+
+`rank` is standard competition ranking (1224): equal fit scores share a rank and the
+next distinct score skips. `tied` is true for every row in a shared-score group.
+
+`differentiator` names the largest mapping disagreement — a shared requirement whose
+status differs, otherwise a unique requirement that changes the comparison — not the
+first shared requirement alphabetically. When nothing distinguishes the two roles it
+is `"No clear differentiator"`.
 
 ---
 

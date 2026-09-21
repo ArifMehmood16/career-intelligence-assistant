@@ -270,7 +270,9 @@ produced it. The product does not pretend to have written your CV.
 
 - The ranking is derived from stored scores. It is not a fresh model call, so it
   cannot disagree with the individual role pages.
-- Ties are shown as ties.
+- Equal scores share a displayed rank (1, 1, 3) and are labelled as ties.
+- The compare differentiator is the largest status distinction between the two
+  mappings, not whichever shared requirement sorts first.
 
 ---
 

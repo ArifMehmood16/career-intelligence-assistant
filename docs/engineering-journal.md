@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.7 — Ranking, comparison and immutable-version export
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/unit/test_ranking.py tests/api/test_role_analysis_routes.py::test_ranking_assigns_shared_rank_to_equal_scores -q --no-cov` — red first (import missing, then ranks 1 vs 2); then green after competition ranking
+  - `pytest tests/api/test_role_analysis_routes.py::test_compare_differentiator_names_a_status_distinction -q --no-cov` — red first (`looker dashboards`); then green after status-gap differentiator
+  - `pytest tests/api/test_role_lifecycle_routes.py::test_export_cover_letter_uses_selected_version tests/api/test_role_lifecycle_routes.py::test_export_bullets_uses_selected_version -q --no-cov` — red first (unknown version 200; version=1 concatenated all bullets); then green
+  - `bun run test src/api/client.test.ts src/components/role/LetterPanel.test.tsx` — red first (unversioned URL; onExport received the click event); then green
+  - `make test` — 252 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 101 passed / 32 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff green; mypy 121 files after renaming reused loop/wire variables; frontend tsc and eslint green
+- Observed result: equal fit scores share a 1224 competition rank. Compare names the largest mapping disagreement instead of the first shared requirement alphabetically. Cover-letter and bullet markdown export pin to `?version=`; the Letter tab sends the on-screen version.
+- Decisions made: ranking and comparison live in `domain/` so hermetic and SQL stores cannot drift. Omitted export version still means latest; unknown version is 422. Bullets use the same version query even though the Gaps tab has no version picker yet.
+- Problems hit: first ranking test commit landed on `main` after PR #26 merged; moved to `feat/phase-13a-ranking-compare-export` and reset local `main` to `origin/main`. mypy failed on reused `item` / `wire` names across incompatible types.
+- Carried forward: 13A.8 frontend asynchronous and failure-state gaps.
+
 ## Phase 13A.6 — Generated prose through the grounded-generation use case
 
 - Date: 2026-09-21

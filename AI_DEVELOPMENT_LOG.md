@@ -538,6 +538,26 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 063 — Phase 13A.7 ranking, compare and versioned export (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.7
+- Prompt intent: continue work after 13A.6 in the same TDD style with regular commits.
+- Suggestion: competition ranks for equal scores; compare differentiator from a real
+  status gap; export the selected cover-letter/bullet version with API and component
+  regressions.
+- Outcome: accepted.
+- Reason: GET /ranking numbered ties 1 and 2; GET /compare returned the first shared
+  requirement alphabetically even when statuses matched; export always dumped latest
+  or every bullet version.
+- Rejected alternatives: dense ranking 1,1,2 (PLAN asked for competition ranking);
+  concatenating every bullet draft when version is omitted (the same latest-version
+  rule as cover letters).
+- Human validation: each slice had a failing test then a green; `make test` 252
+  passed, coverage 80.62%; frontend 101 passed; `make test-integration` 48 passed;
+  `make lint` green after the mypy rename.
+
 ### 062 — Phase 13A.6 grounded generation on HTTP and SQL (TDD)
 
 - Date: 2026-09-21
