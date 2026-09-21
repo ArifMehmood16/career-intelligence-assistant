@@ -82,10 +82,8 @@ alone.
   document does not contain. Quoting an instruction that *is* in the document is
   possible; classification and scoring, not verification, have to deal with that.
 - `make test` is unchanged: the test app factory still builds a hermetic app.
-- Persistence of `item_type` and `self_authored` is still required before a SQL
-  reload can preserve those flags. Until that lands, in-memory analysis is the
-  path that holds the new types.
-- Output-depth work remains PLAN 13C.8. Three-signal matching is PLAN 13C.5.
+- Persistence of `item_type` and `self_authored` landed in 13C.6 so a SQL
+  reload preserves those flags. Output-depth work remains PLAN 13C.8.
 - ADR 003's "hermetic default" referred to the test fixture and, incorrectly, to
   the running product. The product default is now a local model; see the
   amendment there.

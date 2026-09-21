@@ -238,6 +238,46 @@ def test_score_reads_rubric_and_is_deterministic() -> None:
     # Every component traces to requirement ids from the mapping.
     explained_ids = {item.requirement_id for item in first.components}
     assert explained_ids == {"r1", "r2"}
+    assert all(item.adjudicated is False for item in first.components)
+
+
+def test_adjudication_confirmed_embedding_match_is_flagged_on_the_explanation() -> None:
+    """PLAN 13C.6 — met through model adjudication of a disagreement is labelled.
+
+    Arithmetic is unchanged: the flag is additive on the explanation object.
+    """
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    req = _req(
+        id="r1",
+        text="Kubernetes cluster autoscaling",
+        competency="kubernetes",
+    )
+    claim = _claim(
+        id="c1",
+        competency="platform",
+        context="Scaled container orchestration workloads across regions.",
+    )
+    mapping = map_requirement(
+        req,
+        (claim,),
+        similarities={("r1", "c1"): 0.9},
+        adjudications={("r1", "c1"): True},
+    )
+    assert mapping.signals.lexical is False
+    assert mapping.signals.embedding is True
+    assert mapping.signals.adjudication is True
+    explanation = score_fit((req,), (mapping,), (claim,), rubric)
+    flagged = explanation.components[0]
+    assert flagged.adjudicated is True
+    assert flagged.status is not MappingStatus.MISSING
+    unflagged = map_requirement(
+        req,
+        (claim,),
+        similarities={("r1", "c1"): 0.9},
+    )
+    same_math = score_fit((req,), (unflagged,), (claim,), rubric)
+    assert flagged.contribution == same_math.components[0].contribution
+    assert same_math.components[0].adjudicated is False
 
 
 def test_adding_a_met_requirement_never_lowers_score() -> None:

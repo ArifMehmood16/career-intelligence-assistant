@@ -36,6 +36,7 @@ class ScoreComponent:
     status_factor: float
     recency_factor: float
     contribution: float
+    adjudicated: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +77,7 @@ def score_fit(
                 status_factor=status_factor,
                 recency_factor=recency_factor,
                 contribution=contribution,
+                adjudicated=mapping.signals.adjudication is True,
             )
         )
 

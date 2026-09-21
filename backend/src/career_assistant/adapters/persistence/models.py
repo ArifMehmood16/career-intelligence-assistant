@@ -222,6 +222,9 @@ class RequirementRow(Base):
     )
     extraction_confidence: Mapped[float | None] = mapped_column(nullable=True)
     is_vague: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    item_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="requirement"
+    )
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
@@ -244,6 +247,7 @@ class ClaimRow(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False)
     duration_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     recency_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    self_authored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class ClaimSpanRow(Base):

@@ -768,7 +768,7 @@ hits.
       every mapping records which signals fired and at what strength so the breakdown
       can show it. The similarity floor moves to configuration and is set by the
       Phase 14 calibration run rather than guessed. Replaces 7.2.
-- [ ] **13C.6 Score only what is scoreable.** The rubric consumes only items typed
+- [x] **13C.6 Score only what is scoreable.** The rubric consumes only items typed
       `requirement` or `responsibility`. Recency uses the parsed role dates from
       13C.3. A requirement met through model adjudication alone says so in the
       explanation. The rubric arithmetic, the 7.4 property tests and the 7.5

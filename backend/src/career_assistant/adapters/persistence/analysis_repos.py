@@ -104,6 +104,7 @@ def _explanation_payload(explanation: ScoreExplanation) -> dict[str, object]:
                 "status_factor": c.status_factor,
                 "recency_factor": c.recency_factor,
                 "contribution": c.contribution,
+                "adjudicated": c.adjudicated,
             }
             for c in explanation.components
         ],
@@ -384,6 +385,7 @@ class SqlAnalysisResultRepository:
                     source_span_id=_as_uuid(req.source_span_id),
                     extraction_confidence=req.extraction_confidence,
                     is_vague=req.is_vague,
+                    item_type=req.item_type.value,
                     analysis_version=analysis_version,
                 )
             )
@@ -399,6 +401,7 @@ class SqlAnalysisResultRepository:
                     context=claim.context,
                     duration_signal=claim.duration_signal,
                     recency_signal=claim.recency_signal,
+                    self_authored=claim.self_authored,
                 )
             )
             for span_id in claim.source_span_ids:

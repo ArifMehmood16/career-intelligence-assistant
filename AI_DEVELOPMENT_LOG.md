@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 079 — Phase 13C.6 score only scoreable items; flag adjudication (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.6
+- Prompt intent: continue Phase 13C after three-signal matching.
+- Suggestion: additive `ScoreComponent.adjudicated` when the mapping's
+  adjudication signal is true; persist `item_type` and `self_authored` so a SQL
+  reload cannot score a salary line or map a cover letter.
+- Outcome: accepted.
+- Reason: the filter already lived in `map_requirements` (13C.2a). Without
+  persisting the kind, a SQL reload defaulted every item to `requirement` and
+  would score it. The flag is additive so 7.4 arithmetic and 7.5's object shape
+  stay; old explanation JSON without the key reloads as false.
+- Rejected alternatives: changing the score formula when the model confirmed a
+  pair; treating "adjudication alone" as a third OR (13C.5 already made that
+  a tie-break, so the flag means the model confirmed a disagreement).
+- Human validation: the new explanation test failed on missing
+  `adjudicated`; after the change, mapping-scoring and item-type tests pass.
+  Full default pytest suite passed with 3 skipped; coverage 81.25%. ruff and
+  mypy clean.
+
 ### 078 — Phase 13C.5 three-signal matching (TDD)
 
 - Date: 2026-09-21
