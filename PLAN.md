@@ -773,7 +773,7 @@ hits.
       13C.3. A requirement met through model adjudication alone says so in the
       explanation. The rubric arithmetic, the 7.4 property tests and the 7.5
       explanation object are unchanged.
-- [ ] **13C.7 Bullet generation refuses unsupported evidence.** `post_bullets` drafts
+- [x] **13C.7 Bullet generation refuses unsupported evidence.** `post_bullets` drafts
       from any mapping's justifying claims with no reason filter, so an
       `adjacent_claim_only` match — now reachable since 13A.10 — can become a cited CV
       bullet for a requirement it does not support. Refuse it with the existing 409

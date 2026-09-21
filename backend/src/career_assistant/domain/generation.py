@@ -77,7 +77,7 @@ def build_gap_plan(
                 score_delta=delta,
                 action=action,
                 adjacent_claim_ids=adjacent,
-                can_draft_bullet=bool(adjacent) and action is GapAction.EVIDENCE_IT,
+                can_draft_bullet=mapping_supports_cv_bullet(mapping),
             )
         )
     items.sort(key=lambda item: (-item.score_delta, item.requirement_id))
@@ -92,6 +92,13 @@ def _action_for(mapping: RequirementMapping, req: Requirement) -> GapAction:
     if not req.must_have and mapping.status is MappingStatus.MISSING:
         return GapAction.ACCEPT_IT
     return GapAction.LEARN_IT
+
+
+def mapping_supports_cv_bullet(mapping: RequirementMapping) -> bool:
+    """Adjacent evidence is not enough to draft a cited bullet for that requirement."""
+    if not mapping.justifying_claim_ids:
+        return False
+    return mapping.reason_code is not MappingReason.ADJACENT_CLAIM_ONLY
 
 
 def draft_cv_bullet_template(claim: Claim) -> str:

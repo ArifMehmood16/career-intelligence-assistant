@@ -668,6 +668,26 @@ Never record a command output, metric, date or commit hash that was not observed
   extracts only the CV during a role job; the mapping filter is what would
   hold if those claims were mixed in.
 
+### 076 — Phase 13C.7 bullets refuse adjacent-only evidence (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.7
+- Prompt intent: stop drafting a CV bullet from an adjacent_claim_only match.
+- Suggestion: `mapping_supports_cv_bullet` returns false for adjacent-only
+  mappings. `post_bullets` raises the existing 409
+  `insufficient_cited_claims`. The gap plan still recommends `evidence_it`
+  but `can_draft_bullet` is false, so the UI does not offer a button that
+  would 409. Cover-letter drafting already requires `MET` must-haves;
+  interview `lead_with` is already MET-only — regressions confirm neither
+  path has the same hole.
+- Outcome: accepted.
+- Reason: an adjacent claim is related, not supporting. Phrasing it as a
+  cited bullet for that requirement would put the candidate's name on a
+  claim the mapping itself called adjacent-only.
+- Human validation: gap-plan and import tests failed first. After the
+  change, generation, gap-plan and grounded-generation HTTP tests pass.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21
