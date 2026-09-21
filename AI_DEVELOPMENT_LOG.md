@@ -557,6 +557,34 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `make help` lists the new targets; `make -n run-api` and
   `make -n run-web` print uvicorn and bun respectively.
 
+### 072 — Phase 13C.2a extracted items carry their kind (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.2 (first half — the domain type and the scoring boundary)
+- Prompt intent: stop the scorer treating a salary band as a must-have.
+- Suggestion: an `ItemType` on `Requirement` — requirement, responsibility,
+  benefit, logistics, non_requirement — with `SCOREABLE_ITEM_TYPES` holding the
+  first two, and `map_requirements` skipping everything else.
+- Outcome: accepted.
+- Reason: the filter belongs in `map_requirements` rather than at each call
+  site. Three callers build mappings (the SQL worker, the analysis service and
+  the hermetic path) and a fourth would have been added by 13C.5; a rule that
+  every caller must remember is a rule that one caller will forget. Unscoreable
+  items are still extracted and still returned by the requirements route, so the
+  UI can show what the advert pays without the scorer judging the candidate
+  against it.
+- Rejected alternatives: dropping non-scoreable items at extraction time. They
+  are real content a reader wants — the salary, the location, what the role is
+  explicitly not — and discarding them would make the product worse while
+  hiding the classification from any future evaluation.
+- Changed from the proposal: `item_type` defaults to `requirement` so the rules
+  fixture extractor and every existing test keep working unchanged; only the
+  model path in 13C.2b sets it deliberately.
+- Human validation: the new test module failed collection first — `ItemType`
+  and `SCOREABLE_ITEM_TYPES` did not exist — then 6 tests pass. Full suite
+  `289 passed, 3 skipped, 52 deselected`. ruff and mypy clean.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21

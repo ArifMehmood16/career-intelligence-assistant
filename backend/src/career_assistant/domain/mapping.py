@@ -67,8 +67,12 @@ def map_requirements(
     *,
     similarities: Mapping[tuple[str, str], float] | None = None,
 ) -> tuple[RequirementMapping, ...]:
+    # Benefits, logistics and explicit non-requirements are kept and shown, but
+    # a candidate is never mapped or scored against them.
     return tuple(
-        map_requirement(req, claims, similarities=similarities) for req in requirements
+        map_requirement(req, claims, similarities=similarities)
+        for req in requirements
+        if req.is_scoreable
     )
 
 
