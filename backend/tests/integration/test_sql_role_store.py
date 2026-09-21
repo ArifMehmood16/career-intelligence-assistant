@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
+from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
@@ -50,6 +51,7 @@ def test_sql_role_store_create_list_get_and_analysis(
     uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
     workspace_id = str(uuid.uuid4())
 
     upload_pasted_cv(
@@ -66,10 +68,17 @@ def test_sql_role_store_create_list_get_and_analysis(
         company="Acme",
         description=_JD,
     )
+    assert role.status == "analysing"
+    assert job.state == "queued"
+    worker.drain()
+    role = role_store.get_role(workspace_id, role.id)
+    assert role is not None
     assert role.status == "ready"
     assert role.company == "Acme"
     assert role.fit_score > 0
-    assert job.state == "succeeded"
+    finished = role_store.get_job(workspace_id, job.id)
+    assert finished is not None
+    assert finished.state == "succeeded"
 
     listed = role_store.list_roles(workspace_id)
     assert len(listed) == 1
@@ -91,6 +100,7 @@ def test_sql_role_store_delete_and_reanalyse(
     uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
     workspace_id = str(uuid.uuid4())
 
     upload_pasted_cv(
@@ -106,15 +116,22 @@ def test_sql_role_store_delete_and_reanalyse(
         company="Acme",
         description=_JD,
     )
+    worker.drain()
+    role = role_store.get_role(workspace_id, role.id)
+    assert role is not None
     first_score = role.fit_score
     bundle_before = role_store.require_analysis(workspace_id, role.id)
     first_req_count = len(bundle_before.requirements)
 
     updated, new_job = role_store.reanalyse(workspace_id, role.id)
     assert updated.id == role.id
-    assert updated.status == "ready"
-    assert new_job.state == "succeeded"
+    assert updated.status == "analysing"
+    assert new_job.state == "queued"
     assert new_job.id != first_job.id
+    worker.drain()
+    updated = role_store.get_role(workspace_id, role.id)
+    assert updated is not None
+    assert updated.status == "ready"
     assert role_store.get_job(workspace_id, new_job.id) is not None
     bundle = role_store.require_analysis(workspace_id, role.id)
     assert len(bundle.requirements) == first_req_count
@@ -131,6 +148,7 @@ def test_role_http_delete_and_reanalyse_via_sql_stores(
     uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
 
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
@@ -144,10 +162,12 @@ def test_role_http_delete_and_reanalyse_via_sql_stores(
     )
     assert created.status_code == 202
     role_id = created.json()["role"]["id"]
+    worker.drain()
 
     reanalysed = client.post(f"/api/roles/{role_id}/reanalyse")
     assert reanalysed.status_code == 202
     assert reanalysed.json()["jobId"]
+    worker.drain()
     assert client.get(f"/api/roles/{role_id}").json()["status"] == "ready"
     assert client.get(f"/api/roles/{role_id}/requirements").status_code == 200
 
@@ -162,6 +182,7 @@ def test_role_http_routes_persist_via_sql_stores(
     uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
 
     assert (
@@ -182,13 +203,15 @@ def test_role_http_routes_persist_via_sql_stores(
     )
     assert created.status_code == 202
     body = created.json()
-    assert body["role"]["status"] == "ready"
+    assert body["role"]["status"] == "analysing"
     assert body["role"]["company"] == "Acme"
     role_id = body["role"]["id"]
+    worker.drain()
 
     job = client.get(f"/api/jobs/{body['jobId']}")
     assert job.status_code == 200
     assert job.json()["state"] == "succeeded"
+    assert client.get(f"/api/roles/{role_id}").json()["status"] == "ready"
 
     requirements = client.get(f"/api/roles/{role_id}/requirements")
     assert requirements.status_code == 200
@@ -201,6 +224,7 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
     uow_factory = _uow_factory_for(session_factory)
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
     client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
 
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
@@ -212,6 +236,7 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
             "description": _JD,
         },
     ).json()["role"]["id"]
+    worker.drain()
 
     requirements = client.get(f"/api/roles/{role_id}/requirements").json()
     requirement_id = requirements[0]["id"]
