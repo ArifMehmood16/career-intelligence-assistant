@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy.orm import Session, sessionmaker
+from tests.support.scripted_transport import ScriptedTransport
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
+from career_assistant.adapters.persistence.provider_settings_store import (
+    SqlProviderSettingsStore,
+)
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.providers.http_transport import HttpResponse
 from career_assistant.application.ports.extraction import (
     RequirementExtractionPort,
     RequirementExtractionResult,
@@ -19,6 +26,7 @@ from career_assistant.application.ports.extraction import (
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import JobState, mark_running
 from career_assistant.main import create_app
+from career_assistant.settings import ProviderSettings
 
 pytestmark = pytest.mark.integration
 
@@ -278,3 +286,77 @@ def test_startup_recovers_queued_and_stale_running_jobs(
         client.get(f"/api/roles/{queued_role['role']['id']}").json()["status"]
         == "analysing"
     )
+
+
+def test_worker_extraction_calls_the_selected_scripted_provider(
+    session_factory: sessionmaker[Session],
+) -> None:
+    claim = "Owned dbt models in production for the warehouse."
+    payload = {
+        "choices": [
+            {
+                "message": {
+                    "content": json.dumps(
+                        {
+                            "requirements": [
+                                {
+                                    "text": "Must have production dbt experience",
+                                    "must_have": True,
+                                }
+                            ],
+                            "claims": [{"text": claim}],
+                        }
+                    )
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 12, "completion_tokens": 20},
+    }
+    transport = ScriptedTransport(
+        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
+    )
+    settings = ProviderSettings(
+        completion_provider="hermetic",
+        embedding_provider="hermetic",
+        allow_hosted_providers=True,
+        openai_api_key=SecretStr("sk-test-never-leave-the-fixture"),
+        openai_completion_model="gpt-4o-mini",
+        openai_embedding_model="text-embedding-3-small",
+    )
+    uow_factory = _uow_factory(session_factory)
+    cv_store = SqlCvStore(uow_factory)
+    worker = SqlAnalysisWorker(uow_factory, providers=settings, transport=transport)
+    client = TestClient(
+        create_app(
+            providers=settings,
+            cv_store=cv_store,
+            role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
+            provider_choice_store=SqlProviderSettingsStore(uow_factory),
+        )
+    )
+    uploaded = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    assert uploaded.status_code == 201
+    chosen = client.put(
+        "/api/settings/providers",
+        json={
+            "answerProviderId": "openai",
+            "answerModel": "gpt-4o-mini",
+            "indexProviderId": "hermetic",
+            "indexModel": "lexical-hash-v1",
+            "acknowledgedEgress": True,
+        },
+    )
+    assert chosen.status_code == 200
+    created = client.post(
+        "/api/roles",
+        json={"title": "AE", "company": "Acme", "description": _JD},
+    )
+    assert created.status_code == 202
+    worker.drain()
+    assert transport.calls
+    assert any("/chat/completions" in url for _method, url in transport.calls)
+    role_id = created.json()["role"]["id"]
+    role = client.get(f"/api/roles/{role_id}")
+    assert role.status_code == 200
+    assert role.json()["status"] == "ready"

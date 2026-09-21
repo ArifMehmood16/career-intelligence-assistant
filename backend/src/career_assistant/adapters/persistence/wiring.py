@@ -19,11 +19,13 @@ from career_assistant.adapters.persistence.supporting_store import (
     SqlSupportingDocumentStore,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
-from career_assistant.settings import DatabaseSettings
+from career_assistant.settings import DatabaseSettings, ProviderSettings
 
 
 def build_sql_stores(
     settings: DatabaseSettings | None = None,
+    *,
+    providers: ProviderSettings | None = None,
 ) -> tuple[
     SqlCvStore,
     SqlRoleStore,
@@ -47,7 +49,7 @@ def build_sql_stores(
     )
     conversation_store = SqlConversationStore(uow_factory)
     provider_choice_store = SqlProviderSettingsStore(uow_factory)
-    analysis_worker = SqlAnalysisWorker(uow_factory)
+    analysis_worker = SqlAnalysisWorker(uow_factory, providers=providers)
     return (
         cv_store,
         role_store,

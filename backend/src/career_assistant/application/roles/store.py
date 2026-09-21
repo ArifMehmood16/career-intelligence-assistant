@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from career_assistant.application.documents.cv import CvStore
+from career_assistant.application.ports.errors import EgressNotPermittedError
+from career_assistant.application.ports.extraction import (
+    ClaimExtractionPort,
+    RequirementExtractionPort,
+)
 from career_assistant.application.roles.hermetic_analysis import (
     AnalysisBundle,
     analyse_hermetic,
@@ -14,6 +20,10 @@ from career_assistant.application.roles.hermetic_analysis import (
     count_statuses,
 )
 from career_assistant.domain.jobs import JobKind, JobState
+
+ExtractorFactory = Callable[
+    [str], tuple[RequirementExtractionPort, ClaimExtractionPort]
+]
 
 
 class RoleOperationRejected(Exception):
@@ -51,6 +61,7 @@ class JobView:
 @dataclass
 class InMemoryRoleStore:
     cv_store: CvStore
+    extractor_factory: ExtractorFactory | None = None
     roles: dict[str, dict[str, RoleView]] = field(default_factory=dict)
     jobs: dict[str, dict[str, JobView]] = field(default_factory=dict)
     analyses: dict[str, dict[str, AnalysisBundle]] = field(default_factory=dict)
@@ -82,7 +93,8 @@ class InMemoryRoleStore:
         now = datetime.now(UTC)
         role_id = str(uuid.uuid4())
         job_id = str(uuid.uuid4())
-        bundle = analyse_hermetic(
+        bundle = self._analyse(
+            workspace_id,
             cv_text=cv.normalised_text,
             cv_document_id=cv.view.id,
             jd_text=description,
@@ -151,7 +163,8 @@ class InMemoryRoleStore:
             )
         now = datetime.now(UTC)
         job_id = str(uuid.uuid4())
-        bundle = analyse_hermetic(
+        bundle = self._analyse(
+            workspace_id,
             cv_text=cv.normalised_text,
             cv_document_id=cv.view.id,
             jd_text=role.description,
@@ -246,6 +259,35 @@ class InMemoryRoleStore:
                 status_code=409,
             )
         return bundle
+
+    def _analyse(
+        self,
+        workspace_id: str,
+        *,
+        cv_text: str,
+        cv_document_id: str,
+        jd_text: str,
+    ) -> AnalysisBundle:
+        requirement_extractor = None
+        claim_extractor = None
+        if self.extractor_factory is not None:
+            try:
+                requirement_extractor, claim_extractor = self.extractor_factory(
+                    workspace_id
+                )
+            except EgressNotPermittedError as exc:
+                raise RoleOperationRejected(
+                    "egress_not_permitted",
+                    "Hosted provider is not permitted.",
+                    status_code=403,
+                ) from exc
+        return analyse_hermetic(
+            cv_text=cv_text,
+            cv_document_id=cv_document_id,
+            jd_text=jd_text,
+            requirement_extractor=requirement_extractor,
+            claim_extractor=claim_extractor,
+        )
 
     def ranked(
         self, workspace_id: str
