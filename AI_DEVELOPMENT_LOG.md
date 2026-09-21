@@ -538,6 +538,24 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 065 — Phase 13A.9 production wiring matrix and stale README (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.9
+- Prompt intent: continue remaining Phase 13A items.
+- Suggestion: fail tests on stale README claims and missing route rows; add
+  `docs/production-wiring.md`; update API contract, threat model, ADRs 001/007.
+- Outcome: accepted.
+- Reason: README still said Phase 10 and fixture UI; nothing listed which SQL
+  adapter each production route actually uses.
+- Rejected alternatives: walking `app.routes` (included routers are opaque mounts,
+  so an empty matrix would pass); requiring the `docs/` prefix inside files that
+  already live under `docs/`.
+- Human validation: focused docs tests red then green; `make test` 255 passed,
+  coverage 80.62%; frontend 113 passed; `make test-integration` 48 passed;
+  `make lint` green after ruff format.
+
 ### 064 — Phase 13A.8 frontend async and failure states (TDD)
 
 - Date: 2026-09-21
