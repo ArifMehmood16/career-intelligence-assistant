@@ -443,12 +443,10 @@ def post_bullets(
             {"text": generated.text, "spanIds": span_ids, "evidence": evidence}
         )
     if not bullets:
-        bullets.append(
-            {
-                "text": "- Add concrete evidence for this requirement.",
-                "spanIds": [],
-                "evidence": [],
-            }
+        raise AppError(
+            "insufficient_cited_claims",
+            "No cited claim supports a bullet for this requirement.",
+            status_code=409,
         )
     now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     existing = _roles(request).list_bullet_drafts(workspace_id, role_id)
