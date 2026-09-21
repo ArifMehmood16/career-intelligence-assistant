@@ -8,6 +8,10 @@ from career_assistant.adapters.providers.factory import build_completion_port
 from career_assistant.api.errors import AppError
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.errors import EgressNotPermittedError
+from career_assistant.application.providers.accounting import (
+    AccountingCompletion,
+    CallAccountant,
+)
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.providers.choice_store import (
     InMemoryProviderChoiceStore,
@@ -41,7 +45,7 @@ def completion_port_for(request: Request, workspace_id: str) -> CompletionPort:
     )
     transport = getattr(request.app.state, "http_transport", None)
     try:
-        return build_completion_port(
+        port = build_completion_port(
             settings,
             transport=transport,
             provider_id=choice.answer_provider_id,
@@ -53,3 +57,13 @@ def completion_port_for(request: Request, workspace_id: str) -> CompletionPort:
             "Hosted provider is not permitted.",
             status_code=403,
         ) from exc
+    accountant = getattr(request.app.state, "call_accountant", None)
+    if accountant is None:
+        accountant = CallAccountant()
+        request.app.state.call_accountant = accountant
+    return AccountingCompletion(
+        port,
+        accountant,
+        workspace_id=workspace_id,
+        purpose="complete",
+    )

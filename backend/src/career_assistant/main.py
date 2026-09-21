@@ -14,7 +14,11 @@ from typing import Literal
 from fastapi import APIRouter, FastAPI, Request, Response
 
 from career_assistant.adapters.extraction.selected import extractors_for_choice
+from career_assistant.adapters.persistence.accounting import SqlCallAccountant
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
+from career_assistant.adapters.persistence.conversation_store import (
+    SqlConversationStore,
+)
 from career_assistant.adapters.persistence.readiness import SettingsReadiness
 from career_assistant.adapters.persistence.wiring import build_sql_stores
 from career_assistant.api.errors import install_exception_handlers
@@ -46,6 +50,7 @@ from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
 )
+from career_assistant.application.providers.accounting import CallAccountant
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.providers.choice_store import (
     InMemoryProviderChoiceStore,
@@ -174,17 +179,24 @@ def create_app(
         if supporting_store is not None
         else InMemorySupportingDocumentStore(cv_store=resolved_cv)
     )
-    app.state.conversation_store = (
+    resolved_conversation = (
         conversation_store
         if conversation_store is not None
         else InMemoryConversationStore()
     )
+    app.state.conversation_store = resolved_conversation
     app.state.provider_choice_store = (
         provider_choice_store
         if provider_choice_store is not None
         else InMemoryProviderChoiceStore()
     )
     app.state.analysis_worker = analysis_worker
+    if isinstance(resolved_conversation, SqlConversationStore):
+        app.state.call_accountant = SqlCallAccountant(
+            resolved_conversation._uow_factory
+        )
+    else:
+        app.state.call_accountant = CallAccountant()
     if isinstance(app.state.role_store, InMemoryRoleStore):
         app.state.role_store.extractor_factory = _extractor_factory(app)
     app.include_router(router)

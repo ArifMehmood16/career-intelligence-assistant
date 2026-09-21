@@ -21,6 +21,7 @@ from career_assistant.adapters.persistence.models import (
     DocumentRow,
     GeneratedDraftRow,
     MappingRow,
+    ProviderCallAccountingRow,
     ProviderSettingsRow,
     QuestionRow,
     ScoreExplanationRow,
@@ -42,6 +43,7 @@ from career_assistant.application.ports.persistence import (
     StoredDocument,
     WorkspaceRepository,
 )
+from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Span
 
@@ -474,6 +476,25 @@ class SqlProviderSettingsRepository:
         self._session.flush()
 
 
+class SqlAccountingRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def insert(self, workspace_id: str, entry: CallRecord) -> None:
+        self._session.add(
+            ProviderCallAccountingRow(
+                workspace_id=_as_uuid(workspace_id),
+                provider=entry.provider_id,
+                model_tag=entry.model_tag,
+                left_machine=entry.left_machine,
+                purpose=entry.metadata.get("purpose", entry.operation),
+                prompt_tokens=entry.input_tokens,
+                completion_tokens=entry.output_tokens,
+                latency_ms=entry.latency_ms,
+            )
+        )
+
+
 class SqlUnitOfWork:
     def __init__(self, factory: sessionmaker[Session]) -> None:
         self._session_factory = factory
@@ -482,6 +503,7 @@ class SqlUnitOfWork:
         self.documents: DocumentRepository
         self.conversations: ConversationRepository
         self.provider_settings: SqlProviderSettingsRepository
+        self.accounting: SqlAccountingRepository
         self.roles: RoleRepository
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
@@ -493,6 +515,7 @@ class SqlUnitOfWork:
         self.documents = SqlDocumentRepository(self._session)
         self.conversations = SqlConversationRepository(self._session)
         self.provider_settings = SqlProviderSettingsRepository(self._session)
+        self.accounting = SqlAccountingRepository(self._session)
         self.roles = SqlRoleRepository(self._session)
         self.jobs = SqlAnalysisJobRepository(self._session, self.roles)
         self.analysis = SqlAnalysisResultRepository(

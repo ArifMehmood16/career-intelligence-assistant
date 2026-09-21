@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
@@ -11,6 +12,7 @@ from career_assistant.adapters.persistence.conversation_store import (
     SqlConversationStore,
 )
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
+from career_assistant.adapters.persistence.models import ProviderCallAccountingRow
 from career_assistant.adapters.persistence.provider_settings_store import (
     SqlProviderSettingsStore,
 )
@@ -216,3 +218,30 @@ def test_provider_choice_survives_fresh_app_including_model_tags(
     assert got.json() == expected
     assert got.json()["answerModel"] == "rules-v1"
     assert got.json()["indexModel"] == "lexical-hash-v1"
+
+
+def test_open_question_persists_call_accounting(
+    session_factory: sessionmaker[Session],
+) -> None:
+    client, worker = _sql_app(session_factory)
+    role_id = _seed_role(client, worker)
+    asked = client.post(
+        "/api/messages",
+        headers={"Accept": "application/json"},
+        json={
+            "content": "How did I describe my warehouse work?",
+            "roleId": role_id,
+            "clientRequestId": "cr-accounting-sql-1",
+        },
+    )
+    assert asked.status_code == 200
+    with session_factory() as session:
+        rows = session.scalars(select(ProviderCallAccountingRow)).all()
+    assert rows
+    row = rows[-1]
+    assert row.provider
+    assert row.model_tag
+    assert isinstance(row.left_machine, bool)
+    dumped = f"{row.provider} {row.model_tag} {row.purpose}"
+    assert "warehouse" not in dumped
+    assert "dbt" not in dumped
