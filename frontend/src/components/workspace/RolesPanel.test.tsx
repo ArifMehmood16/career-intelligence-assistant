@@ -5,7 +5,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { deriveRolesPanelState, RolesPanel } from "./RolesPanel";
+import { RolesPanel } from "./RolesPanel";
+import { deriveRolesPanelState } from "./roles-panel-state";
 import type { Role } from "@/types";
 
 vi.mock("@tanstack/react-router", () => ({

@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addRole, getCv, getJob, getRoles, reanalyseRole } from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { AddRoleDialog } from "@/components/workspace/AddRoleDialog";
+import { deriveRolesPanelState } from "@/components/workspace/roles-panel-state";
 import {
-  deriveRolesPanelState,
   RolesPanel,
   type RolesSortKey,
   type SortDirection,
