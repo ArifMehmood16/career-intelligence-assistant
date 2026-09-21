@@ -733,7 +733,7 @@ changes is everything upstream of it: deciding what counts as a requirement is a
 language task, and a hermetic test fixture should never have been what a real user
 hits.
 
-- [ ] **13C.1 Make a real model the default and demote the hermetic path.** A running
+- [x] **13C.1 Make a real model the default and demote the hermetic path.** A running
       instance defaults to a local Ollama model for completion and embeddings.
       Hermetic becomes a fixture the test suite selects and no user-facing
       configuration offers. `EXTRACTION_STRATEGY` is currently written in

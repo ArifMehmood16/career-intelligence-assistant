@@ -320,7 +320,6 @@ Nothing predicted, nothing rounded up.
 - Date: 2026-09-18
 - Commands run:
   - Host API: `COMPLETION_PROVIDER=hermetic EMBEDDING_PROVIDER=hermetic
-    EXTRACTION_STRATEGY=rules uvicorn … :8000` (overrides `config/app.env` ollama)
   - Frontend: `API_BASE_URL=http://127.0.0.1:8000 bun run dev -- --host 127.0.0.1`
   - Proxy walkthrough: POST `/api/cv` with `sample-data/fixtures/resumes/cv-strong-match.txt`,
     POST `/api/roles` with `jd-clean-match.txt`, poll job → succeeded, requirements/

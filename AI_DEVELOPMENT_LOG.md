@@ -557,6 +557,36 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `make help` lists the new targets; `make -n run-api` and
   `make -n run-web` print uvicorn and bun respectively.
 
+### 071 — Phase 13C.1 a local model becomes the default (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.1
+- Prompt intent: stop shipping the test fixture as the product default.
+- Suggestion: `ProviderSettings` defaults move from `hermetic` to `ollama`;
+  `config/app.env.example` selects Ollama and says in a comment that the
+  hermetic adapters are a test fixture rather than a deployment option; the dead
+  `EXTRACTION_STRATEGY` key is deleted from the example and the engineering
+  journal.
+- Outcome: accepted.
+- Reason: `EXTRACTION_STRATEGY` was set in configuration and read nowhere in
+  `backend/src` — extractor routing is decided in `selected.py` by provider id
+  alone. A second switch that does nothing is worse than no switch. Deleting it
+  was chosen over implementing it because provider id already carries the
+  decision.
+- Rejected alternatives: removing `hermetic` from the `GET /providers`
+  catalogue as well. The plan item is about what configuration offers, and the
+  catalogue is also how the test suite and the egress tests select a provider;
+  changing it belongs with 13C.10's documentation pass if it is done at all.
+- Human validation: 3 of 4 new tests observed failing for the intended reasons;
+  the fourth — that the test app factory still builds a hermetic app — passed
+  from the start and is kept as the guard that `make test` stays offline. After
+  the change `pytest --no-cov` reports `283 passed, 3 skipped, 52 deselected`.
+  `ruff check` and `ruff format --check` clean. `mypy` clean over 125 source
+  files, on a fresh cache directory.
+- Note: no test asserted the previous `hermetic` default, which is itself the
+  finding — the shipped default was never covered.
+
 ### 070 — Phase 13C.9 repair the deterministic fixture path (TDD)
 
 - Date: 2026-09-21
