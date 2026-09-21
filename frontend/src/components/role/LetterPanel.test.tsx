@@ -169,4 +169,76 @@ describe("LetterPanel", () => {
     await user.click(screen.getByRole("button", { name: /export markdown/i }));
     expect(onExport).toHaveBeenCalledWith(v2);
   });
+
+  it("does not treat a failed generated-letter query as empty history", async () => {
+    const user = userEvent.setup();
+    const onRetryGenerated = vi.fn();
+
+    render(
+      <LetterPanel
+        tone="plain"
+        includeGapLine={false}
+        generating={false}
+        draft={null}
+        versions={[]}
+        refusal={null}
+        supportingDocuments={[]}
+        generatedState="error"
+        onRetryGenerated={onRetryGenerated}
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={vi.fn()}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/generated letters could not be loaded/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /retry generated letters/i }),
+    );
+    expect(onRetryGenerated).toHaveBeenCalled();
+  });
+
+  it("does not treat a failed supporting-letter query as an empty upload list", async () => {
+    const user = userEvent.setup();
+    const onRetrySupporting = vi.fn();
+
+    render(
+      <LetterPanel
+        tone="plain"
+        includeGapLine={false}
+        generating={false}
+        draft={null}
+        versions={[]}
+        refusal={null}
+        supportingDocuments={[]}
+        supportingState="error"
+        onRetrySupporting={onRetrySupporting}
+        onToneChange={vi.fn()}
+        onIncludeGapLineChange={vi.fn()}
+        onGenerate={vi.fn()}
+        onSelectVersion={vi.fn()}
+        onExport={vi.fn()}
+        onCitation={vi.fn()}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/supporting letters could not be loaded/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/no supporting cover letters uploaded/i),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /retry supporting letters/i }),
+    );
+    expect(onRetrySupporting).toHaveBeenCalled();
+  });
 });

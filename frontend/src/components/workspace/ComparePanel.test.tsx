@@ -133,4 +133,35 @@ describe("ComparePanel", () => {
     );
     expect(onOpenGaps).toHaveBeenCalledWith(roleA.id);
   });
+
+  it("does not treat a failed role list as the choose-two-roles empty state", async () => {
+    const user = userEvent.setup();
+    const onRetryRoles = vi.fn();
+
+    render(
+      <ComparePanel
+        roles={[]}
+        roleAId=""
+        roleBId=""
+        rolesState="error"
+        state="empty"
+        comparison={null}
+        onRoleAChange={vi.fn()}
+        onRoleBChange={vi.fn()}
+        onCompare={vi.fn()}
+        onRetry={vi.fn()}
+        onRetryRoles={onRetryRoles}
+        onOpenGaps={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/role list could not be loaded/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/choose two different ready roles/i),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /retry role list/i }));
+    expect(onRetryRoles).toHaveBeenCalled();
+  });
 });

@@ -5,7 +5,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { RolesPanel } from "./RolesPanel";
+import { deriveRolesPanelState, RolesPanel } from "./RolesPanel";
 import type { Role } from "@/types";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -73,6 +73,33 @@ describe("RolesPanel screen states", () => {
     expect(screen.getByText(/roles could not be loaded/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it("treats a failed CV query as error, not as add-your-CV inert", () => {
+    expect(
+      deriveRolesPanelState({
+        cvStatus: "error",
+        rolesStatus: "success",
+        hasCv: false,
+        roleCount: 0,
+      }),
+    ).toBe("error");
+    expect(
+      deriveRolesPanelState({
+        cvStatus: "success",
+        rolesStatus: "error",
+        hasCv: true,
+        roleCount: 0,
+      }),
+    ).toBe("error");
+    expect(
+      deriveRolesPanelState({
+        cvStatus: "success",
+        rolesStatus: "success",
+        hasCv: false,
+        roleCount: 0,
+      }),
+    ).toBe("inert");
   });
 });
 
