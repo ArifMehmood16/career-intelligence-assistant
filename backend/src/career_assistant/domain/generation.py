@@ -123,6 +123,8 @@ def draft_cover_letter(
     requirements: tuple[Requirement, ...] | list[Requirement],
     mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
     claims: tuple[Claim, ...] | list[Claim],
+    tone: str = "plain",
+    include_gap_line: bool = False,
 ) -> CoverLetterDraft | CoverLetterRefusal:
     """Template cover letter from met must-haves; refuses below two."""
     by_req = {r.id: r for r in requirements}
@@ -142,9 +144,12 @@ def draft_cover_letter(
                 "Use the gap plan until more evidence is mapped."
             ),
         )
-    paragraphs = [
-        f"I am writing to apply for the {role_title} role at {company}.",
-    ]
+    opening = (
+        f"I would be glad to apply for the {role_title} role at {company}."
+        if tone == "warm"
+        else f"I am writing to apply for the {role_title} role at {company}."
+    )
+    paragraphs = [opening]
     cited: list[str] = []
     met_ids: list[str] = []
     for req, mapping in met:
@@ -164,7 +169,7 @@ def draft_cover_letter(
         and by_req.get(m.requirement_id) is not None
         and by_req[m.requirement_id].must_have
     ]
-    if missing:
+    if include_gap_line and missing:
         paragraphs.append("I am still building depth in: " + "; ".join(missing) + ".")
     paragraphs.append("Thank you for your consideration.")
     return CoverLetterDraft(
