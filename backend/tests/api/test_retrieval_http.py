@@ -103,3 +103,46 @@ def test_role_scoped_open_question_cannot_cite_other_role_jd() -> None:
     citation_ids = {item["id"] for item in asked.json()["citations"]}
     assert span_a in citation_ids
     assert span_b not in citation_ids
+
+
+def test_cover_letter_cannot_meet_a_role_requirement() -> None:
+    client = TestClient(create_app())
+    assert (
+        client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"}).status_code
+        == 201
+    )
+    letter = client.post(
+        "/api/cover-letters",
+        json={
+            "text": (
+                "Experience\n"
+                "Senior GPU Engineer — Lab — 2020-01 — Present\n"
+                "- Built CUDA kernels in production.\n"
+            ),
+            "filename": "letter.txt",
+        },
+    )
+    assert letter.status_code == 201
+    created = client.post(
+        "/api/roles",
+        json={
+            "title": "GPU",
+            "company": "Acme",
+            "description": (
+                "Requirements\n"
+                "- Must have production dbt experience\n"
+                "- Must have CUDA experience\n"
+            ),
+        },
+    )
+    assert created.status_code == 202
+    role_id = created.json()["role"]["id"]
+
+    requirements = client.get(f"/api/roles/{role_id}/requirements")
+    assert requirements.status_code == 200
+    rows = requirements.json()
+    dbt = next(row for row in rows if "dbt" in row["text"].lower())
+    cuda = next(row for row in rows if "cuda" in row["text"].lower())
+    assert dbt["status"] == "met"
+    assert cuda["status"] == "missing"
+    assert cuda["evidence"] is None

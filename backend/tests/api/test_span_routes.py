@@ -83,7 +83,9 @@ def test_get_span_returns_evidence_for_role_job_description() -> None:
         json={
             "title": "Backend",
             "company": "Acme",
-            "description": "Requirements\n- Must have FastAPI experience in production.\n",
+            "description": (
+                "Requirements\n- Must have FastAPI experience in production.\n"
+            ),
         },
     )
     assert created.status_code == 202
@@ -100,4 +102,31 @@ def test_get_span_returns_evidence_for_role_job_description() -> None:
     assert body["spanId"] == span_id
     assert body["documentId"] == bundle.jd_document_id
     assert body["highlight"] in body["paragraph"]
-    assert "fastapi" in body["highlight"].lower() or "fastapi" in body["paragraph"].lower()
+    assert "fastapi" in body["highlight"].lower() or "fastapi" in body[
+        "paragraph"
+    ].lower()
+
+
+def test_get_span_rejects_cross_workspace_citation() -> None:
+    app = create_app()
+    owner = TestClient(app)
+    stranger = TestClient(app)
+    created = owner.post(
+        "/api/cover-letters",
+        json={
+            "text": "I wrote about Kubernetes operators in my cover letter.",
+            "filename": "letter.txt",
+        },
+    )
+    assert created.status_code == 201
+    workspace_id = owner.cookies["workspace"]
+    stored = next(
+        iter(owner.app.state.supporting_store._letters[workspace_id].values())
+    )
+    span_id = stored.spans[0].id
+
+    response = stranger.get(f"/api/spans/{span_id}")
+
+    assert owner.cookies["workspace"] != stranger.cookies["workspace"]
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "span_not_found"
