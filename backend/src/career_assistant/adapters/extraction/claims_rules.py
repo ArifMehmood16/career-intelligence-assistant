@@ -17,9 +17,13 @@ from career_assistant.domain.recency import (
     parse_date_range,
 )
 
-_BULLET = re.compile(r"^\s*[-*•]\s+(.+)$")
+# PDF extractors emit "•Text" with no space; normalisation makes that "-Text".
+_BULLET = re.compile(r"^\s*[-*•]\s*(.+)$")
 _EXPERIENCE_HEADER = re.compile(r"^experience\b", re.IGNORECASE)
 _SECTION_STOP = re.compile(r"^(skills|education|summary|projects)\b", re.IGNORECASE)
+# A heading is short and is not a sentence. A wrapped body line such as
+# "education customers. Live in production for two years." is neither.
+_MAX_HEADING_CHARS = 40
 _ROLE_HEADER = re.compile(r".+\s[—\-–]\s.+")
 _COMPETENCY_KEYWORDS = (
     ("dbt", "dbt"),
@@ -56,16 +60,14 @@ class RulesClaimExtractor:
         document_kind: DocumentKind,
         normalised_text: str,
     ) -> ClaimExtractionResult:
-        if document_kind is DocumentKind.COVER_LETTER:
-            raise ValueError(
-                "cover_letter documents cannot contribute claims, mappings or scores"
-            )
-        if document_kind is not DocumentKind.CV:
+        if document_kind not in {DocumentKind.CV, DocumentKind.COVER_LETTER}:
             raise ValueError("claims are extracted only from the active CV document")
+        self_authored = document_kind is DocumentKind.COVER_LETTER
 
         claims: list[Claim] = []
         spans: list[Span] = []
-        in_experience = False
+        # Cover letters have no EXPERIENCE heading; read bullets from the start.
+        in_experience = self_authored
         current = _Role(date_range=None, date_span=None)
         offset = 0
 
@@ -80,7 +82,7 @@ class RulesClaimExtractor:
                 in_experience = True
                 current = _Role(date_range=None, date_span=None)
                 continue
-            if in_experience and _SECTION_STOP.match(stripped):
+            if in_experience and _is_section_heading(stripped):
                 in_experience = False
                 continue
             if not in_experience:
@@ -122,10 +124,17 @@ class RulesClaimExtractor:
                     ),
                     source_span_ids=tuple(span_ids),
                     extraction_confidence=0.85,
+                    self_authored=self_authored,
                 )
             )
 
         return ClaimExtractionResult(claims=tuple(claims), spans=tuple(spans))
+
+
+def _is_section_heading(stripped: str) -> bool:
+    if _SECTION_STOP.match(stripped) is None:
+        return False
+    return len(stripped) <= _MAX_HEADING_CHARS and not stripped.endswith(".")
 
 
 def _span_for(document_id: str, full_text: str, line_start: int, body: str) -> Span:

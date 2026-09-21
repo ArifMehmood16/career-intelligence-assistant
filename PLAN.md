@@ -3,8 +3,11 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13B operational logging is complete. Do not start
-Phase 14 until a human asks for it.
+**Current position:** Phase 13B operational logging is complete. The 2026-09-21
+output audit ran a real CV and a real job advert through the shipped pipeline and
+found the product produces nothing useful: the deterministic extractors are the only
+extractors on the default path and they are not capable of the job. Phase 13C
+replaces them. Do not start Phase 14 until 13C is complete.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -61,7 +64,8 @@ Approved for the initial implementation. A change requires an ADR and human appr
 | Frontend packages | `bun` | Lovable maintains `bun.lock` | npm |
 | Store | PostgreSQL 16 + pgvector as the system of record | Original uploads, parsed documents, roles, mappings, drafts, questions, answers and vectors stay transactionally consistent | Dedicated vector DB or split object storage |
 | Persistence | SQLAlchemy 2, Alembic; bounded originals in `bytea` | Explicit schema and migrations; the configured limits keep database-backed files small enough for this portfolio workload | Raw SQL or filesystem uploads |
-| Model integration | Narrow ports with four adapters: hermetic, Ollama, OpenAI, Anthropic | Prove the abstraction, not one vendor | A single vendor SDK in the application |
+| Model integration | Narrow ports with four adapters: hermetic, Ollama, OpenAI, Anthropic | Prove the abstraction, not one vendor. Hermetic is a test fixture so `make test` runs offline; it is never a product default | A single vendor SDK in the application |
+| Extraction | Model-first, with every extracted item carrying a verbatim quote verified against the stored text; local Ollama by default | Deciding what counts as a requirement is a language task. A regex cannot do it, and the 2026-09-21 audit is the evidence | Deterministic parsing as the product default |
 | Provider selection | Runtime workspace setting; hosted behind an explicit egress gate | The person asking should know where their text went | Deploy-time-only configuration |
 | Credentials | Server configuration only; never accepted or returned by any route | A key in the browser is a key in a log | Bring-your-own-key in the UI |
 | Long work | In-process job queue with a job resource the UI polls | Extraction takes minutes; it is a job, not a request | Celery, RQ |
@@ -152,7 +156,8 @@ extraction contract is what every adapter is judged against.
       window, maximum output, embedding dimensions. The application reads capabilities
       and degrades deterministically. It never branches on a provider's name.
 - [x] **2.3** Hermetic adapters as the default: a rule-based extractor and lexical
-      hashing embeddings. No network, no keys, no downloads.
+      hashing embeddings. No network, no keys, no downloads. *Hermetic exists so
+      `make test` runs offline. Superseded as the product default by 13C.1.*
 - [x] **2.4** Ollama adapter — local models, model tags from configuration.
 - [x] **2.5** OpenAI adapter — completion and embeddings.
 - [x] **2.6** Anthropic adapter — completion only. Embeddings stay on whichever
@@ -274,9 +279,13 @@ production path falls back to memory or SQLite.
 - [x] **5.1** Domain type `Requirement`: text, competency, seniority signal, must-have
       or desirable, source span, extraction confidence.
 - [x] **5.2** Extraction port and a deterministic rule-based adapter (default,
-      hermetic) that handles bulleted requirement lists.
-- [x] **5.3** Extraction against the Phase 2 completion port, schema validated, with
-      the same acceptance tests passing on every configured provider.
+      hermetic) that handles bulleted requirement lists. *Superseded as the product
+      default by 13C.2; retained as the hermetic test fixture only.*
+- [ ] **5.3** *Superseded by 13C.2.* The delivered implementation ran the rule
+      extractor first and then discarded every model requirement whose text was not
+      already in the rule output, taking competency, seniority and spans from the
+      rules result. The model could only remove what the regex had already found; it
+      could never extract a requirement the regex missed.
 - [x] **5.4** Output validation: reject any requirement whose source span does not
       resolve to stored text. Drop it, count it, never pass it through.
 - [x] **5.5** Prompt-injection regression test: a job description containing
@@ -284,7 +293,7 @@ production path falls back to memory or SQLite.
 - [x] **5.6** Vague-requirement detection: a requirement with a seniority or scope
       signal the description never quantifies is marked as such. This feeds
       "what to ask them" in the interview pack, so it is data, not a heuristic in the
-      view.
+      view. *Folded into the typed extraction schema in 13C.2.*
 - [x] **5.7** Requirements are extracted only from the stored job-description
       document for that role. An uploaded cover letter cannot contribute a requirement
       or alter a role analysis.
@@ -297,7 +306,8 @@ requirement resolves to a real span; the injection fixture changes nothing.
 - [x] **6.1** Domain type `Claim`: competency, context, duration signal, recency
       signal, source spans.
 - [x] **6.2** Rule-based adapter as the default; model-backed extraction through the
-      Phase 2 port, schema validated on every provider.
+      Phase 2 port, schema validated on every provider. *Superseded as the product
+      default by 13C.3 for the same reason as 5.3; retained as the test fixture.*
 - [x] **6.3** Span verification identical to 5.4.
 - [x] **6.4** Recency and duration derived from dates in the CV, in domain code, not
       by the model. Undated experience is treated as undated, never assumed recent.
@@ -314,13 +324,11 @@ recency, including the dated-experience fixture.
       `missing`, with the justifying span ids and a reason code
       (`no_related_claim`, `adjacent_claim_only`, `evidence_too_old`,
       `evidence_thin`). Pure function, no I/O.
-- [x] **7.2** Analysis mapping computes `(requirement_id, claim_id)` cosine
-      similarities from embeddings of requirement text and claim context. The
-      relatedness test treats `similarity >= similarity_floor` as related even
-      when lexical overlap is zero, so an adjacent claim the token filter misses
-      can still be proposed. Status (`met` / `partial` / `missing`) remains a
-      domain-policy decision. Callers that skip embeddings pass `None` and
-      mapping stays lexical. Wired for production in 13A.10.
+- [ ] **7.2** *Superseded by 13C.5.* Mapping computes `(requirement_id, claim_id)`
+      cosine similarities and treats `similarity >= similarity_floor` as related, with
+      status still decided by domain policy — but the floor is a guessed 0.55 over
+      64-dimension hermetic hash vectors, which is a lexical signal wearing a vector
+      costume. Three-signal matching replaces it; Phase 14 calibrates the floor.
 - [x] **7.3** Deterministic rubric: must/desirable weights, status factors, recency
       decay, normalisation and bands exactly as documented in `docs/features.md`, read
       from configuration. Pure, unit tested.
@@ -628,6 +636,13 @@ real application.
       when the role is ready and the tab is active. Surface generated/supporting
       letter, role-list/compare, clipboard and export failures with retryable UI
       states; do not show a successful empty state while its query failed.
+- [x] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
+      stale README status, API contract, architecture/provenance documentation,
+      threat model and engineering journal after the fixes are proven. Add a
+      production-wiring matrix that names each route's application use case, provider
+      resolver and SQL adapter so an isolated tested implementation cannot be mistaken
+      for a wired feature again.
+
 - [x] **13A.10 Wire embedding similarity into requirement mapping.** PLAN 7.2
       accepted a similarities dict the policy never reached: `_is_related`'s
       third branch required overlap the second branch already returned on, the
@@ -639,13 +654,6 @@ real application.
       index, no Ask retrieval change. Persist unconstrained vectors; changing
       the index provider re-embeds; CV hard delete leaves zero embeddings;
       a closed hosted gate makes no network attempt and does not fail the job.
-- [x] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
-      stale README status, API contract, architecture/provenance documentation,
-      threat model and engineering journal after the fixes are proven. Add a
-      production-wiring matrix that names each route's application use case, provider
-      resolver and SQL adapter so an isolated tested implementation cannot be mistaken
-      for a wired feature again.
-
 **Exit gate:** exact `make lint`, `make typecheck`, `make test` and
 `make test-integration` targets pass. A production-app test using PostgreSQL proves
 chat, provider choice, roles, jobs, uploaded supporting letters, citations and drafts
@@ -699,26 +707,137 @@ ids, counts, durations, stages, provider ids and safe error codes only.
 application lines for a CV upload and a queued role job without document text.
 `make lint` and the hermetic backend tests stay green.
 
+## Phase 13C — Model-first extraction, matching and output
+
+The 2026-09-21 output audit ran the maintainer's real CV and a real job advert through
+the shipped pipeline. The results are why this phase exists:
+
+- The claim extractor produced **zero claims**. `pypdf` emits bullets as `•Text`
+  with no following space; normalisation rewrites that to `-Text`; the bullet pattern
+  requires whitespace after the glyph. Every requirement therefore mapped to `missing`
+  and the fit score was 0.
+- With that one character corrected it produced **4 claims out of roughly 14**, all
+  from the first role. `_SECTION_STOP` matched a wrapped line that happened to begin
+  with the word "education", ending experience parsing at the second job.
+- Every claim came out `undated`, because `pypdf` puts role dates on the role line and
+  the parser expects them on a line of their own.
+- The advert produced **18 requirements, all must-have, all competency `general`**,
+  including the salary band, share options, the remote-working policy, the
+  right-to-work line, and the three bullets under *What this role is not*.
+- With claims present the mapping then reported **11 met, 7 partial** — asserting the
+  candidate *meets* "£70,000 - £80,000 depending on experience".
+
+The scoring layer was never the problem, and it does not change. Deterministic,
+explainable scoring is the one thing here a reviewer has not seen elsewhere. What
+changes is everything upstream of it: deciding what counts as a requirement is a
+language task, and a hermetic test fixture should never have been what a real user
+hits.
+
+- [x] **13C.1 Make a real model the default and demote the hermetic path.** A running
+      instance defaults to a local Ollama model for completion and embeddings.
+      Hermetic becomes a fixture the test suite selects and no user-facing
+      configuration offers. `EXTRACTION_STRATEGY` is currently written in
+      `config/app.env` and read nowhere in the code — make it real or delete it and
+      every document that mentions it. `make test` still runs offline with no key and
+      no model download.
+- [x] **13C.2 Typed requirement extraction with verified quotes.** The model returns,
+      per item: a verbatim `quote` from the advert, an `item_type` of `requirement`,
+      `responsibility`, `benefit`, `logistics` or `non_requirement`, must vs
+      desirable, a competency from an open vocabulary, a seniority signal and a
+      vagueness flag. Each quote is located verbatim in the stored normalised text and
+      the span is built from those offsets; anything that does not verify is dropped
+      and counted, per 5.4 — never repaired, never fuzzy-matched. Only `requirement`
+      and `responsibility` items reach the mapping, so a salary line, a benefit or a
+      "this role is not" bullet can never be scored. The 5.5 injection fixture must
+      still change nothing: verbatim verification is the defence.
+- [x] **13C.3 Structured CV extraction.** The model returns roles with employer, title
+      and date range, and claims beneath them carrying competency, scope, technologies,
+      outcome and a verbatim quote. Dates are parsed and recency and duration derived
+      in domain code, never supplied by the model — 6.4 still holds. Every role in the
+      document is extracted, not only the first. Span verification and the drop count
+      are identical to 13C.2.
+- [x] **13C.4 Cover letter as narrative evidence.** An uploaded cover letter is
+      extracted into the same structured shape and flagged self-authored. It stays
+      excluded from claims, mappings and the fit score — 4.3, 5.7 and 6.5 stand — and
+      becomes available to letter drafting, interview preparation and Ask. A
+      regression proves an uploaded letter is citable and changes no score.
+- [ ] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
+      three signals: lexical overlap, embedding cosine, and model adjudication for the
+      pairs the first two disagree on. Each signal is computed in an adapter behind a
+      port. The combination, the status and the reason code stay pure domain code, and
+      every mapping records which signals fired and at what strength so the breakdown
+      can show it. The similarity floor moves to configuration and is set by the
+      Phase 14 calibration run rather than guessed. Replaces 7.2.
+- [ ] **13C.6 Score only what is scoreable.** The rubric consumes only items typed
+      `requirement` or `responsibility`. Recency uses the parsed role dates from
+      13C.3. A requirement met through model adjudication alone says so in the
+      explanation. The rubric arithmetic, the 7.4 property tests and the 7.5
+      explanation object are unchanged.
+- [x] **13C.7 Bullet generation refuses unsupported evidence.** `post_bullets` drafts
+      from any mapping's justifying claims with no reason filter, so an
+      `adjacent_claim_only` match — now reachable since 13A.10 — can become a cited CV
+      bullet for a requirement it does not support. Refuse it with the existing 409
+      `insufficient_cited_claims`. Confirm the cover-letter and interview-pack paths
+      do not have the same hole.
+- [ ] **13C.8 Output depth.** Every tab returns something worth reading: a prose fit
+      summary naming the strongest and weakest requirements, per-requirement evidence
+      showing the actual quoted CV text, a gap plan with concrete actions and score
+      deltas, tailored bullets, a cover letter that references this role and company,
+      and interview questions each carrying the candidate's own evidence. All of it
+      stays span-bound and validated by the Phase 10 pipeline.
+- [x] **13C.9 Repair the deterministic fixture path.** The rules extractors remain the
+      hermetic fixture, so they must be honest: accept a bullet glyph with no
+      following space, stop treating a wrapped line beginning with a section word as a
+      section boundary, and read role dates from the role line. Those are the three
+      bugs the audit found. Add the real CV and a real advert as fixtures so the
+      failure cannot return unnoticed.
+- [ ] **13C.10 Reconcile documentation with the new direction.** Update the README
+      architecture claims, `docs/features.md`, `docs/production-wiring.md`, the threat
+      model where extraction changed, and ADR 003. Write a new ADR recording why
+      deterministic extraction was tried, exactly what it produced on a real document,
+      and why model-first extraction with server-verified quotes replaced it. That ADR
+      is the most useful page in this repository for a reviewer.
+
+**Exit gate:** on the maintainer's real CV and five real job adverts, every extracted
+item carries a type and a verified quote; no salary, benefit or logistics line is
+scored; claims come from every role with correct dates; the fit score is non-zero,
+explainable and traceable to quoted text; all four tabs return substantive content;
+and the whole path runs on a local Ollama model with no API key. `make lint`,
+`make typecheck`, `make test` and `make test-integration` pass. Only then begin
+Phase 14.
+
 ## Phase 14 — Evaluation
 
-- [ ] **14.1** Labelled dataset: fixture CV/JD pairs with expected requirements,
-      expected mapping outcomes and expected refusals.
-- [ ] **14.2** Harness reporting requirement-extraction precision and recall, mapping
-      accuracy, citation validity rate, insufficient-evidence correctness, score
-      stability and **groundedness violation rate**.
+Measured on real documents, not on fixtures shaped to pass.
+
+- [ ] **14.1** Labelled dataset: the maintainer's real CV plus five real job adverts
+      of different shapes — bulleted, prose, numbered, agency-reformatted — with
+      hand-labelled expected item types, must/desirable, and the expected mapping
+      outcome for every requirement.
+- [ ] **14.2** Harness reporting item-type classification accuracy, requirement recall
+      and precision, claim recall per role, quote-verification drop rate, mapping
+      accuracy, citation validity rate, insufficient-evidence correctness,
+      **groundedness violation rate** and score stability.
 - [ ] **14.3** Record thresholds and observed numbers with the date and provider
       configuration in `docs/evaluation.md`. `TBD` until a run has been observed.
-- [ ] **14.4** `make test-evaluation` runs hermetically against the default providers.
-- [ ] **14.5** Provider comparison: the same dataset on each configured provider —
-      hermetic, Ollama, OpenAI, Anthropic — with quality, latency and cost per
-      question side by side. Report the rows where the local model is competitive.
+- [ ] **14.4** `make test-evaluation` runs hermetically against the fixture
+      extractors, so the harness itself is testable without a model.
+- [ ] **14.5** Provider comparison: the same dataset on the deterministic fixture
+      path, Ollama, OpenAI and Anthropic, with quality, latency and cost side by side.
+      Report the rows where the local model is competitive, and the rows where the
+      deterministic path is not.
 - [ ] **14.6** Generation comparison: groundedness violation rate and template
       fallback rate per provider. A provider that drafts beautifully and fails the
       validator is reported as exactly that.
-- [ ] **14.7** Add a regression case proving an uploaded cover letter can be retrieved
-      and cited for a direct question but cannot improve a fit mapping or score.
+- [ ] **14.7** Calibrate the 13C.5 similarity floor per embedding provider from this
+      dataset and publish the ablation: mapping accuracy with the vector signal off,
+      and on at the calibrated floor.
+- [ ] **14.8** Regression proving an uploaded cover letter can be retrieved, cited and
+      used for drafting, and cannot improve a fit mapping or score.
 
-**Exit gate:** numbers recorded from an observed run, not estimated.
+**Exit gate:** numbers recorded from an observed run, not estimated, including at
+least one row where the deterministic path is visibly worse than the model path. That
+comparison is the point of the page.
 
 ## Phase 15 — Observability and security pass
 
@@ -734,20 +853,19 @@ application code. Do not add `httpx2`, widen the FastAPI pin, or add
 `filterwarnings` to obtain green output. Revisit on a compatible FastAPI /
 Starlette upgrade that still fits Python 3.14 and the existing constraints.
 
-- [ ] **15.1** Structured operation events: document ingested, job stage completed,
-      requirements extracted, mapping computed, question answered, draft generated,
-      draft rejected by the validator. Counts and durations only.
-- [ ] **15.2** Redaction test: no document, question, answer, prompt, embedding, draft
-      body or credential content appears in any log line.
-- [ ] **15.3** `make security`: Bandit, pip-audit, `bun audit`, Gitleaks, Trivy.
-- [ ] **15.4** Retention: configurable window and a documented deletion path,
+Operation events and the redaction test were delivered by Phase 13B (13B.3, 13B.5,
+13B.6); they are not repeated here.
+
+- [ ] **15.1** `make security`: Bandit, pip-audit, `bun audit`, Gitleaks, Trivy.
+- [ ] **15.2** Retention: configurable window and a documented deletion path,
       including original CV/job-description/cover-letter bytes, parsed text,
       embeddings, questions, answers, citations and generated drafts. Expiry is a
       hard delete and its database transaction is integration tested.
-- [ ] **15.5** Rate limiting on upload, analysis and generation routes.
-- [ ] **15.6** Update `docs/threat-model.md` with residual risks.
+- [ ] **15.3** Rate limiting on upload, analysis and generation routes.
+- [ ] **15.4** Update `docs/threat-model.md` with residual risks.
 
-**Exit gate:** `make verify` passes; the redaction test is real, not aspirational.
+**Exit gate:** `make verify` passes; the 13B.6 redaction test still holds after the
+13C extraction changes.
 
 ## Phase 16 — Containers and walkthrough
 
@@ -818,7 +936,10 @@ engineering ones:
 - Employer-side screening. Would need a bias and fairness evaluation.
 - Scanned-image CVs and OCR.
 - Automatic job-board ingestion, auto-apply, email integration.
-- Hybrid lexical and vector retrieval, and reranking.
 - A distributed job queue. The in-process worker is a stated limit.
 - Bring-your-own-key in the browser.
+- A model-emitted fit score. The model extracts and adjudicates; the score is
+  arithmetic in domain code, or the product has nothing to explain.
+- Deterministic extraction as a product default. It is kept as a test fixture only —
+  see the model-first extraction ADR written in 13C.10.
 - Kubernetes, service mesh, observability vendors.

@@ -21,9 +21,12 @@ the second deployment.
 
 ## Decision
 
-The completion and embedding ports each have several adapters: a hermetic default that
-needs no network or keys, a local Ollama adapter, an OpenAI adapter, and an Anthropic
-adapter. The active provider is a runtime setting, not a rebuild.
+The completion and embedding ports each have several adapters: a hermetic
+**test fixture** that needs no network or keys, a local Ollama adapter that is
+the product default, an OpenAI adapter, and an Anthropic adapter. The active
+provider is a runtime setting, not a rebuild. Hermetic exists so `make test`
+runs offline; it is not offered as a deployment default. See
+[ADR 010](010-model-first-extraction.md).
 
 Hosted adapters are reachable only through an enforced egress gate. A hosted adapter is
 constructible only when `ALLOW_HOSTED_PROVIDERS` is true **and** that provider's key is
@@ -41,8 +44,9 @@ contract is fixed or removed — never special-cased in the application.
 
 - The abstraction is the deliverable. Swapping vendors is a setting, and the evidence
   it works is that the same contract suite passes on all of them.
-- Default runs stay hermetic: a reviewer clones, runs and tests with no key and no
-  model download.
+- Default *tests* stay hermetic: a reviewer clones and runs `make test` with no
+  key and no model download. The running product defaults to a local Ollama
+  model; hermetic is not a deployment option.
 - Quality, latency and cost become measurable rather than assumed. The same evaluation
   dataset runs on each provider and the comparison is published, including the cases
   where the local model holds up.

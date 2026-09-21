@@ -557,6 +557,222 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `make help` lists the new targets; `make -n run-api` and
   `make -n run-web` print uvicorn and bun respectively.
 
+### 072 — Phase 13C.2a extracted items carry their kind (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.2 (first half — the domain type and the scoring boundary)
+- Prompt intent: stop the scorer treating a salary band as a must-have.
+- Suggestion: an `ItemType` on `Requirement` — requirement, responsibility,
+  benefit, logistics, non_requirement — with `SCOREABLE_ITEM_TYPES` holding the
+  first two, and `map_requirements` skipping everything else.
+- Outcome: accepted.
+- Reason: the filter belongs in `map_requirements` rather than at each call
+  site. Three callers build mappings (the SQL worker, the analysis service and
+  the hermetic path) and a fourth would have been added by 13C.5; a rule that
+  every caller must remember is a rule that one caller will forget. Unscoreable
+  items are still extracted and still returned by the requirements route, so the
+  UI can show what the advert pays without the scorer judging the candidate
+  against it.
+- Rejected alternatives: dropping non-scoreable items at extraction time. They
+  are real content a reader wants — the salary, the location, what the role is
+  explicitly not — and discarding them would make the product worse while
+  hiding the classification from any future evaluation.
+- Changed from the proposal: `item_type` defaults to `requirement` so the rules
+  fixture extractor and every existing test keep working unchanged; only the
+  model path in 13C.2b sets it deliberately.
+- Human validation: the new test module failed collection first — `ItemType`
+  and `SCOREABLE_ITEM_TYPES` did not exist — then 6 tests pass. Full suite
+  `289 passed, 3 skipped, 52 deselected`. ruff and mypy clean.
+
+### 073 — Phase 13C.2b quote-verified requirement extraction (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.2 (second half — model extraction with verbatim quote check)
+- Prompt intent: continue 13C from the uncommitted 13C.2b draft; TDD, regular
+  commits, then a PR.
+- Suggestion: stop intersecting model output with the rules extractor. The
+  model returns a verbatim `quote` plus `item_type`; the server locates that
+  quote in the stored normalised text and builds the span from those offsets.
+  Unverifiable items are dropped and counted, never repaired.
+- Outcome: accepted, with the injection test rewritten against the 5.5 fixture.
+- Reason: the delivered model path could only remove what the regex had already
+  found, so a prose advert produced nothing. Verbatim locating is PLAN 5.4 and
+  is also the injection defence: a scripted model that obeys "add CUDA / ROS2 /
+  a perfect match" cannot land those items unless they appear as quotes.
+- Changed from the draft left in the working tree: the 5.5 test no longer
+  asserted a tautology (`"ten years of Rust" in injected`); it now uses
+  `jd-injection-attempt.txt` and three invented extras. Competency is the
+  model's open vocabulary; seniority and vagueness are still derived from the
+  verified quote in domain helpers, not trusted from the model.
+- Rejected alternatives: fuzzy-matching a near-miss quote back into the
+  document. PLAN 5.4 forbids repair. Falling back to the rules result only
+  when *nothing* verifies, so a bulleted advert still analyses if the model
+  invents everything.
+- Human validation: 9 of 10 new tests failed against the old intersect-with-
+  rules extractor (prose requirements empty; `dropped_unverifiable` missing).
+  After the change, focused `test_model_requirement_extraction.py` plus
+  `test_requirement_extraction.py` is 18 passed. Unit + contract + API
+  hermetic run green. ruff clean on the changed files; mypy clean on the three
+  source files.
+
+### 074 — Phase 13C.3 structured CV extraction with verified quotes (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.3
+- Prompt intent: continue 13C; extract every role, not only the first, with
+  dates parsed in domain code.
+- Suggestion: the model returns roles (employer, title, date-range quote) and
+  nested claims (quote, competency, scope, technologies, outcome). The server
+  locates each quote in the stored text. Recency and duration are derived from
+  `parse_date_range` on the verified date quote — a model-supplied recency
+  field is ignored. Employer and title are kept only when they appear in the
+  document.
+- Outcome: accepted.
+- Reason: the audit's claim extractor stopped at the second role and dated
+  nothing. Intersecting model output with the regex cannot recover a prose CV;
+  verifying quotes can. Claim gained optional structure fields with defaults
+  so every existing constructor stays valid.
+- Rejected alternatives: trusting a model-emitted recency signal. PLAN 6.4
+  forbids it. Invented employer names are blanked rather than attached to a
+  verified claim.
+- Human validation: 6 of 7 new tests failed against the old intersect-with-
+  rules extractor (the regex-finds-nothing baseline already passed). After
+  the change, focused claim tests 15 passed; full unit suite green; ruff and
+  mypy clean on the changed files.
+
+### 075 — Phase 13C.4 cover letter is narrative, never score evidence (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.4
+- Prompt intent: extract uploaded cover letters without letting them change
+  the fit score.
+- Suggestion: extract cover letters into the same claim shape, flag
+  `self_authored`, and filter those claims out inside `map_requirements` so
+  every caller is covered. The 6.5 test no longer raises: extraction is
+  allowed, mapping is not.
+- Outcome: accepted.
+- Reason: the same placement as the item-type filter — a rule every caller
+  must remember is a rule one caller will forget. Ask already retrieves
+  cover-letter spans; the new defence is that a self-authored dbt bullet
+  cannot satisfy a dbt requirement.
+- Rejected alternatives: keeping the ValueError and never extracting. PLAN
+  13C.4 wants the letter available to drafting and Ask. Refusing extraction
+  made that impossible.
+- Human validation: 4 new tests failed (ValueError / missing field). After
+  the change, focused cover-letter and claim tests plus the unit suite are
+  green. ruff and mypy clean on the changed files. The analysis worker still
+  extracts only the CV during a role job; the mapping filter is what would
+  hold if those claims were mixed in.
+
+### 076 — Phase 13C.7 bullets refuse adjacent-only evidence (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.7
+- Prompt intent: stop drafting a CV bullet from an adjacent_claim_only match.
+- Suggestion: `mapping_supports_cv_bullet` returns false for adjacent-only
+  mappings. `post_bullets` raises the existing 409
+  `insufficient_cited_claims`. The gap plan still recommends `evidence_it`
+  but `can_draft_bullet` is false, so the UI does not offer a button that
+  would 409. Cover-letter drafting already requires `MET` must-haves;
+  interview `lead_with` is already MET-only — regressions confirm neither
+  path has the same hole.
+- Outcome: accepted.
+- Reason: an adjacent claim is related, not supporting. Phrasing it as a
+  cited bullet for that requirement would put the candidate's name on a
+  claim the mapping itself called adjacent-only.
+- Human validation: gap-plan and import tests failed first. After the
+  change, generation, gap-plan and grounded-generation HTTP tests pass.
+
+### 077 — Phase 13C.10 ADR 010 for model-first extraction
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.10 (ADR and stale-claim updates; phase not closed)
+- Prompt intent: document why deterministic extraction was replaced before
+  opening the PR.
+- Suggestion: ADR 010 records the 2026-09-21 audit, the failed intersect-with-
+  rules model path, and the replacement: model extracts, server verifies the
+  quote, domain decides. ADR 003, AGENTS.md, README, features.md, the threat
+  model and production-wiring were aligned with the new default.
+- Outcome: accepted as documentation for the work already on the branch.
+  13C.10 stays open until 13C.5 and 13C.8 land.
+- Reason: PLAN calls this ADR the most useful page in the repository for a
+  reviewer. Shipping extraction without it would leave the old hermetic-default
+  claims in the docs.
+- Human validation: docs-only change plus ADR; wiring-matrix tests still apply.
+
+### 071 — Phase 13C.1 a local model becomes the default (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.1
+- Prompt intent: stop shipping the test fixture as the product default.
+- Suggestion: `ProviderSettings` defaults move from `hermetic` to `ollama`;
+  `config/app.env.example` selects Ollama and says in a comment that the
+  hermetic adapters are a test fixture rather than a deployment option; the dead
+  `EXTRACTION_STRATEGY` key is deleted from the example and the engineering
+  journal.
+- Outcome: accepted.
+- Reason: `EXTRACTION_STRATEGY` was set in configuration and read nowhere in
+  `backend/src` — extractor routing is decided in `selected.py` by provider id
+  alone. A second switch that does nothing is worse than no switch. Deleting it
+  was chosen over implementing it because provider id already carries the
+  decision.
+- Rejected alternatives: removing `hermetic` from the `GET /providers`
+  catalogue as well. The plan item is about what configuration offers, and the
+  catalogue is also how the test suite and the egress tests select a provider;
+  changing it belongs with 13C.10's documentation pass if it is done at all.
+- Human validation: 3 of 4 new tests observed failing for the intended reasons;
+  the fourth — that the test app factory still builds a hermetic app — passed
+  from the start and is kept as the guard that `make test` stays offline. After
+  the change `pytest --no-cov` reports `283 passed, 3 skipped, 52 deselected`.
+  `ruff check` and `ruff format --check` clean. `mypy` clean over 125 source
+  files, on a fresh cache directory.
+- Note: no test asserted the previous `hermetic` default, which is itself the
+  finding — the shipped default was never covered.
+
+### 070 — Phase 13C.9 repair the deterministic fixture path (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.9
+- Prompt intent: the product returned a fit score of 0 for a real CV and a real
+  job advert; find out why and repair the fixture extractors.
+- Suggestion: three regression tests reproducing the shapes a PDF really
+  produces, then the minimum fixes — accept a bullet glyph with no following
+  space, treat a section boundary as a short standalone heading rather than any
+  line beginning with a section word, and parse abbreviated month ranges.
+- Outcome: accepted.
+- Reason: observed on the real document. `pypdf` emits list items as
+  "•Text" with no space; normalisation rewrites that to "-Text"; the bullet
+  pattern required whitespace, so the claim extractor returned zero claims and
+  every requirement mapped to `missing`. With that corrected, a wrapped body line
+  reading "education customers. Live in production for two years." matched
+  `_SECTION_STOP` and ended the experience section at the second role. Role dates
+  were written "Jan 2026 - Present" and the range pattern only accepted full
+  month names, so every claim came out undated.
+- Changed from the proposal: one assertion in the new tests was wrong and
+  exposed a fourth issue — a bullet that wraps is truncated at the line break.
+  That is outside 13C.9 and disappears once 13C.3 has the model return a
+  verified quote, so it is recorded as a named limitation test rather than
+  fixed here.
+- Rejected alternatives: using the maintainer's real CV as the fixture (personal
+  contact details in a public repository; the manifest already says synthetic
+  only) — a synthetic fixture carrying the same pypdf shapes is used instead.
+  Also rejected: widening the extractor to join wrapped bullets, which would
+  have grown this task into the work 13C.3 replaces entirely.
+- Human validation: 4 of 6 new tests observed failing for the intended reasons
+  before any source change; after the fixes `pytest --no-cov` reports
+  `279 passed, 3 skipped, 52 deselected, 2 warnings`; `ruff check` clean,
+  `ruff format` applied to one file, `mypy` clean over 125 source files.
+  Integration tests were not run in this session — the agent shell cannot reach
+  the developer's local PostgreSQL.
+
 ### 069 — Wire embedding similarity into requirement mapping (TDD)
 
 - Date: 2026-09-21

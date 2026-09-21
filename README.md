@@ -6,10 +6,11 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** Phase 13A audit remediation is complete: production HTTP uses
-> PostgreSQL for documents, chat, provider choice, queued analysis and drafts, and
-> generated prose goes through `generate_draft`. Evaluation (Phase 14) is next.
-> This is a **personal tool for local use**, not a multi-user hosted product.
+> **Status:** Phase 13C is in progress: a running instance defaults to a local
+> Ollama model; the model extracts with server-verified quotes; hermetic stays
+> the offline test fixture. Evaluation (Phase 14) waits on the rest of 13C
+> (three-signal matching and output depth). This is a **personal tool for local
+> use**, not a multi-user hosted product.
 > The live route-to-adapter map is [docs/production-wiring.md](docs/production-wiring.md).
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
 > protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
@@ -22,10 +23,14 @@ flatters the user.
 
 This build inverts it. The model does **extraction and phrasing**, never judgement:
 
-1. **Extract requirements** from the job description into a structured set — skill or
-   competency, seniority expected, must-have vs desirable, source span.
-2. **Extract evidence** from the CV into structured claims — skill, context, duration,
-   recency, source span.
+1. **Extract requirements** from the job description into a structured set — a
+   verbatim quote, an item type (requirement, responsibility, benefit, logistics,
+   non-requirement), competency, must-have vs desirable, source span. Only
+   requirements and responsibilities are scored.
+2. **Extract evidence** from the CV into structured claims — role, competency,
+   verbatim quote, duration and recency derived in domain code from parsed dates,
+   source span. Cover letters extract into the same shape flagged self-authored
+   and never enter the mapping.
 3. **Map** each requirement to `met` / `partial` / `missing` with the CV spans that
    justify it, or none.
 4. **Score deterministically** from the mapping. The fit score is arithmetic over the

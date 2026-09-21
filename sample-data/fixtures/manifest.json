@@ -4,7 +4,8 @@
   "cvs": [
     "cv-strong-match.txt",
     "cv-adjacent-skills.txt",
-    "cv-dated-experience.txt"
+    "cv-dated-experience.txt",
+    "cv-pdf-extracted.txt"
   ],
   "jobs": [
     "jd-clean-match.txt",

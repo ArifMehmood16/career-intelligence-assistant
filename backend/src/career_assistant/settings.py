@@ -78,8 +78,10 @@ class ProviderSettings(BaseSettings):
         extra="ignore",
     )
 
-    completion_provider: str = "hermetic"
-    embedding_provider: str = "hermetic"
+    # A local model is the default. The hermetic adapters are a test fixture:
+    # the suite selects them explicitly so it runs with no key and no download.
+    completion_provider: str = "ollama"
+    embedding_provider: str = "ollama"
     allow_hosted_providers: bool = False
 
     ollama_base_url: str = "http://localhost:11434"

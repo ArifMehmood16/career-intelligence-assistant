@@ -7,25 +7,34 @@ from dataclasses import dataclass
 from datetime import date
 
 _MONTHS = {
-    "january": 1,
-    "february": 2,
-    "march": 3,
-    "april": 4,
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
     "may": 5,
-    "june": 6,
-    "july": 7,
-    "august": 8,
-    "september": 9,
-    "october": 10,
-    "november": 11,
-    "december": 12,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
 }
 
+# CV exports abbreviate as often as they spell months out.
+_MONTH = (
+    r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|"
+    r"Aug(?:ust)?|Sep(?:t)?(?:ember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+)
+
+
+def _month_number(name: str) -> int:
+    return _MONTHS[name.lower()[:3]]
+
+
 _RANGE = re.compile(
-    r"(?P<sm>January|February|March|April|May|June|July|August|September|"
-    r"October|November|December)\s+(?P<sy>\d{4})\s*[–\-]\s*"
-    r"(?:(?P<present>Present)|(?P<em>January|February|March|April|May|June|"
-    r"July|August|September|October|November|December)\s+(?P<ey>\d{4}))",
+    rf"(?P<sm>{_MONTH})\.?\s+(?P<sy>\d{{4}})\s*[\u2013\u2014\-]\s*"
+    rf"(?:(?P<present>Present|Current)|(?P<em>{_MONTH})\.?\s+(?P<ey>\d{{4}}))",
     re.IGNORECASE,
 )
 
@@ -40,10 +49,10 @@ def parse_date_range(text: str) -> DateRange | None:
     match = _RANGE.search(text)
     if match is None:
         return None
-    start = date(int(match.group("sy")), _MONTHS[match.group("sm").lower()], 1)
+    start = date(int(match.group("sy")), _month_number(match.group("sm")), 1)
     if match.group("present"):
         return DateRange(start=start, end=None)
-    end = date(int(match.group("ey")), _MONTHS[match.group("em").lower()], 1)
+    end = date(int(match.group("ey")), _month_number(match.group("em")), 1)
     return DateRange(start=start, end=end)
 
 

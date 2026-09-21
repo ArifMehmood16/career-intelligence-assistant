@@ -72,6 +72,7 @@ from career_assistant.domain.generation import (
     draft_cover_letter,
     draft_cv_bullet_template,
     export_markdown,
+    mapping_supports_cv_bullet,
 )
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.mapping import MappingStatus
@@ -551,6 +552,12 @@ def post_bullets(
             "validation_failed",
             "Unknown requirement for this role.",
             status_code=422,
+        )
+    if not mapping_supports_cv_bullet(mapping):
+        raise AppError(
+            "insufficient_cited_claims",
+            "No cited claim supports a bullet for this requirement.",
+            status_code=409,
         )
     bullets = []
     completion = completion_port_for(request, workspace_id)

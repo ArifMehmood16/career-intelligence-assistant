@@ -14,6 +14,12 @@ class Claim:
     recency_signal: str
     source_span_ids: tuple[str, ...]
     extraction_confidence: float
+    employer: str = ""
+    title: str = ""
+    scope: str = ""
+    technologies: tuple[str, ...] = ()
+    outcome: str = ""
+    self_authored: bool = False
 
     def __post_init__(self) -> None:
         if not self.context.strip():

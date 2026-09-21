@@ -81,6 +81,7 @@ def test_gap_plan_action_evidence_it_when_adjacent_claim_exists() -> None:
     assert len(plan.items) == 1
     assert plan.items[0].action is GapAction.EVIDENCE_IT
     assert plan.items[0].adjacent_claim_ids == ("c1",)
+    assert plan.items[0].can_draft_bullet is False
 
 
 def test_gap_plan_excludes_met_requirements() -> None:

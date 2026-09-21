@@ -28,9 +28,11 @@ frameworks or services.
 - If a change would let model output reach the user without passing the span check,
   stop and raise it. That is an architectural change, not an implementation detail.
 
-- A provider is chosen, never assumed. The hermetic adapters are the default, the local
-  and hosted adapters are equals behind the same port, and every one of them passes the
-  same contract suite. Any behaviour that only works on one vendor is a bug in the port.
+- A provider is chosen, never assumed. The product default is a local Ollama
+  model. The hermetic adapters are the test fixture `make test` selects, the local
+  and hosted adapters are equals behind the same port, and every one of them passes
+  the same contract suite. Any behaviour that only works on one vendor is a bug in
+  the port.
 
 ## Product scope
 
@@ -101,7 +103,7 @@ removed.
 - HTTP routes translate requests and responses and invoke use cases. No business
   logic in routes.
 - Interfaces and protocols only at external or meaningfully variable boundaries.
-- Provider implementations live in `adapters/` — the hermetic default, Ollama, OpenAI
+- Provider implementations live in `adapters/` — the hermetic test fixture, Ollama, OpenAI
   and Anthropic sit side by side behind the same port, with no vendor type escaping it.
   Adding a fifth must require no change outside `adapters/` and the configuration.
 - Configuration is injected. Domain code does not read environment variables.

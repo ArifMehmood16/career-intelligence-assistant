@@ -12,8 +12,9 @@ Provider resolvers:
 - `none` — no model call
 - `completion_port_for` — workspace `answerProviderId` / `answerModel` through the
   Phase 2 completion factory, egress-checked at construction and call time
-- `extractors_for_choice` — same workspace answer choice; hermetic stays on rules
-  extractors, any other choice wraps the completion port
+- `extractors_for_choice` — hermetic stays on rules extractors so `make test`
+  is offline; any other workspace answer choice uses the quote-verified model
+  extractors. Cover letters extract as self-authored claims and are not mapped.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve

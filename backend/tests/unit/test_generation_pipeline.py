@@ -233,3 +233,77 @@ def test_cover_letter_builds_when_two_must_haves_met() -> None:
     assert "dbt" in outcome.body.lower()
     assert "sql" in outcome.body.lower()
     assert set(outcome.cited_span_ids) >= {"cv-c1", "cv-c2"}
+
+
+def test_adjacent_claim_does_not_support_a_cv_bullet() -> None:
+    from career_assistant.domain.generation import mapping_supports_cv_bullet
+
+    adjacent = RequirementMapping(
+        requirement_id="airflow",
+        status=MappingStatus.PARTIAL,
+        reason_code=MappingReason.ADJACENT_CLAIM_ONLY,
+        justifying_span_ids=("cv-c1",),
+        justifying_claim_ids=("c1",),
+    )
+    matched = RequirementMapping(
+        requirement_id="dbt",
+        status=MappingStatus.MET,
+        reason_code=MappingReason.MATCHED,
+        justifying_span_ids=("cv-c2",),
+        justifying_claim_ids=("c2",),
+    )
+    assert mapping_supports_cv_bullet(adjacent) is False
+    assert mapping_supports_cv_bullet(matched) is True
+
+
+def test_cover_letter_does_not_treat_adjacent_as_met() -> None:
+    requirements = (
+        _req("dbt", "dbt"),
+        _req("airflow", "Airflow"),
+    )
+    mappings = (
+        RequirementMapping(
+            requirement_id="dbt",
+            status=MappingStatus.MET,
+            reason_code=MappingReason.MATCHED,
+            justifying_span_ids=("cv-c1",),
+            justifying_claim_ids=("c1",),
+        ),
+        RequirementMapping(
+            requirement_id="airflow",
+            status=MappingStatus.PARTIAL,
+            reason_code=MappingReason.ADJACENT_CLAIM_ONLY,
+            justifying_span_ids=("cv-c2",),
+            justifying_claim_ids=("c2",),
+        ),
+    )
+    claims = (
+        _claim("c1", "dbt", "Owned dbt models in production."),
+        _claim("c2", "python", "Worked near Airflow DAGs."),
+    )
+    outcome = draft_cover_letter(
+        role_title="Analytics Engineer",
+        company="Acme",
+        requirements=requirements,
+        mappings=mappings,
+        claims=claims,
+    )
+    assert isinstance(outcome, CoverLetterRefusal)
+
+
+def test_interview_pack_does_not_lead_with_adjacent_evidence() -> None:
+    from career_assistant.domain.generation import build_interview_pack
+
+    requirements = (_req("airflow", "Airflow"),)
+    mappings = (
+        RequirementMapping(
+            requirement_id="airflow",
+            status=MappingStatus.PARTIAL,
+            reason_code=MappingReason.ADJACENT_CLAIM_ONLY,
+            justifying_span_ids=("cv-c1",),
+            justifying_claim_ids=("c1",),
+        ),
+    )
+    pack = build_interview_pack(requirements, mappings, ())
+    assert pack.lead_with == ()
+    assert pack.thin_areas

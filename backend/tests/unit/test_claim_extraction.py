@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-import pytest
-
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.application.extraction.validate import (
     validate_claims_against_pages,
@@ -164,14 +162,15 @@ def test_invalid_claim_span_is_dropped() -> None:
     assert kept[0].id == "c1"
 
 
-def test_cover_letter_cannot_contribute_claims() -> None:
+def test_cover_letter_claims_are_self_authored_not_score_evidence() -> None:
     extractor = RulesClaimExtractor(as_of=AS_OF)
-    with pytest.raises(ValueError, match="cover_letter"):
-        extractor.extract(
-            document_id="doc-cl",
-            document_kind=DocumentKind.COVER_LETTER,
-            normalised_text="- I have production dbt experience.",
-        )
+    result = extractor.extract(
+        document_id="doc-cl",
+        document_kind=DocumentKind.COVER_LETTER,
+        normalised_text="- I have production dbt experience.",
+    )
+    assert result.claims
+    assert all(c.self_authored for c in result.claims)
 
 
 def test_model_backed_claim_extractor_keeps_span_backed_texts() -> None:
