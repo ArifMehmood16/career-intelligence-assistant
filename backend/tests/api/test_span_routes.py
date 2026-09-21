@@ -69,3 +69,35 @@ def test_get_span_returns_evidence_for_uploaded_cover_letter() -> None:
     assert body["documentId"] == created.json()["id"]
     assert "kubernetes" in body["highlight"].lower()
     assert body["highlight"] in body["paragraph"]
+
+
+def test_get_span_returns_evidence_for_role_job_description() -> None:
+    client = TestClient(create_app())
+    uploaded = client.post(
+        "/api/cv",
+        json={"text": "Python engineer with FastAPI.", "filename": "cv.txt"},
+    )
+    assert uploaded.status_code == 201
+    created = client.post(
+        "/api/roles",
+        json={
+            "title": "Backend",
+            "company": "Acme",
+            "description": "Requirements\n- Must have FastAPI experience in production.\n",
+        },
+    )
+    assert created.status_code == 202
+    role_id = created.json()["role"]["id"]
+    workspace_id = client.cookies["workspace"]
+    bundle = client.app.state.role_store.analyses[workspace_id][role_id]
+    assert bundle.jd_spans
+    span_id = bundle.jd_spans[0].id
+
+    response = client.get(f"/api/spans/{span_id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["spanId"] == span_id
+    assert body["documentId"] == bundle.jd_document_id
+    assert body["highlight"] in body["paragraph"]
+    assert "fastapi" in body["highlight"].lower() or "fastapi" in body["paragraph"].lower()
