@@ -70,9 +70,7 @@ def test_production_wiring_matrix_covers_every_live_api_route() -> None:
     assert "| Route | Use case | Provider resolver | SQL adapter |" in text
     documented = {row[0] for row in _matrix_rows(text) if row}
     missing = [route for route in _live_api_routes() if route not in documented]
-    assert missing == [], (
-        "production-wiring.md missing routes: " + ", ".join(missing)
-    )
+    assert missing == [], "production-wiring.md missing routes: " + ", ".join(missing)
     extras = sorted(
         route
         for route in documented
