@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.9 — Documentation reconciled with observed production wiring
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/unit/test_production_wiring_matrix.py -q --no-cov` — red first (stale README; missing `docs/production-wiring.md`); OpenAPI collection replaced nested-router walk; then green
+  - `make test` — 255 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 113 passed / 33 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff needed a format pass on the new test; then ruff, mypy 121 files, frontend tsc and eslint green
+- Observed result: README no longer describes Phase 10 or fixture-only UI. Every live `/api` route is named in `docs/production-wiring.md` with use case, provider resolver and SQL adapter. Threat model records `create_app()` in-memory stores as test-only. ADR 007 states HTTP drafts go through `generate_draft`. A new route without a matrix row fails the hermetic suite.
+- Decisions made: collect routes from OpenAPI because `app.routes` keeps included routers as mounts. Relative `production-wiring.md` links from `docs/` are enough; README uses the `docs/` path.
+- Problems hit: first route collector saw zero `/api` paths and would have let an empty matrix pass.
+- Carried forward: Phase 14 evaluation. Do not start it from this checkpoint.
+
 ## Phase 13A.8 — Frontend asynchronous and failure-state gaps
 
 - Date: 2026-09-21

@@ -625,7 +625,7 @@ real application.
       when the role is ready and the tab is active. Surface generated/supporting
       letter, role-list/compare, clipboard and export failures with retryable UI
       states; do not show a successful empty state while its query failed.
-- [ ] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
+- [x] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
       stale README status, API contract, architecture/provenance documentation,
       threat model and engineering journal after the fixes are proven. Add a
       production-wiring matrix that names each route's application use case, provider

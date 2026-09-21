@@ -6,10 +6,11 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** phase 10 generation complete (validator, gap plan, bullets, interview
-> pack, cover letter, export). Artefact rows in PostgreSQL (10.9) and HTTP routes
-> are next with Phase 11.
+> **Status:** Phase 13A audit remediation is complete: production HTTP uses
+> PostgreSQL for documents, chat, provider choice, queued analysis and drafts, and
+> generated prose goes through `generate_draft`. Evaluation (Phase 14) is next.
 > This is a **personal tool for local use**, not a multi-user hosted product.
+> The live route-to-adapter map is [docs/production-wiring.md](docs/production-wiring.md).
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
 > protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 
@@ -99,6 +100,12 @@ flowchart LR
 
 The browser talks to one origin. The Start server proxies `/api/**` to FastAPI, so
 there is no API URL in browser code and no CORS configuration in this repository.
+
+Production `create_production_app()` wires SQL stores and the in-process analysis
+worker. Hermetic `create_app()` keeps in-memory stores for default tests. Every
+answer and generated draft records provider, model, `leftMachine`, groundedness and
+fallback; see [ADR 007](docs/adr/007-grounded-generation.md) and
+[docs/production-wiring.md](docs/production-wiring.md).
 
 ### Request flow
 
@@ -254,7 +261,8 @@ Application tables live in the dedicated Postgres schema `career_assistant` (not
 instead starts the Compose `db` container; the API reaches it privately as
 `db:5432`, while development Compose may expose host port 5433 to avoid colliding
 with the local instance. Both paths use the same Alembic migrations and PostgreSQL
-repositories. SQLite and filesystem-backed uploads are not fallbacks.
+repositories. SQLite and filesystem-backed uploads are not fallbacks. Which store
+each route uses is listed in [docs/production-wiring.md](docs/production-wiring.md).
 
 PostgreSQL stores the bounded original bytes for CVs, job descriptions and supporting
 cover letters alongside parsed text and spans. Uploaded cover letters may be queried
@@ -272,9 +280,10 @@ behind a Compose profile, so it starts only when asked for:
 docker compose --env-file config/app.env --profile ollama up -d
 ```
 
-**What runs today:** Postgres, the API answering `GET /api/health`, and the web app
-serving the Lovable screens against fixture data. Everything in the feature table
-above is [PLAN.md](PLAN.md) work that has not been built yet.
+**What runs today:** Postgres, the FastAPI process (SQL stores + bounded analysis
+worker), and the TanStack Start app proxying `/api/**` to that process. The feature
+table above is implemented on that path. Default tests stay hermetic; hosted
+providers stay behind the egress gate.
 
 ## Documentation
 
@@ -284,6 +293,7 @@ above is [PLAN.md](PLAN.md) work that has not been built yet.
 | [AGENTS.md](AGENTS.md) | Working protocol, architecture rules and boundaries for coding agents. |
 | [docs/features.md](docs/features.md) | Every feature, how it is used, and the rules that keep it honest. |
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract between backend and frontend. |
+| [docs/production-wiring.md](docs/production-wiring.md) | Each route's use case, provider resolver and SQL adapter. |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable design becomes the shipped frontend. |
 | [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. |
 | [docs/frontend-brief.md](docs/frontend-brief.md) | The Lovable prompt sequence that produced the design. |
@@ -301,9 +311,9 @@ Written down rather than papered over:
 - One CV per workspace at a time. Multi-CV comparison is a later candidate.
 - Supporting cover letters may be uploaded and queried, but are excluded from claims,
   mappings and fit scores.
-- Analysis runs on an in-process job queue. It survives a browser refresh, not a
-  process restart. A distributed queue is the production answer and is not pretended
-  here.
+- Analysis runs on an in-process job queue over PostgreSQL. HTTP returns `202` with
+  `analysing`; a process restart recovers queued and stale-running jobs. A distributed
+  queue is not pretended here.
 - Generated drafts are drafts. The product does not edit your CV, and does not send
   anything anywhere.
 - No employer-side use. This is a candidate tool; screening applicants with it would
