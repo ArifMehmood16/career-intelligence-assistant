@@ -10,6 +10,25 @@ export type RolesSortKey = "role" | "fit" | "met" | "partial" | "missing";
 export type SortDirection = "asc" | "desc";
 /** Force a layout for the state gallery; default follows the viewport. */
 export type RolesLayout = "responsive" | "table" | "cards";
+export type QueryLoadStatus = "pending" | "error" | "success";
+
+export function deriveRolesPanelState(input: {
+  cvStatus: QueryLoadStatus;
+  rolesStatus: QueryLoadStatus;
+  hasCv: boolean;
+  roleCount: number;
+}): RolesPanelState {
+  if (input.cvStatus === "pending" || input.rolesStatus === "pending") {
+    return "loading";
+  }
+  if (input.cvStatus === "error" || input.rolesStatus === "error") {
+    return "error";
+  }
+  if (!input.hasCv) {
+    return "inert";
+  }
+  return input.roleCount === 0 ? "empty" : "ready";
+}
 
 export interface RolesPanelProps {
   state: RolesPanelState;

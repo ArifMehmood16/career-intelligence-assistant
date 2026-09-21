@@ -439,6 +439,26 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               versions={generatedLettersQuery.data ?? []}
               refusal={letterRefusal}
               supportingDocuments={supportingLettersQuery.data ?? []}
+              generatedState={
+                generatedLettersQuery.isPending
+                  ? "loading"
+                  : generatedLettersQuery.isError
+                    ? "error"
+                    : "ready"
+              }
+              supportingState={
+                supportingLettersQuery.isPending
+                  ? "loading"
+                  : supportingLettersQuery.isError
+                    ? "error"
+                    : "ready"
+              }
+              onRetryGenerated={() => {
+                void generatedLettersQuery.refetch();
+              }}
+              onRetrySupporting={() => {
+                void supportingLettersQuery.refetch();
+              }}
               onToneChange={setLetterTone}
               onIncludeGapLineChange={setIncludeGapLine}
               onGenerate={() => {

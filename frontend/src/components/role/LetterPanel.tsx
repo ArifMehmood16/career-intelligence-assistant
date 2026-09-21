@@ -5,6 +5,8 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { AsyncState } from "@/components/role/FitBreakdown";
 import type { CoverLetterDraft, SupportingDocument } from "@/types";
 
 export type LetterTone = "plain" | "warm";
@@ -21,6 +23,10 @@ export interface LetterPanelProps {
   versions: CoverLetterDraft[];
   refusal: LetterRefusal | null;
   supportingDocuments: SupportingDocument[];
+  generatedState?: AsyncState;
+  supportingState?: AsyncState;
+  onRetryGenerated?: () => void;
+  onRetrySupporting?: () => void;
   onToneChange: (tone: LetterTone) => void;
   onIncludeGapLineChange: (include: boolean) => void;
   onGenerate: () => void;
@@ -38,6 +44,10 @@ export function LetterPanel({
   versions,
   refusal,
   supportingDocuments,
+  generatedState = "ready",
+  supportingState = "ready",
+  onRetryGenerated,
+  onRetrySupporting,
   onToneChange,
   onIncludeGapLineChange,
   onGenerate,
@@ -174,7 +184,36 @@ export function LetterPanel({
         </section>
       ) : null}
 
-      {versions.length > 0 ? (
+      {generatedState === "loading" ? (
+        <section
+          aria-label="Version history"
+          className="rounded-md border border-border bg-surface p-5"
+        >
+          <div aria-busy="true" className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </section>
+      ) : generatedState === "error" ? (
+        <section
+          aria-label="Version history"
+          className="rounded-md border border-border bg-surface p-5"
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Generated letters could not be loaded.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRetryGenerated}
+            >
+              Retry generated letters
+            </Button>
+          </div>
+        </section>
+      ) : versions.length > 0 ? (
         <section
           aria-label="Version history"
           className="rounded-md border border-border bg-surface p-5"
@@ -207,7 +246,26 @@ export function LetterPanel({
         <p className="mb-3 text-sm text-muted-foreground">
           Shown separately as supporting documents, never as generated versions.
         </p>
-        {supportingDocuments.length === 0 ? (
+        {supportingState === "loading" ? (
+          <div aria-busy="true" className="space-y-2">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        ) : supportingState === "error" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Supporting letters could not be loaded.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRetrySupporting}
+            >
+              Retry supporting letters
+            </Button>
+          </div>
+        ) : supportingDocuments.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No supporting cover letters uploaded on the workspace.
           </p>

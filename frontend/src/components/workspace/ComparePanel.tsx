@@ -14,11 +14,13 @@ export interface ComparePanelProps {
   roleAId: string;
   roleBId: string;
   state: AsyncState;
+  rolesState?: AsyncState;
   comparison: Comparison | null;
   onRoleAChange: (roleId: string) => void;
   onRoleBChange: (roleId: string) => void;
   onCompare: () => void;
   onRetry: () => void;
+  onRetryRoles?: () => void;
   onOpenGaps: (roleId: string) => void;
 }
 
@@ -27,11 +29,13 @@ export function ComparePanel({
   roleAId,
   roleBId,
   state,
+  rolesState = "ready",
   comparison,
   onRoleAChange,
   onRoleBChange,
   onCompare,
   onRetry,
+  onRetryRoles,
   onOpenGaps,
 }: ComparePanelProps) {
   const canCompare =
@@ -51,43 +55,59 @@ export function ComparePanel({
         differentiator.
       </p>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="space-y-1">
-          <Label htmlFor="compare-role-a">Role A</Label>
-          <select
-            id="compare-role-a"
-            value={roleAId}
-            onChange={(event) => onRoleAChange(event.target.value)}
-            className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+      {rolesState === "error" ? (
+        <div className="mb-4 space-y-3">
+          <p className="text-muted-foreground">
+            The role list could not be loaded.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRetryRoles}
           >
-            <option value="">Select a role</option>
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.title} — {role.company}
-              </option>
-            ))}
-          </select>
+            Retry role list
+          </Button>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="compare-role-b">Role B</Label>
-          <select
-            id="compare-role-b"
-            value={roleBId}
-            onChange={(event) => onRoleBChange(event.target.value)}
-            className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-          >
-            <option value="">Select a role</option>
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.title} — {role.company}
-              </option>
-            ))}
-          </select>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="compare-role-a">Role A</Label>
+            <select
+              id="compare-role-a"
+              value={roleAId}
+              onChange={(event) => onRoleAChange(event.target.value)}
+              className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+            >
+              <option value="">Select a role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.title} — {role.company}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="compare-role-b">Role B</Label>
+            <select
+              id="compare-role-b"
+              value={roleBId}
+              onChange={(event) => onRoleBChange(event.target.value)}
+              className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+            >
+              <option value="">Select a role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.title} — {role.company}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Button type="button" onClick={onCompare} disabled={!canCompare}>
+            Compare
+          </Button>
         </div>
-        <Button type="button" onClick={onCompare} disabled={!canCompare}>
-          Compare
-        </Button>
-      </div>
+      )}
 
       {state === "loading" && (
         <div aria-busy="true" className="space-y-3">
@@ -107,7 +127,7 @@ export function ComparePanel({
         </div>
       )}
 
-      {state === "empty" && (
+      {rolesState !== "error" && state === "empty" && (
         <p className="text-muted-foreground">
           Choose two different ready roles and compare them.
         </p>

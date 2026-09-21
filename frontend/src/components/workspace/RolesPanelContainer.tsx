@@ -4,8 +4,8 @@ import { addRole, getCv, getJob, getRoles, reanalyseRole } from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { AddRoleDialog } from "@/components/workspace/AddRoleDialog";
 import {
+  deriveRolesPanelState,
   RolesPanel,
-  type RolesPanelState,
   type RolesSortKey,
   type SortDirection,
 } from "@/components/workspace/RolesPanel";
@@ -143,16 +143,20 @@ export function RolesPanelContainer() {
 
   const hasCv = Boolean(cvQuery.data);
 
-  const state: RolesPanelState =
-    cvQuery.isPending || rolesQuery.isPending
-      ? "loading"
-      : !hasCv
-        ? "inert"
-        : rolesQuery.isError
-          ? "error"
-          : roles.length === 0
-            ? "empty"
-            : "ready";
+  const state = deriveRolesPanelState({
+    cvStatus: cvQuery.isPending
+      ? "pending"
+      : cvQuery.isError
+        ? "error"
+        : "success",
+    rolesStatus: rolesQuery.isPending
+      ? "pending"
+      : rolesQuery.isError
+        ? "error"
+        : "success",
+    hasCv,
+    roleCount: roles.length,
+  });
 
   return (
     <RolesPanel
@@ -170,6 +174,7 @@ export function RolesPanelContainer() {
         }
       }}
       onRetry={() => {
+        void cvQuery.refetch();
         void rolesQuery.refetch();
       }}
       onReanalyse={(roleId) => reanalyse.mutate(roleId)}
