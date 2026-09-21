@@ -189,3 +189,42 @@ def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
     requirements = client.get(f"/api/roles/{role_id}/requirements")
     assert requirements.status_code == 200
     assert requirements.json()
+
+
+def test_bullet_phrasing_calls_the_selected_scripted_provider() -> None:
+    transport = _scripted_openai_extraction()
+    app = create_app(providers=_openai_settings())
+    app.state.http_transport = transport
+    client = TestClient(app)
+    created = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    assert created.status_code == 201
+    chosen = client.put(
+        "/api/settings/providers",
+        json={
+            "answerProviderId": "openai",
+            "answerModel": "gpt-4o-mini",
+            "indexProviderId": "hermetic",
+            "indexModel": "lexical-hash-v1",
+            "acknowledgedEgress": True,
+        },
+    )
+    assert chosen.status_code == 200
+    created_role = client.post(
+        "/api/roles",
+        json={"title": "AE", "company": "Acme", "description": _JD},
+    )
+    assert created_role.status_code == 202
+    role_id = created_role.json()["role"]["id"]
+    requirement_id = client.get(f"/api/roles/{role_id}/requirements").json()[0]["id"]
+    calls_after_analysis = len(transport.calls)
+
+    drafted = client.post(
+        f"/api/roles/{role_id}/bullets",
+        json={"requirementId": requirement_id},
+    )
+    assert drafted.status_code == 200
+    provenance = drafted.json()["provenance"]
+    assert provenance["provider"] == "openai"
+    assert provenance["model"] == "gpt-4o-mini"
+    assert provenance["leftMachine"] is True
+    assert len(transport.calls) > calls_after_analysis
