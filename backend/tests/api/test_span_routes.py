@@ -39,3 +39,33 @@ def test_get_unknown_span_returns_span_not_found() -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "span_not_found"
+
+
+def _cover_letter_span_id(client: TestClient) -> str:
+    workspace_id = client.cookies["workspace"]
+    letters = client.app.state.supporting_store._letters[workspace_id]
+    stored = next(iter(letters.values()))
+    assert stored.spans
+    return stored.spans[0].id
+
+
+def test_get_span_returns_evidence_for_uploaded_cover_letter() -> None:
+    client = TestClient(create_app())
+    created = client.post(
+        "/api/cover-letters",
+        json={
+            "text": "I wrote about Kubernetes operators in my cover letter.",
+            "filename": "letter.txt",
+        },
+    )
+    assert created.status_code == 201
+    span_id = _cover_letter_span_id(client)
+
+    response = client.get(f"/api/spans/{span_id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["spanId"] == span_id
+    assert body["documentId"] == created.json()["id"]
+    assert "kubernetes" in body["highlight"].lower()
+    assert body["highlight"] in body["paragraph"]
