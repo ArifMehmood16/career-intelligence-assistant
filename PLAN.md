@@ -740,7 +740,7 @@ hits.
       `config/app.env` and read nowhere in the code — make it real or delete it and
       every document that mentions it. `make test` still runs offline with no key and
       no model download.
-- [ ] **13C.2 Typed requirement extraction with verified quotes.** The model returns,
+- [x] **13C.2 Typed requirement extraction with verified quotes.** The model returns,
       per item: a verbatim `quote` from the advert, an `item_type` of `requirement`,
       `responsibility`, `benefit`, `logistics` or `non_requirement`, must vs
       desirable, a competency from an open vocabulary, a seniority signal and a

@@ -14,12 +14,15 @@ from career_assistant.domain.requirements import Requirement
 class RequirementExtractionResult:
     requirements: tuple[Requirement, ...]
     spans: tuple[Span, ...]
+    # Items the model returned whose quote does not appear in the stored text.
+    dropped_unverifiable: int = 0
 
 
 @dataclass(frozen=True, slots=True)
 class ClaimExtractionResult:
     claims: tuple[Claim, ...]
     spans: tuple[Span, ...]
+    dropped_unverifiable: int = 0
 
 
 class RequirementExtractionPort(Protocol):

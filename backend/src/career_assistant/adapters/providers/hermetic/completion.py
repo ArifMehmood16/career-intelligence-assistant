@@ -90,7 +90,15 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
     properties = schema.get("properties")
     if isinstance(properties, dict) and "requirements" in properties:
         return {
-            "requirements": [{"text": item, "must_have": True} for item in requirements]
+            "requirements": [
+                {
+                    "quote": item,
+                    "text": item,
+                    "must_have": True,
+                    "item_type": "requirement",
+                }
+                for item in requirements
+            ]
         }
     if isinstance(properties, dict) and "claims" in properties:
         return {"claims": [{"text": item} for item in requirements]}

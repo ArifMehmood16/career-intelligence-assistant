@@ -585,6 +585,38 @@ Never record a command output, metric, date or commit hash that was not observed
   and `SCOREABLE_ITEM_TYPES` did not exist — then 6 tests pass. Full suite
   `289 passed, 3 skipped, 52 deselected`. ruff and mypy clean.
 
+### 073 — Phase 13C.2b quote-verified requirement extraction (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.2 (second half — model extraction with verbatim quote check)
+- Prompt intent: continue 13C from the uncommitted 13C.2b draft; TDD, regular
+  commits, then a PR.
+- Suggestion: stop intersecting model output with the rules extractor. The
+  model returns a verbatim `quote` plus `item_type`; the server locates that
+  quote in the stored normalised text and builds the span from those offsets.
+  Unverifiable items are dropped and counted, never repaired.
+- Outcome: accepted, with the injection test rewritten against the 5.5 fixture.
+- Reason: the delivered model path could only remove what the regex had already
+  found, so a prose advert produced nothing. Verbatim locating is PLAN 5.4 and
+  is also the injection defence: a scripted model that obeys "add CUDA / ROS2 /
+  a perfect match" cannot land those items unless they appear as quotes.
+- Changed from the draft left in the working tree: the 5.5 test no longer
+  asserted a tautology (`"ten years of Rust" in injected`); it now uses
+  `jd-injection-attempt.txt` and three invented extras. Competency is the
+  model's open vocabulary; seniority and vagueness are still derived from the
+  verified quote in domain helpers, not trusted from the model.
+- Rejected alternatives: fuzzy-matching a near-miss quote back into the
+  document. PLAN 5.4 forbids repair. Falling back to the rules result only
+  when *nothing* verifies, so a bulleted advert still analyses if the model
+  invents everything.
+- Human validation: 9 of 10 new tests failed against the old intersect-with-
+  rules extractor (prose requirements empty; `dropped_unverifiable` missing).
+  After the change, focused `test_model_requirement_extraction.py` plus
+  `test_requirement_extraction.py` is 18 passed. Unit + contract + API
+  hermetic run green. ruff clean on the changed files; mypy clean on the three
+  source files.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21
