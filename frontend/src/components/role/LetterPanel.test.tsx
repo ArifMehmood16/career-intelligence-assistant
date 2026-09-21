@@ -167,6 +167,6 @@ describe("LetterPanel", () => {
     expect(onSelectVersion).toHaveBeenCalledWith(draft);
 
     await user.click(screen.getByRole("button", { name: /export markdown/i }));
-    expect(onExport).toHaveBeenCalled();
+    expect(onExport).toHaveBeenCalledWith(v2);
   });
 });

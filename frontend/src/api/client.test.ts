@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   addRole,
+  exportRoleArtefact,
   getCv,
   getProviders,
   getRoles,
@@ -184,5 +185,22 @@ describe("request helper", () => {
       return Response.json(null);
     });
     await request("/api/cv", { schema: null });
+  });
+});
+
+describe("exportRoleArtefact", () => {
+  it("pins markdown export to the selected draft version", async () => {
+    stubFetch((input) => {
+      const url = String(input);
+      expect(url).toBe("/api/roles/role-1/export/cover-letter.md?version=1");
+      return new Response("Version one letter\n", {
+        status: 200,
+        headers: { "Content-Type": "text/markdown; charset=utf-8" },
+      });
+    });
+
+    await expect(
+      exportRoleArtefact("role-1", "cover-letter", { version: 1 }),
+    ).resolves.toBe("Version one letter\n");
   });
 });
