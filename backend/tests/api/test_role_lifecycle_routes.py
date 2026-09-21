@@ -124,3 +124,84 @@ def test_export_cover_letter_and_bullets_markdown() -> None:
         assert letter_md.status_code == 200
         assert letter_md.headers["content-type"].startswith("text/markdown")
         assert len(letter_md.content) > 0
+
+
+def _letter_markdown(payload: dict[str, object]) -> str:
+    paragraphs = payload["paragraphs"]
+    assert isinstance(paragraphs, list)
+    texts = [
+        str(item["text"])
+        for item in paragraphs
+        if isinstance(item, dict) and item.get("text")
+    ]
+    return "\n\n".join(texts) + "\n"
+
+
+def test_export_cover_letter_uses_selected_version() -> None:
+    client, role_id = _ready_client()
+    first = client.post(
+        f"/api/roles/{role_id}/cover-letter",
+        json={"tone": "plain", "includeGapLine": False},
+    )
+    second = client.post(
+        f"/api/roles/{role_id}/cover-letter",
+        json={"tone": "warm", "includeGapLine": False},
+    )
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    v1 = _letter_markdown(first.json())
+    v2 = _letter_markdown(second.json())
+    assert v1 != v2
+    assert first.json()["version"] == 1
+    assert second.json()["version"] == 2
+
+    latest = client.get(f"/api/roles/{role_id}/export/cover-letter.md")
+    pinned = client.get(f"/api/roles/{role_id}/export/cover-letter.md?version=1")
+    current = client.get(f"/api/roles/{role_id}/export/cover-letter.md?version=2")
+    missing = client.get(f"/api/roles/{role_id}/export/cover-letter.md?version=9")
+
+    assert latest.status_code == 200
+    assert pinned.status_code == 200
+    assert current.status_code == 200
+    assert missing.status_code == 422
+    assert latest.text == v2
+    assert pinned.text == v1
+    assert current.text == v2
+
+
+def test_export_bullets_uses_selected_version() -> None:
+    client, role_id = _ready_client()
+    requirements = client.get(f"/api/roles/{role_id}/requirements").json()
+    met = next(row for row in requirements if row["status"] == "met")
+    first = client.post(
+        f"/api/roles/{role_id}/bullets",
+        json={"requirementId": met["id"]},
+    )
+    second = client.post(
+        f"/api/roles/{role_id}/bullets",
+        json={"requirementId": met["id"]},
+    )
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["version"] == 1
+    assert second.json()["version"] == 2
+
+    v1_lines = [
+        str(item["text"])
+        for item in first.json()["bullets"]
+        if isinstance(item, dict) and item.get("text")
+    ]
+    v2_lines = [
+        str(item["text"])
+        for item in second.json()["bullets"]
+        if isinstance(item, dict) and item.get("text")
+    ]
+    expected_v1 = "# CV bullets\n\n" + "\n".join(v1_lines) + "\n"
+    expected_v2 = "# CV bullets\n\n" + "\n".join(v2_lines) + "\n"
+
+    pinned = client.get(f"/api/roles/{role_id}/export/bullets.md?version=1")
+    latest = client.get(f"/api/roles/{role_id}/export/bullets.md")
+    assert pinned.status_code == 200
+    assert latest.status_code == 200
+    assert pinned.text == expected_v1
+    assert latest.text == expected_v2
