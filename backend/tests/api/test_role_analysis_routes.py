@@ -132,3 +132,25 @@ def test_ranking_and_compare() -> None:
     assert body["b"]["id"] == role_b
     assert "shared" in body
     assert "differentiator" in body
+
+
+def test_ranking_assigns_shared_rank_to_equal_scores() -> None:
+    client, role_a = _ready_client()
+    second = client.post(
+        "/api/roles",
+        json={
+            "title": "Data Engineer",
+            "company": "Beta",
+            "description": _JD,
+        },
+    )
+    assert second.status_code == 202
+    role_b = second.json()["role"]["id"]
+
+    ranking = client.get("/api/ranking")
+    assert ranking.status_code == 200
+    by_id = {row["role"]["id"]: row for row in ranking.json()}
+    assert by_id[role_a]["role"]["fitScore"] == by_id[role_b]["role"]["fitScore"]
+    assert by_id[role_a]["rank"] == by_id[role_b]["rank"]
+    assert by_id[role_a]["tied"] is True
+    assert by_id[role_b]["tied"] is True
