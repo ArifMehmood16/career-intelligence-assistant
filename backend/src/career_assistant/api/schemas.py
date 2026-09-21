@@ -89,6 +89,7 @@ class RoleResponse(ApiModel):
     counts: RoleCounts
     status: str
     updated_at: str
+    fit_summary: str | None = None
 
 
 class RoleCreateRequest(ApiModel):

@@ -150,6 +150,7 @@ Role {
   counts: { met: number; partial: number; missing: number };
   status: "analysing" | "ready" | "failed";   // additive
   updatedAt: string;                          // additive
+  fitSummary: string | null;                  // additive; GET /roles/{id} once ready, otherwise null
 }
 
 RoleCreated { role: Role; jobId: string }

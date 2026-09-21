@@ -85,11 +85,15 @@ query is an error with retry, never an empty success.
 
 **Use it:**
 
-1. Open a role. The header shows the score, the band and the counts.
+1. Open a role. The header shows the score, the band and the counts. The Fit
+   tab opens with a prose summary that names the strongest match and the
+   biggest remaining gap, using the stored requirement text — not a model
+   paraphrase.
 2. The requirement table lists every extracted requirement grouped **missing first**,
    then partial, then met. Gaps are what you came for; matches are reassurance.
 3. Each row shows the requirement, whether it is a must-have or desirable, its status,
-   and the CV excerpt that justifies it.
+   and the quoted CV text that justifies it — the highlight or paragraph, not a
+   truncated snippet.
 4. Click a row. The evidence panel opens the CV paragraph the excerpt came from, with
    the matched text highlighted, and the page it sits on.
 5. The breakdown shows the three score components — must-haves, desirables, recency —
@@ -208,11 +212,11 @@ produced it. The product does not pretend to have written your CV.
 1. Open a role and go to Prepare.
 2. Read four sections, generated from the mapping:
    - **What they will probe.** For every must-have, a likely question, chosen by
-     status: met requirements get a depth question, partial ones get a "tell me about"
-     question, missing ones get the direct question you should expect and not be
-     surprised by.
-   - **Evidence to lead with.** For each met must-have, the CV span that best supports
-     it, so you walk in knowing which story goes where.
+     status: met requirements get a depth question that quotes the candidate's
+     own claim, partial ones get a "tell me about" question, missing ones get
+     the direct question you should expect and not be surprised by.
+   - **Evidence to lead with.** For each met must-have, the CV claim that best
+     supports it, quoted, so you walk in knowing which story goes where.
    - **Where you are thin.** Missing must-haves, stated plainly, with the nearest thing
      you do have. No encouragement, no padding.
    - **What to ask them.** Requirements the job description states vaguely — a

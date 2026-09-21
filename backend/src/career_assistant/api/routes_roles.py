@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, Request, status
 
 from career_assistant.api.deps import WorkspaceId
@@ -21,8 +23,13 @@ from career_assistant.application.roles.store import (
     RoleOperationRejected,
     RoleView,
 )
+from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.domain.generation import build_fit_summary
 
 router = APIRouter(tags=["roles"])
+_RUBRIC = load_scoring_rubric(
+    Path(__file__).resolve().parents[4] / "config" / "scoring_rubric.toml"
+)
 
 
 def _cv_store(request: Request) -> CvStore:
@@ -41,7 +48,7 @@ def _role_store(request: Request) -> InMemoryRoleStore:
     return store
 
 
-def _role_response(role: RoleView) -> RoleResponse:
+def _role_response(role: RoleView, *, fit_summary: str | None = None) -> RoleResponse:
     return RoleResponse(
         id=role.id,
         title=role.title,
@@ -51,7 +58,22 @@ def _role_response(role: RoleView) -> RoleResponse:
         counts=RoleCounts(**role.counts),
         status=role.status,
         updated_at=role.updated_at.isoformat().replace("+00:00", "Z"),
+        fit_summary=fit_summary,
     )
+
+
+def _fit_summary_for(
+    store: InMemoryRoleStore, workspace_id: str, role: RoleView
+) -> str | None:
+    if role.status != "ready":
+        return None
+    try:
+        bundle = store.require_analysis(workspace_id, role.id)
+    except RoleOperationRejected:
+        return None
+    return build_fit_summary(
+        bundle.requirements, bundle.mappings, bundle.claims, _RUBRIC
+    ).text
 
 
 def _job_response(job: JobView) -> AnalysisJobResponse:
@@ -104,10 +126,11 @@ def create_role(
 
 @router.get("/roles/{role_id}", response_model=RoleResponse)
 def get_role(role_id: str, request: Request, workspace_id: WorkspaceId) -> RoleResponse:
-    role = _role_store(request).get_role(workspace_id, role_id)
+    store = _role_store(request)
+    role = store.get_role(workspace_id, role_id)
     if role is None:
         raise AppError("role_not_found", "No role with that id.", status_code=404)
-    return _role_response(role)
+    return _role_response(role, fit_summary=_fit_summary_for(store, workspace_id, role))
 
 
 @router.delete(

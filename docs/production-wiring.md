@@ -38,7 +38,7 @@ Provider resolvers:
 | GET /api/spans/{span_id} | lookup_workspace_span + resolve_span | none | SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | GET /api/roles | list_roles | none | SqlRoleStore |
 | POST /api/roles | create_role (commit analysing + queued job, 202) | analysis_ports_for_choice and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
-| GET /api/roles/{role_id} | get_role | none | SqlRoleStore |
+| GET /api/roles/{role_id} | get_role; build_fit_summary when ready | none | SqlRoleStore |
 | DELETE /api/roles/{role_id} | delete_role | none | SqlRoleStore |
 | POST /api/roles/{role_id}/reanalyse | reanalyse (202) | analysis_ports_for_choice and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/jobs/{job_id} | get_job | none | SqlRoleStore |

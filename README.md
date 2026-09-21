@@ -48,7 +48,7 @@ absent it says so rather than filling the gap.
 
 | Feature | What it gives you |
 |---|---|
-| **Fit analysis** | Every requirement as met, partial or missing, each with the CV text that justifies it, and a score broken into must-haves, desirables and recency |
+| **Fit analysis** | A prose summary of the strongest match and biggest gap, every requirement as met, partial or missing with the quoted CV text that justifies it, and a score broken into must-haves, desirables and recency |
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |

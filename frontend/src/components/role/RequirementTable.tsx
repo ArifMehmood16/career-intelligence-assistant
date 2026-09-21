@@ -28,8 +28,7 @@ export interface RequirementTableProps {
 
 function excerpt(requirement: Requirement): string {
   if (!requirement.evidence) return "—";
-  const text = requirement.evidence.highlight || requirement.evidence.paragraph;
-  return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  return requirement.evidence.highlight || requirement.evidence.paragraph;
 }
 
 function TypeBadge({ type }: { type: Requirement["type"] }) {

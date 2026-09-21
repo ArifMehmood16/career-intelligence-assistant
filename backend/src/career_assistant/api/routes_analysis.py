@@ -119,6 +119,7 @@ def _role_response(role: RoleView) -> RoleResponse:
         counts=RoleCounts(**role.counts),
         status=role.status,
         updated_at=role.updated_at.isoformat().replace("+00:00", "Z"),
+        fit_summary=None,
     )
 
 

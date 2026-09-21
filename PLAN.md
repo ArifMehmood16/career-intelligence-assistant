@@ -779,7 +779,7 @@ hits.
       bullet for a requirement it does not support. Refuse it with the existing 409
       `insufficient_cited_claims`. Confirm the cover-letter and interview-pack paths
       do not have the same hole.
-- [ ] **13C.8 Output depth.** Every tab returns something worth reading: a prose fit
+- [x] **13C.8 Output depth.** Every tab returns something worth reading: a prose fit
       summary naming the strongest and weakest requirements, per-requirement evidence
       showing the actual quoted CV text, a gap plan with concrete actions and score
       deltas, tailored bullets, a cover letter that references this role and company,

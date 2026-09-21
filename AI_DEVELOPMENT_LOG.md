@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 080 — Phase 13C.8 output depth (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.8
+- Prompt intent: continue Phase 13C; make every tab return something worth reading.
+- Suggestion: domain `build_fit_summary` from scored mappings; optional
+  `Role.fitSummary` on GET `/roles/{id}` only; interview templates quote
+  `claim.context`; stop truncating requirement evidence at 80 characters.
+- Outcome: accepted.
+- Reason: the gap plan, cover letter and bullets already had depth. The missing
+  pieces were a prose fit reading of the mapping, full quoted CV text on each
+  requirement, and interview prompts that use the candidate's own claims. The
+  summary is arithmetic over stored requirement text, not a model paraphrase.
+  List and create still omit the paragraph so the workspace table stays a table.
+- Rejected alternatives: a new HTTP route (the wiring matrix forbids one for
+  this); putting the summary on every Role list row; letting the model write
+  the paragraph.
+- Human validation: fit-summary unit tests failed on the missing export; after
+  the change, focused backend tests pass. RequirementTable and FitBreakdown
+  component tests pass.
+
 ### 079 — Phase 13C.6 score only scoreable items; flag adjudication (TDD)
 
 - Date: 2026-09-21

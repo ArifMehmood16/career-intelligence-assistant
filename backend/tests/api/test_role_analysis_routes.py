@@ -60,6 +60,23 @@ def test_requirements_and_gap_plan_for_ready_role() -> None:
     assert isinstance(plan["items"], list)
 
 
+def test_ready_role_includes_prose_fit_summary() -> None:
+    client, role_id = _ready_client()
+    listed = client.get("/api/roles").json()
+    assert listed
+    assert listed[0].get("fitSummary") is None
+    role = client.get(f"/api/roles/{role_id}")
+    assert role.status_code == 200
+    summary = role.json()["fitSummary"]
+    assert isinstance(summary, str) and summary
+    lowered = summary.lower()
+    assert "strongest match" in lowered
+    assert "biggest gap" in lowered
+    requirements = client.get(f"/api/roles/{role_id}/requirements").json()
+    texts = [row["text"] for row in requirements]
+    assert any(text in summary for text in texts)
+
+
 def test_interview_pack_and_export() -> None:
     client, role_id = _ready_client()
 
@@ -71,6 +88,8 @@ def test_interview_pack_and_export() -> None:
     assert "provenance" in body
     assert body["provenance"]["provider"] == "hermetic"
     assert body["provenance"]["leftMachine"] is False
+    blob = str(body).lower()
+    assert "owned dbt models in production" in blob
 
     export = client.get(f"/api/roles/{role_id}/export/gap-plan.md")
     assert export.status_code == 200

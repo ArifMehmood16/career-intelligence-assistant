@@ -76,4 +76,31 @@ describe("FitBreakdown states", () => {
     );
     expect(screen.getByText("Must-have match")).toBeInTheDocument();
   });
+
+  it("renders the prose fit summary above the component rows", () => {
+    render(
+      <FitBreakdown
+        state="ready"
+        summary="The strongest match is “Production dbt experience”. The biggest gap is “CUDA kernel authoring”."
+        rows={[
+          {
+            id: "must",
+            label: "Must-have match",
+            value: 0.8,
+            requirementIds: [],
+          },
+        ]}
+        requirementsById={{}}
+        expandedRowIds={[]}
+        onToggleRow={vi.fn()}
+        onRetry={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(/strongest match is “Production dbt experience”/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/biggest gap is “CUDA kernel authoring”/),
+    ).toBeInTheDocument();
+  });
 });

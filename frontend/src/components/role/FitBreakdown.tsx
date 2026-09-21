@@ -12,6 +12,7 @@ export interface FitBreakdownProps {
   expandedRowIds: string[];
   onToggleRow: (id: string) => void;
   onRetry: () => void;
+  summary?: string | null;
 }
 
 export function FitBreakdown({
@@ -21,6 +22,7 @@ export function FitBreakdown({
   expandedRowIds,
   onToggleRow,
   onRetry,
+  summary,
 }: FitBreakdownProps) {
   return (
     <section
@@ -28,6 +30,9 @@ export function FitBreakdown({
       className="rounded-md border border-border bg-surface p-5"
     >
       <h2 className="mb-4 text-sm font-semibold">Breakdown</h2>
+      {state === "ready" && summary ? (
+        <p className="mb-4 text-sm text-foreground">{summary}</p>
+      ) : null}
 
       {state === "loading" && (
         <div aria-busy="true" className="space-y-4">

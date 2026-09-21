@@ -34,6 +34,7 @@ export const roleSchema = z
     counts: roleCountsSchema,
     status: z.enum(["analysing", "ready", "failed"]),
     updatedAt: z.string(),
+    fitSummary: z.string().nullable().optional(),
   })
   .passthrough();
 

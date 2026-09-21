@@ -181,6 +181,7 @@ function mapRole(raw: z.infer<typeof roleSchema>): Role {
     counts: raw.counts,
     status: raw.status,
     updatedAt: raw.updatedAt,
+    fitSummary: raw.fitSummary ?? null,
   };
 }
 
