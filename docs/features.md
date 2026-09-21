@@ -72,7 +72,8 @@ wide without the system getting complicated: there is one hard problem, solved o
   image, too large, unsupported type). It is never half-ingested.
 
 **States the UI must carry:** empty (no CV), parsing, parsed, parse failed, no roles,
-role analysing, role failed, role ready.
+role analysing, role failed, role ready, role not found, role load failed. A failed
+query is an error with retry, never an empty success.
 
 ---
 

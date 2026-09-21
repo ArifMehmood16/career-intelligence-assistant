@@ -619,7 +619,7 @@ real application.
       not the first shared requirement alphabetically. Export the exact cover-letter
       version selected on screen (and define the same rule for bullet versions), with
       byte-for-byte API and component regressions.
-- [ ] **13A.8 Close frontend asynchronous and failure-state gaps.** Role detail must
+- [x] **13A.8 Close frontend asynchronous and failure-state gaps.** Role detail must
       render explicit not-found, failed and analysing states rather than an indefinite
       header skeleton plus failing child queries. Fetch tab-specific resources only
       when the role is ready and the tab is active. Surface generated/supporting

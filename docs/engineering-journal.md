@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.8 — Frontend asynchronous and failure-state gaps
+
+- Date: 2026-09-21
+- Commands run:
+  - `bun run test src/components/role/RoleHeader.test.tsx` — red first (not-found/analysing/failed absent); then green after `RoleHeaderState`
+  - `bun run test src/components/role/role-detail-tabs.test.ts` — red first (`shouldFetchRoleTabResource` missing); then green after ready-and-active `enabled` flags
+  - `bun run test src/components/role/LetterPanel.test.tsx src/components/workspace/ComparePanel.test.tsx src/components/workspace/RolesPanel.test.tsx` — red first (empty success copy on failed queries); then green after retryable list states
+  - `bun run test src/components/role/BulletDraftPanel.test.tsx src/components/role/LetterPanel.test.tsx src/components/role/PreparePanel.test.tsx` — red first (no clipboard/export retry); then green
+  - `make test` — 252 passed, 3 skipped, 48 deselected; coverage 80.62%; frontend Vitest 113 passed / 33 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff, mypy 121 files, frontend tsc green; eslint warning on exporting a helper from `RolesPanel.tsx` moved to `roles-panel-state.ts`
+- Observed result: a missing or failed role no longer keeps a header skeleton. Tabs stay hidden until analysis is ready, and tab queries only run when that tab is active. Failed generated/supporting letters, compare role list, and a failed CV fetch show retry, not empty success. Copy and markdown export failures stay on screen with retry.
+- Decisions made: header `onRetry` reanalyses a failed role and refetches otherwise. Disabled React Query flags are the fetch gate; hiding tabs alone would still fire child queries. Clipboard/export errors are component state, not query cache.
+- Problems hit: analysing header tests collided without `cleanup()`; eslint `react-refresh/only-export-components` after putting `deriveRolesPanelState` on the panel module.
+- Carried forward: 13A.9 documentation reconciliation. Do not start Phase 14.
+
 ## Phase 13A.7 — Ranking, comparison and immutable-version export
 
 - Date: 2026-09-21

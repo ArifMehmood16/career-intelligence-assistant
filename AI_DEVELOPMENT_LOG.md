@@ -538,6 +538,25 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 064 — Phase 13A.8 frontend async and failure states (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.8
+- Prompt intent: continue 13A with regular TDD commits.
+- Suggestion: explicit role-header states; tab-scoped fetches; retryable letter,
+  compare, role-list, clipboard and export failures instead of empty success.
+- Outcome: accepted.
+- Reason: analysing/failed/404 kept a skeleton and fired child queries; failed
+  generated/supporting letter and CV list queries looked empty; copy and export
+  swallowed errors.
+- Rejected alternatives: leaving child queries enabled and only hiding tabs
+  (they still 409 in the background); treating a failed CV query as inert Add
+  your CV first.
+- Human validation: each slice had a failing test then a green; `make test` 252
+  passed, coverage 80.62%; frontend 113 passed; `make test-integration` 48
+  passed; `make lint` green after moving `deriveRolesPanelState`.
+
 ### 063 — Phase 13A.7 ranking, compare and versioned export (TDD)
 
 - Date: 2026-09-21
