@@ -1,9 +1,9 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RolesPanel } from "./RolesPanel";
 import { deriveRolesPanelState } from "./roles-panel-state";
@@ -26,6 +26,10 @@ vi.mock("@tanstack/react-router", () => ({
   ),
   useNavigate: () => vi.fn(),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 const analysingRole: Role = {
   id: "role-a",
@@ -150,5 +154,47 @@ describe("RolesPanel analysis status", () => {
       screen.getAllByRole("button", { name: "Retry analysis" })[0]!,
     );
     expect(onReanalyse).toHaveBeenCalledWith("role-f");
+  });
+
+  it("asks for confirmation before deleting a role and does not open it", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const readyRole: Role = {
+      ...analysingRole,
+      id: "role-1",
+      status: "ready",
+      fitScore: 82,
+      bandLabel: "Strong match",
+      counts: { met: 1, partial: 0, missing: 0 },
+    };
+
+    render(
+      <RolesPanel
+        state="ready"
+        roles={[readyRole]}
+        sortKey="fit"
+        sortDirection="desc"
+        onSort={vi.fn()}
+        onRetry={vi.fn()}
+        onDelete={onDelete}
+        addRoleSlot={null}
+        layout="table"
+      />,
+    );
+
+    const table = screen.getByRole("table");
+    await user.click(
+      within(table).getByRole("button", { name: /delete analytics engineer/i }),
+    );
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    await user.click(
+      within(table).getByRole("button", { name: /delete analytics engineer/i }),
+    );
+    expect(onDelete).toHaveBeenCalledWith("role-1");
+    confirmSpy.mockRestore();
   });
 });

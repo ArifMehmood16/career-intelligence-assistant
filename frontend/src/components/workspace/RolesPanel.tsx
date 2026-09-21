@@ -19,6 +19,7 @@ export interface RolesPanelProps {
   onSort: (key: RolesSortKey) => void;
   onRetry: () => void;
   onReanalyse?: (roleId: string) => void;
+  onDelete?: (roleId: string) => void;
   failureReasons?: Record<string, string>;
   addRoleSlot: ReactNode;
   layout?: RolesLayout;
@@ -81,6 +82,36 @@ function FitCell({
   );
 }
 
+function confirmDeleteRole(title: string): boolean {
+  return window.confirm(
+    `Delete ${title}? Its analysis, drafts and mappings will be removed.`,
+  );
+}
+
+function DeleteRoleButton({
+  title,
+  onDelete,
+}: {
+  title: string;
+  onDelete: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      aria-label={`Delete ${title}`}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (confirmDeleteRole(title)) onDelete();
+      }}
+    >
+      Delete
+    </Button>
+  );
+}
+
 export function RolesPanel({
   state,
   roles,
@@ -89,6 +120,7 @@ export function RolesPanel({
   onSort,
   onRetry,
   onReanalyse,
+  onDelete,
   failureReasons = {},
   addRoleSlot,
   layout = "responsive",
@@ -215,6 +247,14 @@ export function RolesPanel({
                       </th>
                     );
                   })}
+                  {onDelete ? (
+                    <th
+                      scope="col"
+                      className="py-2 text-right font-medium text-muted-foreground"
+                    >
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -255,6 +295,14 @@ export function RolesPanel({
                     <td className="py-2 text-right font-mono">
                       {role.status === "ready" ? role.counts.missing : "—"}
                     </td>
+                    {onDelete ? (
+                      <td className="py-2 pl-4 text-right">
+                        <DeleteRoleButton
+                          title={role.title}
+                          onDelete={() => onDelete(role.id)}
+                        />
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
@@ -264,39 +312,49 @@ export function RolesPanel({
           <ul className={cardsClass}>
             {roles.map((role) => (
               <li key={role.id}>
-                <Link
-                  to="/roles/$id"
-                  params={{ id: role.id }}
-                  className="block rounded-md border border-border bg-background p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="block font-medium">{role.title}</span>
-                  <span className="block text-muted-foreground">
-                    {role.company}
-                  </span>
-                  <span className="mt-2 block">
-                    <FitCell
-                      role={role}
-                      failureReason={failureReasons[role.id]}
-                      onReanalyse={onReanalyse}
-                    />
-                  </span>
-                  {role.status === "ready" ? (
-                    <span className="mt-1 block text-muted-foreground">
-                      Met{" "}
-                      <span className="font-mono text-foreground">
-                        {role.counts.met}
-                      </span>{" "}
-                      · Partial{" "}
-                      <span className="font-mono text-foreground">
-                        {role.counts.partial}
-                      </span>{" "}
-                      · Missing{" "}
-                      <span className="font-mono text-foreground">
-                        {role.counts.missing}
-                      </span>
+                <div className="rounded-md border border-border bg-background p-4">
+                  <Link
+                    to="/roles/$id"
+                    params={{ id: role.id }}
+                    className="block outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="block font-medium">{role.title}</span>
+                    <span className="block text-muted-foreground">
+                      {role.company}
                     </span>
+                    <span className="mt-2 block">
+                      <FitCell
+                        role={role}
+                        failureReason={failureReasons[role.id]}
+                        onReanalyse={onReanalyse}
+                      />
+                    </span>
+                    {role.status === "ready" ? (
+                      <span className="mt-1 block text-muted-foreground">
+                        Met{" "}
+                        <span className="font-mono text-foreground">
+                          {role.counts.met}
+                        </span>{" "}
+                        · Partial{" "}
+                        <span className="font-mono text-foreground">
+                          {role.counts.partial}
+                        </span>{" "}
+                        · Missing{" "}
+                        <span className="font-mono text-foreground">
+                          {role.counts.missing}
+                        </span>
+                      </span>
+                    ) : null}
+                  </Link>
+                  {onDelete ? (
+                    <div className="mt-3">
+                      <DeleteRoleButton
+                        title={role.title}
+                        onDelete={() => onDelete(role.id)}
+                      />
+                    </div>
                   ) : null}
-                </Link>
+                </div>
               </li>
             ))}
           </ul>

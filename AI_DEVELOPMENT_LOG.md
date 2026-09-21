@@ -538,6 +538,28 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 066 — Frontend role hard-delete controls
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: none (human request after 13A.8; 13A.9 lives on feat/phase-13a-docs-reconciliation)
+- Prompt intent: add delete buttons for roles and wire them on the frontend.
+- Suggestion: `deleteRole` client against existing `DELETE /api/roles/{id}`;
+  confirm-then-delete on the workspace table/cards and role header, matching CV
+  and cover-letter delete; invalidate roles/ranking and return to the workspace
+  after a header delete.
+- Outcome: accepted.
+- Reason: the API already hard-deleted a role; the UI only exposed CV and
+  supporting-letter delete.
+- Rejected alternatives: clicking either duplicate Delete in tests (table plus
+  CSS-hidden cards both stay in the accessibility tree without Tailwind);
+  passing `onDelete={undefined}` under `exactOptionalPropertyTypes`.
+- Human validation: focused vitest 24 passed; gallery smoke 1 passed;
+  `tsc --noEmit` and eslint on the changed files green. Browser: gallery
+  table Delete asked `Delete Senior Data Analyst? Its analysis, drafts and
+  mappings will be removed.` and cancelled; live workspace had no roles so
+  the wired delete path was not exercised against PostgreSQL in the browser.
+
 ### 064 — Phase 13A.8 frontend async and failure states (TDD)
 
 - Date: 2026-09-21

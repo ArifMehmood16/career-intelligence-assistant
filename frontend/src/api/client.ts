@@ -308,6 +308,10 @@ export async function getComparison(
   };
 }
 
+export function deleteRole(roleId: string): Promise<void> {
+  return request(`/api/roles/${roleId}`, { method: "DELETE", schema: null });
+}
+
 export async function getRole(id: string): Promise<Role | null> {
   try {
     const row = await request(`/api/roles/${id}`, { schema: roleSchema });

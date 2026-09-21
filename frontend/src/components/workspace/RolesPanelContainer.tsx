@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addRole, getCv, getJob, getRoles, reanalyseRole } from "@/api/client";
+import {
+  addRole,
+  deleteRole,
+  getCv,
+  getJob,
+  getRoles,
+  reanalyseRole,
+} from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { AddRoleDialog } from "@/components/workspace/AddRoleDialog";
 import { deriveRolesPanelState } from "@/components/workspace/roles-panel-state";
@@ -133,6 +140,24 @@ export function RolesPanelContainer() {
     },
   });
 
+  const remove = useMutation({
+    mutationFn: deleteRole,
+    onSuccess: (_result, roleId) => {
+      setRoleJobs((prev) => {
+        const next = { ...prev };
+        delete next[roleId];
+        return next;
+      });
+      setFailureReasons((prev) => {
+        const next = { ...prev };
+        delete next[roleId];
+        return next;
+      });
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+      void queryClient.invalidateQueries({ queryKey: ["ranking"] });
+    },
+  });
+
   const roles = useMemo(() => {
     const list = [...(rolesQuery.data ?? [])];
     list.sort((a, b) =>
@@ -178,6 +203,7 @@ export function RolesPanelContainer() {
         void rolesQuery.refetch();
       }}
       onReanalyse={(roleId) => reanalyse.mutate(roleId)}
+      onDelete={(roleId) => remove.mutate(roleId)}
       addRoleSlot={
         <AddRoleDialog
           open={dialogOpen}

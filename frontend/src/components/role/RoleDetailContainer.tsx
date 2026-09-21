@@ -5,6 +5,7 @@ import {
   ApiError,
   createBulletDraft,
   createCoverLetterDraft,
+  deleteRole,
   exportRoleArtefact,
   getCoverLetters,
   getFitBreakdown,
@@ -143,6 +144,15 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     mutationFn: () => reanalyseRole(roleId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: () => deleteRole(roleId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["roles"] });
+      void queryClient.invalidateQueries({ queryKey: ["ranking"] });
+      void navigate({ to: "/" });
     },
   });
 
@@ -407,6 +417,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           }
           void roleQuery.refetch();
         }}
+        onDelete={() => remove.mutate()}
       />
 
       {headerState === "ready" ? (

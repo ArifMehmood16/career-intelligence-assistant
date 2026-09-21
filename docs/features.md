@@ -52,7 +52,9 @@ wide without the system getting complicated: there is one hard problem, solved o
 4. Add a role: title, company, and the job description pasted or uploaded.
 5. The role appears immediately with the status `Analysing`. When the job finishes it
    carries a score, a band and met/partial/missing counts.
-6. Replace the CV at any time. Every role is re-analysed against the new one, and the
+6. Delete a role from the workspace table or the role header. Confirmation is required;
+   the role, its mappings, drafts and job description are hard-deleted.
+7. Replace the CV at any time. Every role is re-analysed against the new one, and the
    old mapping is deleted rather than kept alongside.
 
 **Rules**

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   addRole,
+  deleteRole,
   exportRoleArtefact,
   getCv,
   getProviders,
@@ -185,6 +186,18 @@ describe("request helper", () => {
       return Response.json(null);
     });
     await request("/api/cv", { schema: null });
+  });
+});
+
+describe("deleteRole", () => {
+  it("hard-deletes a role by id", async () => {
+    stubFetch((input, init) => {
+      expect(String(input)).toBe("/api/roles/role-1");
+      expect(init?.method).toBe("DELETE");
+      return new Response(null, { status: 204 });
+    });
+
+    await expect(deleteRole("role-1")).resolves.toBeUndefined();
   });
 });
 

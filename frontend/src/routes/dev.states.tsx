@@ -576,6 +576,7 @@ export function DevStatesPage() {
           sortDirection="desc"
           onSort={noop}
           onRetry={noop}
+          onDelete={noop}
           addRoleSlot={
             <Button type="button" size="sm">
               Add role
@@ -593,6 +594,7 @@ export function DevStatesPage() {
           sortDirection="desc"
           onSort={noop}
           onRetry={noop}
+          onDelete={noop}
           addRoleSlot={
             <Button type="button" size="sm">
               Add role

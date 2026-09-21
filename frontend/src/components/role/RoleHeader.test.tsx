@@ -131,4 +131,41 @@ describe("RoleHeader states", () => {
     await user.click(screen.getByRole("button", { name: /^retry$/i }));
     expect(onRetry).toHaveBeenCalled();
   });
+
+  it("asks for confirmation before deleting the open role", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(
+      <RoleHeader
+        loading={false}
+        state="ready"
+        onDelete={onDelete}
+        role={{
+          id: "role-1",
+          title: "Analytics Engineer",
+          company: "Acme",
+          fitScore: 82,
+          bandLabel: "Strong match",
+          counts: { met: 1, partial: 0, missing: 0 },
+          status: "ready",
+          updatedAt: "2026-09-18T12:00:00Z",
+        }}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /delete analytics engineer/i }),
+    );
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    await user.click(
+      screen.getByRole("button", { name: /delete analytics engineer/i }),
+    );
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    confirmSpy.mockRestore();
+  });
 });
