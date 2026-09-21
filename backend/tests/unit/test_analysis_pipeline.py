@@ -14,6 +14,10 @@ from career_assistant.application.analysis.service import (
     AnalysisService,
     JobClock,
 )
+from career_assistant.application.ports.embedding import (
+    EmbeddingCachePort,
+    EmbeddingPort,
+)
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     ClaimExtractionResult,
@@ -151,6 +155,10 @@ def _service(
     clock: JobClock | None = None,
     docs: AnalysisDocuments | None = None,
     rubric: ScoringRubric | None = None,
+    embedding: EmbeddingPort | None = None,
+    embedding_cache: EmbeddingCachePort | None = None,
+    embedding_provider_id: str = "hermetic",
+    embedding_model_tag: str = "lexical-hash-v1",
 ) -> tuple[AnalysisService, _MemPublisher]:
     pub = publisher or _MemPublisher()
     service = AnalysisService(
@@ -166,6 +174,10 @@ def _service(
         clock=clock or _FixedClock(NOW),
         running_timeout=timedelta(minutes=10),
         max_concurrent=2,
+        embedding=embedding,
+        embedding_cache=embedding_cache,
+        embedding_provider_id=embedding_provider_id,
+        embedding_model_tag=embedding_model_tag,
     )
     return service, pub
 

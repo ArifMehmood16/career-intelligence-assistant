@@ -71,6 +71,7 @@ omit = [
     "*/adapters/persistence/conversation_store.py",
     "*/adapters/persistence/provider_settings_store.py",
     "*/adapters/persistence/analysis_worker.py",
+    "*/adapters/persistence/embedding_repos.py",
 ]
 
 [tool.ruff]

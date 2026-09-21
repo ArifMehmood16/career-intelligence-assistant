@@ -11,12 +11,27 @@ from pathlib import Path
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
 from career_assistant.adapters.extraction.selected import extractors_for_choice
+from career_assistant.adapters.persistence.accounting import SqlCallAccountant
+from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingCache
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.providers.factory import build_embedding_port
 from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.application.analysis.service import JobClock, StartupRecovery
+from career_assistant.application.analysis.similarity import (
+    requirement_claim_similarities,
+)
+from career_assistant.application.ports.embedding import EmbeddingPort
+from career_assistant.application.ports.errors import (
+    EgressNotPermittedError,
+    ProviderUnavailableError,
+)
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
+)
+from career_assistant.application.providers.accounting import (
+    AccountingEmbedding,
+    CallAccountant,
 )
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
@@ -58,6 +73,8 @@ class SqlAnalysisWorker:
         max_concurrent: int = 1,
         providers: ProviderSettings | None = None,
         transport: HttpTransport | None = None,
+        embedding_port: EmbeddingPort | None = None,
+        call_accountant: CallAccountant | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._requirement_extractor = requirement_extractor
@@ -68,6 +85,8 @@ class SqlAnalysisWorker:
         self._max_concurrent = max_concurrent
         self._providers = providers
         self._transport = transport
+        self._embedding_port = embedding_port
+        self._call_accountant = call_accountant
 
     def startup(self) -> StartupRecovery:
         failed: list[str] = []
@@ -182,7 +201,21 @@ class SqlAnalysisWorker:
                 role_id=job.role_id,
                 stage=stage.value,
             )
-            mappings = map_requirements(req_result.requirements, claim_result.claims)
+            embeddings, provider_id, model_tag = self._embedding_for(job.workspace_id)
+            similarities = requirement_claim_similarities(
+                workspace_id=job.workspace_id,
+                requirements=req_result.requirements,
+                claims=claim_result.claims,
+                embedding=embeddings,
+                cache=SqlEmbeddingCache(self._uow_factory),
+                provider_id=provider_id,
+                model_tag=model_tag,
+            )
+            mappings = map_requirements(
+                req_result.requirements,
+                claim_result.claims,
+                similarities=similarities,
+            )
             stage = JobStage.SCORING
             log_event(
                 _log,
@@ -302,3 +335,39 @@ class SqlAnalysisWorker:
         if choice is None:
             choice = default_provider_choice(settings)
         return extractors_for_choice(settings, choice, transport=self._transport)
+
+    def _embedding_for(
+        self, workspace_id: str
+    ) -> tuple[EmbeddingPort | None, str, str]:
+        settings = self._providers or ProviderSettings(
+            completion_provider="hermetic",
+            embedding_provider="hermetic",
+        )
+        with self._uow_factory() as uow:
+            choice = uow.provider_settings.get(workspace_id)
+        if choice is None:
+            choice = default_provider_choice(settings)
+        provider_id = choice.index_provider_id
+        model_tag = choice.index_model
+        if self._embedding_port is not None:
+            return self._embedding_port, provider_id, model_tag
+        try:
+            port = build_embedding_port(
+                settings,
+                transport=self._transport,
+                provider_id=provider_id,
+                model_tag=model_tag,
+            )
+        except EgressNotPermittedError, ProviderUnavailableError:
+            return None, provider_id, model_tag
+        accountant = self._call_accountant or SqlCallAccountant(self._uow_factory)
+        return (
+            AccountingEmbedding(
+                port,
+                accountant,
+                workspace_id=workspace_id,
+                purpose="embed",
+            ),
+            provider_id,
+            model_tag,
+        )

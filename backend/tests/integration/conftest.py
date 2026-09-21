@@ -56,7 +56,7 @@ def session_factory(migrated_engine: Engine) -> Iterator[sessionmaker[Session]]:
                 f"{APP_SCHEMA}.claim_spans, {APP_SCHEMA}.answers, "
                 f"{APP_SCHEMA}.analysis_jobs, {APP_SCHEMA}.spans, "
                 f"{APP_SCHEMA}.roles, {APP_SCHEMA}.questions, "
-                f"{APP_SCHEMA}.claims, {APP_SCHEMA}.chunks, "
+                f"{APP_SCHEMA}.claims, "
                 f"{APP_SCHEMA}.provider_settings, "
                 f"{APP_SCHEMA}.provider_call_accounting, "
                 f"{APP_SCHEMA}.documents, {APP_SCHEMA}.conversations, "

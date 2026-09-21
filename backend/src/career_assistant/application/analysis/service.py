@@ -8,6 +8,13 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from typing import Protocol
 
+from career_assistant.application.analysis.similarity import (
+    requirement_claim_similarities,
+)
+from career_assistant.application.ports.embedding import (
+    EmbeddingCachePort,
+    EmbeddingPort,
+)
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
@@ -89,6 +96,10 @@ class AnalysisService:
         clock: JobClock,
         running_timeout: timedelta,
         max_concurrent: int,
+        embedding: EmbeddingPort | None = None,
+        embedding_cache: EmbeddingCachePort | None = None,
+        embedding_provider_id: str = "hermetic",
+        embedding_model_tag: str = "lexical-hash-v1",
     ) -> None:
         self._documents = documents
         self._requirement_extractor = requirement_extractor
@@ -98,6 +109,10 @@ class AnalysisService:
         self._clock = clock
         self._running_timeout = running_timeout
         self._max_concurrent = max_concurrent
+        self._embedding = embedding
+        self._embedding_cache = embedding_cache
+        self._embedding_provider_id = embedding_provider_id
+        self._embedding_model_tag = embedding_model_tag
         self._roles: dict[str, AnalysisRole] = {}
         self._jobs: dict[str, AnalysisJob] = {}
         self._role_order: list[str] = []
@@ -346,7 +361,20 @@ class AnalysisService:
                 role_id=role_id,
                 stage=JobStage.MAPPING.value,
             )
-            mappings = map_requirements(req_result.requirements, claim_result.claims)
+            similarities = requirement_claim_similarities(
+                workspace_id=workspace_id,
+                requirements=req_result.requirements,
+                claims=claim_result.claims,
+                embedding=self._embedding,
+                cache=self._embedding_cache,
+                provider_id=self._embedding_provider_id,
+                model_tag=self._embedding_model_tag,
+            )
+            mappings = map_requirements(
+                req_result.requirements,
+                claim_result.claims,
+                similarities=similarities,
+            )
 
             job = mark_stage(job, JobStage.SCORING)
             self._jobs[job_id] = job
@@ -389,6 +417,7 @@ class AnalysisService:
                 requirement_count=len(req_result.requirements),
                 claim_count=len(claim_result.claims),
                 mapping_count=len(mappings),
+                similarity_pairs=len(similarities),
             )
             return done
         except Exception:

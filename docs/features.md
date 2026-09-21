@@ -68,7 +68,7 @@ wide without the system getting complicated: there is one hard problem, solved o
   Neither uploaded nor generated letter text can create candidate claims or affect a
   fit score.
 - Deleting a role, the CV, a supporting cover letter or chat history is a hard delete:
-  original bytes, spans, chunks, embeddings, claims, mappings, generated drafts,
+  original bytes, spans, embeddings, claims, mappings, generated drafts,
   questions, answers and dependent citations go with it. Nothing is soft-deleted.
 - A document that cannot be parsed is rejected with the reason (encrypted, scanned
   image, too large, unsupported type). It is never half-ingested.
@@ -353,8 +353,9 @@ Four providers behind two independent ports — completion and embeddings:
   attempt, including after the adapter was already built.
 - A hosted provider that fails does not silently become a local one. If fallback is
   enabled, the answer says a fallback happened.
-- Switching the index provider invalidates embeddings, so it triggers a re-index and
-  the UI says so before you confirm.
+- Switching the index provider invalidates stored requirement and claim
+  embeddings, so it triggers a re-analysis that re-embeds, and the UI says so
+  before you confirm.
 
 **Why four, and why switchable:** local-only is unusable for someone who wants
 frontier quality and has accepted a vendor's terms; hosted-only is unusable for
