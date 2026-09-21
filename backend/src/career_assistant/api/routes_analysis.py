@@ -58,6 +58,7 @@ from career_assistant.application.roles.store import (
     RoleView,
 )
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.domain.comparison import compare_requirement_sets
 from career_assistant.domain.generation import (
     CoverLetterRefusal,
     InterviewAskThem,
@@ -773,18 +774,14 @@ def compare_roles(
         raise AppError("role_not_found", "No role with that id.", status_code=404)
     bundle_a = _require_bundle(request, workspace_id, a)
     bundle_b = _require_bundle(request, workspace_id, b)
-    status_a = {m.requirement_id: m.status for m in bundle_a.mappings}
-    status_b = {m.requirement_id: m.status for m in bundle_b.mappings}
-    missing = MappingStatus.MISSING
-    text_a = {
-        r.text.lower(): (r, status_a.get(r.id, missing)) for r in bundle_a.requirements
-    }
-    text_b = {
-        r.text.lower(): (r, status_b.get(r.id, missing)) for r in bundle_b.requirements
-    }
-    shared_keys = sorted(set(text_a) & set(text_b))
-    only_a_keys = sorted(set(text_a) - set(text_b))
-    only_b_keys = sorted(set(text_b) - set(text_a))
+    comparison = compare_requirement_sets(
+        title_a=role_a.title,
+        title_b=role_b.title,
+        requirements_a=bundle_a.requirements,
+        mappings_a=bundle_a.mappings,
+        requirements_b=bundle_b.requirements,
+        mappings_b=bundle_b.mappings,
+    )
 
     def _req_wire(
         role_id: str, req: Requirement, status: MappingStatus
@@ -798,25 +795,22 @@ def compare_roles(
             evidence=None,
         )
 
-    shared = [
-        {
-            "text": text_a[key][0].text,
-            "aStatus": text_a[key][1].value,
-            "bStatus": text_b[key][1].value,
-        }
-        for key in shared_keys
-    ]
-    if shared:
-        differentiator = str(shared[0]["text"])
-    elif only_a_keys:
-        differentiator = text_a[only_a_keys[0]][0].text
-    else:
-        differentiator = "No clear differentiator"
     return ComparisonWire(
         a=_role_response(role_a),
         b=_role_response(role_b),
-        shared=shared,
-        only_in_a=[_req_wire(a, text_a[k][0], text_a[k][1]) for k in only_a_keys],
-        only_in_b=[_req_wire(b, text_b[k][0], text_b[k][1]) for k in only_b_keys],
-        differentiator=differentiator,
+        shared=[
+            {
+                "text": item.text,
+                "aStatus": item.a_status.value,
+                "bStatus": item.b_status.value,
+            }
+            for item in comparison.shared
+        ],
+        only_in_a=[
+            _req_wire(a, item.requirement, item.status) for item in comparison.only_a
+        ],
+        only_in_b=[
+            _req_wire(b, item.requirement, item.status) for item in comparison.only_b
+        ],
+        differentiator=comparison.differentiator,
     )

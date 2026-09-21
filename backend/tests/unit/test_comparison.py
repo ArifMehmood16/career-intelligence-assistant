@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from career_assistant.domain.comparison import compare_requirement_sets
-from career_assistant.domain.mapping import MappingReason, MappingStatus, RequirementMapping
+from career_assistant.domain.mapping import (
+    MappingReason,
+    MappingStatus,
+    RequirementMapping,
+)
 from career_assistant.domain.requirements import Requirement
 
 
