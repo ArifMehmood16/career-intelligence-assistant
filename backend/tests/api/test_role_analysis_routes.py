@@ -154,3 +154,29 @@ def test_ranking_assigns_shared_rank_to_equal_scores() -> None:
     assert by_id[role_a]["rank"] == by_id[role_b]["rank"]
     assert by_id[role_a]["tied"] is True
     assert by_id[role_b]["tied"] is True
+
+
+def test_compare_differentiator_names_a_status_distinction() -> None:
+    client, role_a = _ready_client()
+    second = client.post(
+        "/api/roles",
+        json={
+            "title": "Platform Engineer",
+            "company": "Kestrel",
+            "description": """Requirements
+- Must have production dbt experience
+- Must have CUDA experience
+Nice to have
+- Looker dashboards
+""",
+        },
+    )
+    assert second.status_code == 202
+    role_b = second.json()["role"]["id"]
+
+    compare = client.get(f"/api/compare?a={role_a}&b={role_b}")
+    assert compare.status_code == 200
+    body = compare.json()
+    differentiator = body["differentiator"].lower()
+    assert "looker" not in differentiator
+    assert "sql" in differentiator or "cuda" in differentiator
