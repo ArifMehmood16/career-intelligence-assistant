@@ -246,10 +246,16 @@ make down         # stop it again
 make setup   # config/app.env, Python venv from the lock, bun install
 make test    # hermetic backend tests — no database, no key, no model download
 make lint    # ruff, mypy strict, tsc, eslint
-make run     # API and web dev server on the host
+make run     # migrate, then API and web in two Terminal windows (macOS)
+make run-api # API only — application events and uvicorn logs in this terminal
+make run-web # web only — Vite logs in this terminal
 make verify  # lint + test + security
 make help    # every target, with what it needs
 ```
+
+`make run-api` writes INFO events to stderr (`request`, `cv.uploaded`,
+`role.created`, worker stages). Lines carry ids, counts and durations — never
+document text, questions, answers, prompts or API keys.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on

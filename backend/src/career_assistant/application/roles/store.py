@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -23,10 +24,13 @@ from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
+from career_assistant.logconfig import log_event
 
 ExtractorFactory = Callable[
     [str], tuple[RequirementExtractionPort, ClaimExtractionPort]
 ]
+
+_log = logging.getLogger(__name__)
 
 
 class RoleOperationRejected(Exception):
@@ -126,6 +130,13 @@ class InMemoryRoleStore:
         self.jobs.setdefault(workspace_id, {})[job.id] = job
         self.analyses.setdefault(workspace_id, {})[role.id] = bundle
         self.role_job.setdefault(workspace_id, {})[role.id] = job.id
+        log_event(
+            _log,
+            "role.created",
+            role_id=role.id,
+            job_id=job.id,
+            status=role.status,
+        )
         return role, job
 
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:
@@ -189,6 +200,7 @@ class InMemoryRoleStore:
         self.bullet_drafts.get(workspace_id, {}).pop(role_id, None)
         if job_id is not None:
             self.jobs.get(workspace_id, {}).pop(job_id, None)
+        log_event(_log, "role.deleted", role_id=role_id)
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         role = self.get_role(workspace_id, role_id)
@@ -235,6 +247,13 @@ class InMemoryRoleStore:
         self.jobs.setdefault(workspace_id, {})[job.id] = job
         self.analyses.setdefault(workspace_id, {})[role_id] = bundle
         self.role_job.setdefault(workspace_id, {})[role_id] = job.id
+        log_event(
+            _log,
+            "role.reanalysed",
+            role_id=role_id,
+            job_id=job.id,
+            status=updated.status,
+        )
         return updated, job
 
     def mark_incomplete(self, workspace_id: str, role_id: str) -> None:

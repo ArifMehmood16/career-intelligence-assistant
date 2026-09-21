@@ -3,10 +3,8 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13 UI work is complete. A post-Phase-13 audit found
-production-wiring and end-to-end correctness gaps that the existing component,
-API and repository tests do not cover. Complete Phase 13A before Phase 14; do not
-evaluate simulated or process-local behaviour as if it were the shipped system.
+**Current position:** Phase 13B operational logging is complete. Do not start
+Phase 14 until a human asks for it.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -625,6 +623,17 @@ real application.
       when the role is ready and the tab is active. Surface generated/supporting
       letter, role-list/compare, clipboard and export failures with retryable UI
       states; do not show a successful empty state while its query failed.
+- [x] **13A.10 Wire embedding similarity into requirement mapping.** PLAN 7.2
+      accepted a similarities dict the policy never reached: `_is_related`'s
+      third branch required overlap the second branch already returned on, the
+      dict was keyed by claim id alone, and no caller computed vectors. Map
+      with `(requirement_id, claim_id)` scores; treat `similarity >= floor` as
+      related with no overlap condition; compute one batched embed of uncached
+      requirement text and claim context per analysis (cache by owner, provider,
+      model and text sha256). Exact cosine in Python — no chunk table, no ANN
+      index, no Ask retrieval change. Persist unconstrained vectors; changing
+      the index provider re-embeds; CV hard delete leaves zero embeddings;
+      a closed hosted gate makes no network attempt and does not fail the job.
 - [x] **13A.9 Reconcile claims and documentation with observed behaviour.** Update the
       stale README status, API contract, architecture/provenance documentation,
       threat model and engineering journal after the fixes are proven. Add a
@@ -641,6 +650,49 @@ proves runtime selection and truthful provenance. An invalid generated claim fai
 closed. A direct question retrieves and opens a supporting-letter citation without
 changing any fit score. Ties, comparison differentiators and selected-version export
 are deterministic and covered at API and component level. Only then begin Phase 14.
+
+## Phase 13B — Operational logging (console)
+
+The production process had no application loggers. Uvicorn access lines (when they
+appear) are not enough to see intake, analysis stages, persistence or provider
+choice. Add stdlib logging to stdout/stderr so `make run-api` shows what the
+process is doing. Do not add a logging framework.
+
+**Invariant:** logs are operational, not dumps. Never write document text, raw
+uploads, questions, answers, embeddings, prompts, draft bodies, credentials or
+model payloads. Do not serialise request/response DTOs. Log field names, entity
+ids, counts, durations, stages, provider ids and safe error codes only.
+
+- [x] **13B.1 Process logging.** Configure the `career_assistant` logger at
+      INFO to stderr (same stream as uvicorn), unbuffered, with correlation and
+      workspace ids on every line. Re-apply after uvicorn's own logging setup so
+      the reloader does not swallow application logs. `PYTHONUNBUFFERED=1` on
+      `make run-api`.
+- [x] **13B.2 HTTP layer.** Middleware logs method, path, status and duration for
+      every request. Exception handlers log the contract error code, not the
+      request body. Query strings that are only ids (compare, export version) may
+      appear; bodies must not.
+- [x] **13B.3 Application / use cases.** Log CV admit, cover-letter admit, role
+      create/delete/reanalyse, Ask, and grounded generation as events with
+      document/role/job ids, byte length, page count and span count — never
+      filename-as-content or parsed text.
+- [x] **13B.4 Persistence adapters.** SQL CV, supporting-document, role, job and
+      conversation adapters log the operation name and ids. SQLAlchemy `echo`
+      stays off; `hide_parameters` stays true.
+- [x] **13B.5 Analysis worker.** Log claim, each recorded stage, success and
+      safe failure (stage + code). No extracted requirement text, claim text or
+      mapping excerpts.
+- [x] **13B.6 Config, security, providers.** Startup logs completion/embedding
+      provider ids, hosted-egress boolean and database host:port — never URLs
+      with passwords or API keys. Provider factory logs which adapter was
+      constructed. A redaction test fails if a planted document phrase or key
+      appears in any captured line.
+- [x] **13B.7 Documentation.** Threat model, README `make run-api` note and
+      engineering journal record the log contract.
+
+**Exit gate:** focused redaction and HTTP-log tests pass; `make run-api` prints
+application lines for a CV upload and a queued role job without document text.
+`make lint` and the hermetic backend tests stay green.
 
 ## Phase 14 — Evaluation
 

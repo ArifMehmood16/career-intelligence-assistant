@@ -17,7 +17,7 @@ drafts.
 | Application to model provider | Prompts built from application documents and questions | Egress gate at construction and call time; explicit acknowledgement covering every data kind; provider allowlist of hermetic, Ollama, OpenAI and Anthropic; per-provider timeout and breaker; keys never logged or returned; call accounting stores identifiers and counts only |
 | Application to database | SQL parameters; original uploads; parsed personal data; questions, answers and drafts | Parameterised access, least-privilege database role, workspace scoping, explicit transactions, foreign keys and hard delete of originals plus derived records. Production uses `create_production_app` / `build_sql_stores` (PostgreSQL). Hermetic `create_app()` in-memory stores are test-only. |
 | Database container to storage | PostgreSQL data directory and backups | Private network in deployment, required non-default credentials, persistent volume, documented backup/restore and backup rotation |
-| Application to logs | Everything | Redaction; no document, question, answer, prompt, embedding, draft body or credential content |
+| Application to logs | Everything | Field-based stdlib logs at HTTP, application, persistence, worker, provider and config boundaries. `format_fields` drops multiline and over-long values. A redacting filter masks `sk-` / Bearer tokens and configured API keys. Never document text, uploads, questions, answers, embeddings, prompts, draft bodies, DTO dumps or credentials. SQLAlchemy `echo` stays off; `hide_parameters` stays true. |
 
 ## Named risks
 
@@ -36,6 +36,7 @@ drafts.
 | SQL injection or accidental unscoped mutation | SQLAlchemy parameterisation; repository methods require workspace id; cross-workspace read and mutation tests | A future raw-SQL escape hatch would need separate review |
 | Application data reaching a third party | Hermetic and local providers by default; hosted adapters unreachable unless egress is enabled and a key is present, re-checked on every call; the notice covers CVs, job descriptions, cover letters and questions; selection is recorded on every artefact | A user who enables a hosted provider accepts that vendor's retention terms; the product makes that visible, it cannot make it safe |
 | Leaked API key | Keys read at construction, never logged, never returned by any route including masked; redaction test | A compromised host still exposes the environment |
+| Document text in operational logs | Event names plus ids, counts, durations, stages and provider ids only; planted-phrase and planted-key tests; `PYTHONUNBUFFERED=1` on `make run-api` so operators see those events instead of turning echo on | A future logger.exception on an intake error could still carry a snippet in the traceback |
 | Hosted provider outage or rate limit | Bounded retry on 429 and 5xx, timeout, breaker, safe error; no silent fallback to a different model | A degraded answer is still possible if fallback is explicitly enabled |
 
 ## Out of scope for this build

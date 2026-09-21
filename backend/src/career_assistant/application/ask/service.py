@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
@@ -23,6 +24,9 @@ from career_assistant.domain.prompts import (
     build_open_question_prompt,
     select_spans_for_open_question,
 )
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +141,16 @@ class AskService:
             model_tag=model,
             left_machine=left,
         )
+        log_event(
+            _log,
+            "ask.answered",
+            question_id=question_id,
+            answer_id=answer_id,
+            kind=result.kind.value,
+            citation_count=len(result.citations),
+            provider=provider,
+            left_machine=left,
+        )
         return result
 
     def stream(self, request: AskRequest) -> Iterator[AskEvent]:
@@ -178,6 +192,16 @@ class AskService:
             citations=tuple(c.span_id for c in result.citations),
             provider=provider,
             model_tag=model,
+            left_machine=left,
+        )
+        log_event(
+            _log,
+            "ask.answered",
+            question_id=question_id,
+            answer_id=answer_id,
+            kind=result.kind.value,
+            citation_count=len(result.citations),
+            provider=provider,
             left_machine=left,
         )
         yield AskEvent(type="done", kind=result.kind.value)

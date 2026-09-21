@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -17,6 +18,9 @@ from career_assistant.domain.jobs import (
     mark_failed,
     mark_running,
 )
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 class SqlCvStore:
@@ -49,6 +53,12 @@ class SqlCvStore:
                 )
             spans = uow.documents.list_spans(workspace_id, stored.id)
             uow.commit()
+            log_event(
+                _log,
+                "sql.cv.replace",
+                document_id=stored.id,
+                reanalysis_jobs=len(assigned),
+            )
             return _to_stored_cv(stored, spans, reanalysis_job_ids=assigned)
 
     def delete_active(self, workspace_id: str) -> None:
@@ -78,6 +88,7 @@ class SqlCvStore:
                 uow.roles.set_status(workspace_id, role.id, RoleStatus.FAILED)
             uow.documents.hard_delete(workspace_id, document.id)
             uow.commit()
+            log_event(_log, "sql.cv.delete", document_id=document.id)
 
     def get_span(
         self, workspace_id: str, span_id: str

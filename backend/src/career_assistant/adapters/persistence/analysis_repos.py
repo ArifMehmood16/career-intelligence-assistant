@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime
 
@@ -36,6 +37,9 @@ from career_assistant.domain.mapping import (
 )
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 def _as_uuid(value: str) -> uuid.UUID:
@@ -211,6 +215,13 @@ class SqlAnalysisJobRepository:
         )
         self._session.add(row)
         self._session.flush()
+        log_event(
+            _log,
+            "sql.job.enqueued",
+            job_id=job.id,
+            role_id=job.role_id,
+            state=job.state.value,
+        )
         return _to_job(row)
 
     def enqueue_idempotent(self, job: AnalysisJob) -> AnalysisJob:
@@ -423,6 +434,16 @@ class SqlAnalysisResultRepository:
         self._jobs.save(job)
         self._roles.set_status(workspace_id, role_id, RoleStatus.READY)
         self._session.flush()
+        log_event(
+            _log,
+            "sql.analysis.published",
+            role_id=role_id,
+            job_id=job.id,
+            analysis_version=analysis_version,
+            requirement_count=len(requirements),
+            claim_count=len(claims),
+            mapping_count=len(mappings),
+        )
 
     def fail_job(
         self,
@@ -441,6 +462,13 @@ class SqlAnalysisResultRepository:
         self._jobs.save(job)
         self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
         self._session.flush()
+        log_event(
+            _log,
+            "sql.analysis.failed",
+            role_id=role_id,
+            job_id=job.id,
+            code=job.error.code if job.error else "unknown",
+        )
 
     def list_mappings(
         self, workspace_id: str, role_id: str

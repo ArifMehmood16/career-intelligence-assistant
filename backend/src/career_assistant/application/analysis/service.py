@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
@@ -29,8 +30,10 @@ from career_assistant.domain.jobs import (
 from career_assistant.domain.mapping import RequirementMapping, map_requirements
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation, ScoringRubric, score_fit
+from career_assistant.logconfig import log_event
 
 JobClock = Callable[[], datetime]
+_log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,6 +260,12 @@ class AnalysisService:
             self._jobs[job.id] = running
             started.append(running)
             running_count += 1
+            log_event(
+                _log,
+                "worker.claimed",
+                job_id=running.id,
+                role_id=running.role_id,
+            )
         return tuple(started)
 
     def process_next(self) -> AnalysisJob | None:
@@ -283,13 +292,28 @@ class AnalysisService:
         role = self._roles[job.role_id]
         workspace_id = job.workspace_id
         role_id = job.role_id
+        log_event(_log, "worker.claimed", job_id=job_id, role_id=role_id)
 
         try:
             job = mark_stage(job, JobStage.PARSING)
             self._jobs[job_id] = job
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job_id,
+                role_id=role_id,
+                stage=JobStage.PARSING.value,
+            )
 
             job = mark_stage(job, JobStage.EXTRACTING_REQUIREMENTS)
             self._jobs[job_id] = job
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job_id,
+                role_id=role_id,
+                stage=JobStage.EXTRACTING_REQUIREMENTS.value,
+            )
             jd_id, jd_text = self._documents.job_description_text(workspace_id, role_id)
             req_result = self._requirement_extractor.extract(
                 document_id=jd_id,
@@ -299,6 +323,13 @@ class AnalysisService:
 
             job = mark_stage(job, JobStage.EXTRACTING_CLAIMS)
             self._jobs[job_id] = job
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job_id,
+                role_id=role_id,
+                stage=JobStage.EXTRACTING_CLAIMS.value,
+            )
             cv_id, cv_text = self._documents.active_cv_text(workspace_id)
             claim_result = self._claim_extractor.extract(
                 document_id=cv_id,
@@ -308,10 +339,24 @@ class AnalysisService:
 
             job = mark_stage(job, JobStage.MAPPING)
             self._jobs[job_id] = job
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job_id,
+                role_id=role_id,
+                stage=JobStage.MAPPING.value,
+            )
             mappings = map_requirements(req_result.requirements, claim_result.claims)
 
             job = mark_stage(job, JobStage.SCORING)
             self._jobs[job_id] = job
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job_id,
+                role_id=role_id,
+                stage=JobStage.SCORING.value,
+            )
             explanation = score_fit(
                 req_result.requirements,
                 mappings,
@@ -336,6 +381,15 @@ class AnalysisService:
                 status=RoleStatus.READY,
                 analysis_version=version,
             )
+            log_event(
+                _log,
+                "worker.succeeded",
+                job_id=job_id,
+                role_id=role_id,
+                requirement_count=len(req_result.requirements),
+                claim_count=len(claim_result.claims),
+                mapping_count=len(mappings),
+            )
             return done
         except Exception:
             stage = job.stage or JobStage.PARSING
@@ -356,4 +410,12 @@ class AnalysisService:
             )
             self._jobs[job_id] = failed
             self._roles[role_id] = replace(role, status=RoleStatus.FAILED)
+            log_event(
+                _log,
+                "worker.failed",
+                job_id=job_id,
+                role_id=role_id,
+                stage=stage.value,
+                code=code,
+            )
             return failed
