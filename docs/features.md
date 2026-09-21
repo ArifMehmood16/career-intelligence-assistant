@@ -65,8 +65,8 @@ wide without the system getting complicated: there is one hard problem, solved o
   PostgreSQL after successful admission; rejected documents are not retained.
 - Uploaded and generated cover letters are different data. Uploaded letters are
   supporting documents; generated letters are immutable, provenance-bearing drafts.
-  Neither uploaded nor generated letter text can create candidate claims or affect a
-  fit score.
+  Neither uploaded nor generated letter text can affect a fit score. An uploaded
+  letter is extracted as self-authored narrative, citable for Ask, never mapped.
 - Deleting a role, the CV, a supporting cover letter or chat history is a hard delete:
   original bytes, spans, embeddings, claims, mappings, generated drafts,
   questions, answers and dependent citations go with it. Nothing is soft-deleted.
@@ -323,8 +323,8 @@ Four providers behind two independent ports — completion and embeddings:
 
 | Provider | Completion | Embeddings | Content leaves the machine | Needs |
 |---|---|---|---|---|
-| `hermetic` (default) | Rule-based | Lexical hashing | No | Nothing |
-| `ollama` | Local model | Local model | No | Ollama running |
+| `hermetic` (test fixture) | Rule-based | Lexical hashing | No | Nothing; `make test` only |
+| `ollama` (product default) | Local model | Local model | No | Ollama running |
 | `openai` | Chat API | Embeddings API | **Yes** | Key in server config |
 | `anthropic` | Messages API | — | **Yes** | Key in server config |
 

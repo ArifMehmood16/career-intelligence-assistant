@@ -688,6 +688,24 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: gap-plan and import tests failed first. After the
   change, generation, gap-plan and grounded-generation HTTP tests pass.
 
+### 077 — Phase 13C.10 ADR 010 for model-first extraction
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.10 (ADR and stale-claim updates; phase not closed)
+- Prompt intent: document why deterministic extraction was replaced before
+  opening the PR.
+- Suggestion: ADR 010 records the 2026-09-21 audit, the failed intersect-with-
+  rules model path, and the replacement: model extracts, server verifies the
+  quote, domain decides. ADR 003, AGENTS.md, README, features.md, the threat
+  model and production-wiring were aligned with the new default.
+- Outcome: accepted as documentation for the work already on the branch.
+  13C.10 stays open until 13C.5 and 13C.8 land.
+- Reason: PLAN calls this ADR the most useful page in the repository for a
+  reviewer. Shipping extraction without it would leave the old hermetic-default
+  claims in the docs.
+- Human validation: docs-only change plus ADR; wiring-matrix tests still apply.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21
