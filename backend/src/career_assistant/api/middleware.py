@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,8 +19,14 @@ from career_assistant.api.deps import (
     resolve_workspace_id,
     workspace_cookie_needs_set,
 )
+from career_assistant.logconfig import (
+    bind_request_context,
+    clear_request_context,
+    log_event,
+)
 
 _UPLOAD_METHODS = frozenset({"POST", "PUT", "PATCH"})
+_http_log = logging.getLogger("career_assistant.http")
 
 
 class WorkspaceCookieMiddleware(BaseHTTPMiddleware):
@@ -55,6 +63,50 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Log method, path, status and duration — never the body."""
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        correlation_id = getattr(request.state, "correlation_id", "-")
+        workspace_id = getattr(request.state, "workspace_id", None)
+        bind_request_context(
+            correlation_id=str(correlation_id),
+            workspace_id=str(workspace_id) if workspace_id else None,
+        )
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = int((time.perf_counter() - started) * 1000)
+            log_event(
+                _http_log,
+                "request_failed",
+                method=request.method,
+                path=request.url.path,
+                duration_ms=duration_ms,
+                correlation_id=correlation_id,
+            )
+            raise
+        else:
+            duration_ms = int((time.perf_counter() - started) * 1000)
+            log_event(
+                _http_log,
+                "request",
+                method=request.method,
+                path=request.url.path,
+                status=response.status_code,
+                duration_ms=duration_ms,
+                correlation_id=correlation_id,
+            )
+            return response
+        finally:
+            clear_request_context()
+
+
 class UploadSizeLimitMiddleware:
     """Reject oversized bodies using Content-Length — never buffer them first."""
 
@@ -86,6 +138,14 @@ class UploadSizeLimitMiddleware:
         correlation_id = resolve_correlation_id(
             headers.get(b"x-correlation-id", b"").decode("ascii", errors="ignore")
             or None
+        )
+        log_event(
+            _http_log,
+            "http.error",
+            status=413,
+            code="document_too_large",
+            path=scope.get("path"),
+            content_length=content_length,
         )
         payload = json.dumps(
             {

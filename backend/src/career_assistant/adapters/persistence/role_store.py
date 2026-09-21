@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import uuid
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
@@ -51,6 +52,7 @@ from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
+from career_assistant.logconfig import log_event
 from career_assistant.parsing.pipeline import parse_pasted_text
 
 
@@ -70,6 +72,9 @@ class _DraftLike(Protocol):
     bullets: Sequence[object]
     requirement_id: object
     omitted_reason: object
+
+
+_log = logging.getLogger(__name__)
 
 
 class SqlRoleStore:
@@ -144,6 +149,13 @@ class SqlRoleStore:
             uow.commit()
             record = uow.roles.get(workspace_id, role_id)
             assert record is not None
+            log_event(
+                _log,
+                "sql.role.created",
+                role_id=role_id,
+                job_id=job_id,
+                jd_document_id=parsed.document.id,
+            )
             return self._role_view(uow, workspace_id, record), _job_view(queued)
 
     def delete_role(self, workspace_id: str, role_id: str) -> None:
@@ -157,6 +169,7 @@ class SqlRoleStore:
             uow.roles.delete(workspace_id, role_id)
             uow.documents.hard_delete(workspace_id, jd_id)
             uow.commit()
+            log_event(_log, "sql.role.deleted", role_id=role_id)
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         if self.cv_store.get_active(workspace_id) is None:
@@ -186,6 +199,12 @@ class SqlRoleStore:
             uow.commit()
             updated = uow.roles.get(workspace_id, role_id)
             assert updated is not None
+            log_event(
+                _log,
+                "sql.role.reanalysed",
+                role_id=role_id,
+                job_id=queued.id,
+            )
             return self._role_view(uow, workspace_id, updated), _job_view(queued)
 
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:

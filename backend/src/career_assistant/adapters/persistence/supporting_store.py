@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from datetime import UTC
 
@@ -13,6 +14,9 @@ from career_assistant.application.documents.supporting import (
 )
 from career_assistant.application.ports.persistence import NewDocument, StoredDocument
 from career_assistant.domain.documents import DocumentKind, Page, Span
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 class SqlSupportingDocumentStore:
@@ -43,6 +47,12 @@ class SqlSupportingDocumentStore:
             uow.workspaces.ensure(workspace_id)
             stored = uow.documents.save_admitted(workspace_id, document)
             uow.commit()
+            log_event(
+                _log,
+                "sql.cover_letter.insert",
+                document_id=stored.id,
+                page_count=stored.page_count,
+            )
             return _to_view(stored)
 
     def delete_cover_letter(self, workspace_id: str, document_id: str) -> bool:
@@ -52,6 +62,7 @@ class SqlSupportingDocumentStore:
                 return False
             uow.documents.hard_delete(workspace_id, document_id)
             uow.commit()
+            log_event(_log, "sql.cover_letter.delete", document_id=document_id)
             return True
 
     def get_downloadable(

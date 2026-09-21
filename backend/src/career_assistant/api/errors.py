@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -9,9 +11,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from career_assistant.api.deps import resolve_correlation_id
 from career_assistant.api.schemas import ErrorBody, ErrorEnvelope
+from career_assistant.logconfig import log_event
 
 _SAFE_INTERNAL_MESSAGE = "Something went wrong."
 _SAFE_VALIDATION_MESSAGE = "Request failed validation."
+_error_log = logging.getLogger("career_assistant.http")
 
 
 class AppError(Exception):
@@ -51,6 +55,13 @@ def error_response(
 def install_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        log_event(
+            _error_log,
+            "http.error",
+            status=exc.status_code,
+            code=exc.code,
+            path=request.url.path,
+        )
         return error_response(
             status_code=exc.status_code,
             code=exc.code,
@@ -62,6 +73,13 @@ def install_exception_handlers(app: FastAPI) -> None:
     async def validation_handler(
         request: Request, _exc: RequestValidationError
     ) -> JSONResponse:
+        log_event(
+            _error_log,
+            "http.error",
+            status=422,
+            code="validation_failed",
+            path=request.url.path,
+        )
         return error_response(
             status_code=422,
             code="validation_failed",
@@ -84,6 +102,13 @@ def install_exception_handlers(app: FastAPI) -> None:
                 if exc.status_code >= 500
                 else _SAFE_VALIDATION_MESSAGE
             )
+        log_event(
+            _error_log,
+            "http.error",
+            status=exc.status_code,
+            code=code,
+            path=request.url.path,
+        )
         return error_response(
             status_code=exc.status_code,
             code=code,
@@ -93,6 +118,14 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def unhandled_handler(request: Request, _exc: Exception) -> JSONResponse:
+        log_event(
+            _error_log,
+            "http.error",
+            status=500,
+            code="internal_error",
+            path=request.url.path,
+            exc_type=type(_exc).__name__,
+        )
         return error_response(
             status_code=500,
             code="internal_error",

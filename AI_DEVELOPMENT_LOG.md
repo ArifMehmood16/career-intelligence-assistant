@@ -538,6 +538,67 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 067 — Split host run so API and web logs are independent
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: none (human request)
+- Prompt intent: `make run` should show backend logs, or open two terminals for
+  API and web independently.
+- Suggestion: background uvicorn and keep Vite in the foreground was the old
+  shape; replace it with `make run-api` / `make run-web`, and have `make run` on
+  macOS open two Terminal windows.
+- Outcome: accepted.
+- Reason: one process group hid uvicorn behind Vite, so uploads and jobs had no
+  visible API log stream.
+- Rejected alternatives: prefixing interleaved `[api]` / `[web]` lines in one
+  terminal (still mixed); swapping which process is backgrounded (then the web
+  log disappears instead).
+- Human validation: `make help` lists the new targets; `make -n run-api` and
+  `make -n run-web` print uvicorn and bun respectively.
+
+### 069 — Wire embedding similarity into requirement mapping (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.10 (corrects the 7.2 claim)
+- Prompt intent: similarity support was ticked in PLAN 7.2 but did not change
+  mapping outcomes; wire embeddings into requirement mapping and drop the unused
+  chunk index.
+- Suggestion: pair-keyed similarities, reachable `similarity >= floor` branch,
+  batched embed + cache, unconstrained `embeddings` table keyed to requirement
+  or claim, exact cosine, no Ask retrieval.
+- Outcome: accepted.
+- Reason: reading `_is_related` showed the similarity branch was dead — it
+  required `_overlap_count(...) >= 1`, which the branch above already returned
+  on. Callers passed `None`. `Vector(64)` could not store nomic/OpenAI sizes.
+  `ChunkRow`/`EmbeddingRow` were referenced from models only.
+- Rejected alternatives: adding an ivfflat/hnsw index; a document chunk pipeline;
+  vector search for Ask (named non-goal); keeping a claim-id-only similarities
+  dict.
+- Human validation: TBD until the session's lint, typecheck, hermetic and
+  integration targets are observed.
+
+### 068 — Phase 13B operational logging (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13B.1–13B.7
+- Prompt intent: backend terminal still showed no Python logs; add operational
+  logs at controller, service, repository, security and config boundaries, and
+  record Phase 13B in PLAN.md.
+- Suggestion: stdlib `career_assistant` logger to stderr with correlation ids;
+  HTTP middleware; application/persistence/worker/provider events; redacting
+  filter; never DTO or document dumps.
+- Outcome: accepted.
+- Reason: uvicorn access lines were not enough to see intake or analysis; the
+  process had no application loggers. Operators need events, not payloads.
+- Rejected alternatives: adding a logging framework; SQLAlchemy `echo`;
+  serialising request/response bodies; logging from domain.
+- Human validation: focused logging tests 6 passed; hermetic pytest 272 passed,
+  3 skipped; coverage 80.79%; ruff on logging modules and mypy on logconfig/HTTP
+  green.
+
 ### 066 — Frontend role hard-delete controls
 
 - Date: 2026-09-21

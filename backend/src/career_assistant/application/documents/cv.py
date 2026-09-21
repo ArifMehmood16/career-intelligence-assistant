@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Protocol
@@ -11,8 +12,11 @@ from career_assistant.application.intake.admission import AdmissionLimits
 from career_assistant.application.intake.errors import IntakeError
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentFormat, DocumentKind, Page, Span
+from career_assistant.logconfig import log_event
 from career_assistant.parsing.pipeline import parse_pasted_text
 from career_assistant.settings import LimitSettings
+
+_log = logging.getLogger(__name__)
 
 _MEDIA_TYPES = {
     DocumentFormat.PLAIN_TEXT: "text/plain",
@@ -185,6 +189,15 @@ def _store_parsed_cv(
         spans=parsed.spans,
     )
     stored = store.replace(workspace_id, document)
+    log_event(
+        _log,
+        "cv.uploaded",
+        document_id=stored.view.id,
+        page_count=stored.view.page_count,
+        span_count=len(document.spans),
+        byte_length=len(body),
+        media_type=document.media_type,
+    )
     return stored.view
 
 
@@ -195,6 +208,7 @@ def get_cv(store: CvStore, *, workspace_id: str) -> CvView | None:
 
 def delete_cv(store: CvStore, *, workspace_id: str) -> None:
     store.delete_active(workspace_id)
+    log_event(_log, "cv.deleted")
 
 
 def reraise_intake_as_message(error: IntakeError) -> tuple[str, str, int]:

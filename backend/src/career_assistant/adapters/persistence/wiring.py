@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.conversation_store import (
     SqlConversationStore,
@@ -19,7 +21,10 @@ from career_assistant.adapters.persistence.supporting_store import (
     SqlSupportingDocumentStore,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.logconfig import log_event
 from career_assistant.settings import DatabaseSettings, ProviderSettings
+
+_log = logging.getLogger(__name__)
 
 
 def build_sql_stores(
@@ -38,6 +43,13 @@ def build_sql_stores(
     database = settings or DatabaseSettings()
     engine = create_db_engine(database)
     session_factory = create_session_factory(engine)
+    log_event(
+        _log,
+        "sql.engine.created",
+        host=database.host_path_hostname(),
+        port=database.host_path_port(),
+        echo=database.db_echo,
+    )
 
     def uow_factory() -> SqlUnitOfWork:
         return SqlUnitOfWork(session_factory)

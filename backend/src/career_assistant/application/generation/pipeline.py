@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from career_assistant.application.ports.completion import CompletionPort
@@ -10,6 +11,9 @@ from career_assistant.domain.groundedness import (
     GroundednessVerdict,
     validate_groundedness,
 )
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -63,7 +67,7 @@ def generate_draft(
         left_machine = result.left_machine
         check = validate_groundedness(result.text, cited_span_texts)
         if check.verdict is GroundednessVerdict.PASS:
-            return GeneratedDraft(
+            draft = GeneratedDraft(
                 text=result.text,
                 provenance=DraftProvenance(
                     provider_id=result.provider_id or provider_id,
@@ -74,6 +78,15 @@ def generate_draft(
                     regeneration_count=regenerations,
                 ),
             )
+            log_event(
+                _log,
+                "generation.completed",
+                provider_id=draft.provenance.provider_id,
+                groundedness=draft.provenance.groundedness.value,
+                template_fallback=False,
+                regenerations=regenerations,
+            )
+            return draft
         counters.validator_failures += 1
         if attempt == 0:
             regenerations += 1
@@ -82,7 +95,7 @@ def generate_draft(
     # Template path is span-backed by construction; still run the validator.
     check = validate_groundedness(template_text, cited_span_texts)
     counters.template_fallbacks += 1
-    return GeneratedDraft(
+    draft = GeneratedDraft(
         text=template_text,
         provenance=DraftProvenance(
             provider_id=provider_id,
@@ -93,3 +106,12 @@ def generate_draft(
             regeneration_count=regenerations,
         ),
     )
+    log_event(
+        _log,
+        "generation.completed",
+        provider_id=draft.provenance.provider_id,
+        groundedness=draft.provenance.groundedness.value,
+        template_fallback=True,
+        regenerations=regenerations,
+    )
+    return draft

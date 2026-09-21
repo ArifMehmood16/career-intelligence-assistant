@@ -18,6 +18,19 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13B — Operational logging (console)
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_operational_logging.py -q --no-cov` — red first (`ModuleNotFoundError: career_assistant.logconfig`); then 6 passed after logger, middleware, redaction filter and layer events
+  - `pytest -q` — 272 passed, 3 skipped; coverage 80.79%
+  - `ruff check` / `ruff format --check` on logging modules — green after wrapping long `worker.stage` lines and sorting imports
+  - `mypy` — `logconfig.StreamHandler` typed as `TextIO | None`
+- Observed result: hermetic `create_app()` logs HTTP method/path/status, `cv.uploaded` and `role.created` without planted document phrases. A planted `sk-` key is redacted. `make run-api` sets `PYTHONUNBUFFERED=1` and lifespan re-applies the stderr handler so uvicorn `--reload` does not swallow application lines.
+- Decisions made: stdlib logging only. Domain stays silent. DTOs are never dumped; `format_fields` refuses multiline and over-long values. SQLAlchemy `echo` remains off.
+- Problems hit: the production process had zero `getLogger` usage, so uvicorn access lines were the only console output and were easy to miss under a buffered reloader.
+- Carried forward: Phase 14 evaluation. Do not start it from this checkpoint.
+
 ## Phase 13A.9 — Documentation reconciled with observed production wiring
 
 - Date: 2026-09-21

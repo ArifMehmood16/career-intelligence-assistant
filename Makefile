@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-docker down logs db-check db-migrate db-create
+.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-api run-web run-docker down logs db-check db-migrate db-create
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -15,7 +15,9 @@ help:
 	@echo ""
 	@echo "Run"
 	@echo "  make setup              Copy config/app.env if missing; install Python and frontend deps"
-	@echo "  make run                Host API + web; migrates local Postgres first"
+	@echo "  make run                Migrate, then API and web in two Terminal windows (macOS)"
+	@echo "  make run-api            Host API in this terminal (application + uvicorn logs)"
+	@echo "  make run-web            Host web in this terminal (Vite logs)"
 	@echo "  make run-docker         Compose Postgres, API and web; build images"
 	@echo "  make down               Stop Compose services"
 	@echo "  make logs               Follow Compose logs"
@@ -122,14 +124,38 @@ logs: config
 down: config
 	$(COMPOSE) down
 
-# Host API + web. Creates DB if missing, migrates schema, then starts.
-# bun --env-file loads API_BASE_URL into the Start proxy process (shell export alone
-# is not enough for the Vinxi/Nitro worker). Port is 3000 to match WEB_ORIGIN.
+# Host API. bun is not involved; uvicorn stays in the foreground so application
+# and access logs are this terminal's output. PYTHONUNBUFFERED keeps INFO lines
+# from sitting in the stdio buffer under --reload.
+run-api: config
+	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
+	$(LOAD_ENV) && \
+	echo "API http://localhost:$${API_PORT:-8000}/docs" && \
+	PYTHONUNBUFFERED=1 $(BACKEND_BIN)/uvicorn career_assistant.main:app --reload --host 127.0.0.1 --port $${API_PORT:-8000}
+
+# Host web. bun --env-file loads API_BASE_URL into the Start proxy process (shell
+# export alone is not enough for the Vinxi/Nitro worker). Port 3000 matches WEB_ORIGIN.
+run-web: config
+	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)
+	$(LOAD_ENV) && \
+	echo "Web http://localhost:$${WEB_PORT:-3000}" && \
+	cd $(FRONTEND) && bun --env-file=../$(ENV_FILE) run dev -- --host 127.0.0.1 --port $${WEB_PORT:-3000} --strictPort
+
+# Creates DB if missing, migrates schema, then starts API and web with independent
+# log streams. On macOS that is two Terminal windows; elsewhere this terminal is
+# the API and you start `make run-web` in a second one.
 run: config db-migrate db-check
 	@test -x $(BACKEND_BIN)/uvicorn || (echo "Run make setup first." && exit 1)
 	@command -v bun >/dev/null || (echo "run needs bun: https://bun.sh" && exit 1)
-	$(LOAD_ENV) && \
-	echo "Web http://localhost:$${WEB_PORT:-3000}  API http://localhost:$${API_PORT:-8000}/docs" && \
-	trap 'kill 0' EXIT && \
-	$(BACKEND_BIN)/uvicorn career_assistant.main:app --reload --host 127.0.0.1 --port $${API_PORT:-8000} & \
-	cd $(FRONTEND) && bun --env-file=../$(ENV_FILE) run dev -- --host 127.0.0.1 --port $${WEB_PORT:-3000} --strictPort
+	@$(LOAD_ENV) && echo "Web http://localhost:$${WEB_PORT:-3000}  API http://localhost:$${API_PORT:-8000}/docs"
+ifeq ($(shell uname -s),Darwin)
+	@echo "Opening API and web in two Terminal windows."
+	@osascript \
+	  -e 'tell application "Terminal" to activate' \
+	  -e 'tell application "Terminal" to do script "export PATH=\"$(PATH)\"; cd \"$(CURDIR)\" && make run-api"' \
+	  -e 'tell application "Terminal" to do script "export PATH=\"$(PATH)\"; cd \"$(CURDIR)\" && make run-web"' \
+	  >/dev/null
+else
+	@echo "Start the web in another terminal: make run-web"
+	@$(MAKE) run-api
+endif

@@ -6,6 +6,7 @@ browser never holds an API origin. See docs/api-contract.md.
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -24,6 +25,7 @@ from career_assistant.adapters.persistence.wiring import build_sql_stores
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
+    RequestLoggingMiddleware,
     UploadSizeLimitMiddleware,
     WorkspaceCookieMiddleware,
 )
@@ -57,13 +59,24 @@ from career_assistant.application.providers.choice_store import (
     ProviderChoiceStore,
 )
 from career_assistant.application.roles.store import ExtractorFactory, InMemoryRoleStore
-from career_assistant.settings import LimitSettings, ProviderSettings
+from career_assistant.logconfig import configure_logging, load_secret_values, log_event
+from career_assistant.settings import DatabaseSettings, LimitSettings, ProviderSettings
 
 router = APIRouter(prefix="/api")
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    providers = getattr(app.state, "providers", None)
+    secrets = load_secret_values()
+    if isinstance(providers, ProviderSettings):
+        secrets = secrets + providers.secret_values()
+    configure_logging(force=True, secret_values=secrets)
+    log_event(
+        logging.getLogger("career_assistant.config"),
+        "process_start",
+        **_safe_process_fields(app),
+    )
     worker = getattr(app.state, "analysis_worker", None)
     if worker is None:
         yield
@@ -81,6 +94,24 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         stop.set()
         thread.join(timeout=5.0)
+
+
+def _safe_process_fields(app: FastAPI) -> dict[str, object]:
+    providers = getattr(app.state, "providers", None)
+    database = DatabaseSettings()
+    fields: dict[str, object] = {
+        "sql_stores": type(getattr(app.state, "cv_store", None)).__name__,
+        "database_host": database.host_path_hostname(),
+        "database_port": database.host_path_port(),
+    }
+    if isinstance(providers, ProviderSettings):
+        snap = providers.public_snapshot()
+        fields["completion_provider"] = snap["completionProvider"]
+        fields["embedding_provider"] = snap["embeddingProvider"]
+        fields["hosted_egress"] = snap["allowHostedProviders"]
+        fields["openai_key_configured"] = snap["openaiKeyConfigured"]
+        fields["anthropic_key_configured"] = snap["anthropicKeyConfigured"]
+    return fields
 
 
 class HealthResponse(ApiModel):
@@ -146,6 +177,7 @@ def create_app(
     ``app`` used by uvicorn/Docker is built with ``create_production_app``.
     """
     upload_limits = limits or LimitSettings()
+    configure_logging(secret_values=load_secret_values())
     app = FastAPI(
         title="Career Intelligence Assistant",
         version="0.1.0",
@@ -153,7 +185,9 @@ def create_app(
         openapi_url="/openapi.json",
         lifespan=_lifespan,
     )
-    # Last added runs first for requests.
+    # Last added runs first for requests. Logging is innermost so correlation
+    # and workspace are already on request.state.
+    app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(WorkspaceCookieMiddleware)
     app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(

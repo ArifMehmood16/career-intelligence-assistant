@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable
 from datetime import UTC
@@ -15,6 +16,9 @@ from career_assistant.application.ports.persistence import (
     HistoryMessage,
     QuestionRecord,
 )
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 class SqlConversationStore:
@@ -36,6 +40,7 @@ class SqlConversationStore:
             conversation_id = str(uuid.uuid4())
             uow.conversations.create_conversation(workspace_id, conversation_id)
             uow.commit()
+            log_event(_log, "sql.conversation.created", conversation_id=conversation_id)
             return conversation_id
 
     def find_by_client_request_id(
@@ -81,6 +86,12 @@ class SqlConversationStore:
                     text=text,
                 )
                 uow.commit()
+                log_event(
+                    _log,
+                    "sql.question.persisted",
+                    question_id=question_id,
+                    conversation_id=conversation_id,
+                )
             except IntegrityError:
                 uow.rollback()
 
@@ -111,6 +122,16 @@ class SqlConversationStore:
                     citation_span_ids=citations,
                 )
                 uow.commit()
+                log_event(
+                    _log,
+                    "sql.answer.persisted",
+                    question_id=question_id,
+                    answer_id=answer_id,
+                    kind=kind,
+                    citation_count=len(citations),
+                    provider=provider,
+                    left_machine=left_machine,
+                )
             except IntegrityError:
                 uow.rollback()
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from career_assistant.adapters.providers.anthropic.completion import (
     AnthropicCompletionAdapter,
 )
@@ -40,7 +42,10 @@ from career_assistant.application.providers.fallback import (
     CompletingWithOptionalFallback,
     FallbackPolicy,
 )
+from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
+
+_log = logging.getLogger(__name__)
 
 
 def build_egress_policy(settings: ProviderSettings) -> HostedEgressPolicy:
@@ -81,13 +86,22 @@ def build_completion_port(
         model_tag=model_tag,
     )
     if selected in {"openai", "anthropic"}:
-        return CompletingWithOptionalFallback(
+        wrapped = CompletingWithOptionalFallback(
             primary=primary,
             local=hermetic,
             policy=FallbackPolicy(
                 allow_local_fallback=settings.provider_allow_local_fallback
             ),
         )
+        log_event(
+            _log,
+            "provider.constructed",
+            kind="completion",
+            provider_id=selected,
+            fallback="hermetic",
+        )
+        return wrapped
+    log_event(_log, "provider.constructed", kind="completion", provider_id=selected)
     return primary
 
 
@@ -102,14 +116,17 @@ def build_embedding_port(
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
-    return _embedding_for(
-        provider_id or settings.embedding_provider,
+    selected = provider_id or settings.embedding_provider
+    port = _embedding_for(
+        selected,
         settings=settings,
         egress=policy,
         transport=http,
         resilience=resilience,
         model_tag=model_tag,
     )
+    log_event(_log, "provider.constructed", kind="embedding", provider_id=selected)
+    return port
 
 
 def _completion_for(

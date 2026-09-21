@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -33,11 +34,13 @@ from career_assistant.domain.jobs import (
 )
 from career_assistant.domain.mapping import map_requirements
 from career_assistant.domain.scoring import ScoringRubric, score_fit
+from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
 
 _ROOT = Path(__file__).resolve().parents[5]
 _DEFAULT_RUBRIC = load_scoring_rubric(_ROOT / "config" / "scoring_rubric.toml")
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
+_log = logging.getLogger(__name__)
 
 
 class SqlAnalysisWorker:
@@ -84,6 +87,12 @@ class SqlAnalysisWorker:
                     failed.append(job.id)
             queued = uow.jobs.list_queued()
             uow.commit()
+        log_event(
+            _log,
+            "worker.startup",
+            failed_jobs=len(failed),
+            dispatched_jobs=len(queued),
+        )
         return StartupRecovery(
             failed_job_ids=tuple(failed),
             dispatched_job_ids=tuple(job.id for job in queued),
@@ -99,10 +108,23 @@ class SqlAnalysisWorker:
             claimed = mark_running(queued[0], at=self._clock())
             uow.jobs.save(claimed)
             uow.commit()
+            log_event(
+                _log,
+                "worker.claimed",
+                job_id=claimed.id,
+                role_id=claimed.role_id,
+            )
             return claimed
 
     def complete(self, job: AnalysisJob) -> AnalysisJob:
         stage = JobStage.PARSING
+        log_event(
+            _log,
+            "worker.stage",
+            job_id=job.id,
+            role_id=job.role_id,
+            stage=stage.value,
+        )
         try:
             with self._uow_factory() as uow:
                 role = uow.roles.get(job.workspace_id, job.role_id)
@@ -124,6 +146,13 @@ class SqlAnalysisWorker:
                 analysis_version = role.analysis_version
 
             stage = JobStage.EXTRACTING_REQUIREMENTS
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job.id,
+                role_id=job.role_id,
+                stage=stage.value,
+            )
             requirement_extractor, claim_extractor = self._extractors_for(
                 job.workspace_id
             )
@@ -133,14 +162,35 @@ class SqlAnalysisWorker:
                 normalised_text=jd_text,
             )
             stage = JobStage.EXTRACTING_CLAIMS
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job.id,
+                role_id=job.role_id,
+                stage=stage.value,
+            )
             claim_result = claim_extractor.extract(
                 document_id=cv_id,
                 document_kind=DocumentKind.CV,
                 normalised_text=cv_text,
             )
             stage = JobStage.MAPPING
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job.id,
+                role_id=job.role_id,
+                stage=stage.value,
+            )
             mappings = map_requirements(req_result.requirements, claim_result.claims)
             stage = JobStage.SCORING
+            log_event(
+                _log,
+                "worker.stage",
+                job_id=job.id,
+                role_id=job.role_id,
+                stage=stage.value,
+            )
             explanation = score_fit(
                 req_result.requirements,
                 mappings,
@@ -171,6 +221,15 @@ class SqlAnalysisWorker:
                     job=terminal,
                 )
                 uow.commit()
+            log_event(
+                _log,
+                "worker.succeeded",
+                job_id=job.id,
+                role_id=job.role_id,
+                requirement_count=len(req_result.requirements),
+                claim_count=len(claim_result.claims),
+                mapping_count=len(mappings),
+            )
             return terminal
         except Exception:
             return self._fail(job, stage)
@@ -216,6 +275,14 @@ class SqlAnalysisWorker:
                 job=failed,
             )
             uow.commit()
+        log_event(
+            _log,
+            "worker.failed",
+            job_id=job.id,
+            role_id=job.role_id,
+            stage=stage.value,
+            code=failed.error.code if failed.error else "unknown",
+        )
         return failed
 
     def _extractors_for(
