@@ -106,6 +106,103 @@ def test_mapping_partial_when_only_old_evidence() -> None:
     assert result.reason_code is MappingReason.EVIDENCE_TOO_OLD
 
 
+def test_high_similarity_without_overlap_or_competency_is_related_not_missing() -> None:
+    req = _req(
+        id="r1",
+        text="Kubernetes cluster autoscaling",
+        competency="kubernetes",
+    )
+    claim = _claim(
+        id="c1",
+        competency="platform",
+        context="Scaled container orchestration workloads across regions.",
+    )
+    result = map_requirement(
+        req,
+        (claim,),
+        similarities={("r1", "c1"): 0.9},
+    )
+    assert result.status is not MappingStatus.MISSING
+    assert result.reason_code is MappingReason.ADJACENT_CLAIM_ONLY
+    assert result.justifying_claim_ids == ("c1",)
+
+
+def test_low_similarity_without_overlap_or_competency_is_missing() -> None:
+    req = _req(
+        id="r1",
+        text="Kubernetes cluster autoscaling",
+        competency="kubernetes",
+    )
+    claim = _claim(
+        id="c1",
+        competency="platform",
+        context="Scaled container orchestration workloads across regions.",
+    )
+    result = map_requirement(
+        req,
+        (claim,),
+        similarities={("r1", "c1"): 0.2},
+    )
+    assert result.status is MappingStatus.MISSING
+    assert result.reason_code is MappingReason.NO_RELATED_CLAIM
+    assert result.justifying_span_ids == ()
+
+
+def test_similarities_are_keyed_per_requirement_claim_pair() -> None:
+    req_a = _req(
+        id="ra",
+        text="Kubernetes cluster autoscaling",
+        competency="kubernetes",
+    )
+    req_b = _req(
+        id="rb",
+        text="CUDA kernel authoring",
+        competency="cuda",
+    )
+    claim = _claim(
+        id="c1",
+        competency="platform",
+        context="Scaled container orchestration workloads across regions.",
+    )
+    mappings = map_requirements(
+        (req_a, req_b),
+        (claim,),
+        similarities={("ra", "c1"): 0.9, ("rb", "c1"): 0.2},
+    )
+    by_id = {item.requirement_id: item for item in mappings}
+    assert by_id["ra"].status is not MappingStatus.MISSING
+    assert by_id["rb"].status is MappingStatus.MISSING
+
+
+def test_supplying_similarities_never_lowers_score_and_is_deterministic() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    requirements = (
+        _req(
+            id="r1",
+            text="Kubernetes cluster autoscaling",
+            competency="kubernetes",
+        ),
+        _req(id="r2", text="Production dbt experience", competency="dbt"),
+    )
+    claims = (
+        _claim(
+            id="c1",
+            competency="platform",
+            context="Scaled container orchestration workloads across regions.",
+        ),
+        _claim(id="c2", competency="dbt", context="Owned dbt models in production."),
+    )
+    without = map_requirements(requirements, claims)
+    score_without = score_fit(requirements, without, claims, rubric).score
+    similarities = {("r1", "c1"): 0.9, ("r2", "c2"): 0.1}
+    with_sims = map_requirements(requirements, claims, similarities=similarities)
+    score_with = score_fit(requirements, with_sims, claims, rubric).score
+    again = map_requirements(requirements, claims, similarities=similarities)
+    score_again = score_fit(requirements, again, claims, rubric).score
+    assert score_with >= score_without
+    assert score_with == score_again
+
+
 def test_similarity_scores_can_surface_candidates_but_policy_decides() -> None:
     req = _req(id="r1", text="dbt analytics engineering", competency="dbt")
     unrelated = _claim(
@@ -117,7 +214,7 @@ def test_similarity_scores_can_surface_candidates_but_policy_decides() -> None:
     result = map_requirement(
         req,
         (unrelated,),
-        similarities={"c1": 0.99},
+        similarities={("r1", "c1"): 0.99},
     )
     assert result.status is not MappingStatus.MET
 

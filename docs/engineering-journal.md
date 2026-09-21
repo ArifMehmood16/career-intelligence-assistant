@@ -31,6 +31,16 @@ Nothing predicted, nothing rounded up.
 - Problems hit: the production process had zero `getLogger` usage, so uvicorn access lines were the only console output and were easy to miss under a buffered reloader.
 - Carried forward: Phase 14 evaluation. Do not start it from this checkpoint.
 
+## Phase 13A.10 — Embedding similarity for mapping candidates
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/unit/test_similarity.py tests/unit/test_analysis_similarity.py tests/unit/test_mapping_scoring.py tests/unit/test_analysis_pipeline.py tests/api/test_operational_logging.py -q --no-cov` — 34 passed
+- Observed result: mapping treats cosine `similarity >= floor` as related without lexical overlap. Requirement and claim vectors are cached; the unused chunks table is dropped by migration `e9b7c4d1a2f0`. Ask retrieval is unchanged.
+- Decisions made: exact cosine in Python; no ANN; hosted-gate miss degrades to lexical mapping rather than failing the job. ADR 009.
+- Problems hit: none observed in the focused unit run.
+- Carried forward: Phase 14 evaluation. Do not start it from this checkpoint.
+
 ## Phase 13A.9 — Documentation reconciled with observed production wiring
 
 - Date: 2026-09-21
