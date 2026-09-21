@@ -19,6 +19,7 @@ from career_assistant.application.roles.hermetic_analysis import (
     band_label,
     count_statuses,
 )
+from career_assistant.domain.documents import Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
 
 ExtractorFactory = Callable[
@@ -130,6 +131,32 @@ class InMemoryRoleStore:
 
     def get_role(self, workspace_id: str, role_id: str) -> RoleView | None:
         return self.roles.get(workspace_id, {}).get(role_id)
+
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        for role_id, bundle in self.analyses.get(workspace_id, {}).items():
+            role = self.roles.get(workspace_id, {}).get(role_id)
+            if role is None:
+                continue
+            for span in bundle.jd_spans:
+                if span.id == span_id:
+                    pages = (
+                        Page(
+                            document_id=bundle.jd_document_id,
+                            page_number=1,
+                            text=role.description,
+                        ),
+                    )
+                    return span, pages
+            for span in bundle.cv_claim_spans:
+                if span.id != span_id:
+                    continue
+                cv = self.cv_store.get_active(workspace_id)
+                if cv is None:
+                    return None
+                return span, cv.pages
+        return None
 
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         return self.jobs.get(workspace_id, {}).get(job_id)

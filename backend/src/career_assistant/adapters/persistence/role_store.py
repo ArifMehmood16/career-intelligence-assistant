@@ -39,7 +39,7 @@ from career_assistant.application.roles.store import (
     RoleView,
 )
 from career_assistant.domain.claims import Claim
-from career_assistant.domain.documents import DocumentKind, ParsedDocument
+from career_assistant.domain.documents import DocumentKind, Page, ParsedDocument, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import (
     AnalysisJob,
@@ -199,6 +199,19 @@ class SqlRoleStore:
             if record is None:
                 return None
             return self._role_view(uow, workspace_id, record)
+
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        with self._uow_factory() as uow:
+            found = uow.documents.find_span(workspace_id, span_id)
+            if found is None:
+                return None
+            span, _pages = found
+            document = uow.documents.get(workspace_id, span.document_id)
+            if document is None or document.kind is not DocumentKind.JOB_DESCRIPTION:
+                return None
+            return found
 
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         with self._uow_factory() as uow:
