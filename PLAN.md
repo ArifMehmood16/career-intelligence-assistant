@@ -604,7 +604,7 @@ real application.
       Preserve the hard boundary that cover-letter text cannot become a claim,
       mapping or score input. Cover this through production HTTP tests, including
       cross-workspace and cross-role rejection.
-- [ ] **13A.6 Route all generated prose through the grounded-generation use case.**
+- [x] **13A.6 Route all generated prose through the grounded-generation use case.**
       Bullet, interview-pack and cover-letter HTTP routes must call the Phase 10
       generation pipeline, verify citations against stored spans, run the
       groundedness validator, retry/fall back as specified and persist the real

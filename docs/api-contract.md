@@ -56,6 +56,8 @@ Every non-2xx response:
 | `role_not_found` / `cv_not_found` / `cover_letter_not_found` / `span_not_found` | 404 | Unknown id in this workspace |
 | `analysis_incomplete` | 409 | Output requested before the analysis job finished |
 | `insufficient_evidence` | 200 | Not an error — an answer kind. Listed here so it is not mistaken for one |
+| `insufficient_cited_claims` | 409 | Bullet requested for a requirement with no cited CV claim |
+| `insufficient_matched_requirements` | 409 | Cover letter refused because fewer than two must-haves are met |
 | `provider_unavailable` | 409 | Selected provider is not usable; `message` gives the reason |
 | `egress_not_permitted` | 403 | Hosted provider selected while the gate is closed |
 | `egress_not_acknowledged` | 409 | Hosted selection without `acknowledgedEgress` |
@@ -252,6 +254,10 @@ InterviewPack {
 }
 ```
 
+Probe questions, lead-with notes and ask-them lines are phrased through the same
+generation pipeline as drafts. Citations on `leadWith` and `thinAreas.nearest` are
+dropped unless the span still resolves in this workspace.
+
 ---
 
 ## Generated drafts
@@ -297,9 +303,17 @@ CoverLetterDraft {
 The cover letter returns `409` with code `insufficient_matched_requirements` when
 fewer than two must-haves are met, with a message that points at the gap plan.
 
-**Every draft route runs the groundedness validator before responding.** A draft that
-fails twice is returned from the deterministic template path with
-`provenance.fallback: "template"`. The response is never an ungrounded draft.
+A bullet returns `409` with code `insufficient_cited_claims` when the requirement has
+no cited CV claim. The instruction is not stored as a grounded draft.
+
+**Every bullet, interview-pack and cover-letter route runs `generate_draft` before
+responding:** phrase through the selected completion port, validate groundedness
+against cited span text, regenerate once, then fall back to the deterministic
+template. Citations are resolved against stored workspace spans. Cover-letter `tone`
+and `includeGapLine` change the template that enters that pipeline. Template-fallback
+drafts persist the validator's real verdict (`provenance.grounded` may be `false`);
+the SQL adapter never rewrites `FAIL` to `PASS`. Model output that fails twice is not
+stored as a passing draft.
 
 Every returned draft is stored in PostgreSQL as an immutable version linked to the
 role-analysis version and its cited spans. Regeneration creates another version; it

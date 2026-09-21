@@ -163,7 +163,8 @@ than dressing it up as an opportunity.
 
 1. From a gap, or from any partial requirement, choose "Draft a bullet".
 2. The system collects the claims already extracted from your CV that relate to that
-   requirement, and drafts one or two replacement bullets.
+   requirement, and drafts one or two replacement bullets. If no cited claim supports
+   the requirement, the request is refused rather than storing an uncited instruction.
 3. Each draft shows the spans it was built from as citation chips. Click one to see
    the original CV text.
 4. Copy it. Nothing is written back into your CV — the product never edits your
@@ -215,7 +216,8 @@ produced it. The product does not pretend to have written your CV.
 **Rules**
 
 - Question phrasing may come from a model; **which** requirements appear and in which
-  section is decided in domain code from the mapping.
+  section is decided in domain code from the mapping. Phrasing still runs the
+  groundedness validator (regenerate once, then the template).
 - Every evidence line carries its span. The pack is quotable back to your own CV.
 
 ---
@@ -239,7 +241,8 @@ produced it. The product does not pretend to have written your CV.
 **Rules**
 
 - The same groundedness validator as CV bullets. A sentence asserting a fact absent
-  from the cited spans does not ship.
+  from the cited spans does not ship. Tone and the honest gap line change the template
+  that enters that pipeline; they are not a second unvalidated path.
 - **It refuses** when fewer than two must-have requirements are met, and says why: a
   letter built on one match is a letter that is going to get you caught out, and the
   honest move is the gap plan instead.

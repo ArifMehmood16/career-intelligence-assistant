@@ -538,6 +538,26 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 062 — Phase 13A.6 grounded generation on HTTP and SQL (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.6
+- Prompt intent: continue the next work in the same TDD style with regular commits.
+- Suggestion: route bullets, interview packs and cover letters through `generate_draft`;
+  persist the real groundedness verdict on SQL; honour Letter-tab tone and gap line;
+  refuse a bullet with no cited claim.
+- Outcome: accepted.
+- Reason: cover letters and interview packs still returned domain templates without a
+  completion call, SQL drafts were stored as PASS regardless of the validator, and an
+  uncited bullet persisted an instruction as a grounded draft.
+- Rejected alternatives: removing the Letter-tab controls until they were real (PLAN
+  allowed that; implementing the validated path kept the shipped UI honest);
+  introducing a mapping_claims table to restore justifying claim ids (span overlap
+  from existing rows was enough).
+- Human validation: each slice had a failing test then a green; `make test` 246 passed,
+  coverage 80.14%; `make test-integration` 48 passed; `make lint` green.
+
 ### 061 — Phase 13A.5 workspace retrieval and span resolution (TDD)
 
 - Date: 2026-09-21

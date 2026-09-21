@@ -12,7 +12,7 @@ drafts.
 | File to parser | PDF/DOCX structure | Bounded parsing, no macro or embedded-object execution, resource limits |
 | Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence |
 | Model to application | Extraction JSON, answer text | Schema validation, span verification, drop unresolvable output |
-| Generated draft to browser | Model-phrased or template prose | Groundedness validator against cited spans; template fallback; provenance on every artefact |
+| Generated draft to browser | Model-phrased or template prose | Groundedness validator against cited spans; template fallback; real verdict persisted (FAIL never rewritten to PASS); provenance on every artefact |
 | Application to browser | Excerpts and drafts | Escaped text rendering, no raw HTML |
 | Application to model provider | Prompts built from application documents and questions | Egress gate at construction and call time; explicit acknowledgement covering every data kind; provider allowlist of hermetic, Ollama, OpenAI and Anthropic; per-provider timeout and breaker; keys never logged or returned; call accounting stores identifiers and counts only |
 | Application to database | SQL parameters; original uploads; parsed personal data; questions, answers and drafts | Parameterised access, least-privilege database role, workspace scoping, explicit transactions, foreign keys and hard delete of originals plus derived records |
@@ -25,7 +25,7 @@ drafts.
 |---|---|---|
 | Prompt injection in a job description or supporting cover letter | Untrusted delimiting, schema validation, span verification, document-kind policy and regression tests | A crafted document may still degrade extraction or retrieval quality |
 | Fabricated experience in an answer | Every claim requires a resolvable span | Extraction may mis-attribute a real span |
-| Fabricated experience in a generated draft | Groundedness validator; regenerate once; hermetic template fallback; refusal when evidence is thin | Validator false positives become template fallbacks |
+| Fabricated experience in a generated draft | Groundedness validator; regenerate once; hermetic template fallback; refuse a bullet with no cited claim; SQL never stores FAIL as PASS | Validator false positives become template fallbacks |
 | Malicious PDF or DOCX | Bounded parsing, no embedded execution, size and page caps | Parser library vulnerabilities; mitigated by dependency scanning |
 | Resource exhaustion | Caps on size, pages, characters, context and output; one in-process analysis worker with a running-job timeout and startup recovery of stale running rows | A slow extract still occupies that worker until timeout; this build is a local personal tool |
 | Personal data retention | Hard delete of original bytes, parsed text, spans, chunks, embeddings, claims, mappings, generated drafts, questions, answers and citations; configurable retention window | Database backups retain data until they rotate |

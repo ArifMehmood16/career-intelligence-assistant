@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.6 — Generated prose through the grounded-generation use case
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_grounded_generation_http.py::test_bullet_without_cited_claim_is_refused_not_persisted -q --no-cov` — red first (200 vs 409); then green after `insufficient_cited_claims`
+  - `pytest tests/integration/test_draft_persistence.py::test_template_fallback_fail_is_persisted_without_rewriting_to_pass -m integration --no-cov` — red first (must be pass); then green after allowing FAIL only on template fallback
+  - `pytest tests/integration/test_sql_role_store.py::test_sql_role_store_persists_failed_template_fallback_verdict -m integration --no-cov` — red first (grounded stayed true); then green after mapping provenance to `GroundednessVerdict`
+  - `pytest tests/api/test_grounded_generation_http.py::test_cover_letter_honours_tone_and_honest_gap_line -q --no-cov` — red first (CUDA always present); then green after tone/gap on the template
+  - `pytest tests/api/test_grounded_generation_http.py::test_cover_letter_uses_generation_pipeline_and_drops_invented_facts -q --no-cov` — red first (`transport.calls` empty); then green after `generate_draft`
+  - `pytest tests/api/test_grounded_generation_http.py::test_interview_pack_phrases_through_generation_pipeline -q --no-cov` — red first (`transport.calls` empty); then green after phrasing probes/notes
+  - `make test` — 246 passed, 3 skipped, 48 deselected; coverage 80.14%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff, mypy 119 files, frontend tsc and eslint green
+- Observed result: bullets, cover letters and interview packs (GET and markdown export) call `generate_draft`. Invented tokens such as Kubernetes are dropped via template fallback. Cover-letter tone and the honest gap line change that template. An uncited bullet is 409 and is not stored. SQL persists the real groundedness verdict and reconstructs justifying claim ids from mapping∩claim spans. The Letter tab controls stay; they now drive the validated path.
+- Decisions made: persist FAIL for template-fallback drafts only; still refuse ungrounded model output with no fallback. Reconstruct claim ids from existing span overlap rather than a new mapping_claims table.
+- Problems hit: SQL bullets 409'd on met requirements because `list_mappings` hard-coded empty `justifying_claim_ids`. Cover-letter HTTP previously ignored `tone`/`includeGapLine` (`del body`).
+- Carried forward: 13A.7 ranking, comparison and immutable-version export.
+
 ## Phase 13A.5 — Database-backed retrieval and span resolution
 
 - Date: 2026-09-21
