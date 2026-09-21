@@ -150,3 +150,58 @@ def test_cover_letter_uses_generation_pipeline_and_drops_invented_facts() -> Non
     assert letter.json()["provenance"]["fallback"] == "template"
     assert letter.json()["provenance"]["provider"] == "openai"
     assert len(transport.calls) > calls_after_analysis
+
+
+def test_interview_pack_phrases_through_generation_pipeline() -> None:
+    payload = {
+        "choices": [
+            {
+                "message": {"content": "Ask them about Kubernetes operators."},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 4, "completion_tokens": 6},
+    }
+    transport = ScriptedTransport(
+        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
+    )
+    app = create_app(
+        providers=ProviderSettings(
+            completion_provider="hermetic",
+            embedding_provider="hermetic",
+            allow_hosted_providers=True,
+            openai_api_key=SecretStr("sk-test-never-leave-the-fixture"),
+            openai_completion_model="gpt-4o-mini",
+            openai_embedding_model="text-embedding-3-small",
+        )
+    )
+    app.state.http_transport = transport
+    client = TestClient(app)
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    role_id = client.post(
+        "/api/roles",
+        json={
+            "title": "Analytics Engineer",
+            "company": "Acme",
+            "description": _JD,
+        },
+    ).json()["role"]["id"]
+    chosen = client.put(
+        "/api/settings/providers",
+        json={
+            "answerProviderId": "openai",
+            "answerModel": "gpt-4o-mini",
+            "indexProviderId": "hermetic",
+            "indexModel": "lexical-hash-v1",
+            "acknowledgedEgress": True,
+        },
+    )
+    assert chosen.status_code == 200
+    calls_after_analysis = len(transport.calls)
+
+    pack = client.get(f"/api/roles/{role_id}/interview-pack")
+    assert pack.status_code == 200
+    dumped = json.dumps(pack.json()).lower()
+    assert "kubernetes" not in dumped
+    assert pack.json()["provenance"]["provider"] == "openai"
+    assert len(transport.calls) > calls_after_analysis
