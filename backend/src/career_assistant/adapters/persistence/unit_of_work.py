@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_repos import (
@@ -14,11 +14,13 @@ from career_assistant.adapters.persistence.analysis_repos import (
     SqlRoleRepository,
 )
 from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
+from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRepository
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
     ConversationRow,
     DocumentRow,
+    EmbeddingRow,
     GeneratedDraftRow,
     MappingRow,
     ProviderCallAccountingRow,
@@ -229,6 +231,9 @@ class SqlDocumentRepository:
         )
         if row is None:
             return
+        self._session.execute(
+            delete(EmbeddingRow).where(EmbeddingRow.workspace_id == row.workspace_id)
+        )
         self._session.delete(row)
         self._session.flush()
 
@@ -544,6 +549,7 @@ class SqlUnitOfWork:
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
         self.drafts: DraftRepository
+        self.embeddings: SqlEmbeddingRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -558,6 +564,7 @@ class SqlUnitOfWork:
             self._session, self.roles, self.jobs
         )
         self.drafts = SqlDraftRepository(self._session)
+        self.embeddings = SqlEmbeddingRepository(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:

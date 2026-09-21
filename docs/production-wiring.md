@@ -14,6 +14,10 @@ Provider resolvers:
   Phase 2 completion factory, egress-checked at construction and call time
 - `extractors_for_choice` — same workspace answer choice; hermetic stays on rules
   extractors, any other choice wraps the completion port
+- `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
+  Phase 2 embedding factory, egress-checked at construction and call time; used
+  by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
+  over vectors.
 - `list_provider_catalogue` / `apply_provider_choice` — catalogue and egress
   acknowledgement only; no document text leaves the process
 
@@ -30,10 +34,10 @@ Provider resolvers:
 | GET /api/documents/{document_id}/download | get_downloadable | none | SqlSupportingDocumentStore |
 | GET /api/spans/{span_id} | lookup_workspace_span + resolve_span | none | SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | GET /api/roles | list_roles | none | SqlRoleStore |
-| POST /api/roles | create_role (commit analysing + queued job, 202) | extractors_for_choice on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker |
+| POST /api/roles | create_role (commit analysing + queued job, 202) | extractors_for_choice and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/roles/{role_id} | get_role | none | SqlRoleStore |
 | DELETE /api/roles/{role_id} | delete_role | none | SqlRoleStore |
-| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | extractors_for_choice on the worker | SqlRoleStore; SqlAnalysisWorker |
+| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | extractors_for_choice and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/jobs/{job_id} | get_job | none | SqlRoleStore |
 | GET /api/roles/{role_id}/requirements | stored mappings | none | SqlRoleStore |
 | GET /api/roles/{role_id}/breakdown | stored score explanation | none | SqlRoleStore |
@@ -52,6 +56,7 @@ Provider resolvers:
 | GET /api/settings/providers | get persisted choice | none | SqlProviderSettingsStore |
 | PUT /api/settings/providers | apply_provider_choice | apply_provider_choice + egress | SqlProviderSettingsStore |
 
-Call accounting for completion goes through `AccountingCompletion` into
-`SqlCallAccountant` / `provider_call_accounting`. It stores provider, model,
-`left_machine` and token counts — never document, question or prompt text.
+Call accounting for completion and embeddings goes through `AccountingCompletion`
+/ `AccountingEmbedding` into `SqlCallAccountant` / `provider_call_accounting`.
+It stores provider, model, `left_machine` and token counts — never document,
+question, prompt or embedding text.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -64,7 +65,7 @@ def map_requirements(
     requirements: tuple[Requirement, ...] | list[Requirement],
     claims: tuple[Claim, ...] | list[Claim],
     *,
-    similarities: dict[str, float] | None = None,
+    similarities: Mapping[tuple[str, str], float] | None = None,
 ) -> tuple[RequirementMapping, ...]:
     return tuple(
         map_requirement(req, claims, similarities=similarities) for req in requirements
@@ -75,7 +76,7 @@ def map_requirement(
     requirement: Requirement,
     claims: tuple[Claim, ...] | list[Claim],
     *,
-    similarities: dict[str, float] | None = None,
+    similarities: Mapping[tuple[str, str], float] | None = None,
     similarity_floor: float = 0.55,
 ) -> RequirementMapping:
     """Map one requirement to met/partial/missing with a reason and span ids."""
@@ -83,7 +84,12 @@ def map_requirement(
     related = [
         claim
         for claim in claims
-        if _is_related(requirement, claim, sims.get(claim.id, 0.0), similarity_floor)
+        if _is_related(
+            requirement,
+            claim,
+            sims.get((requirement.id, claim.id), 0.0),
+            similarity_floor,
+        )
     ]
     if not related:
         return RequirementMapping(
@@ -150,11 +156,8 @@ def _is_related(
         return True
     if _overlap_count(requirement.text, claim.context) >= 1:
         return True
-    # Embeddings may propose candidates; the policy still decides status.
-    return (
-        similarity >= similarity_floor
-        and _overlap_count(requirement.text, claim.context) >= 1
-    )
+    # Embeddings may propose adjacent candidates lexical overlap misses.
+    return similarity >= similarity_floor
 
 
 def _tokens(text: str) -> set[str]:

@@ -35,9 +35,6 @@ NAMING = {
     "pk": "pk_%(table_name)s",
 }
 
-# Hermetic default; recorded on each embedding row. Hosted dims need a migration.
-EMBEDDING_DIMENSIONS = 64
-
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING, schema=APP_SCHEMA)
@@ -140,45 +137,40 @@ class SpanRow(Base):
     document: Mapped[DocumentRow] = relationship(back_populates="spans")
 
 
-class ChunkRow(Base):
-    __tablename__ = "chunks"
-    __table_args__ = (Index("ix_chunks_workspace_id", "workspace_id"),)
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    workspace_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("workspaces.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("documents.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
-    text: Mapped[str] = mapped_column(Text, nullable=False)
-
-
 class EmbeddingRow(Base):
     __tablename__ = "embeddings"
-    __table_args__ = (Index("ix_embeddings_workspace_id", "workspace_id"),)
+    __table_args__ = (
+        CheckConstraint(
+            "owner_kind IN ('requirement', 'claim')",
+            name="embedding_owner_kind",
+        ),
+        UniqueConstraint(
+            "workspace_id",
+            "owner_kind",
+            "owner_id",
+            "provider",
+            "model_tag",
+            "text_sha256",
+            name="uq_embeddings_owner_provider_text",
+        ),
+        Index("ix_embeddings_workspace_id", "workspace_id"),
+    )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("workspaces.id", ondelete="CASCADE"),
         nullable=False,
     )
-    chunk_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("chunks.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    owner_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     model_tag: Mapped[str] = mapped_column(String(128), nullable=False)
-    left_machine: Mapped[bool] = mapped_column(Boolean, nullable=False)
     dimensions: Mapped[int] = mapped_column(Integer, nullable=False)
-    embedding: Mapped[Any] = mapped_column(Vector(EMBEDDING_DIMENSIONS), nullable=False)
+    text_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    embedding: Mapped[Any] = mapped_column(Vector(), nullable=False)
 
 
 class RoleRow(Base):

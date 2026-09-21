@@ -8,6 +8,14 @@ from pathlib import Path
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
+from career_assistant.application.analysis.similarity import (
+    InMemoryEmbeddingCache,
+    requirement_claim_similarities,
+)
+from career_assistant.application.ports.embedding import (
+    EmbeddingCachePort,
+    EmbeddingPort,
+)
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
@@ -42,6 +50,11 @@ def analyse_hermetic(
     jd_text: str,
     requirement_extractor: RequirementExtractionPort | None = None,
     claim_extractor: ClaimExtractionPort | None = None,
+    embedding: EmbeddingPort | None = None,
+    embedding_cache: EmbeddingCachePort | None = None,
+    embedding_provider_id: str = "hermetic",
+    embedding_model_tag: str = "lexical-hash-v1",
+    workspace_id: str = "hermetic",
 ) -> AnalysisBundle:
     jd_id = str(uuid.uuid4())
     req_result = (requirement_extractor or RulesRequirementExtractor()).extract(
@@ -54,7 +67,20 @@ def analyse_hermetic(
         document_kind=DocumentKind.CV,
         normalised_text=cv_text,
     )
-    mappings = map_requirements(req_result.requirements, claim_result.claims)
+    similarities = requirement_claim_similarities(
+        workspace_id=workspace_id,
+        requirements=req_result.requirements,
+        claims=claim_result.claims,
+        embedding=embedding,
+        cache=embedding_cache or InMemoryEmbeddingCache(),
+        provider_id=embedding_provider_id,
+        model_tag=embedding_model_tag,
+    )
+    mappings = map_requirements(
+        req_result.requirements,
+        claim_result.claims,
+        similarities=similarities,
+    )
     explanation = score_fit(
         req_result.requirements, mappings, claim_result.claims, _RUBRIC
     )

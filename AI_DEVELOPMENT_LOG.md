@@ -576,8 +576,10 @@ Never record a command output, metric, date or commit hash that was not observed
 - Rejected alternatives: adding an ivfflat/hnsw index; a document chunk pipeline;
   vector search for Ask (named non-goal); keeping a claim-id-only similarities
   dict.
-- Human validation: TBD until the session's lint, typecheck, hermetic and
-  integration targets are observed.
+- Human validation: focused unit tests 34 passed (`test_similarity`,
+  `test_analysis_similarity`, `test_mapping_scoring`, `test_analysis_pipeline`,
+  operational logging). Integration mapping test is in the tree; not run in this
+  commit.
 
 ### 068 — Phase 13B operational logging (TDD)
 

@@ -314,8 +314,13 @@ recency, including the dated-experience fixture.
       `missing`, with the justifying span ids and a reason code
       (`no_related_claim`, `adjacent_claim_only`, `evidence_too_old`,
       `evidence_thin`). Pure function, no I/O.
-- [x] **7.2** Similarity support for mapping candidates via embeddings, with the
-      decision still made by the policy.
+- [x] **7.2** Analysis mapping computes `(requirement_id, claim_id)` cosine
+      similarities from embeddings of requirement text and claim context. The
+      relatedness test treats `similarity >= similarity_floor` as related even
+      when lexical overlap is zero, so an adjacent claim the token filter misses
+      can still be proposed. Status (`met` / `partial` / `missing`) remains a
+      domain-policy decision. Callers that skip embeddings pass `None` and
+      mapping stays lexical. Wired for production in 13A.10.
 - [x] **7.3** Deterministic rubric: must/desirable weights, status factors, recency
       decay, normalisation and bands exactly as documented in `docs/features.md`, read
       from configuration. Pure, unit tested.

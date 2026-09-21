@@ -87,7 +87,7 @@ flowchart LR
   subgraph adapters [Adapters]
     DOC[CV / JD / cover-letter readers]
     PG[(PostgreSQL 16 + pgvector)]
-    EMB[Embed: hermetic, Ollama, OpenAI]
+    EMB[Embed mapping candidates: hermetic, Ollama, OpenAI]
     LLM[Complete: Ollama, OpenAI or Anthropic]
   end
   UI --> SSR
@@ -141,7 +141,7 @@ open-ended questions fall through to retrieval.
 |---|---|---|
 | Backend | Python 3.14+, FastAPI, Pydantic | Typed API, mature AI ecosystem |
 | Frontend | TanStack Start, React 19, strict TypeScript, designed in Lovable | The design is the deliverable; the server carries the API proxy |
-| Store | PostgreSQL 16 + pgvector | System of record for original uploads, parsed spans, roles, mappings, generated drafts, questions, answers and vectors |
+| Store | PostgreSQL 16 + pgvector | System of record for original uploads, parsed spans, roles, mappings, generated drafts, questions, answers and requirement/claim vectors |
 | Persistence | SQLAlchemy 2, Alembic | Explicit schema, repeatable migrations and transactionally consistent deletion |
 | Models | One port per concern, four adapters: hermetic, Ollama, OpenAI, Anthropic | Switchable at runtime; hosted behind an egress gate |
 | Long work | In-process job queue with a polled job resource | Extraction takes minutes; it is a job, not a request |
@@ -217,8 +217,8 @@ a paragraph at the end of it:
 - Every stored extraction, every answer and every draft records the provider and model
   that produced it, so "where did this go?" is a query rather than a guess.
 - Every document has an owner, a retention window and a hard delete that removes
-  original bytes, derived chunks, embeddings, mappings, drafts, questions, answers
-  and citations — not just the top-level row.
+  original bytes, embeddings of requirement and claim text, mappings, drafts,
+  questions, answers and citations — not just the top-level row.
 - No CV or cover-letter text, questions, answers, prompts, embeddings, draft bodies or
   model bodies in logs.
 - Job-description text is untrusted input. A JD that contains "ignore previous
