@@ -55,7 +55,8 @@ def test_open_question_calls_the_selected_scripted_provider() -> None:
     app = create_app(providers=_openai_settings())
     app.state.http_transport = transport
     client = TestClient(app)
-    assert client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"}).status_code == 201
+    created = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    assert created.status_code == 201
     role_id = client.post(
         "/api/roles",
         json={"title": "AE", "company": "Acme", "description": _JD},

@@ -57,19 +57,23 @@ def build_completion_port(
     *,
     transport: HttpTransport | None = None,
     egress: HostedEgressPolicy | None = None,
+    provider_id: str | None = None,
+    model_tag: str | None = None,
 ) -> CompletionPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
     hermetic = HermeticCompletionAdapter()
+    selected = provider_id or settings.completion_provider
     primary = _completion_for(
-        settings.completion_provider,
+        selected,
         settings=settings,
         egress=policy,
         transport=http,
         resilience=resilience,
+        model_tag=model_tag,
     )
-    if settings.completion_provider in {"openai", "anthropic"}:
+    if selected in {"openai", "anthropic"}:
         return CompletingWithOptionalFallback(
             primary=primary,
             local=hermetic,
@@ -85,16 +89,19 @@ def build_embedding_port(
     *,
     transport: HttpTransport | None = None,
     egress: HostedEgressPolicy | None = None,
+    provider_id: str | None = None,
+    model_tag: str | None = None,
 ) -> EmbeddingPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
     return _embedding_for(
-        settings.embedding_provider,
+        provider_id or settings.embedding_provider,
         settings=settings,
         egress=policy,
         transport=http,
         resilience=resilience,
+        model_tag=model_tag,
     )
 
 
@@ -105,13 +112,14 @@ def _completion_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
+    model_tag: str | None = None,
 ) -> CompletionPort:
     if provider_id == "hermetic":
         return HermeticCompletionAdapter()
     if provider_id == "ollama":
         return OllamaCompletionAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=settings.ollama_completion_model or "llama3.2",
+            model_tag=model_tag or settings.ollama_completion_model or "llama3.2",
             transport=transport,
             resilience=resilience,
         )
@@ -119,7 +127,7 @@ def _completion_for(
         key = egress.assert_openai_constructible()
         return OpenAICompletionAdapter(
             api_key=key,
-            model_tag=settings.openai_completion_model,
+            model_tag=model_tag or settings.openai_completion_model,
             transport=transport,
             resilience=resilience,
         )
@@ -127,7 +135,7 @@ def _completion_for(
         key = egress.assert_anthropic_constructible()
         return AnthropicCompletionAdapter(
             api_key=key,
-            model_tag=settings.anthropic_completion_model,
+            model_tag=model_tag or settings.anthropic_completion_model,
             transport=transport,
             resilience=resilience,
         )
@@ -141,13 +149,16 @@ def _embedding_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
+    model_tag: str | None = None,
 ) -> EmbeddingPort:
     if provider_id == "hermetic":
         return HermeticEmbeddingAdapter()
     if provider_id == "ollama":
         return OllamaEmbeddingAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=settings.ollama_embedding_model or "nomic-embed-text",
+            model_tag=(
+                model_tag or settings.ollama_embedding_model or "nomic-embed-text"
+            ),
             transport=transport,
             resilience=resilience,
         )
@@ -155,7 +166,7 @@ def _embedding_for(
         key = egress.assert_openai_constructible()
         return OpenAIEmbeddingAdapter(
             api_key=key,
-            model_tag=settings.openai_embedding_model,
+            model_tag=model_tag or settings.openai_embedding_model,
             transport=transport,
             resilience=resilience,
         )

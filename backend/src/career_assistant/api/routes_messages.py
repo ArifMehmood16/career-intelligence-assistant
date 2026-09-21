@@ -9,9 +9,7 @@ from datetime import UTC
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import StreamingResponse
 
-from career_assistant.adapters.providers.hermetic.completion import (
-    HermeticCompletionAdapter,
-)
+from career_assistant.adapters.providers.factory import build_completion_port
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.schemas import (
@@ -31,6 +29,13 @@ from career_assistant.application.ask.service import (
 )
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.ports.completion import CompletionPort
+from career_assistant.application.ports.errors import EgressNotPermittedError
+from career_assistant.application.providers.catalogue import default_provider_choice
+from career_assistant.application.providers.choice_store import (
+    InMemoryProviderChoiceStore,
+    ProviderChoiceStore,
+)
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
@@ -39,6 +44,7 @@ from career_assistant.application.roles.store import (
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.prompts import RetrievedSpan
+from career_assistant.settings import ProviderSettings
 
 router = APIRouter(tags=["ask"])
 
@@ -65,6 +71,42 @@ def _conversation_store(request: Request) -> ConversationStore:
         store = InMemoryConversationStore()
         request.app.state.conversation_store = store
     return store
+
+
+def _provider_settings(request: Request) -> ProviderSettings:
+    configured = getattr(request.app.state, "providers", None)
+    if isinstance(configured, ProviderSettings):
+        return configured
+    return ProviderSettings()
+
+
+def _choice_store(request: Request) -> ProviderChoiceStore:
+    store = getattr(request.app.state, "provider_choice_store", None)
+    if store is None:
+        store = InMemoryProviderChoiceStore()
+        request.app.state.provider_choice_store = store
+    return store
+
+
+def _completion_port(request: Request, workspace_id: str) -> CompletionPort:
+    settings = _provider_settings(request)
+    choice = _choice_store(request).get(workspace_id) or default_provider_choice(
+        settings
+    )
+    transport = getattr(request.app.state, "http_transport", None)
+    try:
+        return build_completion_port(
+            settings,
+            transport=transport,
+            provider_id=choice.answer_provider_id,
+            model_tag=choice.answer_model,
+        )
+    except EgressNotPermittedError as exc:
+        raise AppError(
+            "egress_not_permitted",
+            "Hosted provider is not permitted.",
+            status_code=403,
+        ) from exc
 
 
 def _view_for_role(
@@ -120,7 +162,7 @@ def _ask_service(
 ) -> AskService:
     return AskService(
         store=_conversation_store(request),
-        completion=HermeticCompletionAdapter(),
+        completion=_completion_port(request, workspace_id),
         known_span_ids=_known_span_ids(request, workspace_id, roles),
         id_factory=lambda _prefix: str(uuid.uuid4()),
     )
