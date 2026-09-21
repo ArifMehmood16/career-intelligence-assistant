@@ -22,6 +22,7 @@ from career_assistant.application.roles.hermetic_analysis import (
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
 from career_assistant.domain.prompts import RetrievedSpan
+from career_assistant.domain.ranking import RankableRole, rank_roles
 
 ExtractorFactory = Callable[
     [str], tuple[RequirementExtractionPort, ClaimExtractionPort]
@@ -333,26 +334,25 @@ class InMemoryRoleStore:
     def ranked(
         self, workspace_id: str
     ) -> tuple[tuple[RoleView, int, bool, tuple[str, ...]], ...]:
-        roles = sorted(
-            self.list_roles(workspace_id),
-            key=lambda role: (-role.fit_score, role.title, role.id),
-        )
-        out: list[tuple[RoleView, int, bool, tuple[str, ...]]] = []
-        for index, role in enumerate(roles, start=1):
-            tied = False
-            if index > 1 and roles[index - 2].fit_score == role.fit_score:
-                tied = True
-                prev = out[-1]
-                out[-1] = (prev[0], prev[1], True, prev[3])
+        views = {role.id: role for role in self.list_roles(workspace_id)}
+        candidates: list[RankableRole] = []
+        for role in views.values():
+            bundle = self.analyses[workspace_id][role.id]
+            reqs = {item.id: item.text for item in bundle.requirements}
             because = tuple(
-                m.requirement_id
-                for m in self.analyses[workspace_id][role.id].mappings
-                if m.status.value == "met"
+                reqs[mapping.requirement_id]
+                for mapping in bundle.mappings
+                if mapping.status.value == "met" and mapping.requirement_id in reqs
             )[:3]
-            # Prefer requirement texts for "because".
-            reqs = {
-                r.id: r.text for r in self.analyses[workspace_id][role.id].requirements
-            }
-            because_texts = tuple(reqs[rid] for rid in because if rid in reqs)
-            out.append((role, index, tied, because_texts))
-        return tuple(out)
+            candidates.append(
+                RankableRole(
+                    id=role.id,
+                    title=role.title,
+                    fit_score=role.fit_score,
+                    because=because,
+                )
+            )
+        return tuple(
+            (views[item.id], item.rank, item.tied, item.because)
+            for item in rank_roles(candidates)
+        )

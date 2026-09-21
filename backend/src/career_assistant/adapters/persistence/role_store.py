@@ -48,6 +48,7 @@ from career_assistant.domain.jobs import (
 )
 from career_assistant.domain.mapping import MappingStatus
 from career_assistant.domain.prompts import RetrievedSpan
+from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 from career_assistant.parsing.pipeline import parse_pasted_text
@@ -336,30 +337,33 @@ class SqlRoleStore:
     def ranked(
         self, workspace_id: str
     ) -> tuple[tuple[RoleView, int, bool, tuple[str, ...]], ...]:
-        roles = sorted(
-            (
-                role
-                for role in self.list_roles(workspace_id)
-                if role.status == RoleStatus.READY.value
-            ),
-            key=lambda role: (-role.fit_score, role.title, role.id),
-        )
-        out: list[tuple[RoleView, int, bool, tuple[str, ...]]] = []
-        for index, role in enumerate(roles, start=1):
-            tied = False
-            if index > 1 and roles[index - 2].fit_score == role.fit_score:
-                tied = True
-                prev = out[-1]
-                out[-1] = (prev[0], prev[1], True, prev[3])
+        views = {
+            role.id: role
+            for role in self.list_roles(workspace_id)
+            if role.status == RoleStatus.READY.value
+        }
+        candidates: list[RankableRole] = []
+        for role in views.values():
             bundle = self.require_analysis(workspace_id, role.id)
-            reqs = {r.id: r.text for r in bundle.requirements}
+            reqs = {item.id: item.text for item in bundle.requirements}
             because = tuple(
-                reqs[m.requirement_id]
-                for m in bundle.mappings
-                if m.status is MappingStatus.MET and m.requirement_id in reqs
+                reqs[mapping.requirement_id]
+                for mapping in bundle.mappings
+                if mapping.status is MappingStatus.MET
+                and mapping.requirement_id in reqs
             )[:3]
-            out.append((role, index, tied, because))
-        return tuple(out)
+            candidates.append(
+                RankableRole(
+                    id=role.id,
+                    title=role.title,
+                    fit_score=role.fit_score,
+                    because=because,
+                )
+            )
+        return tuple(
+            (views[item.id], item.rank, item.tied, item.because)
+            for item in rank_roles(candidates)
+        )
 
     def _session(self, uow: SqlUnitOfWork) -> Session:
         session = uow._session  # noqa: SLF001
