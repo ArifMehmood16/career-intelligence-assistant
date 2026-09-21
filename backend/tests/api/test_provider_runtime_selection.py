@@ -228,3 +228,46 @@ def test_bullet_phrasing_calls_the_selected_scripted_provider() -> None:
     assert provenance["model"] == "gpt-4o-mini"
     assert provenance["leftMachine"] is True
     assert len(transport.calls) > calls_after_analysis
+
+
+def test_open_question_records_accounting_without_document_text() -> None:
+    transport = _scripted_openai_answer("The CV cites owned dbt models in production.")
+    app = create_app(providers=_openai_settings())
+    app.state.http_transport = transport
+    client = TestClient(app)
+    created = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    assert created.status_code == 201
+    role_id = client.post(
+        "/api/roles",
+        json={"title": "AE", "company": "Acme", "description": _JD},
+    ).json()["role"]["id"]
+    chosen = client.put(
+        "/api/settings/providers",
+        json={
+            "answerProviderId": "openai",
+            "answerModel": "gpt-4o-mini",
+            "indexProviderId": "hermetic",
+            "indexModel": "lexical-hash-v1",
+            "acknowledgedEgress": True,
+        },
+    )
+    assert chosen.status_code == 200
+    asked = client.post(
+        "/api/messages",
+        headers={"Accept": "application/json"},
+        json={
+            "content": _QUESTION,
+            "roleId": role_id,
+            "clientRequestId": "cr-accounting-1",
+        },
+    )
+    assert asked.status_code == 200
+    records = app.state.call_accountant.records
+    assert records
+    entry = records[-1]
+    assert entry.provider_id == "openai"
+    assert entry.model_tag == "gpt-4o-mini"
+    assert entry.left_machine is True
+    dumped = str(records)
+    assert "warehouse" not in dumped
+    assert "dbt" not in dumped
