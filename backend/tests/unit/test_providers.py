@@ -244,3 +244,35 @@ def test_openai_adapter_sends_authorization_only_when_constructed() -> None:
     )
     adapter.complete(CompletionRequest(system="s", user="u", max_output_tokens=5))
     assert transport.calls
+
+
+def test_complete_rechecks_egress_and_makes_no_network_call() -> None:
+    transport = ScriptedTransport(
+        {
+            "/chat/completions": HttpResponse(
+                200,
+                json.dumps(
+                    {
+                        "choices": [
+                            {"message": {"content": "ok"}, "finish_reason": "stop"}
+                        ],
+                        "usage": {},
+                    }
+                ).encode(),
+                {},
+            )
+        }
+    )
+    settings = ProviderSettings(
+        allow_hosted_providers=True,
+        openai_api_key=SecretStr("sk-should-never-travel"),
+        completion_provider="openai",
+        openai_completion_model="gpt-4o-mini",
+        provider_allow_local_fallback=True,
+    )
+    port = build_completion_port(settings, transport=transport)
+    settings.allow_hosted_providers = False
+
+    with pytest.raises(EgressNotPermittedError):
+        port.complete(CompletionRequest(system="s", user="u", max_output_tokens=5))
+    assert transport.calls == []
