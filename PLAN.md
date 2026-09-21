@@ -588,7 +588,7 @@ real application.
       leave a role marked `ready` with a missing or stale score; CV deletion needs an
       equally explicit non-ready/deletion outcome. Add production-path tests for
       queued/running/succeeded/failed states, restart recovery and no partial results.
-- [ ] **13A.4 Make provider selection affect actual work.** Resolve the persisted
+- [x] **13A.4 Make provider selection affect actual work.** Resolve the persisted
       workspace choice through the Phase 2 factories for requirement extraction,
       claim extraction, open-question answers and generated phrasing. Keep the
       completion and embedding choices independent, enforce the hosted egress gate at

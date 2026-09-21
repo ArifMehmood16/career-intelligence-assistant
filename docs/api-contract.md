@@ -430,11 +430,18 @@ ProviderChoice { answerProviderId; answerModel; indexProviderId; indexModel }
 `PUT` body is a `ProviderChoice` plus `acknowledgedEgress: boolean`.
 
 - `403 egress_not_permitted` — hosted provider while `ALLOW_HOSTED_PROVIDERS` is false
-  or no key is configured.
+  or no key is configured. The same code is returned if the gate closes after a
+  hosted choice was stored: Ask and generation refuse and make no network attempt.
 - `409 egress_not_acknowledged` — hosted provider without `acknowledgedEgress: true`.
   The confirmation dialog is enforced server-side, not only in the UI.
 - Changing `indexProviderId` or `indexModel` invalidates embeddings and returns
   `reindex: { jobId }` as an additive field.
+
+The persisted `answerProviderId` / `answerModel` is what Ask, requirement/claim
+extraction and bullet phrasing actually call. `indexProviderId` stays independent.
+Answer and draft `provider` / `model` / `leftMachine` come from that completion
+port, not a hard-coded hermetic tag. Call accounting records those identifiers and
+token counts only — never question, CV or prompt text.
 
 **No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
 masked, not a boolean per key beyond `available`. A redaction test asserts that the

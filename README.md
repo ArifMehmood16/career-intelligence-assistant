@@ -165,8 +165,9 @@ embeddings with a hosted completer is a sensible configuration in its own right.
 
 Hosted providers are unreachable unless two things are true: `ALLOW_HOSTED_PROVIDERS`
 is on in server configuration, and that provider's key is present. A single enforced
-chokepoint makes the decision. No adapter can reach the network around it, and a test
-asserts that.
+chokepoint makes the decision at construction **and** on every complete or embed
+call. Closing the gate after an adapter was built still refuses and makes no network
+attempt, and a test asserts that.
 
 Within what the server permits, the active provider is a workspace setting changed in
 the UI. Choosing a hosted one shows a notice saying CV, job-description, supporting

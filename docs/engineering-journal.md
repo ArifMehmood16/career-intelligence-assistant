@@ -18,6 +18,23 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.4 — Provider selection drives extraction, Ask and phrasing
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_provider_runtime_selection.py::test_open_question_calls_the_selected_scripted_provider -q --no-cov` — red first (`provider` was `hermetic`); then green after Ask used the workspace choice
+  - `pytest tests/unit/test_providers.py::test_complete_rechecks_egress_and_makes_no_network_call -q --no-cov` — red first (DID NOT RAISE); then green after call-time egress wrap
+  - `pytest tests/api/test_provider_runtime_selection.py::test_requirement_extraction_calls_the_selected_scripted_provider -q --no-cov` — red first (`transport.calls` empty); then green
+  - `pytest tests/api/test_provider_runtime_selection.py::test_bullet_phrasing_calls_the_selected_scripted_provider -q --no-cov` — red first (`provider` was `hermetic`); then green
+  - `pytest tests/api/test_provider_runtime_selection.py::test_open_question_records_accounting_without_document_text -q --no-cov` — red first (no `call_accountant`); then green
+  - `make test` — 236 passed, 3 skipped, 42 deselected; coverage 80.61%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 42 passed
+  - `make lint` — ruff, mypy 118 files, frontend tsc and eslint green
+- Observed result: persisted answer provider is used for open questions, requirement/claim extraction (non-hermetic) and bullet phrasing. Completion and embedding choices stay independent. Hosted egress is checked at construction and again on `complete()`. A rejected hosted choice returns 403 with no transport calls. Answers, bullets and interview/cover-letter provenance come from the selected completion port rather than a hard-coded hermetic tag. Call accounting stores provider/model/`left_machine` and token counts, never document text; SQL-backed apps write `provider_call_accounting` rows.
+- Decisions made: hermetic `create_app()` still defaults completion/embedding to hermetic so env `COMPLETION_PROVIDER=openai` cannot leak into API tests. Hermetic analysis stays on rules extractors; model-backed extractors wrap the Phase 2 factory only when the workspace answer choice is not hermetic. Local fallback never swallows `EgressNotPermittedError`.
+- Problems hit: wrapping analysis in `Model*Extractor` for the hermetic default dropped SQL fit scores to 0 because hermetic structured output did not map cleanly; restored rules for hermetic choice. Env-hosted `ProviderSettings()` on the SQL worker similarly tried a real OpenAI call in integration tests; worker defaults without injected settings stay hermetic.
+- Carried forward: 13A.5 database-backed retrieval and span resolution.
+
 ## Phase 13A.3 — PostgreSQL-backed analysis worker
 
 - Date: 2026-09-21

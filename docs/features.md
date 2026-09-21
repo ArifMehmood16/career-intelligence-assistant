@@ -338,8 +338,9 @@ Four providers behind two independent ports — completion and embeddings:
   or returns a key, in any shape, including masked. A reviewer enables a hosted
   provider by editing `config/app.env`, which is the same act as accepting the egress.
 - Hosted providers are unreachable unless `ALLOW_HOSTED_PROVIDERS` is true **and** the
-  key is present. One enforced chokepoint decides, and a test proves no adapter
-  reaches the network around it.
+  key is present. The gate is checked when a hosted adapter is constructed **and**
+  again on every complete/embed call. A test proves a closed gate makes no network
+  attempt, including after the adapter was already built.
 - A hosted provider that fails does not silently become a local one. If fallback is
   enabled, the answer says a fallback happened.
 - Switching the index provider invalidates embeddings, so it triggers a re-index and

@@ -538,6 +538,26 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 060 — Phase 13A.4 provider selection drives actual work (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.4
+- Prompt intent: implement 13A.4 in TDD style with regular commits.
+- Suggestion: resolve workspace completion choice through Phase 2 factories for Ask,
+  extraction and bullet phrasing; re-check hosted egress on every `complete()`;
+  persist accounting without content; stop hard-coding hermetic draft provenance.
+- Outcome: accepted, with the changes below.
+- Reason: Ask still constructed `HermeticCompletionAdapter` regardless of the
+  persisted choice, so selecting OpenAI never called it. Construction-only egress
+  would still network if the gate closed after the adapter existed.
+- Rejected alternatives: putting `http_transport` on `create_app()` before the first
+  red (would have failed on TypeError instead of `provider == hermetic`); using
+  `Model*Extractor` for hermetic analysis (SQL fit scores dropped to 0); reading
+  env `COMPLETION_PROVIDER` in hermetic `create_app()` (API tests reached OpenAI).
+- Human validation: each slice had a failing test then a green; `make test` 236
+  passed, coverage 80.61%; `make test-integration` 42 passed; `make lint` green.
+
 ### 059 — Phase 13A.3 PostgreSQL analysis worker (TDD)
 
 - Date: 2026-09-21
