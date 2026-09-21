@@ -3,9 +3,19 @@ import { Link } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Role } from "@/types";
 
+export type RoleHeaderState =
+  | "loading"
+  | "ready"
+  | "not-found"
+  | "failed"
+  | "analysing"
+  | "error";
+
 export interface RoleHeaderProps {
   role: Role | null;
   loading: boolean;
+  state?: RoleHeaderState;
+  onRetry?: () => void;
 }
 
 export function RoleHeader({ role, loading }: RoleHeaderProps) {
