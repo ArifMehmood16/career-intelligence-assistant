@@ -35,6 +35,10 @@ from career_assistant.api.schemas import (
     RoleResponse,
 )
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.documents.supporting import (
+    InMemorySupportingDocumentStore,
+    SupportingDocumentStore,
+)
 from career_assistant.application.generation.pipeline import (
     DraftProvenance,
     GenerationCounters,
@@ -44,6 +48,7 @@ from career_assistant.application.intake.resolve_span import (
     SpanNotFoundError,
     resolve_span,
 )
+from career_assistant.application.intake.workspace_spans import lookup_workspace_span
 from career_assistant.application.ports.persistence import GeneratedDraftRecord
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
@@ -87,6 +92,14 @@ def _roles(request: Request) -> InMemoryRoleStore:
     return store
 
 
+def _supporting_store(request: Request) -> SupportingDocumentStore:
+    store = getattr(request.app.state, "supporting_store", None)
+    if store is None:
+        store = InMemorySupportingDocumentStore(cv_store=_cv_store(request))
+        request.app.state.supporting_store = store
+    return store
+
+
 def _role_response(role: RoleView) -> RoleResponse:
     return RoleResponse(
         id=role.id,
@@ -105,7 +118,13 @@ def _evidence(
 ) -> EvidenceResponse | None:
     if not span_id:
         return None
-    found = _cv_store(request).get_span(workspace_id, span_id)
+    found = lookup_workspace_span(
+        workspace_id,
+        span_id,
+        cv_store=_cv_store(request),
+        supporting_store=_supporting_store(request),
+        role_store=_roles(request),
+    )
     if found is None:
         return None
     span, pages = found

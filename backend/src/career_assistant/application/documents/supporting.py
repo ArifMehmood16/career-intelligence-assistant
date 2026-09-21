@@ -74,6 +74,10 @@ class SupportingDocumentStore(Protocol):
         self, workspace_id: str, document_id: str
     ) -> DownloadableDocument | None: ...
 
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None: ...
+
 
 @dataclass
 class InMemorySupportingDocumentStore:
@@ -156,6 +160,15 @@ class InMemorySupportingDocumentStore:
             original_bytes=cv.original_bytes,
             kind=DocumentKind.CV.value,
         )
+
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        for stored in self._letters.get(workspace_id, {}).values():
+            for span in stored.spans:
+                if span.id == span_id:
+                    return span, stored.pages
+        return None
 
 
 def upload_pasted_cover_letter(

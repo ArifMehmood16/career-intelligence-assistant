@@ -45,7 +45,7 @@ from career_assistant.application.ports.persistence import (
 )
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
-from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.domain.documents import DocumentKind, Page, Span
 
 
 def _as_uuid(value: str) -> uuid.UUID:
@@ -161,6 +161,42 @@ class SqlDocumentRepository:
             )
             for row in rows
         )
+
+    def find_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        try:
+            wid = _as_uuid(workspace_id)
+            sid = _as_uuid(span_id)
+        except ValueError:
+            return None
+        row = self._session.scalar(
+            select(SpanRow).where(
+                SpanRow.workspace_id == wid,
+                SpanRow.id == sid,
+            )
+        )
+        if row is None:
+            return None
+        document = self._session.get(DocumentRow, row.document_id)
+        if document is None:
+            return None
+        span = Span(
+            id=str(row.id),
+            document_id=str(row.document_id),
+            page_number=row.page_number,
+            start_offset=row.start_offset,
+            end_offset=row.end_offset,
+            text=row.text,
+        )
+        pages = (
+            Page(
+                document_id=str(document.id),
+                page_number=row.page_number,
+                text=document.normalised_text,
+            ),
+        )
+        return span, pages
 
     def ensure_spans(
         self, workspace_id: str, document_id: str, spans: tuple[Span, ...]

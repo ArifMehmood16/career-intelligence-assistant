@@ -8,7 +8,7 @@ from enum import StrEnum
 from typing import Protocol
 
 from career_assistant.domain.claims import Claim
-from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import AnalysisJob, RoleStatus
 from career_assistant.domain.mapping import RequirementMapping
@@ -116,6 +116,10 @@ class DocumentRepository(Protocol):
     def get_active_cv(self, workspace_id: str) -> StoredDocument | None: ...
 
     def list_spans(self, workspace_id: str, document_id: str) -> tuple[Span, ...]: ...
+
+    def find_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None: ...
 
     def ensure_spans(
         self, workspace_id: str, document_id: str, spans: tuple[Span, ...]
