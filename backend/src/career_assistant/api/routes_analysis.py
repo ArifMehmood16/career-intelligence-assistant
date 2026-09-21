@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Protocol
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import PlainTextResponse
@@ -326,6 +328,39 @@ def _as_bullet_wire(draft: object) -> BulletDraftWire:
             ),
         )
     raise TypeError(f"unsupported bullet draft type: {type(draft)!r}")
+
+
+class _VersionedDraft(Protocol):
+    version: int
+
+
+def _pick_draft_version[T: _VersionedDraft](
+    drafts: Sequence[object],
+    version: int | None,
+    as_wire: Callable[[object], T],
+) -> T | None:
+    wires = [as_wire(item) for item in drafts]
+    if not wires:
+        return None
+    if version is None:
+        return wires[-1]
+    return next((item for item in wires if item.version == version), None)
+
+
+def _cover_letter_markdown(wire: CoverLetterDraftWire) -> str:
+    paragraphs = [
+        str(para.get("text", "")) for para in wire.paragraphs if isinstance(para, dict)
+    ]
+    return "\n\n".join(p for p in paragraphs if p) + "\n"
+
+
+def _bullets_markdown(wire: BulletDraftWire) -> str:
+    lines = ["# CV bullets", ""]
+    for bullet in wire.bullets:
+        if isinstance(bullet, dict) and bullet.get("text"):
+            lines.append(str(bullet["text"]))
+    lines.append("")
+    return "\n".join(lines)
 
 
 @router.get("/roles/{role_id}/requirements", response_model=list[RequirementWire])
@@ -694,6 +729,7 @@ def export_artefact(
     artefact: str,
     request: Request,
     workspace_id: WorkspaceId,
+    version: int | None = Query(default=None),
 ) -> PlainTextResponse:
     store = _roles(request)
     bundle = _require_bundle(request, workspace_id, role_id)
@@ -709,35 +745,24 @@ def export_artefact(
         body = export_markdown(artefact, pack)
     elif artefact == "cover-letter":
         drafts = store.list_cover_letters(workspace_id, role_id)
-        if not drafts:
+        wire = _pick_draft_version(drafts, version, _as_cover_letter_wire)
+        if wire is None:
             raise AppError(
                 "validation_failed",
                 "No cover letter draft to export for this role.",
                 status_code=422,
             )
-        latest = _as_cover_letter_wire(drafts[-1])
-        paragraphs = [
-            str(para.get("text", ""))
-            for para in latest.paragraphs
-            if isinstance(para, dict)
-        ]
-        body = "\n\n".join(p for p in paragraphs if p) + "\n"
+        body = _cover_letter_markdown(wire)
     elif artefact == "bullets":
         drafts = store.list_bullet_drafts(workspace_id, role_id)
-        if not drafts:
+        wire = _pick_draft_version(drafts, version, _as_bullet_wire)
+        if wire is None:
             raise AppError(
                 "validation_failed",
                 "No bullet drafts to export for this role.",
                 status_code=422,
             )
-        lines = ["# CV bullets", ""]
-        for draft in drafts:
-            wire = _as_bullet_wire(draft)
-            for bullet in wire.bullets:
-                if isinstance(bullet, dict) and bullet.get("text"):
-                    lines.append(str(bullet["text"]))
-        lines.append("")
-        body = "\n".join(lines)
+        body = _bullets_markdown(wire)
     else:
         raise AppError(
             "validation_failed",
