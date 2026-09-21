@@ -40,10 +40,12 @@ drafts.
 
 ## Out of scope for this build
 
-Stated as a decision, not an oversight:
+Stated as a decision, not an oversight. The product is a personal career tool meant
+to be run locally by one person. It is not intended to go live for multiple users,
+so this build stays light on multi-user security controls.
 
-- Authentication, authorization and multi-tenancy. Required before any untrusted user
-  touches the system.
+- Authentication, authorization and multi-tenancy. Not required for local personal
+  use. Required before any untrusted user or shared deployment.
 - Network hardening, WAF, rate limiting at a gateway.
 - Malware scanning of uploads.
 - Audit logging and incident response process.

@@ -38,6 +38,9 @@ class InMemoryConversationStore:
         self.conversations[workspace_id] = conversation_id
         return conversation_id
 
+    def conversation_id_for(self, workspace_id: str) -> str | None:
+        return self.conversations.get(workspace_id)
+
     def find_by_client_request_id(
         self, workspace_id: str, client_request_id: str
     ) -> tuple[MemoryMessage, MemoryMessage] | None:
@@ -59,7 +62,7 @@ class InMemoryConversationStore:
                 for message in self.messages
                 if message.workspace_id == workspace_id
                 and message.author == "assistant"
-                and message.id == f"a-{question.id}"
+                and message.client_request_id == client_request_id
             ),
             None,
         )
@@ -117,6 +120,7 @@ class InMemoryConversationStore:
         conversation_id = (
             question.conversation_id if question is not None else str(uuid.uuid4())
         )
+        client_request_id = question.client_request_id if question is not None else None
         self.messages.append(
             MemoryMessage(
                 id=answer_id,
@@ -127,7 +131,7 @@ class InMemoryConversationStore:
                 provider=provider,
                 model=model_tag,
                 left_machine=left_machine,
-                client_request_id=None,
+                client_request_id=client_request_id,
                 created_at=datetime.now(UTC),
                 conversation_id=conversation_id,
                 workspace_id=workspace_id,

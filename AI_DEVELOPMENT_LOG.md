@@ -538,6 +538,25 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 058 — Phase 13A.2 SQL chat and provider settings (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Composer, agent session
+- Plan task: 13A.2
+- Prompt intent: continue Phase 13A; keep the product a local personal tool and
+  document a lighter multi-user security posture.
+- Suggestion: SQL ConversationStore and ProviderChoiceStore adapters; wire through
+  `build_sql_stores` / `create_production_app`; UUID answer ids; `answers.kind` and
+  provider model-tag migration; HTTP process-restart tests.
+- Outcome: accepted.
+- Reason: production HTTP still used process memory for chat and provider choice
+  even though SQL tables existed. Hermetic `create_app()` stays in-memory.
+- Rejected alternatives: installing extra security for a multi-user deployment;
+  requiring nonempty citations on FIT answers (FIT has none by design).
+- Human validation: survival suite 4 green against PostgreSQL; hermetic ask /
+  message / provider / wiring tests green; `make test` 230 passed, coverage 80.28%;
+  frontend 100 passed; `make test-integration` 33 passed; `make lint` green.
+
 ### 057 — Phase 13A.1 quality baseline (TDD)
 
 - Date: 2026-09-18

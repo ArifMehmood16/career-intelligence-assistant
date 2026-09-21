@@ -24,7 +24,11 @@ from career_assistant.application.ask.memory import (
     InMemoryConversationStore,
     MemoryMessage,
 )
-from career_assistant.application.ask.service import AskRequest, AskService
+from career_assistant.application.ask.service import (
+    AskRequest,
+    AskService,
+    ConversationStore,
+)
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
 from career_assistant.application.roles.store import (
@@ -55,7 +59,7 @@ def _role_store(request: Request) -> InMemoryRoleStore:
     return store
 
 
-def _conversation_store(request: Request) -> InMemoryConversationStore:
+def _conversation_store(request: Request) -> ConversationStore:
     store = getattr(request.app.state, "conversation_store", None)
     if store is None:
         store = InMemoryConversationStore()
@@ -150,6 +154,12 @@ def _build_ask_request(
     )
 
 
+def _as_memory_message(message: object) -> MemoryMessage:
+    if isinstance(message, MemoryMessage):
+        return message
+    raise TypeError("conversation store must yield MemoryMessage records")
+
+
 def _citations_wire(result: AnswerResult) -> list[CitationWire]:
     return [
         CitationWire(id=citation.span_id, label=citation.label, evidence=None)
@@ -203,11 +213,11 @@ def _history_message_wire(message: MemoryMessage) -> ChatMessageWire:
 @router.get("/messages", response_model=list[ChatMessageWire])
 def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessageWire]:
     store = _conversation_store(request)
-    conversation_id = store.conversations.get(workspace_id)
+    conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is None:
         return []
     history = store.list_history(workspace_id, conversation_id)
-    return [_history_message_wire(message) for message in history]
+    return [_history_message_wire(_as_memory_message(message)) for message in history]
 
 
 @router.delete(
@@ -217,7 +227,7 @@ def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessag
 )
 def delete_messages(request: Request, workspace_id: WorkspaceId) -> Response:
     store = _conversation_store(request)
-    conversation_id = store.conversations.get(workspace_id)
+    conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is not None:
         store.hard_delete(workspace_id, conversation_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -268,4 +278,4 @@ def post_message(
             status_code=500,
         )
     _question, answer = found
-    return _assistant_message_wire(result=result, answer=answer)
+    return _assistant_message_wire(result=result, answer=_as_memory_message(answer))

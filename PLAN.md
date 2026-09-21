@@ -571,7 +571,7 @@ real application.
       the configured checks merely to obtain green output. Record the two current
       third-party deprecation warnings and either remove them through compatible
       dependency upgrades or carry them as an explicit Phase 15 maintenance risk.
-- [ ] **13A.2 Make PostgreSQL the production source of truth for chat and provider
+- [x] **13A.2 Make PostgreSQL the production source of truth for chat and provider
       settings.** Add application adapters over the existing conversation repository
       and `provider_settings` table, including selected model tags; wire them through
       `build_sql_stores` / `create_production_app`. Remove production fallbacks to

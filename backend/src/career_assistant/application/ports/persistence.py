@@ -84,6 +84,7 @@ class AnswerRecord:
     workspace_id: str
     question_id: str
     body: str
+    kind: str
     provider: str
     model_tag: str
     left_machine: bool
@@ -93,7 +94,7 @@ class AnswerRecord:
 @dataclass(frozen=True, slots=True)
 class HistoryMessage:
     id: str
-    kind: str  # question | answer
+    kind: str  # question | answer | insufficient
     content: str
     created_at: datetime
     provider: str | None = None
@@ -132,6 +133,8 @@ class DocumentRepository(Protocol):
 class ConversationRepository(Protocol):
     def create_conversation(self, workspace_id: str, conversation_id: str) -> None: ...
 
+    def conversation_id_for(self, workspace_id: str) -> str | None: ...
+
     def add_question(
         self,
         workspace_id: str,
@@ -153,6 +156,7 @@ class ConversationRepository(Protocol):
         model_tag: str,
         left_machine: bool,
         citation_span_ids: tuple[str, ...],
+        kind: str = "answer",
     ) -> AnswerRecord: ...
 
     def get_by_client_request_id(
@@ -211,6 +215,14 @@ class AnalysisJobRepository(Protocol):
         job_ids: tuple[str, ...],
         created_at: datetime,
     ) -> tuple[str, ...]: ...
+
+    def list_queued(self) -> tuple[AnalysisJob, ...]: ...
+
+    def list_running(self) -> tuple[AnalysisJob, ...]: ...
+
+    def active_for_role(
+        self, workspace_id: str, role_id: str
+    ) -> AnalysisJob | None: ...
 
 
 class AnalysisResultRepository(Protocol):

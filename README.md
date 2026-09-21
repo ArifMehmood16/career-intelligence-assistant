@@ -9,6 +9,7 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > **Status:** phase 10 generation complete (validator, gap plan, bullets, interview
 > pack, cover letter, export). Artefact rows in PostgreSQL (10.9) and HTTP routes
 > are next with Phase 11.
+> This is a **personal tool for local use**, not a multi-user hosted product.
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
 > protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
 

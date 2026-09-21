@@ -18,6 +18,20 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.2 — SQL chat and provider settings
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/integration/test_chat_provider_http_sql.py::test_messages_survive_fresh_app_process -m integration` — red first on empty FIT citations and a doubled check-constraint name; then green
+  - focused hermetic ask/message/provider/wiring tests — 19 passed
+  - `make test` — 230 passed, 3 skipped, 33 deselected; coverage 80.28%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 33 passed
+  - `make lint` — ruff, mypy 114 files, frontend tsc and eslint green
+- Observed result: production `create_production_app` wires SQL conversation and provider-choice stores. Questions, answers, citations, idempotent retries, deletion and provider model tags survive a fresh app process and stay workspace-scoped. `create_app()` remains in-memory for hermetic API tests.
+- Decisions made: UUID answer ids from `id_factory`; additive `answers.kind` and provider model-tag columns; one conversation per workspace; local personal-use security posture documented (no multi-user auth in this build).
+- Problems hit: FIT answers have empty citations by design — survival test uses an evidence question. Alembic naming doubled `ck_answers_answer_kind`.
+- Carried forward: 13A.3 PostgreSQL-backed analysis worker in production.
+
 ## Phase 13A.1 — Restore the complete quality baseline
 
 - Date: 2026-09-18

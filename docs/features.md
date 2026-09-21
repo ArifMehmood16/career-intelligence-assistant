@@ -414,7 +414,9 @@ Named so the absence reads as a decision:
   market, the competition or what you want. It maps requirements to evidence; the
   decision is yours.
 - **No multi-CV comparison** in this build. One CV per workspace.
-- **No authentication or multi-tenancy.** Required before an untrusted user touches
-  it, and named as such rather than quietly missing.
+- **No authentication or multi-tenancy.** This is a personal tool for local use, not
+  a multi-user hosted product. Cookie workspace scoping still keeps rows apart in
+  the database; login and tenant isolation stay out of scope until that product
+  decision changes.
 - **No scanned-image CVs.** OCR is a real piece of work and is out of scope until it
   is justified.

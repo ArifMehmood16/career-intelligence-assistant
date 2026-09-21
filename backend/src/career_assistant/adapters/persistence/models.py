@@ -453,6 +453,10 @@ class AnswerRow(Base):
     __tablename__ = "answers"
     __table_args__ = (
         UniqueConstraint("question_id", name="uq_answers_one_per_question"),
+        CheckConstraint(
+            "kind IN ('answer', 'insufficient')",
+            name="answer_kind",
+        ),
         Index("ix_answers_workspace_id", "workspace_id"),
     )
 
@@ -468,6 +472,7 @@ class AnswerRow(Base):
         nullable=False,
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, default="answer")
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     model_tag: Mapped[str] = mapped_column(String(128), nullable=False)
     left_machine: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -583,6 +588,12 @@ class ProviderSettingsRow(Base):
     )
     completion_provider: Mapped[str] = mapped_column(String(64), nullable=False)
     embedding_provider: Mapped[str] = mapped_column(String(64), nullable=False)
+    completion_model: Mapped[str] = mapped_column(
+        String(128), nullable=False, default=""
+    )
+    embedding_model: Mapped[str] = mapped_column(
+        String(128), nullable=False, default=""
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

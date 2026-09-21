@@ -18,14 +18,18 @@ the shape changes.
 
 ## Workspace identity
 
-There is no authentication in this build. The server resolves a workspace from a
-`workspace` cookie, issuing one on first request (`HttpOnly`, `SameSite=Lax`). Every
-query is scoped by workspace id, and an integration test proves one workspace cannot
-read another's rows — so the scoping is real even though the identity is not yet.
+This is a personal tool intended for local single-user use, not a live multi-user
+deployment. There is no authentication in this build. The server resolves a workspace
+from a `workspace` cookie, issuing one on first request (`HttpOnly`, `SameSite=Lax`).
+Every query is scoped by workspace id, and an integration test proves one workspace
+cannot read another's rows — so the scoping is real even though identity is a local
+cookie, not a login.
 
 PostgreSQL is the source of truth behind every route. Original document bytes, parsed
-spans, roles, generated artefacts, questions, final answers and citations are durable;
-the API never falls back to process memory, SQLite or a filesystem upload directory.
+spans, roles, generated artefacts, questions, final answers, citations and workspace
+provider choices are durable; the production API never falls back to process memory,
+SQLite or a filesystem upload directory. Hermetic `create_app()` tests may still use
+in-memory stores.
 
 ---
 
