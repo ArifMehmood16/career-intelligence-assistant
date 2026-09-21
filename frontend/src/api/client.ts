@@ -384,12 +384,21 @@ export type ExportArtefact =
 export async function exportRoleArtefact(
   roleId: string,
   artefact: ExportArtefact,
+  options?: { version?: number },
 ): Promise<string> {
-  const response = await fetch(`/api/roles/${roleId}/export/${artefact}.md`, {
-    method: "GET",
-    headers: { Accept: "text/markdown, text/plain, */*" },
-    credentials: "same-origin",
-  });
+  const params = new URLSearchParams();
+  if (options?.version !== undefined) {
+    params.set("version", String(options.version));
+  }
+  const query = params.size > 0 ? `?${params.toString()}` : "";
+  const response = await fetch(
+    `/api/roles/${roleId}/export/${artefact}.md${query}`,
+    {
+      method: "GET",
+      headers: { Accept: "text/markdown, text/plain, */*" },
+      credentials: "same-origin",
+    },
+  );
   if (!response.ok) {
     let code = "internal_error";
     let message = "Export failed.";

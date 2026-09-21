@@ -383,8 +383,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               setLetterRefusal(null);
               setSelectedLetter(version);
             }}
-            onExport={() => {
-              void exportRoleArtefact(roleId, "cover-letter").then((body) =>
+            onExport={(draft) => {
+              void exportRoleArtefact(roleId, "cover-letter", {
+                version: draft.version,
+              }).then((body) =>
                 downloadMarkdown(`cover-letter-${roleId}.md`, body),
               );
             }}

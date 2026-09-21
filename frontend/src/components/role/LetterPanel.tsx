@@ -25,7 +25,7 @@ export interface LetterPanelProps {
   onIncludeGapLineChange: (include: boolean) => void;
   onGenerate: () => void;
   onSelectVersion: (draft: CoverLetterDraft) => void;
-  onExport: () => void;
+  onExport: (draft: CoverLetterDraft) => void;
   onCitation: (spanId: string) => void;
   onOpenGaps: () => void;
 }
@@ -140,7 +140,9 @@ export function LetterPanel({
               type="button"
               variant="outline"
               size="sm"
-              onClick={onExport}
+              onClick={() => {
+                onExport(draft);
+              }}
             >
               Export Markdown
             </Button>
