@@ -261,7 +261,7 @@ class SqlAnalysisJobRepository:
             raise ValueError("job_ids must match workspace role count")
         assigned: list[str] = []
         for role, job_id in zip(roles, job_ids, strict=True):
-            self._roles.set_status(workspace_id, role.id, RoleStatus.ANALYSING)
+            self._roles.bump_analysis_version(workspace_id, role.id)
             active = self._session.scalars(
                 select(AnalysisJobRow).where(
                     AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
@@ -286,6 +286,34 @@ class SqlAnalysisJobRepository:
             assigned.append(job_id)
         self._session.flush()
         return tuple(assigned)
+
+    def list_queued(self) -> tuple[AnalysisJob, ...]:
+        return self._list_by_state(JobState.QUEUED)
+
+    def list_running(self) -> tuple[AnalysisJob, ...]:
+        return self._list_by_state(JobState.RUNNING)
+
+    def active_for_role(self, workspace_id: str, role_id: str) -> AnalysisJob | None:
+        row = self._session.scalar(
+            select(AnalysisJobRow)
+            .where(
+                AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
+                AnalysisJobRow.role_id == _as_uuid(role_id),
+                AnalysisJobRow.state.in_(
+                    (JobState.QUEUED.value, JobState.RUNNING.value)
+                ),
+            )
+            .order_by(AnalysisJobRow.created_at.asc())
+        )
+        return _to_job(row) if row is not None else None
+
+    def _list_by_state(self, state: JobState) -> tuple[AnalysisJob, ...]:
+        rows = self._session.scalars(
+            select(AnalysisJobRow)
+            .where(AnalysisJobRow.state == state.value)
+            .order_by(AnalysisJobRow.created_at.asc())
+        ).all()
+        return tuple(_to_job(row) for row in rows)
 
 
 class SqlAnalysisResultRepository:
@@ -403,10 +431,12 @@ class SqlAnalysisResultRepository:
         role_id: str,
         job: AnalysisJob,
     ) -> None:
+        role = self._roles.get(workspace_id, role_id)
+        version = None if role is None else role.analysis_version
         self._delete_analysis_rows(
             _as_uuid(workspace_id),
             _as_uuid(role_id),
-            analysis_version=None,
+            analysis_version=version,
         )
         self._jobs.save(job)
         self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
@@ -434,13 +464,26 @@ class SqlAnalysisResultRepository:
                     select(MappingSpanRow).where(MappingSpanRow.mapping_id == row.id)
                 ).all()
             )
+            claim_ids: tuple[str, ...] = ()
+            if span_ids:
+                found = self._session.scalars(
+                    select(ClaimSpanRow.claim_id)
+                    .where(
+                        ClaimSpanRow.workspace_id == _as_uuid(workspace_id),
+                        ClaimSpanRow.span_id.in_(
+                            [_as_uuid(span_id) for span_id in span_ids]
+                        ),
+                    )
+                    .distinct()
+                ).all()
+                claim_ids = tuple(str(claim_id) for claim_id in found)
             results.append(
                 RequirementMapping(
                     requirement_id=str(row.requirement_id),
                     status=MappingStatus(row.status),
                     reason_code=MappingReason(row.reason_code),
                     justifying_span_ids=span_ids,
-                    justifying_claim_ids=(),
+                    justifying_claim_ids=claim_ids,
                 )
             )
         return tuple(results)

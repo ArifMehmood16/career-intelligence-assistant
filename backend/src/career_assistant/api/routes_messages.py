@@ -9,11 +9,9 @@ from datetime import UTC
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import StreamingResponse
 
-from career_assistant.adapters.providers.hermetic.completion import (
-    HermeticCompletionAdapter,
-)
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
+from career_assistant.api.provider_runtime import completion_port_for
 from career_assistant.api.schemas import (
     ChatMessageWire,
     CitationWire,
@@ -24,16 +22,24 @@ from career_assistant.application.ask.memory import (
     InMemoryConversationStore,
     MemoryMessage,
 )
-from career_assistant.application.ask.service import AskRequest, AskService
+from career_assistant.application.ask.service import (
+    AskRequest,
+    AskService,
+    ConversationStore,
+)
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.documents.supporting import (
+    InMemorySupportingDocumentStore,
+    SupportingDocumentStore,
+)
+from career_assistant.application.intake.workspace_spans import retrieval_pool
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
     RoleView,
 )
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
-from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.prompts import RetrievedSpan
 
 router = APIRouter(tags=["ask"])
@@ -55,7 +61,15 @@ def _role_store(request: Request) -> InMemoryRoleStore:
     return store
 
 
-def _conversation_store(request: Request) -> InMemoryConversationStore:
+def _supporting_store(request: Request) -> SupportingDocumentStore:
+    store = getattr(request.app.state, "supporting_store", None)
+    if store is None:
+        store = InMemorySupportingDocumentStore(cv_store=_cv_store(request))
+        request.app.state.supporting_store = store
+    return store
+
+
+def _conversation_store(request: Request) -> ConversationStore:
     store = getattr(request.app.state, "conversation_store", None)
     if store is None:
         store = InMemoryConversationStore()
@@ -91,21 +105,18 @@ def _known_span_ids(
     workspace_id: str,
     roles: tuple[RoleAnalysisView, ...],
 ) -> frozenset[str]:
-    ids: set[str] = set()
-    cv = _cv_store(request).get_active(workspace_id)
-    if cv is not None:
-        ids.update(span.id for span in cv.spans)
+    ids: set[str] = {item.span.id for item in _retrieved_pool(request, workspace_id)}
     for role in roles:
         ids.update(role.span_texts)
     return frozenset(ids)
 
 
 def _retrieved_pool(request: Request, workspace_id: str) -> tuple[RetrievedSpan, ...]:
-    cv = _cv_store(request).get_active(workspace_id)
-    if cv is None:
-        return ()
-    return tuple(
-        RetrievedSpan(span=span, document_kind=DocumentKind.CV) for span in cv.spans
+    return retrieval_pool(
+        workspace_id,
+        cv_store=_cv_store(request),
+        supporting_store=_supporting_store(request),
+        role_store=_role_store(request),
     )
 
 
@@ -116,7 +127,7 @@ def _ask_service(
 ) -> AskService:
     return AskService(
         store=_conversation_store(request),
-        completion=HermeticCompletionAdapter(),
+        completion=completion_port_for(request, workspace_id),
         known_span_ids=_known_span_ids(request, workspace_id, roles),
         id_factory=lambda _prefix: str(uuid.uuid4()),
     )
@@ -148,6 +159,12 @@ def _build_ask_request(
         roles=roles,
         retrieved_pool=_retrieved_pool(request, workspace_id),
     )
+
+
+def _as_memory_message(message: object) -> MemoryMessage:
+    if isinstance(message, MemoryMessage):
+        return message
+    raise TypeError("conversation store must yield MemoryMessage records")
 
 
 def _citations_wire(result: AnswerResult) -> list[CitationWire]:
@@ -203,11 +220,11 @@ def _history_message_wire(message: MemoryMessage) -> ChatMessageWire:
 @router.get("/messages", response_model=list[ChatMessageWire])
 def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessageWire]:
     store = _conversation_store(request)
-    conversation_id = store.conversations.get(workspace_id)
+    conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is None:
         return []
     history = store.list_history(workspace_id, conversation_id)
-    return [_history_message_wire(message) for message in history]
+    return [_history_message_wire(_as_memory_message(message)) for message in history]
 
 
 @router.delete(
@@ -217,7 +234,7 @@ def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessag
 )
 def delete_messages(request: Request, workspace_id: WorkspaceId) -> Response:
     store = _conversation_store(request)
-    conversation_id = store.conversations.get(workspace_id)
+    conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is not None:
         store.hard_delete(workspace_id, conversation_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -268,4 +285,4 @@ def post_message(
             status_code=500,
         )
     _question, answer = found
-    return _assistant_message_wire(result=result, answer=answer)
+    return _assistant_message_wire(result=result, answer=_as_memory_message(answer))

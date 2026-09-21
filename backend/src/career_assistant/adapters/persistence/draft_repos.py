@@ -50,9 +50,13 @@ class SqlDraftRepository:
         self._session = session
 
     def save(self, draft: NewGeneratedDraft) -> GeneratedDraftRecord:
-        if draft.groundedness is not GroundednessVerdict.PASS:
+        if (
+            draft.groundedness is not GroundednessVerdict.PASS
+            and not draft.used_template_fallback
+        ):
             raise ValueError(
-                "ungrounded drafts cannot be persisted (groundedness must be pass)"
+                "ungrounded drafts cannot be persisted (groundedness must be "
+                "pass unless template fallback was used)"
             )
         next_version = self._next_version(draft.workspace_id, draft.role_id, draft.kind)
         row = GeneratedDraftRow(

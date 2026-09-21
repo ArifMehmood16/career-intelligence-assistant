@@ -21,6 +21,8 @@ from career_assistant.adapters.persistence.models import (
     DocumentRow,
     GeneratedDraftRow,
     MappingRow,
+    ProviderCallAccountingRow,
+    ProviderSettingsRow,
     QuestionRow,
     ScoreExplanationRow,
     SpanRow,
@@ -41,7 +43,9 @@ from career_assistant.application.ports.persistence import (
     StoredDocument,
     WorkspaceRepository,
 )
-from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.application.ports.types import CallRecord
+from career_assistant.application.providers.catalogue import ProviderChoice
+from career_assistant.domain.documents import DocumentKind, Page, Span
 
 
 def _as_uuid(value: str) -> uuid.UUID:
@@ -158,6 +162,42 @@ class SqlDocumentRepository:
             for row in rows
         )
 
+    def find_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        try:
+            wid = _as_uuid(workspace_id)
+            sid = _as_uuid(span_id)
+        except ValueError:
+            return None
+        row = self._session.scalar(
+            select(SpanRow).where(
+                SpanRow.workspace_id == wid,
+                SpanRow.id == sid,
+            )
+        )
+        if row is None:
+            return None
+        document = self._session.get(DocumentRow, row.document_id)
+        if document is None:
+            return None
+        span = Span(
+            id=str(row.id),
+            document_id=str(row.document_id),
+            page_number=row.page_number,
+            start_offset=row.start_offset,
+            end_offset=row.end_offset,
+            text=row.text,
+        )
+        pages = (
+            Page(
+                document_id=str(document.id),
+                page_number=row.page_number,
+                text=document.normalised_text,
+            ),
+        )
+        return span, pages
+
     def ensure_spans(
         self, workspace_id: str, document_id: str, spans: tuple[Span, ...]
     ) -> None:
@@ -248,6 +288,17 @@ class SqlConversationRepository:
         )
         self._session.flush()
 
+    def conversation_id_for(self, workspace_id: str) -> str | None:
+        row = self._session.scalar(
+            select(ConversationRow)
+            .where(ConversationRow.workspace_id == _as_uuid(workspace_id))
+            .order_by(ConversationRow.created_at.asc(), ConversationRow.id.asc())
+            .limit(1)
+        )
+        if row is None:
+            return None
+        return str(row.id)
+
     def add_question(
         self,
         workspace_id: str,
@@ -286,6 +337,7 @@ class SqlConversationRepository:
         model_tag: str,
         left_machine: bool,
         citation_span_ids: tuple[str, ...],
+        kind: str = "answer",
     ) -> AnswerRecord:
         wid = _as_uuid(workspace_id)
         row = AnswerRow(
@@ -293,6 +345,7 @@ class SqlConversationRepository:
             workspace_id=wid,
             question_id=_as_uuid(question_id),
             body=body,
+            kind=kind,
             provider=provider,
             model_tag=model_tag,
             left_machine=left_machine,
@@ -313,6 +366,7 @@ class SqlConversationRepository:
             workspace_id=str(row.workspace_id),
             question_id=str(row.question_id),
             body=row.body,
+            kind=row.kind,
             provider=row.provider,
             model_tag=row.model_tag,
             left_machine=row.left_machine,
@@ -352,6 +406,7 @@ class SqlConversationRepository:
                 workspace_id=str(answer.workspace_id),
                 question_id=str(answer.question_id),
                 body=answer.body,
+                kind=answer.kind,
                 provider=answer.provider,
                 model_tag=answer.model_tag,
                 left_machine=answer.left_machine,
@@ -398,7 +453,7 @@ class SqlConversationRepository:
                 messages.append(
                     HistoryMessage(
                         id=str(answer.id),
-                        kind="answer",
+                        kind=answer.kind,
                         content=answer.body,
                         created_at=answer.created_at or datetime.now(UTC),
                         provider=answer.provider,
@@ -421,6 +476,61 @@ class SqlConversationRepository:
         self._session.flush()
 
 
+class SqlProviderSettingsRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def get(self, workspace_id: str) -> ProviderChoice | None:
+        row = self._session.get(ProviderSettingsRow, _as_uuid(workspace_id))
+        if row is None:
+            return None
+        return ProviderChoice(
+            answer_provider_id=row.completion_provider,
+            answer_model=row.completion_model,
+            index_provider_id=row.embedding_provider,
+            index_model=row.embedding_model,
+        )
+
+    def put(self, workspace_id: str, choice: ProviderChoice) -> None:
+        wid = _as_uuid(workspace_id)
+        row = self._session.get(ProviderSettingsRow, wid)
+        if row is None:
+            self._session.add(
+                ProviderSettingsRow(
+                    workspace_id=wid,
+                    completion_provider=choice.answer_provider_id,
+                    embedding_provider=choice.index_provider_id,
+                    completion_model=choice.answer_model,
+                    embedding_model=choice.index_model,
+                )
+            )
+        else:
+            row.completion_provider = choice.answer_provider_id
+            row.embedding_provider = choice.index_provider_id
+            row.completion_model = choice.answer_model
+            row.embedding_model = choice.index_model
+        self._session.flush()
+
+
+class SqlAccountingRepository:
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def insert(self, workspace_id: str, entry: CallRecord) -> None:
+        self._session.add(
+            ProviderCallAccountingRow(
+                workspace_id=_as_uuid(workspace_id),
+                provider=entry.provider_id,
+                model_tag=entry.model_tag,
+                left_machine=entry.left_machine,
+                purpose=entry.metadata.get("purpose", entry.operation),
+                prompt_tokens=entry.input_tokens,
+                completion_tokens=entry.output_tokens,
+                latency_ms=entry.latency_ms,
+            )
+        )
+
+
 class SqlUnitOfWork:
     def __init__(self, factory: sessionmaker[Session]) -> None:
         self._session_factory = factory
@@ -428,6 +538,8 @@ class SqlUnitOfWork:
         self.workspaces: WorkspaceRepository
         self.documents: DocumentRepository
         self.conversations: ConversationRepository
+        self.provider_settings: SqlProviderSettingsRepository
+        self.accounting: SqlAccountingRepository
         self.roles: RoleRepository
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
@@ -438,6 +550,8 @@ class SqlUnitOfWork:
         self.workspaces = SqlWorkspaceRepository(self._session)
         self.documents = SqlDocumentRepository(self._session)
         self.conversations = SqlConversationRepository(self._session)
+        self.provider_settings = SqlProviderSettingsRepository(self._session)
+        self.accounting = SqlAccountingRepository(self._session)
         self.roles = SqlRoleRepository(self._session)
         self.jobs = SqlAnalysisJobRepository(self._session, self.roles)
         self.analysis = SqlAnalysisResultRepository(

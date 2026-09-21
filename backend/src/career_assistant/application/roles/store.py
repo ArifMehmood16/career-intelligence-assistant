@@ -3,17 +3,29 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from career_assistant.application.documents.cv import CvStore
+from career_assistant.application.ports.errors import EgressNotPermittedError
+from career_assistant.application.ports.extraction import (
+    ClaimExtractionPort,
+    RequirementExtractionPort,
+)
 from career_assistant.application.roles.hermetic_analysis import (
     AnalysisBundle,
     analyse_hermetic,
     band_label,
     count_statuses,
 )
+from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
+from career_assistant.domain.prompts import RetrievedSpan
+
+ExtractorFactory = Callable[
+    [str], tuple[RequirementExtractionPort, ClaimExtractionPort]
+]
 
 
 class RoleOperationRejected(Exception):
@@ -51,6 +63,7 @@ class JobView:
 @dataclass
 class InMemoryRoleStore:
     cv_store: CvStore
+    extractor_factory: ExtractorFactory | None = None
     roles: dict[str, dict[str, RoleView]] = field(default_factory=dict)
     jobs: dict[str, dict[str, JobView]] = field(default_factory=dict)
     analyses: dict[str, dict[str, AnalysisBundle]] = field(default_factory=dict)
@@ -82,7 +95,8 @@ class InMemoryRoleStore:
         now = datetime.now(UTC)
         role_id = str(uuid.uuid4())
         job_id = str(uuid.uuid4())
-        bundle = analyse_hermetic(
+        bundle = self._analyse(
+            workspace_id,
             cv_text=cv.normalised_text,
             cv_document_id=cv.view.id,
             jd_text=description,
@@ -119,6 +133,45 @@ class InMemoryRoleStore:
     def get_role(self, workspace_id: str, role_id: str) -> RoleView | None:
         return self.roles.get(workspace_id, {}).get(role_id)
 
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        for role_id, bundle in self.analyses.get(workspace_id, {}).items():
+            role = self.roles.get(workspace_id, {}).get(role_id)
+            if role is None:
+                continue
+            for span in bundle.jd_spans:
+                if span.id == span_id:
+                    pages = (
+                        Page(
+                            document_id=bundle.jd_document_id,
+                            page_number=1,
+                            text=role.description,
+                        ),
+                    )
+                    return span, pages
+            for span in bundle.cv_claim_spans:
+                if span.id != span_id:
+                    continue
+                cv = self.cv_store.get_active(workspace_id)
+                if cv is None:
+                    return None
+                return span, cv.pages
+        return None
+
+    def job_description_spans(self, workspace_id: str) -> tuple[RetrievedSpan, ...]:
+        items: list[RetrievedSpan] = []
+        for role_id, bundle in self.analyses.get(workspace_id, {}).items():
+            items.extend(
+                RetrievedSpan(
+                    span=span,
+                    document_kind=DocumentKind.JOB_DESCRIPTION,
+                    role_id=role_id,
+                )
+                for span in bundle.jd_spans
+            )
+        return tuple(items)
+
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         return self.jobs.get(workspace_id, {}).get(job_id)
 
@@ -151,7 +204,8 @@ class InMemoryRoleStore:
             )
         now = datetime.now(UTC)
         job_id = str(uuid.uuid4())
-        bundle = analyse_hermetic(
+        bundle = self._analyse(
+            workspace_id,
             cv_text=cv.normalised_text,
             cv_document_id=cv.view.id,
             jd_text=role.description,
@@ -246,6 +300,35 @@ class InMemoryRoleStore:
                 status_code=409,
             )
         return bundle
+
+    def _analyse(
+        self,
+        workspace_id: str,
+        *,
+        cv_text: str,
+        cv_document_id: str,
+        jd_text: str,
+    ) -> AnalysisBundle:
+        requirement_extractor = None
+        claim_extractor = None
+        if self.extractor_factory is not None:
+            try:
+                requirement_extractor, claim_extractor = self.extractor_factory(
+                    workspace_id
+                )
+            except EgressNotPermittedError as exc:
+                raise RoleOperationRejected(
+                    "egress_not_permitted",
+                    "Hosted provider is not permitted.",
+                    status_code=403,
+                ) from exc
+        return analyse_hermetic(
+            cv_text=cv_text,
+            cv_document_id=cv_document_id,
+            jd_text=jd_text,
+            requirement_extractor=requirement_extractor,
+            claim_extractor=claim_extractor,
+        )
 
     def ranked(
         self, workspace_id: str

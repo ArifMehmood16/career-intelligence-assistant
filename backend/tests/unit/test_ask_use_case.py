@@ -53,6 +53,12 @@ class _MemStore:
     questions_before_answers: list[str] = field(default_factory=list)
     deleted: bool = False
 
+    def ensure_conversation(self, workspace_id: str) -> str:
+        return "conv-1"
+
+    def conversation_id_for(self, workspace_id: str) -> str | None:
+        return "conv-1" if self.messages else None
+
     def find_by_client_request_id(
         self, workspace_id: str, client_request_id: str
     ) -> tuple[_MemMessage, _MemMessage] | None:
@@ -70,7 +76,7 @@ class _MemStore:
             (
                 m
                 for m in self.messages
-                if m.author == "assistant" and m.id == f"a-{q.id}"
+                if m.author == "assistant" and m.client_request_id == client_request_id
             ),
             None,
         )
@@ -127,7 +133,14 @@ class _MemStore:
                 provider=provider,
                 model=model_tag,
                 left_machine=left_machine,
-                client_request_id=None,
+                client_request_id=next(
+                    (
+                        m.client_request_id
+                        for m in self.messages
+                        if m.id == question_id and m.author == "user"
+                    ),
+                    None,
+                ),
                 created_at=NOW,
             )
         )

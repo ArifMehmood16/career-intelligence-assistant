@@ -571,7 +571,7 @@ real application.
       the configured checks merely to obtain green output. Record the two current
       third-party deprecation warnings and either remove them through compatible
       dependency upgrades or carry them as an explicit Phase 15 maintenance risk.
-- [ ] **13A.2 Make PostgreSQL the production source of truth for chat and provider
+- [x] **13A.2 Make PostgreSQL the production source of truth for chat and provider
       settings.** Add application adapters over the existing conversation repository
       and `provider_settings` table, including selected model tags; wire them through
       `build_sql_stores` / `create_production_app`. Remove production fallbacks to
@@ -579,7 +579,7 @@ real application.
       HTTP surface that questions, final answers, citations, idempotent retries,
       deletion and provider choices survive construction of a fresh app process and
       remain workspace-scoped.
-- [ ] **13A.3 Use the PostgreSQL-backed analysis worker in production.** Adding or
+- [x] **13A.3 Use the PostgreSQL-backed analysis worker in production.** Adding or
       reanalysing a role must commit an `analysing` role and queued job, return 202
       before extraction completes, and let the bounded worker publish results or a
       safe failure transactionally. Wire startup recovery for persisted queued and
@@ -588,7 +588,7 @@ real application.
       leave a role marked `ready` with a missing or stale score; CV deletion needs an
       equally explicit non-ready/deletion outcome. Add production-path tests for
       queued/running/succeeded/failed states, restart recovery and no partial results.
-- [ ] **13A.4 Make provider selection affect actual work.** Resolve the persisted
+- [x] **13A.4 Make provider selection affect actual work.** Resolve the persisted
       workspace choice through the Phase 2 factories for requirement extraction,
       claim extraction, open-question answers and generated phrasing. Keep the
       completion and embedding choices independent, enforce the hosted egress gate at
@@ -596,7 +596,7 @@ real application.
       provenance plus accounting. Remove hard-coded hermetic provenance from routes;
       tests must use scripted adapters to prove the selected provider is called and a
       rejected hosted choice makes no network attempt.
-- [ ] **13A.5 Complete database-backed retrieval and span resolution.** Open questions
+- [x] **13A.5 Complete database-backed retrieval and span resolution.** Open questions
       may retrieve workspace-scoped spans from the active CV and uploaded supporting
       cover letters, while role-scoped retrieval may additionally use only that
       role's job description. A single workspace-scoped span resolver must open every
@@ -604,7 +604,7 @@ real application.
       Preserve the hard boundary that cover-letter text cannot become a claim,
       mapping or score input. Cover this through production HTTP tests, including
       cross-workspace and cross-role rejection.
-- [ ] **13A.6 Route all generated prose through the grounded-generation use case.**
+- [x] **13A.6 Route all generated prose through the grounded-generation use case.**
       Bullet, interview-pack and cover-letter HTTP routes must call the Phase 10
       generation pipeline, verify citations against stored spans, run the
       groundedness validator, retry/fall back as specified and persist the real

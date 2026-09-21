@@ -18,14 +18,18 @@ the shape changes.
 
 ## Workspace identity
 
-There is no authentication in this build. The server resolves a workspace from a
-`workspace` cookie, issuing one on first request (`HttpOnly`, `SameSite=Lax`). Every
-query is scoped by workspace id, and an integration test proves one workspace cannot
-read another's rows — so the scoping is real even though the identity is not yet.
+This is a personal tool intended for local single-user use, not a live multi-user
+deployment. There is no authentication in this build. The server resolves a workspace
+from a `workspace` cookie, issuing one on first request (`HttpOnly`, `SameSite=Lax`).
+Every query is scoped by workspace id, and an integration test proves one workspace
+cannot read another's rows — so the scoping is real even though identity is a local
+cookie, not a login.
 
 PostgreSQL is the source of truth behind every route. Original document bytes, parsed
-spans, roles, generated artefacts, questions, final answers and citations are durable;
-the API never falls back to process memory, SQLite or a filesystem upload directory.
+spans, roles, generated artefacts, questions, final answers, citations and workspace
+provider choices are durable; the production API never falls back to process memory,
+SQLite or a filesystem upload directory. Hermetic `create_app()` tests may still use
+in-memory stores.
 
 ---
 
@@ -52,6 +56,8 @@ Every non-2xx response:
 | `role_not_found` / `cv_not_found` / `cover_letter_not_found` / `span_not_found` | 404 | Unknown id in this workspace |
 | `analysis_incomplete` | 409 | Output requested before the analysis job finished |
 | `insufficient_evidence` | 200 | Not an error — an answer kind. Listed here so it is not mistaken for one |
+| `insufficient_cited_claims` | 409 | Bullet requested for a requirement with no cited CV claim |
+| `insufficient_matched_requirements` | 409 | Cover letter refused because fewer than two must-haves are met |
 | `provider_unavailable` | 409 | Selected provider is not usable; `message` gives the reason |
 | `egress_not_permitted` | 403 | Hosted provider selected while the gate is closed |
 | `egress_not_acknowledged` | 409 | Hosted selection without `acknowledgedEgress` |
@@ -248,6 +254,10 @@ InterviewPack {
 }
 ```
 
+Probe questions, lead-with notes and ask-them lines are phrased through the same
+generation pipeline as drafts. Citations on `leadWith` and `thinAreas.nearest` are
+dropped unless the span still resolves in this workspace.
+
 ---
 
 ## Generated drafts
@@ -293,9 +303,17 @@ CoverLetterDraft {
 The cover letter returns `409` with code `insufficient_matched_requirements` when
 fewer than two must-haves are met, with a message that points at the gap plan.
 
-**Every draft route runs the groundedness validator before responding.** A draft that
-fails twice is returned from the deterministic template path with
-`provenance.fallback: "template"`. The response is never an ungrounded draft.
+A bullet returns `409` with code `insufficient_cited_claims` when the requirement has
+no cited CV claim. The instruction is not stored as a grounded draft.
+
+**Every bullet, interview-pack and cover-letter route runs `generate_draft` before
+responding:** phrase through the selected completion port, validate groundedness
+against cited span text, regenerate once, then fall back to the deterministic
+template. Citations are resolved against stored workspace spans. Cover-letter `tone`
+and `includeGapLine` change the template that enters that pipeline. Template-fallback
+drafts persist the validator's real verdict (`provenance.grounded` may be `false`);
+the SQL adapter never rewrites `FAIL` to `PASS`. Model output that fails twice is not
+stored as a passing draft.
 
 Every returned draft is stored in PostgreSQL as an immutable version linked to the
 role-analysis version and its cited spans. Regeneration creates another version; it
@@ -333,9 +351,12 @@ Both are derived from stored scores, so they cannot disagree with a role page.
 GET /api/spans/{id} → Evidence
 ```
 
-The citation chip contract. A span id that does not resolve is a `404`, and the
-frontend treats that as a bug worth surfacing rather than an empty panel — an
-unresolvable citation is the one failure this product must never hide.
+The citation chip contract. One workspace-scoped resolver opens every citation
+emitted by Ask or generated artefacts: the active CV, uploaded supporting cover
+letters, and job-description spans in this workspace. A span id that does not
+resolve, or that belongs to another workspace, is a `404`, and the frontend treats
+that as a bug worth surfacing rather than an empty panel — an unresolvable citation
+is the one failure this product must never hide.
 
 ---
 
@@ -385,6 +406,12 @@ Citations arrive **after** the text because they are validated against stored sp
 once the answer is complete. An answer whose citations do not all resolve is reduced
 to `kind: "insufficient"` before `done` is sent.
 
+Open questions retrieve workspace-scoped spans from the active CV and uploaded
+supporting cover letters. When `roleId` is set they may also retrieve that role's job
+description, never another role's. Cover-letter text cannot become a claim, mapping
+or score input. Every citation, including supporting-letter and JD spans, opens
+through `GET /api/spans/{id}`.
+
 The user question is committed before processing. Exactly one final validated answer
 or insufficient-evidence result, its citations and provider provenance are committed
 after validation. Token events, incomplete text and raw provider payloads are never
@@ -426,11 +453,18 @@ ProviderChoice { answerProviderId; answerModel; indexProviderId; indexModel }
 `PUT` body is a `ProviderChoice` plus `acknowledgedEgress: boolean`.
 
 - `403 egress_not_permitted` — hosted provider while `ALLOW_HOSTED_PROVIDERS` is false
-  or no key is configured.
+  or no key is configured. The same code is returned if the gate closes after a
+  hosted choice was stored: Ask and generation refuse and make no network attempt.
 - `409 egress_not_acknowledged` — hosted provider without `acknowledgedEgress: true`.
   The confirmation dialog is enforced server-side, not only in the UI.
 - Changing `indexProviderId` or `indexModel` invalidates embeddings and returns
   `reindex: { jobId }` as an additive field.
+
+The persisted `answerProviderId` / `answerModel` is what Ask, requirement/claim
+extraction and bullet phrasing actually call. `indexProviderId` stays independent.
+Answer and draft `provider` / `model` / `leftMachine` come from that completion
+port, not a hard-coded hermetic tag. Call accounting records those identifiers and
+token counts only — never question, CV or prompt text.
 
 **No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
 masked, not a boolean per key beyond `available`. A redaction test asserts that the

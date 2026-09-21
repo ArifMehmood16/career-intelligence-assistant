@@ -68,6 +68,9 @@ omit = [
     # Exercised by pytest -m integration; hermetic gate stays deterministic offline.
     "*/adapters/persistence/analysis_repos.py",
     "*/adapters/persistence/draft_repos.py",
+    "*/adapters/persistence/conversation_store.py",
+    "*/adapters/persistence/provider_settings_store.py",
+    "*/adapters/persistence/analysis_worker.py",
 ]
 
 [tool.ruff]

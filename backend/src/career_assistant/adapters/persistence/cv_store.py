@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Callable
-from datetime import UTC
+from datetime import UTC, datetime
 
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import CvView, StoredCv
 from career_assistant.application.ports.persistence import NewDocument, StoredDocument
 from career_assistant.domain.documents import Page, Span
+from career_assistant.domain.jobs import (
+    JobError,
+    JobState,
+    RoleStatus,
+    mark_failed,
+    mark_running,
+)
 
 
 class SqlCvStore:
@@ -26,18 +34,48 @@ class SqlCvStore:
             return _to_stored_cv(document, spans)
 
     def replace(self, workspace_id: str, document: NewDocument) -> StoredCv:
+        now = datetime.now(UTC)
         with self._uow_factory() as uow:
             uow.workspaces.ensure(workspace_id)
             stored = uow.documents.replace_cv(workspace_id, document)
+            roles = uow.roles.list_for_workspace(workspace_id)
+            job_ids = tuple(str(uuid.uuid4()) for _ in roles)
+            assigned: tuple[str, ...] = ()
+            if job_ids:
+                assigned = uow.jobs.enqueue_reanalysis_for_workspace(
+                    workspace_id=workspace_id,
+                    job_ids=job_ids,
+                    created_at=now,
+                )
             spans = uow.documents.list_spans(workspace_id, stored.id)
             uow.commit()
-            return _to_stored_cv(stored, spans)
+            return _to_stored_cv(stored, spans, reanalysis_job_ids=assigned)
 
     def delete_active(self, workspace_id: str) -> None:
+        now = datetime.now(UTC)
         with self._uow_factory() as uow:
             document = uow.documents.get_active_cv(workspace_id)
             if document is None:
                 return
+            for role in uow.roles.list_for_workspace(workspace_id):
+                active = uow.jobs.active_for_role(workspace_id, role.id)
+                if active is not None:
+                    running = (
+                        active
+                        if active.state is JobState.RUNNING
+                        else mark_running(active, at=now)
+                    )
+                    uow.jobs.save(
+                        mark_failed(
+                            running,
+                            at=now,
+                            error=JobError(
+                                code="cv_deleted",
+                                message="The CV was deleted before analysis finished.",
+                            ),
+                        )
+                    )
+                uow.roles.set_status(workspace_id, role.id, RoleStatus.FAILED)
             uow.documents.hard_delete(workspace_id, document.id)
             uow.commit()
 
@@ -53,7 +91,12 @@ class SqlCvStore:
         return None
 
 
-def _to_stored_cv(document: StoredDocument, spans: tuple[Span, ...]) -> StoredCv:
+def _to_stored_cv(
+    document: StoredDocument,
+    spans: tuple[Span, ...],
+    *,
+    reanalysis_job_ids: tuple[str, ...] = (),
+) -> StoredCv:
     pages = (
         Page(
             document_id=document.id,
@@ -70,7 +113,7 @@ def _to_stored_cv(document: StoredDocument, spans: tuple[Span, ...]) -> StoredCv
             filename=document.filename,
             page_count=document.page_count,
             parsed_at=parsed_at,
-            reanalysis_job_ids=(),
+            reanalysis_job_ids=reanalysis_job_ids,
         ),
         spans=spans,
         pages=pages,

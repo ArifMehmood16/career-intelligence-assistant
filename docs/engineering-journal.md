@@ -18,6 +18,85 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.6 — Generated prose through the grounded-generation use case
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_grounded_generation_http.py::test_bullet_without_cited_claim_is_refused_not_persisted -q --no-cov` — red first (200 vs 409); then green after `insufficient_cited_claims`
+  - `pytest tests/integration/test_draft_persistence.py::test_template_fallback_fail_is_persisted_without_rewriting_to_pass -m integration --no-cov` — red first (must be pass); then green after allowing FAIL only on template fallback
+  - `pytest tests/integration/test_sql_role_store.py::test_sql_role_store_persists_failed_template_fallback_verdict -m integration --no-cov` — red first (grounded stayed true); then green after mapping provenance to `GroundednessVerdict`
+  - `pytest tests/api/test_grounded_generation_http.py::test_cover_letter_honours_tone_and_honest_gap_line -q --no-cov` — red first (CUDA always present); then green after tone/gap on the template
+  - `pytest tests/api/test_grounded_generation_http.py::test_cover_letter_uses_generation_pipeline_and_drops_invented_facts -q --no-cov` — red first (`transport.calls` empty); then green after `generate_draft`
+  - `pytest tests/api/test_grounded_generation_http.py::test_interview_pack_phrases_through_generation_pipeline -q --no-cov` — red first (`transport.calls` empty); then green after phrasing probes/notes
+  - `make test` — 246 passed, 3 skipped, 48 deselected; coverage 80.14%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 48 passed
+  - `make lint` — ruff, mypy 119 files, frontend tsc and eslint green
+- Observed result: bullets, cover letters and interview packs (GET and markdown export) call `generate_draft`. Invented tokens such as Kubernetes are dropped via template fallback. Cover-letter tone and the honest gap line change that template. An uncited bullet is 409 and is not stored. SQL persists the real groundedness verdict and reconstructs justifying claim ids from mapping∩claim spans. The Letter tab controls stay; they now drive the validated path.
+- Decisions made: persist FAIL for template-fallback drafts only; still refuse ungrounded model output with no fallback. Reconstruct claim ids from existing span overlap rather than a new mapping_claims table.
+- Problems hit: SQL bullets 409'd on met requirements because `list_mappings` hard-coded empty `justifying_claim_ids`. Cover-letter HTTP previously ignored `tone`/`includeGapLine` (`del body`).
+- Carried forward: 13A.7 ranking, comparison and immutable-version export.
+
+## Phase 13A.5 — Database-backed retrieval and span resolution
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_span_routes.py::test_get_span_returns_evidence_for_uploaded_cover_letter -q --no-cov` — red first (404); then green after workspace span lookup
+  - `pytest tests/api/test_span_routes.py::test_get_span_returns_evidence_for_role_job_description -q --no-cov` — red first (404); then green after role-store `get_span`
+  - `pytest tests/api/test_retrieval_http.py -q --no-cov` — red first (cover-letter and same-role JD ids absent from Ask citations); then green after retrieval pool
+  - `pytest -m integration tests/integration/test_retrieval_http_sql.py -q --no-cov` — 4 passed against PostgreSQL
+  - `make test` — 242 passed, 3 skipped, 46 deselected; coverage 80.12%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 46 passed
+  - `make lint` — ruff, mypy 119 files, frontend tsc and eslint green
+- Observed result: `GET /api/spans/{id}` and generated-artefact evidence share one workspace-scoped resolver over the active CV, uploaded cover letters and role JD spans. Open questions retrieve those same kinds; a role-scoped question cannot cite another role's JD. Cover-letter text that would meet a requirement if it were a CV does not change mappings or scores. Cross-workspace span GET returns `span_not_found`. The same behaviours hold on SQL stores.
+- Decisions made: lookup lives in application code (`lookup_workspace_span` / `retrieval_pool`); HTTP routes only translate. SQL finds any stored span row by workspace id, then filters by document kind at the supporting/role adapters.
+- Problems hit: first JD GET fixture had no bullets so rules extraction produced no spans; switched to a Requirements list. Cover-letter Ask first asserted `spans[0]`, which was the greeting paragraph; the test now selects the Kubernetes span.
+- Carried forward: 13A.6 route generated prose through the grounded-generation use case.
+
+## Phase 13A.4 — Provider selection drives extraction, Ask and phrasing
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_provider_runtime_selection.py::test_open_question_calls_the_selected_scripted_provider -q --no-cov` — red first (`provider` was `hermetic`); then green after Ask used the workspace choice
+  - `pytest tests/unit/test_providers.py::test_complete_rechecks_egress_and_makes_no_network_call -q --no-cov` — red first (DID NOT RAISE); then green after call-time egress wrap
+  - `pytest tests/api/test_provider_runtime_selection.py::test_requirement_extraction_calls_the_selected_scripted_provider -q --no-cov` — red first (`transport.calls` empty); then green
+  - `pytest tests/api/test_provider_runtime_selection.py::test_bullet_phrasing_calls_the_selected_scripted_provider -q --no-cov` — red first (`provider` was `hermetic`); then green
+  - `pytest tests/api/test_provider_runtime_selection.py::test_open_question_records_accounting_without_document_text -q --no-cov` — red first (no `call_accountant`); then green
+  - `make test` — 236 passed, 3 skipped, 42 deselected; coverage 80.61%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 42 passed
+  - `make lint` — ruff, mypy 118 files, frontend tsc and eslint green
+- Observed result: persisted answer provider is used for open questions, requirement/claim extraction (non-hermetic) and bullet phrasing. Completion and embedding choices stay independent. Hosted egress is checked at construction and again on `complete()`. A rejected hosted choice returns 403 with no transport calls. Answers, bullets and interview/cover-letter provenance come from the selected completion port rather than a hard-coded hermetic tag. Call accounting stores provider/model/`left_machine` and token counts, never document text; SQL-backed apps write `provider_call_accounting` rows.
+- Decisions made: hermetic `create_app()` still defaults completion/embedding to hermetic so env `COMPLETION_PROVIDER=openai` cannot leak into API tests. Hermetic analysis stays on rules extractors; model-backed extractors wrap the Phase 2 factory only when the workspace answer choice is not hermetic. Local fallback never swallows `EgressNotPermittedError`.
+- Problems hit: wrapping analysis in `Model*Extractor` for the hermetic default dropped SQL fit scores to 0 because hermetic structured output did not map cleanly; restored rules for hermetic choice. Env-hosted `ProviderSettings()` on the SQL worker similarly tried a real OpenAI call in integration tests; worker defaults without injected settings stay hermetic.
+- Carried forward: 13A.5 database-backed retrieval and span resolution.
+
+## Phase 13A.3 — PostgreSQL-backed analysis worker
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/integration/test_analysis_worker_http_sql.py::test_post_role_returns_analysing_and_queued_before_worker_runs -m integration --no-cov` — red first (`ready` vs `analysing`); then green after enqueue-only `create_role`
+  - focused worker / SQL role / chat / CV / wiring tests — green
+  - `make test` — 230 passed, 3 skipped, 40 deselected; coverage 80.04%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 40 passed
+  - `make lint` — ruff, mypy 115 files, frontend tsc and eslint green
+- Observed result: production SQL `POST /roles` and reanalyse commit `analysing` plus a queued job and return 202 before extraction. The in-process worker publishes or fails transactionally. CV replace enqueues job ids in the same transaction and never leaves a role `ready` with a stale score. CV delete marks roles `failed`. Startup recovers queued jobs and fails stale-running ones. Hermetic `create_app()` stays in-memory and still returns `ready` immediately.
+- Decisions made: hermetic API tests keep the synchronous in-memory store; only the SQL path is asynchronous. Worker extractors remain hermetic until 13A.4. No Celery.
+- Problems hit: existing SQL role/chat tests assumed in-request `ready`/`succeeded` — they now drain the worker. `fail_job` deletes only the current analysis version so sibling-role claims are not wiped.
+- Carried forward: 13A.4 provider selection must affect actual extraction and answers.
+
+## Phase 13A.2 — SQL chat and provider settings
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/integration/test_chat_provider_http_sql.py::test_messages_survive_fresh_app_process -m integration` — red first on empty FIT citations and a doubled check-constraint name; then green
+  - focused hermetic ask/message/provider/wiring tests — 19 passed
+  - `make test` — 230 passed, 3 skipped, 33 deselected; coverage 80.28%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 33 passed
+  - `make lint` — ruff, mypy 114 files, frontend tsc and eslint green
+- Observed result: production `create_production_app` wires SQL conversation and provider-choice stores. Questions, answers, citations, idempotent retries, deletion and provider model tags survive a fresh app process and stay workspace-scoped. `create_app()` remains in-memory for hermetic API tests.
+- Decisions made: UUID answer ids from `id_factory`; additive `answers.kind` and provider model-tag columns; one conversation per workspace; local personal-use security posture documented (no multi-user auth in this build).
+- Problems hit: FIT answers have empty citations by design — survival test uses an evidence question. Alembic naming doubled `ck_answers_answer_kind`.
+- Carried forward: 13A.3 PostgreSQL-backed analysis worker in production.
+
 ## Phase 13A.1 — Restore the complete quality baseline
 
 - Date: 2026-09-18

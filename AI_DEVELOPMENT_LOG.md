@@ -538,6 +538,104 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 062 — Phase 13A.6 grounded generation on HTTP and SQL (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.6
+- Prompt intent: continue the next work in the same TDD style with regular commits.
+- Suggestion: route bullets, interview packs and cover letters through `generate_draft`;
+  persist the real groundedness verdict on SQL; honour Letter-tab tone and gap line;
+  refuse a bullet with no cited claim.
+- Outcome: accepted.
+- Reason: cover letters and interview packs still returned domain templates without a
+  completion call, SQL drafts were stored as PASS regardless of the validator, and an
+  uncited bullet persisted an instruction as a grounded draft.
+- Rejected alternatives: removing the Letter-tab controls until they were real (PLAN
+  allowed that; implementing the validated path kept the shipped UI honest);
+  introducing a mapping_claims table to restore justifying claim ids (span overlap
+  from existing rows was enough).
+- Human validation: each slice had a failing test then a green; `make test` 246 passed,
+  coverage 80.14%; `make test-integration` 48 passed; `make lint` green.
+
+### 061 — Phase 13A.5 workspace retrieval and span resolution (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.5
+- Prompt intent: continue the next phase in the same TDD style with regular commits.
+- Suggestion: one workspace-scoped span resolver for CV, supporting cover letters and
+  role JDs; feed those kinds into Ask retrieval; keep cover letters out of claims,
+  mappings and scores; prove it on hermetic and PostgreSQL HTTP tests.
+- Outcome: accepted.
+- Reason: GET /api/spans and Ask's retrieved pool were active-CV only, so cover-letter
+  and JD citations 404'd and open questions could not cite them even though domain
+  selection rules already existed.
+- Rejected alternatives: widening CvStore.get_span to every document kind (lied about
+  the store); putting retrieval assembly in the HTTP route (routes must not hold that
+  policy).
+- Human validation: cover-letter and JD GET tests failed 404 then passed; Ask retrieval
+  tests failed on missing citation ids then passed; make test 242 passed, coverage
+  80.12%; make test-integration 46 passed; make lint green.
+
+### 060 — Phase 13A.4 provider selection drives actual work (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.4
+- Prompt intent: implement 13A.4 in TDD style with regular commits.
+- Suggestion: resolve workspace completion choice through Phase 2 factories for Ask,
+  extraction and bullet phrasing; re-check hosted egress on every `complete()`;
+  persist accounting without content; stop hard-coding hermetic draft provenance.
+- Outcome: accepted, with the changes below.
+- Reason: Ask still constructed `HermeticCompletionAdapter` regardless of the
+  persisted choice, so selecting OpenAI never called it. Construction-only egress
+  would still network if the gate closed after the adapter existed.
+- Rejected alternatives: putting `http_transport` on `create_app()` before the first
+  red (would have failed on TypeError instead of `provider == hermetic`); using
+  `Model*Extractor` for hermetic analysis (SQL fit scores dropped to 0); reading
+  env `COMPLETION_PROVIDER` in hermetic `create_app()` (API tests reached OpenAI).
+- Human validation: each slice had a failing test then a green; `make test` 236
+  passed, coverage 80.61%; `make test-integration` 42 passed; `make lint` green.
+
+### 059 — Phase 13A.3 PostgreSQL analysis worker (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Composer, agent session
+- Plan task: 13A.3
+- Prompt intent: continue 13A.3 with TDD; commit red then green.
+- Suggestion: stop analysing in the HTTP request; persist JD + queued job; run a
+  bounded SQL worker from FastAPI lifespan; CV replace/delete enqueue or fail in
+  the same transaction; startup recovery for queued and stale-running jobs.
+- Outcome: accepted.
+- Reason: production `SqlRoleStore.create_role` still extracted hermetically and
+  published `ready`/`succeeded` before returning 202, so evaluation would measure
+  process-local behaviour rather than the shipped job path.
+- Rejected alternatives: Celery/RQ (PLAN says in-process); using in-memory
+  `AnalysisService` dicts as the production queue (they do not survive restart).
+- Human validation: first HTTP test failed on `ready` vs `analysing`; worker suite
+  then 7 green; `make test` 230 passed, coverage 80.04%; `make test-integration`
+  40 passed; `make lint` green.
+
+### 058 — Phase 13A.2 SQL chat and provider settings (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Composer, agent session
+- Plan task: 13A.2
+- Prompt intent: continue Phase 13A; keep the product a local personal tool and
+  document a lighter multi-user security posture.
+- Suggestion: SQL ConversationStore and ProviderChoiceStore adapters; wire through
+  `build_sql_stores` / `create_production_app`; UUID answer ids; `answers.kind` and
+  provider model-tag migration; HTTP process-restart tests.
+- Outcome: accepted.
+- Reason: production HTTP still used process memory for chat and provider choice
+  even though SQL tables existed. Hermetic `create_app()` stays in-memory.
+- Rejected alternatives: installing extra security for a multi-user deployment;
+  requiring nonempty citations on FIT answers (FIT has none by design).
+- Human validation: survival suite 4 green against PostgreSQL; hermetic ask /
+  message / provider / wiring tests green; `make test` 230 passed, coverage 80.28%;
+  frontend 100 passed; `make test-integration` 33 passed; `make lint` green.
+
 ### 057 — Phase 13A.1 quality baseline (TDD)
 
 - Date: 2026-09-18

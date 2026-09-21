@@ -21,6 +21,10 @@ from career_assistant.application.providers.catalogue import (
     default_provider_choice,
     list_provider_catalogue,
 )
+from career_assistant.application.providers.choice_store import (
+    InMemoryProviderChoiceStore,
+    ProviderChoiceStore,
+)
 from career_assistant.settings import ProviderSettings
 
 router = APIRouter(tags=["providers"])
@@ -33,11 +37,11 @@ def _settings(request: Request) -> ProviderSettings:
     return ProviderSettings()
 
 
-def _choice_store(request: Request) -> dict[str, ProviderChoice]:
-    store = getattr(request.app.state, "provider_choices", None)
+def _choice_store(request: Request) -> ProviderChoiceStore:
+    store = getattr(request.app.state, "provider_choice_store", None)
     if store is None:
-        store = {}
-        request.app.state.provider_choices = store
+        store = InMemoryProviderChoiceStore()
+        request.app.state.provider_choice_store = store
     return store
 
 
@@ -109,5 +113,5 @@ def put_provider_choice(
         )
     except ProviderSelectionRejected as exc:
         raise AppError(exc.code, exc.message, status_code=exc.status_code) from exc
-    _choice_store(request)[workspace_id] = applied
+    _choice_store(request).put(workspace_id, applied)
     return _to_response(applied)

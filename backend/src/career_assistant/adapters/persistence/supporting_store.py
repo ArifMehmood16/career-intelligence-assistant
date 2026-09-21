@@ -12,7 +12,7 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentView,
 )
 from career_assistant.application.ports.persistence import NewDocument, StoredDocument
-from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.documents import DocumentKind, Page, Span
 
 
 class SqlSupportingDocumentStore:
@@ -79,6 +79,26 @@ class SqlSupportingDocumentStore:
             original_bytes=cv.original_bytes,
             kind=DocumentKind.CV.value,
         )
+
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        with self._uow_factory() as uow:
+            found = uow.documents.find_span(workspace_id, span_id)
+            if found is None:
+                return None
+            span, _pages = found
+            document = uow.documents.get(workspace_id, span.document_id)
+            if document is None or document.kind is not DocumentKind.COVER_LETTER:
+                return None
+            return found
+
+    def spans_for_workspace(self, workspace_id: str) -> tuple[Span, ...]:
+        with self._uow_factory() as uow:
+            spans: list[Span] = []
+            for document in uow.documents.list_cover_letters(workspace_id):
+                spans.extend(uow.documents.list_spans(workspace_id, document.id))
+            return tuple(spans)
 
 
 def _to_view(document: StoredDocument) -> SupportingDocumentView:

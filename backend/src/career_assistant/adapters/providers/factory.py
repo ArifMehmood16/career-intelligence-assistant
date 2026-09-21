@@ -28,6 +28,13 @@ from career_assistant.adapters.providers.resilience import (
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.errors import ProviderUnavailableError
+from career_assistant.application.ports.types import (
+    CapabilityDescriptor,
+    CompletionRequest,
+    CompletionResult,
+    EmbeddingRequest,
+    EmbeddingResult,
+)
 from career_assistant.application.providers.egress import HostedEgressPolicy
 from career_assistant.application.providers.fallback import (
     CompletingWithOptionalFallback,
@@ -57,19 +64,23 @@ def build_completion_port(
     *,
     transport: HttpTransport | None = None,
     egress: HostedEgressPolicy | None = None,
+    provider_id: str | None = None,
+    model_tag: str | None = None,
 ) -> CompletionPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
     hermetic = HermeticCompletionAdapter()
+    selected = provider_id or settings.completion_provider
     primary = _completion_for(
-        settings.completion_provider,
+        selected,
         settings=settings,
         egress=policy,
         transport=http,
         resilience=resilience,
+        model_tag=model_tag,
     )
-    if settings.completion_provider in {"openai", "anthropic"}:
+    if selected in {"openai", "anthropic"}:
         return CompletingWithOptionalFallback(
             primary=primary,
             local=hermetic,
@@ -85,16 +96,19 @@ def build_embedding_port(
     *,
     transport: HttpTransport | None = None,
     egress: HostedEgressPolicy | None = None,
+    provider_id: str | None = None,
+    model_tag: str | None = None,
 ) -> EmbeddingPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
     return _embedding_for(
-        settings.embedding_provider,
+        provider_id or settings.embedding_provider,
         settings=settings,
         egress=policy,
         transport=http,
         resilience=resilience,
+        model_tag=model_tag,
     )
 
 
@@ -105,31 +119,40 @@ def _completion_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
+    model_tag: str | None = None,
 ) -> CompletionPort:
     if provider_id == "hermetic":
         return HermeticCompletionAdapter()
     if provider_id == "ollama":
         return OllamaCompletionAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=settings.ollama_completion_model or "llama3.2",
+            model_tag=model_tag or settings.ollama_completion_model or "llama3.2",
             transport=transport,
             resilience=resilience,
         )
     if provider_id == "openai":
         key = egress.assert_openai_constructible()
-        return OpenAICompletionAdapter(
-            api_key=key,
-            model_tag=settings.openai_completion_model,
-            transport=transport,
-            resilience=resilience,
+        return _CallTimeEgressCompletion(
+            OpenAICompletionAdapter(
+                api_key=key,
+                model_tag=model_tag or settings.openai_completion_model,
+                transport=transport,
+                resilience=resilience,
+            ),
+            settings=settings,
+            hosted_kind="openai",
         )
     if provider_id == "anthropic":
         key = egress.assert_anthropic_constructible()
-        return AnthropicCompletionAdapter(
-            api_key=key,
-            model_tag=settings.anthropic_completion_model,
-            transport=transport,
-            resilience=resilience,
+        return _CallTimeEgressCompletion(
+            AnthropicCompletionAdapter(
+                api_key=key,
+                model_tag=model_tag or settings.anthropic_completion_model,
+                transport=transport,
+                resilience=resilience,
+            ),
+            settings=settings,
+            hosted_kind="anthropic",
         )
     raise ProviderUnavailableError(f"unknown completion provider {provider_id!r}")
 
@@ -141,23 +164,30 @@ def _embedding_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
+    model_tag: str | None = None,
 ) -> EmbeddingPort:
     if provider_id == "hermetic":
         return HermeticEmbeddingAdapter()
     if provider_id == "ollama":
         return OllamaEmbeddingAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=settings.ollama_embedding_model or "nomic-embed-text",
+            model_tag=(
+                model_tag or settings.ollama_embedding_model or "nomic-embed-text"
+            ),
             transport=transport,
             resilience=resilience,
         )
     if provider_id == "openai":
         key = egress.assert_openai_constructible()
-        return OpenAIEmbeddingAdapter(
-            api_key=key,
-            model_tag=settings.openai_embedding_model,
-            transport=transport,
-            resilience=resilience,
+        return _CallTimeEgressEmbedding(
+            OpenAIEmbeddingAdapter(
+                api_key=key,
+                model_tag=model_tag or settings.openai_embedding_model,
+                transport=transport,
+                resilience=resilience,
+            ),
+            settings=settings,
+            hosted_kind="openai",
         )
     if provider_id == "anthropic":
         raise ProviderUnavailableError(
@@ -165,6 +195,68 @@ def _embedding_for(
             "embedding provider"
         )
     raise ProviderUnavailableError(f"unknown embedding provider {provider_id!r}")
+
+
+class _CallTimeEgressCompletion:
+    """Re-assert hosted egress on every complete(), not only at construction."""
+
+    def __init__(
+        self,
+        inner: CompletionPort,
+        *,
+        settings: ProviderSettings,
+        hosted_kind: str,
+    ) -> None:
+        self._inner = inner
+        self._settings = settings
+        self._hosted_kind = hosted_kind
+
+    @property
+    def provider_id(self) -> str:
+        return self._hosted_kind
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return self._inner.capabilities
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        _assert_hosted_call_permitted(self._settings, self._hosted_kind)
+        return self._inner.complete(request)
+
+
+class _CallTimeEgressEmbedding:
+    """Re-assert hosted egress on every embed(), not only at construction."""
+
+    def __init__(
+        self,
+        inner: EmbeddingPort,
+        *,
+        settings: ProviderSettings,
+        hosted_kind: str,
+    ) -> None:
+        self._inner = inner
+        self._settings = settings
+        self._hosted_kind = hosted_kind
+
+    @property
+    def provider_id(self) -> str:
+        return self._hosted_kind
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return self._inner.capabilities
+
+    def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
+        _assert_hosted_call_permitted(self._settings, self._hosted_kind)
+        return self._inner.embed(request)
+
+
+def _assert_hosted_call_permitted(settings: ProviderSettings, hosted_kind: str) -> None:
+    policy = build_egress_policy(settings)
+    if hosted_kind == "openai":
+        policy.assert_openai_constructible()
+        return
+    policy.assert_anthropic_constructible()
 
 
 def _secret_or_none(value: object) -> str | None:

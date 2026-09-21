@@ -51,6 +51,10 @@ class AskEvent:
 
 
 class ConversationStore(Protocol):
+    def ensure_conversation(self, workspace_id: str) -> str: ...
+
+    def conversation_id_for(self, workspace_id: str) -> str | None: ...
+
     def find_by_client_request_id(
         self, workspace_id: str, client_request_id: str
     ) -> tuple[object, object] | None: ...
@@ -113,7 +117,7 @@ class AskService:
         if existing is not None:
             return existing
         question_id = self._id_factory("q")
-        answer_id = f"a-{question_id}"
+        answer_id = self._id_factory("a")
         self._store.persist_question(
             workspace_id=request.workspace_id,
             conversation_id=request.conversation_id,
@@ -142,7 +146,7 @@ class AskService:
             return
 
         question_id = self._id_factory("q")
-        answer_id = f"a-{question_id}"
+        answer_id = self._id_factory("a")
         self._store.persist_question(
             workspace_id=request.workspace_id,
             conversation_id=request.conversation_id,
@@ -223,7 +227,11 @@ class AskService:
             question_id = str(getattr(question, "id", "") or "") or None
             message_id = str(getattr(answer, "id", "") or "") or None
             provider = str(getattr(answer, "provider", None) or provider)
-            model = str(getattr(answer, "model", None) or model)
+            model = str(
+                getattr(answer, "model", None)
+                or getattr(answer, "model_tag", None)
+                or model
+            )
             left_machine = bool(getattr(answer, "left_machine", False))
         yield AskEvent(
             type="meta",

@@ -1,4 +1,4 @@
-"""SQL-backed role store — hermetic analyse + publish into PostgreSQL."""
+"""SQL-backed role store — persist the JD and enqueue analysis; the worker publishes."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from career_assistant.adapters.persistence.models import (
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import CvStore
+from career_assistant.application.intake.errors import IntakeError
 from career_assistant.application.ports.persistence import (
     GeneratedDraftRecord,
     NewDocument,
@@ -29,7 +30,6 @@ from career_assistant.application.ports.persistence import (
 )
 from career_assistant.application.roles.hermetic_analysis import (
     AnalysisBundle,
-    analyse_hermetic,
     band_label,
     count_statuses,
 )
@@ -39,19 +39,18 @@ from career_assistant.application.roles.store import (
     RoleView,
 )
 from career_assistant.domain.claims import Claim
-from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.documents import DocumentKind, Page, ParsedDocument, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import (
-    JobStage,
+    AnalysisJob,
     RoleStatus,
-    mark_running,
-    mark_stage,
-    mark_succeeded,
     new_role_analysis_job,
 )
 from career_assistant.domain.mapping import MappingStatus
+from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
+from career_assistant.parsing.pipeline import parse_pasted_text
 
 
 class _ProvenanceLike(Protocol):
@@ -73,7 +72,7 @@ class _DraftLike(Protocol):
 
 
 class SqlRoleStore:
-    """RoleStore over SqlUnitOfWork. Sync hermetic analyse on create."""
+    """RoleStore over SqlUnitOfWork. Create/reanalyse enqueue; the worker publishes."""
 
     def __init__(
         self,
@@ -92,8 +91,7 @@ class SqlRoleStore:
         company: str,
         description: str,
     ) -> tuple[RoleView, JobView]:
-        cv = self.cv_store.get_active(workspace_id)
-        if cv is None:
+        if self.cv_store.get_active(workspace_id) is None:
             raise RoleOperationRejected(
                 "cv_required",
                 "Upload a CV before adding a role.",
@@ -106,28 +104,22 @@ class SqlRoleStore:
                 status_code=422,
             )
 
-        bundle = analyse_hermetic(
-            cv_text=cv.normalised_text,
-            cv_document_id=cv.view.id,
-            jd_text=description,
-        )
+        try:
+            parsed = parse_pasted_text(
+                description,
+                filename="job-description.txt",
+                kind=DocumentKind.JOB_DESCRIPTION,
+            )
+        except IntakeError as exc:
+            raise RoleOperationRejected(
+                exc.code.value, exc.message, status_code=422
+            ) from exc
+
         now = datetime.now(UTC)
         role_id = str(uuid.uuid4())
         job_id = str(uuid.uuid4())
-        body = description.encode("utf-8")
-        jd_document = NewDocument(
-            id=bundle.jd_document_id,
-            kind=DocumentKind.JOB_DESCRIPTION,
-            filename="job-description.txt",
-            media_type="text/plain",
-            original_bytes=body,
-            sha256=hashlib.sha256(body).hexdigest(),
-            normalised_text=description,
-            parse_status=ParseStatus.PARSED,
-            page_count=1,
-            character_count=len(description),
-            is_active=False,
-            spans=bundle.jd_spans,
+        jd_document = _new_document_from_parsed(
+            parsed, body=description.encode("utf-8")
         )
         queued = new_role_analysis_job(
             job_id=job_id,
@@ -135,58 +127,23 @@ class SqlRoleStore:
             role_id=role_id,
             created_at=now,
         )
-        terminal = mark_succeeded(
-            mark_stage(mark_running(queued, at=now), JobStage.SCORING),
-            at=now,
-        )
 
         with self._uow_factory() as uow:
             uow.workspaces.ensure(workspace_id)
             uow.documents.save_admitted(workspace_id, jd_document)
-            uow.documents.ensure_spans(workspace_id, cv.view.id, bundle.cv_claim_spans)
             uow.roles.create(
                 workspace_id=workspace_id,
                 role_id=role_id,
                 title=title,
                 company=company,
-                job_description_document_id=bundle.jd_document_id,
+                job_description_document_id=parsed.document.id,
                 status=RoleStatus.ANALYSING,
             )
             uow.jobs.enqueue(queued)
-            uow.analysis.publish(
-                workspace_id=workspace_id,
-                role_id=role_id,
-                analysis_version=1,
-                cv_document_id=cv.view.id,
-                requirements=bundle.requirements,
-                claims=bundle.claims,
-                mappings=bundle.mappings,
-                explanation=bundle.explanation,
-                job=terminal,
-            )
             uow.commit()
-
-        role = RoleView(
-            id=role_id,
-            title=title,
-            company=company,
-            fit_score=int(round(bundle.explanation.score)),
-            band_label=band_label(bundle.explanation.band),
-            counts=count_statuses(bundle.mappings),
-            status="ready",
-            updated_at=now,
-            description=description,
-        )
-        job = JobView(
-            id=job_id,
-            kind=terminal.kind.value,
-            state=terminal.state.value,
-            stage=terminal.stage.value if terminal.stage else None,
-            started_at=terminal.started_at,
-            finished_at=terminal.finished_at,
-            error=None,
-        )
-        return role, job
+            record = uow.roles.get(workspace_id, role_id)
+            assert record is not None
+            return self._role_view(uow, workspace_id, record), _job_view(queued)
 
     def delete_role(self, workspace_id: str, role_id: str) -> None:
         with self._uow_factory() as uow:
@@ -201,102 +158,34 @@ class SqlRoleStore:
             uow.commit()
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
-        cv = self.cv_store.get_active(workspace_id)
-        if cv is None:
+        if self.cv_store.get_active(workspace_id) is None:
             raise RoleOperationRejected(
                 "cv_required",
                 "Upload a CV before reanalysing a role.",
                 status_code=409,
             )
+        now = datetime.now(UTC)
         with self._uow_factory() as uow:
             record = uow.roles.get(workspace_id, role_id)
             if record is None:
                 raise RoleOperationRejected(
                     "role_not_found", "No role with that id.", status_code=404
                 )
-            jd = uow.documents.get(workspace_id, record.job_description_document_id)
-            if jd is None:
-                raise RoleOperationRejected(
-                    "role_not_found",
-                    "Job description for this role is missing.",
-                    status_code=404,
-                )
-            description = jd.normalised_text
-
-        bundle = analyse_hermetic(
-            cv_text=cv.normalised_text,
-            cv_document_id=cv.view.id,
-            jd_text=description,
-        )
-        now = datetime.now(UTC)
-        job_id = str(uuid.uuid4())
-        queued = new_role_analysis_job(
-            job_id=job_id,
-            workspace_id=workspace_id,
-            role_id=role_id,
-            created_at=now,
-        )
-        terminal = mark_succeeded(
-            mark_stage(mark_running(queued, at=now), JobStage.SCORING),
-            at=now,
-        )
-
-        with self._uow_factory() as uow:
-            bumped = uow.roles.bump_analysis_version(workspace_id, role_id)
-            uow.documents.ensure_spans(workspace_id, cv.view.id, bundle.cv_claim_spans)
-            # JD spans may be new ids from a fresh hermetic extract — persist them.
-            uow.documents.ensure_spans(
-                workspace_id, record.job_description_document_id, bundle.jd_spans
-            )
-            # Re-bind requirement source_span_ids onto the existing JD document id.
-            requirements = tuple(
-                Requirement(
-                    id=req.id,
-                    text=req.text,
-                    competency=req.competency,
-                    seniority_signal=req.seniority_signal,
-                    must_have=req.must_have,
-                    source_span_id=req.source_span_id,
-                    extraction_confidence=req.extraction_confidence,
-                    is_vague=req.is_vague,
-                )
-                for req in bundle.requirements
-            )
-            uow.jobs.enqueue(queued)
-            uow.analysis.publish(
+            active = uow.jobs.active_for_role(workspace_id, role_id)
+            if active is not None:
+                return self._role_view(uow, workspace_id, record), _job_view(active)
+            uow.roles.bump_analysis_version(workspace_id, role_id)
+            queued = new_role_analysis_job(
+                job_id=str(uuid.uuid4()),
                 workspace_id=workspace_id,
                 role_id=role_id,
-                analysis_version=bumped.analysis_version,
-                cv_document_id=cv.view.id,
-                requirements=requirements,
-                claims=bundle.claims,
-                mappings=bundle.mappings,
-                explanation=bundle.explanation,
-                job=terminal,
+                created_at=now,
             )
+            uow.jobs.enqueue(queued)
             uow.commit()
-
-        role = RoleView(
-            id=role_id,
-            title=record.title,
-            company=record.company,
-            fit_score=int(round(bundle.explanation.score)),
-            band_label=band_label(bundle.explanation.band),
-            counts=count_statuses(bundle.mappings),
-            status="ready",
-            updated_at=now,
-            description=description,
-        )
-        job = JobView(
-            id=job_id,
-            kind=terminal.kind.value,
-            state=terminal.state.value,
-            stage=terminal.stage.value if terminal.stage else None,
-            started_at=terminal.started_at,
-            finished_at=terminal.finished_at,
-            error=None,
-        )
-        return role, job
+            updated = uow.roles.get(workspace_id, role_id)
+            assert updated is not None
+            return self._role_view(uow, workspace_id, updated), _job_view(queued)
 
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:
         with self._uow_factory() as uow:
@@ -312,23 +201,41 @@ class SqlRoleStore:
                 return None
             return self._role_view(uow, workspace_id, record)
 
+    def get_span(
+        self, workspace_id: str, span_id: str
+    ) -> tuple[Span, tuple[Page, ...]] | None:
+        with self._uow_factory() as uow:
+            found = uow.documents.find_span(workspace_id, span_id)
+            if found is None:
+                return None
+            span, _pages = found
+            document = uow.documents.get(workspace_id, span.document_id)
+            if document is None or document.kind is not DocumentKind.JOB_DESCRIPTION:
+                return None
+            return found
+
+    def job_description_spans(self, workspace_id: str) -> tuple[RetrievedSpan, ...]:
+        with self._uow_factory() as uow:
+            items: list[RetrievedSpan] = []
+            for record in uow.roles.list_for_workspace(workspace_id):
+                items.extend(
+                    RetrievedSpan(
+                        span=span,
+                        document_kind=DocumentKind.JOB_DESCRIPTION,
+                        role_id=record.id,
+                    )
+                    for span in uow.documents.list_spans(
+                        workspace_id, record.job_description_document_id
+                    )
+                )
+            return tuple(items)
+
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         with self._uow_factory() as uow:
             job = uow.jobs.get(workspace_id, job_id)
             if job is None:
                 return None
-            error = None
-            if job.error is not None:
-                error = f"{job.error.code}: {job.error.message}"
-            return JobView(
-                id=job.id,
-                kind=job.kind.value,
-                state=job.state.value,
-                stage=job.stage.value if job.stage else None,
-                started_at=job.started_at,
-                finished_at=job.finished_at,
-                error=error,
-            )
+            return _job_view(job)
 
     def require_analysis(self, workspace_id: str, role_id: str) -> AnalysisBundle:
         with self._uow_factory() as uow:
@@ -389,7 +296,8 @@ class SqlRoleStore:
         body: str,
         citation_span_ids: tuple[str, ...],
     ) -> None:
-        provider, model_tag, left_machine, _grounded, fallback = _provenance_bits(draft)
+        provider, model_tag, left_machine, grounded, fallback = _provenance_bits(draft)
+        verdict = GroundednessVerdict.PASS if grounded else GroundednessVerdict.FAIL
         with self._uow_factory() as uow:
             record = uow.roles.get(workspace_id, role_id)
             if record is None:
@@ -408,7 +316,7 @@ class SqlRoleStore:
                     provider=provider,
                     model_tag=model_tag or "rules-v1",
                     left_machine=left_machine,
-                    groundedness=GroundednessVerdict.PASS,
+                    groundedness=verdict,
                     used_template_fallback=fallback == "template",
                     regeneration_count=0,
                 )
@@ -429,7 +337,11 @@ class SqlRoleStore:
         self, workspace_id: str
     ) -> tuple[tuple[RoleView, int, bool, tuple[str, ...]], ...]:
         roles = sorted(
-            self.list_roles(workspace_id),
+            (
+                role
+                for role in self.list_roles(workspace_id)
+                if role.status == RoleStatus.READY.value
+            ),
             key=lambda role: (-role.fit_score, role.title, role.id),
         )
         out: list[tuple[RoleView, int, bool, tuple[str, ...]]] = []
@@ -468,7 +380,7 @@ class SqlRoleStore:
         )
         mappings = uow.analysis.list_mappings(workspace_id, record.id)
         fit_score = int(round(score_row.score)) if score_row is not None else 0
-        band = score_row.band if score_row is not None else "limited"
+        band = score_row.band if score_row is not None else "unscored"
         jd = uow.documents.get(workspace_id, record.job_description_document_id)
         description = jd.normalised_text if jd is not None else ""
         created = record.created_at
@@ -644,3 +556,35 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
         if isinstance(raw, list):
             ids.extend(str(item) for item in raw)
     return tuple(dict.fromkeys(ids))
+
+
+def _job_view(job: AnalysisJob) -> JobView:
+    error = None
+    if job.error is not None:
+        error = f"{job.error.code}: {job.error.message}"
+    return JobView(
+        id=job.id,
+        kind=job.kind.value,
+        state=job.state.value,
+        stage=job.stage.value if job.stage else None,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
+        error=error,
+    )
+
+
+def _new_document_from_parsed(parsed: ParsedDocument, *, body: bytes) -> NewDocument:
+    return NewDocument(
+        id=parsed.document.id,
+        kind=DocumentKind.JOB_DESCRIPTION,
+        filename=parsed.document.filename,
+        media_type="text/plain",
+        original_bytes=body,
+        sha256=hashlib.sha256(body).hexdigest(),
+        normalised_text="\n\n".join(page.text for page in parsed.pages),
+        parse_status=ParseStatus.PARSED,
+        page_count=parsed.document.page_count,
+        character_count=parsed.document.character_count,
+        is_active=False,
+        spans=parsed.spans,
+    )

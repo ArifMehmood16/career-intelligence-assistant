@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
+from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
+from career_assistant.adapters.persistence.conversation_store import (
+    SqlConversationStore,
+)
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
+from career_assistant.adapters.persistence.provider_settings_store import (
+    SqlProviderSettingsStore,
+)
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.supporting_store import (
     SqlSupportingDocumentStore,
 )
+from career_assistant.application.ask.memory import InMemoryConversationStore
 from career_assistant.application.documents.cv import InMemoryCvStore
 from career_assistant.application.documents.supporting import (
     InMemorySupportingDocumentStore,
+)
+from career_assistant.application.providers.choice_store import (
+    InMemoryProviderChoiceStore,
 )
 from career_assistant.application.roles.store import InMemoryRoleStore
 from career_assistant.main import app, create_app
@@ -19,6 +30,9 @@ def test_module_app_wires_sql_cv_role_and_supporting_stores() -> None:
     assert isinstance(app.state.cv_store, SqlCvStore)
     assert isinstance(app.state.role_store, SqlRoleStore)
     assert isinstance(app.state.supporting_store, SqlSupportingDocumentStore)
+    assert isinstance(app.state.conversation_store, SqlConversationStore)
+    assert isinstance(app.state.provider_choice_store, SqlProviderSettingsStore)
+    assert isinstance(app.state.analysis_worker, SqlAnalysisWorker)
 
 
 def test_create_app_default_stays_hermetic_for_api_tests() -> None:
@@ -26,3 +40,6 @@ def test_create_app_default_stays_hermetic_for_api_tests() -> None:
     assert isinstance(hermetic.state.cv_store, InMemoryCvStore)
     assert isinstance(hermetic.state.role_store, InMemoryRoleStore)
     assert isinstance(hermetic.state.supporting_store, InMemorySupportingDocumentStore)
+    assert isinstance(hermetic.state.conversation_store, InMemoryConversationStore)
+    assert isinstance(hermetic.state.provider_choice_store, InMemoryProviderChoiceStore)
+    assert hermetic.state.analysis_worker is None

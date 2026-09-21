@@ -4,10 +4,21 @@ Routes live under ``/api`` so the web tier can proxy a single prefix and the
 browser never holds an API origin. See docs/api-contract.md.
 """
 
+from __future__ import annotations
+
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import APIRouter, FastAPI, Request, Response
 
+from career_assistant.adapters.extraction.selected import extractors_for_choice
+from career_assistant.adapters.persistence.accounting import SqlCallAccountant
+from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
+from career_assistant.adapters.persistence.conversation_store import (
+    SqlConversationStore,
+)
 from career_assistant.adapters.persistence.readiness import SettingsReadiness
 from career_assistant.adapters.persistence.wiring import build_sql_stores
 from career_assistant.api.errors import install_exception_handlers
@@ -28,15 +39,48 @@ from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.application.ask.memory import InMemoryConversationStore
+from career_assistant.application.ask.service import ConversationStore
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
 from career_assistant.application.documents.supporting import (
     InMemorySupportingDocumentStore,
     SupportingDocumentStore,
 )
-from career_assistant.application.roles.store import InMemoryRoleStore
+from career_assistant.application.ports.extraction import (
+    ClaimExtractionPort,
+    RequirementExtractionPort,
+)
+from career_assistant.application.providers.accounting import CallAccountant
+from career_assistant.application.providers.catalogue import default_provider_choice
+from career_assistant.application.providers.choice_store import (
+    InMemoryProviderChoiceStore,
+    ProviderChoiceStore,
+)
+from career_assistant.application.roles.store import ExtractorFactory, InMemoryRoleStore
 from career_assistant.settings import LimitSettings, ProviderSettings
 
 router = APIRouter(prefix="/api")
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    worker = getattr(app.state, "analysis_worker", None)
+    if worker is None:
+        yield
+        return
+    stop = threading.Event()
+    thread = threading.Thread(
+        target=worker.run_forever,
+        kwargs={"stop": stop},
+        name="analysis-worker",
+        daemon=True,
+    )
+    thread.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        thread.join(timeout=5.0)
 
 
 class HealthResponse(ApiModel):
@@ -92,6 +136,9 @@ def create_app(
     cv_store: CvStore | None = None,
     role_store: object | None = None,
     supporting_store: SupportingDocumentStore | None = None,
+    conversation_store: ConversationStore | None = None,
+    provider_choice_store: ProviderChoiceStore | None = None,
+    analysis_worker: SqlAnalysisWorker | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -104,6 +151,7 @@ def create_app(
         version="0.1.0",
         docs_url="/docs",
         openapi_url="/openapi.json",
+        lifespan=_lifespan,
     )
     # Last added runs first for requests.
     app.add_middleware(WorkspaceCookieMiddleware)
@@ -114,8 +162,11 @@ def create_app(
     install_exception_handlers(app)
     app.state.readiness = readiness
     app.state.limits = upload_limits
-    app.state.providers = providers
-    app.state.provider_choices = {}
+    # Hermetic API tests must not inherit a hosted env default.
+    app.state.providers = providers or ProviderSettings(
+        completion_provider="hermetic",
+        embedding_provider="hermetic",
+    )
     resolved_cv = cv_store if cv_store is not None else InMemoryCvStore()
     app.state.cv_store = resolved_cv
     app.state.role_store = (
@@ -128,6 +179,26 @@ def create_app(
         if supporting_store is not None
         else InMemorySupportingDocumentStore(cv_store=resolved_cv)
     )
+    resolved_conversation = (
+        conversation_store
+        if conversation_store is not None
+        else InMemoryConversationStore()
+    )
+    app.state.conversation_store = resolved_conversation
+    app.state.provider_choice_store = (
+        provider_choice_store
+        if provider_choice_store is not None
+        else InMemoryProviderChoiceStore()
+    )
+    app.state.analysis_worker = analysis_worker
+    if isinstance(resolved_conversation, SqlConversationStore):
+        app.state.call_accountant = SqlCallAccountant(
+            resolved_conversation._uow_factory
+        )
+    else:
+        app.state.call_accountant = CallAccountant()
+    if isinstance(app.state.role_store, InMemoryRoleStore):
+        app.state.role_store.extractor_factory = _extractor_factory(app)
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
     app.include_router(cv_router, prefix="/api")
@@ -139,6 +210,23 @@ def create_app(
     return app
 
 
+def _extractor_factory(app: FastAPI) -> ExtractorFactory:
+    def factory(
+        workspace_id: str,
+    ) -> tuple[RequirementExtractionPort, ClaimExtractionPort]:
+        settings = app.state.providers or ProviderSettings()
+        choice = app.state.provider_choice_store.get(
+            workspace_id
+        ) or default_provider_choice(settings)
+        return extractors_for_choice(
+            settings,
+            choice,
+            transport=getattr(app.state, "http_transport", None),
+        )
+
+    return factory
+
+
 def create_production_app(
     *,
     readiness: ReadinessProbe | None = None,
@@ -146,14 +234,25 @@ def create_production_app(
     providers: ProviderSettings | None = None,
 ) -> FastAPI:
     """Wire SQL stores for the process entrypoint (uvicorn / Docker CMD)."""
-    cv_store, role_store, supporting_store = build_sql_stores()
+    resolved_providers = providers or ProviderSettings()
+    (
+        cv_store,
+        role_store,
+        supporting_store,
+        conversation_store,
+        provider_choice_store,
+        analysis_worker,
+    ) = build_sql_stores(providers=resolved_providers)
     return create_app(
         readiness=readiness if readiness is not None else SettingsReadiness(),
         limits=limits,
-        providers=providers,
+        providers=resolved_providers,
         cv_store=cv_store,
         role_store=role_store,
         supporting_store=supporting_store,
+        conversation_store=conversation_store,
+        provider_choice_store=provider_choice_store,
+        analysis_worker=analysis_worker,
     )
 
 

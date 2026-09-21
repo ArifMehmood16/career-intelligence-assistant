@@ -153,3 +153,36 @@ def test_reject_ungrounded_draft_at_save(uow: SqlUnitOfWork) -> None:
                 )
             )
         uow.rollback()
+
+
+def test_template_fallback_fail_is_persisted_without_rewriting_to_pass(
+    uow: SqlUnitOfWork,
+) -> None:
+    workspace_id, role_id, span_id = _seed_role_with_span(uow)
+    draft_id = str(uuid.uuid4())
+    with uow:
+        stored = uow.drafts.save(
+            NewGeneratedDraft(
+                id=draft_id,
+                workspace_id=workspace_id,
+                role_id=role_id,
+                kind="bullets",
+                body="- Template fallback that still failed the validator.",
+                analysis_version=1,
+                citation_span_ids=(span_id,),
+                provider="hermetic",
+                model_tag="rules-v1",
+                left_machine=False,
+                groundedness=GroundednessVerdict.FAIL,
+                used_template_fallback=True,
+                regeneration_count=1,
+            )
+        )
+        uow.commit()
+
+    assert stored.groundedness is GroundednessVerdict.FAIL
+    with uow:
+        fetched = uow.drafts.get(workspace_id, draft_id)
+        assert fetched is not None
+        assert fetched.groundedness is GroundednessVerdict.FAIL
+        assert fetched.used_template_fallback is True

@@ -8,6 +8,10 @@ from pathlib import Path
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
+from career_assistant.application.ports.extraction import (
+    ClaimExtractionPort,
+    RequirementExtractionPort,
+)
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
@@ -32,15 +36,20 @@ class AnalysisBundle:
 
 
 def analyse_hermetic(
-    *, cv_text: str, cv_document_id: str, jd_text: str
+    *,
+    cv_text: str,
+    cv_document_id: str,
+    jd_text: str,
+    requirement_extractor: RequirementExtractionPort | None = None,
+    claim_extractor: ClaimExtractionPort | None = None,
 ) -> AnalysisBundle:
     jd_id = str(uuid.uuid4())
-    req_result = RulesRequirementExtractor().extract(
+    req_result = (requirement_extractor or RulesRequirementExtractor()).extract(
         document_id=jd_id,
         document_kind=DocumentKind.JOB_DESCRIPTION,
         normalised_text=jd_text,
     )
-    claim_result = RulesClaimExtractor().extract(
+    claim_result = (claim_extractor or RulesClaimExtractor()).extract(
         document_id=cv_document_id,
         document_kind=DocumentKind.CV,
         normalised_text=cv_text,

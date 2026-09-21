@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from career_assistant.application.ports.completion import CompletionPort
-from career_assistant.application.ports.errors import ProviderError
+from career_assistant.application.ports.errors import (
+    EgressNotPermittedError,
+    ProviderError,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -38,8 +41,11 @@ class CompletingWithOptionalFallback:
     def complete(self, request: CompletionRequest) -> CompletionResult:
         try:
             return self._primary.complete(request)
-        except ProviderError:
-            if not self._policy.allow_local_fallback:
+        except ProviderError as exc:
+            if (
+                isinstance(exc, EgressNotPermittedError)
+                or not self._policy.allow_local_fallback
+            ):
                 raise
             result = self._local.complete(request)
             return CompletionResult(
