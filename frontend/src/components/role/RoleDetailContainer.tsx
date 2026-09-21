@@ -27,6 +27,7 @@ import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import {
   isRoleDetailTabId,
+  shouldFetchRoleTabResource,
   type RoleDetailTabId,
 } from "@/components/role/role-detail-tabs";
 import { RoleHeader, type RoleHeaderState } from "@/components/role/RoleHeader";
@@ -79,29 +80,56 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       query.state.data?.status === "analysing" ? 1500 : false,
     retry: false,
   });
+  const roleStatus = roleQuery.data?.status;
+  const fetchFit = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "fit",
+  });
+  const fetchGaps = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "gaps",
+  });
+  const fetchPrepare = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "prepare",
+  });
+  const fetchLetter = shouldFetchRoleTabResource({
+    roleStatus,
+    activeTab,
+    resourceTab: "letter",
+  });
   const breakdownQuery = useQuery({
     queryKey: ["breakdown", roleId],
     queryFn: () => getFitBreakdown(roleId),
+    enabled: fetchFit,
   });
   const requirementsQuery = useQuery({
     queryKey: ["requirements", roleId],
     queryFn: () => getRequirements(roleId),
+    enabled: fetchFit,
   });
   const gapPlanQuery = useQuery({
     queryKey: ["gap-plan", roleId],
     queryFn: () => getGapPlan(roleId),
+    enabled: fetchGaps,
   });
   const interviewPackQuery = useQuery({
     queryKey: ["interview-pack", roleId],
     queryFn: () => getInterviewPack(roleId),
+    enabled: fetchPrepare,
   });
   const generatedLettersQuery = useQuery({
     queryKey: ["generated-cover-letters", roleId],
     queryFn: () => getGeneratedCoverLetters(roleId),
+    enabled: fetchLetter,
   });
   const supportingLettersQuery = useQuery({
     queryKey: ["cover-letters"],
     queryFn: () => getCoverLetters(),
+    enabled: fetchLetter,
   });
 
   const reanalyse = useMutation({
