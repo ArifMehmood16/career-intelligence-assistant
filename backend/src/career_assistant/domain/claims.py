@@ -19,6 +19,7 @@ class Claim:
     scope: str = ""
     technologies: tuple[str, ...] = ()
     outcome: str = ""
+    self_authored: bool = False
 
     def __post_init__(self) -> None:
         if not self.context.strip():

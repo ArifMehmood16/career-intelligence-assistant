@@ -643,6 +643,31 @@ Never record a command output, metric, date or commit hash that was not observed
   the change, focused claim tests 15 passed; full unit suite green; ruff and
   mypy clean on the changed files.
 
+### 075 — Phase 13C.4 cover letter is narrative, never score evidence (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.4
+- Prompt intent: extract uploaded cover letters without letting them change
+  the fit score.
+- Suggestion: extract cover letters into the same claim shape, flag
+  `self_authored`, and filter those claims out inside `map_requirements` so
+  every caller is covered. The 6.5 test no longer raises: extraction is
+  allowed, mapping is not.
+- Outcome: accepted.
+- Reason: the same placement as the item-type filter — a rule every caller
+  must remember is a rule one caller will forget. Ask already retrieves
+  cover-letter spans; the new defence is that a self-authored dbt bullet
+  cannot satisfy a dbt requirement.
+- Rejected alternatives: keeping the ValueError and never extracting. PLAN
+  13C.4 wants the letter available to drafting and Ask. Refusing extraction
+  made that impossible.
+- Human validation: 4 new tests failed (ValueError / missing field). After
+  the change, focused cover-letter and claim tests plus the unit suite are
+  green. ruff and mypy clean on the changed files. The analysis worker still
+  extracts only the CV during a role job; the mapping filter is what would
+  hold if those claims were mixed in.
+
 ### 071 — Phase 13C.1 a local model becomes the default (TDD)
 
 - Date: 2026-09-21

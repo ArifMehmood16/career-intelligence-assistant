@@ -756,7 +756,7 @@ hits.
       in domain code, never supplied by the model — 6.4 still holds. Every role in the
       document is extracted, not only the first. Span verification and the drop count
       are identical to 13C.2.
-- [ ] **13C.4 Cover letter as narrative evidence.** An uploaded cover letter is
+- [x] **13C.4 Cover letter as narrative evidence.** An uploaded cover letter is
       extracted into the same structured shape and flagged self-authored. It stays
       excluded from claims, mappings and the fit score — 4.3, 5.7 and 6.5 stand — and
       becomes available to letter drafting, interview preparation and Ask. A

@@ -60,16 +60,14 @@ class RulesClaimExtractor:
         document_kind: DocumentKind,
         normalised_text: str,
     ) -> ClaimExtractionResult:
-        if document_kind is DocumentKind.COVER_LETTER:
-            raise ValueError(
-                "cover_letter documents cannot contribute claims, mappings or scores"
-            )
-        if document_kind is not DocumentKind.CV:
+        if document_kind not in {DocumentKind.CV, DocumentKind.COVER_LETTER}:
             raise ValueError("claims are extracted only from the active CV document")
+        self_authored = document_kind is DocumentKind.COVER_LETTER
 
         claims: list[Claim] = []
         spans: list[Span] = []
-        in_experience = False
+        # Cover letters have no EXPERIENCE heading; read bullets from the start.
+        in_experience = self_authored
         current = _Role(date_range=None, date_span=None)
         offset = 0
 
@@ -126,6 +124,7 @@ class RulesClaimExtractor:
                     ),
                     source_span_ids=tuple(span_ids),
                     extraction_confidence=0.85,
+                    self_authored=self_authored,
                 )
             )
 

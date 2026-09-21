@@ -90,22 +90,23 @@ class ModelClaimExtractor:
         document_kind: DocumentKind,
         normalised_text: str,
     ) -> ClaimExtractionResult:
-        if document_kind is DocumentKind.COVER_LETTER:
-            raise ValueError(
-                "cover_letter documents cannot contribute claims, mappings or scores"
-            )
-        if document_kind is not DocumentKind.CV:
+        if document_kind not in {DocumentKind.CV, DocumentKind.COVER_LETTER}:
             raise ValueError("claims are extracted only from the active CV document")
+        self_authored = document_kind is DocumentKind.COVER_LETTER
 
         rules = self._fallback.extract(
             document_id=document_id,
             document_kind=document_kind,
             normalised_text=normalised_text,
         )
+        envelope = (
+            "UNTRUSTED_COVER_LETTER_BEGIN" if self_authored else "UNTRUSTED_CV_BEGIN"
+        )
+        close = envelope.replace("_BEGIN", "_END")
         result = self._completion.complete(
             CompletionRequest(
                 system=_SYSTEM,
-                user=f"UNTRUSTED_CV_BEGIN\n{normalised_text}\nUNTRUSTED_CV_END",
+                user=f"{envelope}\n{normalised_text}\n{close}",
                 max_output_tokens=1024,
                 json_schema=CLAIMS_JSON_SCHEMA,
             )
@@ -127,6 +128,7 @@ class ModelClaimExtractor:
                 document_id=document_id,
                 normalised_text=normalised_text,
                 as_of=self._as_of,
+                self_authored=self_authored,
             )
             dropped += dropped_here
             for claim, spans in extracted:
@@ -154,6 +156,7 @@ def _claims_for_role(
     document_id: str,
     normalised_text: str,
     as_of: date,
+    self_authored: bool,
 ) -> tuple[list[tuple[Claim, tuple[Span, ...]]], int]:
     if not isinstance(role, dict):
         return [], 0
@@ -200,6 +203,7 @@ def _claims_for_role(
             scope=str(item.get("scope", "")).strip(),
             technologies=technologies,
             outcome=str(item.get("outcome", "")).strip(),
+            self_authored=self_authored,
         )
         kept.append((claim, tuple(spans)))
     return kept, dropped
