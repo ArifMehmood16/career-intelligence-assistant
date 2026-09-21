@@ -324,7 +324,7 @@ recency, including the dated-experience fixture.
       `missing`, with the justifying span ids and a reason code
       (`no_related_claim`, `adjacent_claim_only`, `evidence_too_old`,
       `evidence_thin`). Pure function, no I/O.
-- [ ] **7.2** *Superseded by 13C.5.* Mapping computes `(requirement_id, claim_id)`
+- [x] **7.2** *Superseded by 13C.5.* Mapping computes `(requirement_id, claim_id)`
       cosine similarities and treats `similarity >= similarity_floor` as related, with
       status still decided by domain policy — but the floor is a guessed 0.55 over
       64-dimension hermetic hash vectors, which is a lexical signal wearing a vector
@@ -761,7 +761,7 @@ hits.
       excluded from claims, mappings and the fit score — 4.3, 5.7 and 6.5 stand — and
       becomes available to letter drafting, interview preparation and Ask. A
       regression proves an uploaded letter is citable and changes no score.
-- [ ] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
+- [x] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
       three signals: lexical overlap, embedding cosine, and model adjudication for the
       pairs the first two disagree on. Each signal is computed in an adapter behind a
       port. The combination, the status and the reason code stay pure domain code, and

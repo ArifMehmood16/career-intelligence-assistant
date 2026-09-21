@@ -116,6 +116,15 @@ class AnalysisJobResponse(ApiModel):
     error: str | None
 
 
+class RelatednessSignalsWire(ApiModel):
+    lexical: bool
+    lexical_overlap: int
+    embedding: bool
+    embedding_similarity: float
+    adjudication: bool | None
+    related: bool
+
+
 class RequirementWire(ApiModel):
     id: str
     role_id: str
@@ -123,6 +132,7 @@ class RequirementWire(ApiModel):
     type: str
     status: str
     evidence: EvidenceResponse | None
+    signals: RelatednessSignalsWire | None = None
 
 
 class BreakdownRowWire(ApiModel):

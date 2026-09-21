@@ -1,11 +1,23 @@
-"""Load the fit-score rubric from configuration (not hard-coded literals)."""
+"""Load the fit-score rubric and mapping floor from configuration."""
 
 from __future__ import annotations
 
 import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 
 from career_assistant.domain.scoring import ScoringRubric
+
+
+@dataclass(frozen=True, slots=True)
+class MappingConfig:
+    similarity_floor: float
+
+
+def load_mapping_config(path: Path | str) -> MappingConfig:
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    mapping = data["mapping"]
+    return MappingConfig(similarity_floor=float(mapping["similarity_floor"]))
 
 
 def load_scoring_rubric(path: Path | str) -> ScoringRubric:

@@ -10,16 +10,23 @@ from pathlib import Path
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
-from career_assistant.adapters.extraction.selected import extractors_for_choice
+from career_assistant.adapters.extraction.selected import (
+    analysis_ports_for_choice,
+)
 from career_assistant.adapters.persistence.accounting import SqlCallAccountant
 from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingCache
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.providers.factory import build_embedding_port
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.application.analysis.relatedness import (
+    NullAdjudicator,
+    map_role_requirements,
+)
 from career_assistant.application.analysis.service import JobClock, StartupRecovery
 from career_assistant.application.analysis.similarity import (
     requirement_claim_similarities,
 )
+from career_assistant.application.ports.adjudication import AdjudicationPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.errors import (
     EgressNotPermittedError,
@@ -34,7 +41,10 @@ from career_assistant.application.providers.accounting import (
     CallAccountant,
 )
 from career_assistant.application.providers.catalogue import default_provider_choice
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.application.scoring.rubric_loader import (
+    load_mapping_config,
+    load_scoring_rubric,
+)
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
     AnalysisJob,
@@ -47,13 +57,13 @@ from career_assistant.domain.jobs import (
     mark_succeeded,
     recover_stale_running,
 )
-from career_assistant.domain.mapping import map_requirements
 from career_assistant.domain.scoring import ScoringRubric, score_fit
 from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
 
 _ROOT = Path(__file__).resolve().parents[5]
 _DEFAULT_RUBRIC = load_scoring_rubric(_ROOT / "config" / "scoring_rubric.toml")
+_MAPPING = load_mapping_config(_ROOT / "config" / "scoring_rubric.toml")
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
 _log = logging.getLogger(__name__)
 
@@ -172,8 +182,8 @@ class SqlAnalysisWorker:
                 role_id=job.role_id,
                 stage=stage.value,
             )
-            requirement_extractor, claim_extractor = self._extractors_for(
-                job.workspace_id
+            requirement_extractor, claim_extractor, adjudicator = (
+                self._analysis_ports_for(job.workspace_id)
             )
             req_result = requirement_extractor.extract(
                 document_id=jd_id,
@@ -211,10 +221,12 @@ class SqlAnalysisWorker:
                 provider_id=provider_id,
                 model_tag=model_tag,
             )
-            mappings = map_requirements(
+            mappings = map_role_requirements(
                 req_result.requirements,
                 claim_result.claims,
                 similarities=similarities,
+                adjudicator=adjudicator,
+                similarity_floor=_MAPPING.similarity_floor,
             )
             stage = JobStage.SCORING
             log_event(
@@ -318,13 +330,14 @@ class SqlAnalysisWorker:
         )
         return failed
 
-    def _extractors_for(
+    def _analysis_ports_for(
         self, workspace_id: str
-    ) -> tuple[RequirementExtractionPort, ClaimExtractionPort]:
+    ) -> tuple[RequirementExtractionPort, ClaimExtractionPort, AdjudicationPort]:
         if self._requirement_extractor is not None or self._claim_extractor is not None:
             return (
                 self._requirement_extractor or RulesRequirementExtractor(),
                 self._claim_extractor or RulesClaimExtractor(),
+                NullAdjudicator(),
             )
         settings = self._providers or ProviderSettings(
             completion_provider="hermetic",
@@ -334,7 +347,7 @@ class SqlAnalysisWorker:
             choice = uow.provider_settings.get(workspace_id)
         if choice is None:
             choice = default_provider_choice(settings)
-        return extractors_for_choice(settings, choice, transport=self._transport)
+        return analysis_ports_for_choice(settings, choice, transport=self._transport)
 
     def _embedding_for(
         self, workspace_id: str

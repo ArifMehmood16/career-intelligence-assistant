@@ -31,9 +31,20 @@ table and no vector retrieval for Ask.
 
 `map_requirements` / `map_requirement` take
 `similarities: Mapping[tuple[str, str], float] | None` keyed
-`(requirement_id, claim_id)`. Relatedness is competency match, lexical overlap,
-or `similarity >= similarity_floor` with no overlap condition. Status remains a
-pure domain-policy decision.
+`(requirement_id, claim_id)` and optional `adjudications` for the pairs where
+lexical overlap and embedding cosine disagree. Relatedness is the domain
+combination of three signals (PLAN 13C.5):
+
+1. lexical overlap of requirement text and claim context
+2. `similarity >= similarity_floor`, with the floor read from
+   `config/scoring_rubric.toml` `[mapping]`
+3. model adjudication of disagreements only
+
+Agreement of (1) and (2) is final. Disagreement is a tie-break: the
+adjudicator decides when it answered; hermetic analysis skips the call and
+falls back to OR so embedding-only adjacent matches are not dropped. Status
+remains a pure domain-policy decision. Every mapping records which signals
+fired and at what strength.
 
 A workspace holds tens of claims, so similarity is exact cosine in Python. No
 ANN index. The embeddings column is dimension-agnostic and records provider,

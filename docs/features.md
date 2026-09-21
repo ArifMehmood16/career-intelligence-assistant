@@ -118,6 +118,11 @@ the configuration file rather than hard-coding these literals.
 **Rules**
 
 - A requirement with no justifying span is `missing`. Never "probably met".
+- Relatedness is three signals: lexical overlap, embedding cosine at or above
+  the configured floor, and model adjudication of the pairs those two disagree
+  on. The combination, the status and the reason code stay in domain code.
+  Hermetic analysis does not call the adjudicator and treats disagreement as
+  the OR of the first two, so embedding-only adjacent matches still appear.
 - Status colour is never the only signal — every status carries a text mark, because
   a gap is information, not an error.
 - The same CV and the same job description always produce the same score. That is a

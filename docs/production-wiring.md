@@ -12,9 +12,11 @@ Provider resolvers:
 - `none` — no model call
 - `completion_port_for` — workspace `answerProviderId` / `answerModel` through the
   Phase 2 completion factory, egress-checked at construction and call time
-- `extractors_for_choice` — hermetic stays on rules extractors so `make test`
-  is offline; any other workspace answer choice uses the quote-verified model
-  extractors. Cover letters extract as self-authored claims and are not mapped.
+- `analysis_ports_for_choice` — hermetic stays on rules extractors and a
+  null adjudicator so `make test` is offline; any other workspace answer
+  choice uses the quote-verified model extractors and a model adjudicator
+  for lexical/embedding disagreements. Cover letters extract as
+  self-authored claims and are not mapped.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
@@ -27,7 +29,7 @@ Provider resolvers:
 | GET /api/health | liveness | none | none |
 | GET /api/ready | SettingsReadiness.check | none | SettingsReadiness (database + migrations) |
 | GET /api/cv | get_cv | none | SqlCvStore |
-| POST /api/cv | upload_bytes_cv / upload_pasted_cv | none on admit; extractors_for_choice on queued reanalysis | SqlCvStore; SqlRoleStore enqueue; SqlAnalysisWorker |
+| POST /api/cv | upload_bytes_cv / upload_pasted_cv | none on admit; analysis_ports_for_choice on queued reanalysis | SqlCvStore; SqlRoleStore enqueue; SqlAnalysisWorker |
 | DELETE /api/cv | delete_cv | none | SqlCvStore (hard delete + dependent roles) |
 | GET /api/cover-letters | list_cover_letters | none | SqlSupportingDocumentStore |
 | POST /api/cover-letters | upload_bytes_cover_letter / upload_pasted_cover_letter | none | SqlSupportingDocumentStore |
@@ -35,10 +37,10 @@ Provider resolvers:
 | GET /api/documents/{document_id}/download | get_downloadable | none | SqlSupportingDocumentStore |
 | GET /api/spans/{span_id} | lookup_workspace_span + resolve_span | none | SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | GET /api/roles | list_roles | none | SqlRoleStore |
-| POST /api/roles | create_role (commit analysing + queued job, 202) | extractors_for_choice and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles | create_role (commit analysing + queued job, 202) | analysis_ports_for_choice and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/roles/{role_id} | get_role | none | SqlRoleStore |
 | DELETE /api/roles/{role_id} | delete_role | none | SqlRoleStore |
-| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | extractors_for_choice and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | analysis_ports_for_choice and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/jobs/{job_id} | get_job | none | SqlRoleStore |
 | GET /api/roles/{role_id}/requirements | stored mappings | none | SqlRoleStore |
 | GET /api/roles/{role_id}/breakdown | stored score explanation | none | SqlRoleStore |

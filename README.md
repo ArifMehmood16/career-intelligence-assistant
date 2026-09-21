@@ -9,7 +9,7 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > **Status:** Phase 13C is in progress: a running instance defaults to a local
 > Ollama model; the model extracts with server-verified quotes; hermetic stays
 > the offline test fixture. Evaluation (Phase 14) waits on the rest of 13C
-> (three-signal matching and output depth). This is a **personal tool for local
+> (output depth). This is a **personal tool for local
 > use**, not a multi-user hosted product.
 > The live route-to-adapter map is [docs/production-wiring.md](docs/production-wiring.md).
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
@@ -32,7 +32,8 @@ This build inverts it. The model does **extraction and phrasing**, never judgeme
    source span. Cover letters extract into the same shape flagged self-authored
    and never enter the mapping.
 3. **Map** each requirement to `met` / `partial` / `missing` with the CV spans that
-   justify it, or none.
+   justify it, or none. Relatedness is lexical overlap, embedding cosine, or
+   model adjudication of disagreements; the domain combines the signals.
 4. **Score deterministically** from the mapping. The fit score is arithmetic over the
    mapping, computed in domain code. No model emits a number.
 5. **Answer and draft** from the mapping and the cited spans only, with a validator

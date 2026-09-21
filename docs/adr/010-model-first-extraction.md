@@ -85,8 +85,7 @@ alone.
 - Persistence of `item_type` and `self_authored` is still required before a SQL
   reload can preserve those flags. Until that lands, in-memory analysis is the
   path that holds the new types.
-- Three-signal matching (lexical, embedding, model adjudication) and output-depth
-  work remain PLAN 13C.5 and 13C.8. This ADR does not pre-empt them.
+- Output-depth work remains PLAN 13C.8. Three-signal matching is PLAN 13C.5.
 - ADR 003's "hermetic default" referred to the test fixture and, incorrectly, to
   the running product. The product default is now a local model; see the
   amendment there.

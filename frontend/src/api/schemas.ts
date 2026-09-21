@@ -42,6 +42,15 @@ export const roleCreatedSchema = z.object({
   jobId: z.string(),
 });
 
+export const relatednessSignalsSchema = z.object({
+  lexical: z.boolean(),
+  lexicalOverlap: z.number().int(),
+  embedding: z.boolean(),
+  embeddingSimilarity: z.number(),
+  adjudication: z.boolean().nullable(),
+  related: z.boolean(),
+});
+
 export const requirementSchema = z.object({
   id: z.string(),
   roleId: z.string(),
@@ -49,6 +58,7 @@ export const requirementSchema = z.object({
   type: z.enum(["must", "desirable"]),
   status: z.enum(["met", "partial", "missing"]),
   evidence: evidenceSchema.nullable(),
+  signals: relatednessSignalsSchema.nullable().optional(),
 });
 
 export const breakdownRowSchema = z.object({

@@ -27,6 +27,32 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 078 — Phase 13C.5 three-signal matching (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.5
+- Prompt intent: continue Phase 13C; implement three-signal matching.
+- Suggestion: relatedness as lexical overlap, embedding cosine, and model
+  adjudication of XOR disagreements; combination in domain; floor in
+  `config/scoring_rubric.toml`; hermetic `NullAdjudicator` falls back to OR so
+  embedding-only adjacent matches survive; mappings record signal strength;
+  persist JSONB `signals` and expose it on `Requirement`.
+- Outcome: accepted, with one combination rule changed from a naive third OR.
+- Reason: `related = lexical OR embedding OR adjudication` would never need the
+  third signal — disagreement already has a true. Adjudication is a tie-break
+  on XOR pairs. Hermetic must not veto embedding-only relatedness (the existing
+  0.9 cosine test). Lexical overlap stayed a pure domain function rather than a
+  port: it is not an I/O boundary. Embedding already had a port; only
+  adjudication is new.
+- Rejected alternatives: three RelatednessPorts wrapping lexical overlap;
+  treating competency match as a fourth relatedness OR (status still uses it);
+  letting adjudication fire on agreed pairs.
+- Human validation: `test_three_signal_matching` failed on missing modules,
+  then 10 tests there plus model-adjudication, mapping, analysis-pipeline,
+  analysis-similarity, OpenAPI and wiring-matrix tests pass. Full default
+  pytest suite passed with 3 skipped; coverage 81.24%. ruff and mypy clean.
+
 ### 001 — Run and deploy surface brought forward
 
 - Date: 2026-09-17

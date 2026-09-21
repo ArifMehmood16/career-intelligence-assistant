@@ -36,6 +36,7 @@ from career_assistant.domain.mapping import (
     MappingStatus,
     RequirementMapping,
 )
+from career_assistant.domain.relatedness import RelatednessSignals
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
 from career_assistant.logconfig import log_event
@@ -421,6 +422,7 @@ class SqlAnalysisResultRepository:
                     requirement_id=_as_uuid(mapping.requirement_id),
                     status=mapping.status.value,
                     reason_code=mapping.reason_code.value,
+                    signals=mapping.signals.as_payload(),
                     analysis_version=analysis_version,
                     invalidated=False,
                 )
@@ -527,6 +529,7 @@ class SqlAnalysisResultRepository:
                     reason_code=MappingReason(row.reason_code),
                     justifying_span_ids=span_ids,
                     justifying_claim_ids=claim_ids,
+                    signals=RelatednessSignals.from_payload(row.signals),
                 )
             )
         return tuple(results)

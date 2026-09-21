@@ -8,6 +8,9 @@ from career_assistant.adapters.extraction.model_backed import ModelRequirementEx
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
 from career_assistant.adapters.providers.factory import build_completion_port
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.adapters.relatedness.model import ModelAdjudicator
+from career_assistant.adapters.relatedness.null import NullAdjudicator
+from career_assistant.application.ports.adjudication import AdjudicationPort
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
@@ -22,12 +25,44 @@ def extractors_for_choice(
     *,
     transport: HttpTransport | None = None,
 ) -> tuple[RequirementExtractionPort, ClaimExtractionPort]:
+    requirement, claim, _adjudicator = analysis_ports_for_choice(
+        settings, choice, transport=transport
+    )
+    return requirement, claim
+
+
+def adjudicator_for_choice(
+    settings: ProviderSettings,
+    choice: ProviderChoice,
+    *,
+    transport: HttpTransport | None = None,
+) -> AdjudicationPort:
+    _requirement, _claim, adjudicator = analysis_ports_for_choice(
+        settings, choice, transport=transport
+    )
+    return adjudicator
+
+
+def analysis_ports_for_choice(
+    settings: ProviderSettings,
+    choice: ProviderChoice,
+    *,
+    transport: HttpTransport | None = None,
+) -> tuple[RequirementExtractionPort, ClaimExtractionPort, AdjudicationPort]:
     if choice.answer_provider_id == "hermetic":
-        return RulesRequirementExtractor(), RulesClaimExtractor()
+        return (
+            RulesRequirementExtractor(),
+            RulesClaimExtractor(),
+            NullAdjudicator(),
+        )
     completion = build_completion_port(
         settings,
         transport=transport,
         provider_id=choice.answer_provider_id,
         model_tag=choice.answer_model,
     )
-    return ModelRequirementExtractor(completion), ModelClaimExtractor(completion)
+    return (
+        ModelRequirementExtractor(completion),
+        ModelClaimExtractor(completion),
+        ModelAdjudicator(completion),
+    )

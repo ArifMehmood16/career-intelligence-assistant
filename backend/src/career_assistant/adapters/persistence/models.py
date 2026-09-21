@@ -303,6 +303,7 @@ class MappingRow(Base):
     )
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    signals: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False)
     invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

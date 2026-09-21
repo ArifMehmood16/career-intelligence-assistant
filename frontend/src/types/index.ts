@@ -30,6 +30,15 @@ export interface Role {
 export type RequirementType = "must" | "desirable";
 export type RequirementStatus = "met" | "partial" | "missing";
 
+export interface RelatednessSignals {
+  lexical: boolean;
+  lexicalOverlap: number;
+  embedding: boolean;
+  embeddingSimilarity: number;
+  adjudication: boolean | null;
+  related: boolean;
+}
+
 export interface Requirement {
   id: string;
   roleId: string;
@@ -37,6 +46,7 @@ export interface Requirement {
   type: RequirementType;
   status: RequirementStatus;
   evidence: Evidence | null;
+  signals?: RelatednessSignals | null;
 }
 
 export interface BreakdownRow {

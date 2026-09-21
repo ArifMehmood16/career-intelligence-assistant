@@ -10,7 +10,7 @@ drafts.
 |---|---|---|
 | Browser to API | Uploads, questions | Type sniffing, size and page caps, schema validation, safe errors |
 | File to parser | PDF/DOCX structure | Bounded parsing, no macro or embedded-object execution, resource limits |
-| Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence |
+| Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence; adjudication pairs are delimited the same way and only submitted pair ids are accepted |
 | Model to application | Extraction JSON, answer text | Schema validation, span verification, drop unresolvable output |
 | Generated draft to browser | Model-phrased or template prose | Groundedness validator against cited spans; template fallback; real verdict persisted (FAIL never rewritten to PASS); provenance on every artefact |
 | Application to browser | Excerpts and drafts | Escaped text rendering, no raw HTML |

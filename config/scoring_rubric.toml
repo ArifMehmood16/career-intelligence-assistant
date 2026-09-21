@@ -20,3 +20,7 @@ over_5y = 0.7
 [bands]
 strong_match_min = 75
 partial_match_min = 50
+
+# Initial floor. Phase 14.7 calibrates this per embedding provider.
+[mapping]
+similarity_floor = 0.55

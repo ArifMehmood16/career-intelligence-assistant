@@ -2,40 +2,13 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.relatedness import RelatednessSignals, pair_relatedness
 from career_assistant.domain.requirements import Requirement
-
-_TOKEN = re.compile(r"[a-z0-9]+")
-_STOP = frozenset(
-    {
-        "a",
-        "an",
-        "the",
-        "and",
-        "or",
-        "for",
-        "with",
-        "on",
-        "in",
-        "of",
-        "to",
-        "by",
-        "at",
-        "from",
-        "experience",
-        "strong",
-        "production",
-        "owned",
-        "wrote",
-        "built",
-        "used",
-    }
-)
 
 
 class MappingStatus(StrEnum):
@@ -59,6 +32,7 @@ class RequirementMapping:
     reason_code: MappingReason
     justifying_span_ids: tuple[str, ...]
     justifying_claim_ids: tuple[str, ...]
+    signals: RelatednessSignals = field(default_factory=RelatednessSignals)
 
 
 def map_requirements(
@@ -66,13 +40,21 @@ def map_requirements(
     claims: tuple[Claim, ...] | list[Claim],
     *,
     similarities: Mapping[tuple[str, str], float] | None = None,
+    adjudications: Mapping[tuple[str, str], bool] | None = None,
+    similarity_floor: float = 0.55,
 ) -> tuple[RequirementMapping, ...]:
     # Benefits, logistics and explicit non-requirements are kept and shown, but
     # a candidate is never mapped or scored against them. Self-authored cover
     # letter claims are narrative: citable, never evidence for a mapping.
     evidence = tuple(claim for claim in claims if not claim.self_authored)
     return tuple(
-        map_requirement(req, evidence, similarities=similarities)
+        map_requirement(
+            req,
+            evidence,
+            similarities=similarities,
+            adjudications=adjudications,
+            similarity_floor=similarity_floor,
+        )
         for req in requirements
         if req.is_scoreable
     )
@@ -83,20 +65,26 @@ def map_requirement(
     claims: tuple[Claim, ...] | list[Claim],
     *,
     similarities: Mapping[tuple[str, str], float] | None = None,
+    adjudications: Mapping[tuple[str, str], bool] | None = None,
     similarity_floor: float = 0.55,
 ) -> RequirementMapping:
     """Map one requirement to met/partial/missing with a reason and span ids."""
     sims = similarities or {}
-    related = [
-        claim
-        for claim in claims
-        if _is_related(
+    adjs = adjudications or {}
+    considered: list[tuple[Claim, RelatednessSignals]] = []
+    related: list[tuple[Claim, RelatednessSignals]] = []
+    for claim in claims:
+        key = (requirement.id, claim.id)
+        signals = pair_relatedness(
             requirement,
             claim,
-            sims.get((requirement.id, claim.id), 0.0),
-            similarity_floor,
+            similarity=sims.get(key, 0.0),
+            similarity_floor=similarity_floor,
+            adjudication=adjs[key] if key in adjs else None,
         )
-    ]
+        considered.append((claim, signals))
+        if signals.related:
+            related.append((claim, signals))
     if not related:
         return RequirementMapping(
             requirement_id=requirement.id,
@@ -104,43 +92,44 @@ def map_requirement(
             reason_code=MappingReason.NO_RELATED_CLAIM,
             justifying_span_ids=(),
             justifying_claim_ids=(),
+            signals=_closest_miss(considered),
         )
 
-    same = [c for c in related if c.competency == requirement.competency]
+    same = [(c, s) for c, s in related if c.competency == requirement.competency]
     if not same:
-        best = _best_claim(related)
+        best, best_signals = _best_claim(related)
         return RequirementMapping(
             requirement_id=requirement.id,
             status=MappingStatus.PARTIAL,
             reason_code=MappingReason.ADJACENT_CLAIM_ONLY,
             justifying_span_ids=best.source_span_ids,
             justifying_claim_ids=(best.id,),
+            signals=best_signals,
         )
 
     recent_enough = [
-        c for c in same if c.recency_signal in {"recent", "mid", "undated"}
+        item for item in same if item[0].recency_signal in {"recent", "mid", "undated"}
     ]
     pool = recent_enough or same
-    best = _best_claim(pool)
-    if not recent_enough and all(c.recency_signal == "old" for c in same):
+    best, best_signals = _best_claim(pool)
+    if not recent_enough and all(c.recency_signal == "old" for c, _s in same):
         return RequirementMapping(
             requirement_id=requirement.id,
             status=MappingStatus.PARTIAL,
             reason_code=MappingReason.EVIDENCE_TOO_OLD,
             justifying_span_ids=best.source_span_ids,
             justifying_claim_ids=(best.id,),
+            signals=best_signals,
         )
 
-    if (
-        _overlap_count(requirement.text, best.context) < 1
-        and requirement.competency == "general"
-    ):
+    if best_signals.lexical_overlap < 1 and requirement.competency == "general":
         return RequirementMapping(
             requirement_id=requirement.id,
             status=MappingStatus.PARTIAL,
             reason_code=MappingReason.EVIDENCE_THIN,
             justifying_span_ids=best.source_span_ids,
             justifying_claim_ids=(best.id,),
+            signals=best_signals,
         )
 
     return RequirementMapping(
@@ -149,35 +138,29 @@ def map_requirement(
         reason_code=MappingReason.MATCHED,
         justifying_span_ids=best.source_span_ids,
         justifying_claim_ids=(best.id,),
+        signals=best_signals,
     )
 
 
-def _is_related(
-    requirement: Requirement,
-    claim: Claim,
-    similarity: float,
-    similarity_floor: float,
-) -> bool:
-    if claim.competency == requirement.competency:
-        return True
-    if _overlap_count(requirement.text, claim.context) >= 1:
-        return True
-    # Embeddings may propose adjacent candidates lexical overlap misses.
-    return similarity >= similarity_floor
-
-
-def _tokens(text: str) -> set[str]:
-    return {t for t in _TOKEN.findall(text.lower()) if t not in _STOP and len(t) > 2}
-
-
-def _overlap_count(left: str, right: str) -> int:
-    return len(_tokens(left) & _tokens(right))
-
-
-def _best_claim(claims: list[Claim]) -> Claim:
+def _best_claim(
+    items: list[tuple[Claim, RelatednessSignals]],
+) -> tuple[Claim, RelatednessSignals]:
     rank = {"recent": 0, "mid": 1, "undated": 2, "old": 3}
 
-    def key(claim: Claim) -> tuple[int, int]:
+    def key(item: tuple[Claim, RelatednessSignals]) -> tuple[int, int]:
+        claim = item[0]
         return (rank.get(claim.recency_signal, 9), -len(claim.context))
 
-    return sorted(claims, key=key)[0]
+    return sorted(items, key=key)[0]
+
+
+def _closest_miss(
+    items: list[tuple[Claim, RelatednessSignals]],
+) -> RelatednessSignals:
+    """Keep the strongest rejected pair so a veto still shows on the mapping."""
+    if not items:
+        return RelatednessSignals()
+    return max(
+        items,
+        key=lambda item: (item[1].embedding_similarity, item[1].lexical_overlap),
+    )[1]

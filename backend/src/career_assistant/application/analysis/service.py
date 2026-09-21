@@ -6,11 +6,17 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Protocol
 
+from career_assistant.application.analysis.relatedness import (
+    NullAdjudicator,
+    map_role_requirements,
+)
 from career_assistant.application.analysis.similarity import (
     requirement_claim_similarities,
 )
+from career_assistant.application.ports.adjudication import AdjudicationPort
 from career_assistant.application.ports.embedding import (
     EmbeddingCachePort,
     EmbeddingPort,
@@ -19,6 +25,7 @@ from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
 )
+from career_assistant.application.scoring.rubric_loader import load_mapping_config
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
@@ -34,13 +41,16 @@ from career_assistant.domain.jobs import (
     new_role_analysis_job,
     recover_stale_running,
 )
-from career_assistant.domain.mapping import RequirementMapping, map_requirements
+from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation, ScoringRubric, score_fit
 from career_assistant.logconfig import log_event
 
 JobClock = Callable[[], datetime]
 _log = logging.getLogger(__name__)
+_MAPPING = load_mapping_config(
+    Path(__file__).resolve().parents[5] / "config" / "scoring_rubric.toml"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +110,8 @@ class AnalysisService:
         embedding_cache: EmbeddingCachePort | None = None,
         embedding_provider_id: str = "hermetic",
         embedding_model_tag: str = "lexical-hash-v1",
+        adjudicator: AdjudicationPort | None = None,
+        similarity_floor: float | None = None,
     ) -> None:
         self._documents = documents
         self._requirement_extractor = requirement_extractor
@@ -113,6 +125,12 @@ class AnalysisService:
         self._embedding_cache = embedding_cache
         self._embedding_provider_id = embedding_provider_id
         self._embedding_model_tag = embedding_model_tag
+        self._adjudicator = adjudicator or NullAdjudicator()
+        self._similarity_floor = (
+            similarity_floor
+            if similarity_floor is not None
+            else _MAPPING.similarity_floor
+        )
         self._roles: dict[str, AnalysisRole] = {}
         self._jobs: dict[str, AnalysisJob] = {}
         self._role_order: list[str] = []
@@ -370,10 +388,12 @@ class AnalysisService:
                 provider_id=self._embedding_provider_id,
                 model_tag=self._embedding_model_tag,
             )
-            mappings = map_requirements(
+            mappings = map_role_requirements(
                 req_result.requirements,
                 claim_result.claims,
                 similarities=similarities,
+                adjudicator=self._adjudicator,
+                similarity_floor=self._similarity_floor,
             )
 
             job = mark_stage(job, JobStage.SCORING)

@@ -206,6 +206,16 @@ Requirement {
   type: "must" | "desirable";
   status: "met" | "partial" | "missing";
   evidence: Evidence | null;
+  signals: RelatednessSignals | null;  // which of lexical / embedding / adjudication fired
+}
+
+RelatednessSignals {
+  lexical: boolean;
+  lexicalOverlap: number;
+  embedding: boolean;
+  embeddingSimilarity: number;
+  adjudication: boolean | null;  // null = not asked (agreement or hermetic)
+  related: boolean;
 }
 
 Evidence { spanId; documentId; page: number; paragraph: string; highlight: string }
