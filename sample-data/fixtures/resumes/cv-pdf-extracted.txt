@@ -1,0 +1,29 @@
+Synthetic fixture. Shaped like pypdf output from a real PDF CV.
+
+PROFILE
+Engineer who ships with AI tools and then owns what runs in production.
+
+EXPERIENCE
+AI Engineer — Northwind Health Jan 2026 – Present
+Manchester, UK
+Product: A consumer health application returning a personalised report across nine
+areas of health. In user acceptance testing.
+Technologies: Python · FastAPI · PostgreSQL 16 with pgvector · Ollama
+•Owned the AI layer end to end. Guidance is chosen by rules from the clinical
+library before any model call, so the model changes how something is said and never
+what is recommended.
+•Built the evaluation that says whether a change helped. A locked dataset and a
+runner scoring source hit rate at k, citation validity and latency.
+Software Engineer — Riverbank University Dec 2023 – Jan 2026
+Cardiff, UK
+Product: A platform that ten institutions use to record concerns raised by students
+and practitioners, and put them in front of the institutions, the health service and
+education customers. Live in production for two years.
+Technologies: React · Node.js · TypeScript · Python and FastAPI · PostgreSQL
+•Designed and shipped the React application and the serverless backend, released it
+to ten institutions and fixed it through every fault for two years.
+•Ran the client relationship, took requirements directly from the institutions and
+trained the colleagues who run it today.
+
+EDUCATION & CERTIFICATION
+BSc Computer Science

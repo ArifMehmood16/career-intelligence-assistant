@@ -121,8 +121,8 @@ def test_fixture_manifest_covers_required_scenarios() -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     resumes = list((FIXTURES / "resumes").glob("cv-*.txt"))
     jobs = list((FIXTURES / "job-descriptions").glob("jd-*.txt"))
-    assert len(resumes) == 3, f"expected 3 CVs, found {len(resumes)}"
-    assert len(jobs) == 6, f"expected 6 job descriptions, found {len(jobs)}"
+    assert {p.name for p in resumes} == set(manifest["cvs"]), "undeclared CV fixture"
+    assert {p.name for p in jobs} == set(manifest["jobs"]), "undeclared JD fixture"
     scenarios = {entry["scenario"] for entry in manifest["pairings"]}
     assert scenarios == REQUIRED_SCENARIOS
     for entry in manifest["pairings"]:

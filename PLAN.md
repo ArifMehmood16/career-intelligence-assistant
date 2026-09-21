@@ -785,7 +785,7 @@ hits.
       deltas, tailored bullets, a cover letter that references this role and company,
       and interview questions each carrying the candidate's own evidence. All of it
       stays span-bound and validated by the Phase 10 pipeline.
-- [ ] **13C.9 Repair the deterministic fixture path.** The rules extractors remain the
+- [x] **13C.9 Repair the deterministic fixture path.** The rules extractors remain the
       hermetic fixture, so they must be honest: accept a bullet glyph with no
       following space, stop treating a wrapped line beginning with a section word as a
       section boundary, and read role dates from the role line. Those are the three

@@ -10,7 +10,8 @@ from career_assistant.application.ports.extraction import RequirementExtractionR
 from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.requirements import Requirement
 
-_BULLET = re.compile(r"^\s*[-*•]\s+(.+)$")
+# PDF extractors emit "•Text" with no space; normalisation makes that "-Text".
+_BULLET = re.compile(r"^\s*[-*•]\s*(.+)$")
 _MUST_HEADERS = re.compile(
     r"^(requirements|must[- ]haves?|what you.ll need|you must have)\b",
     re.IGNORECASE,

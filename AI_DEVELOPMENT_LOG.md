@@ -557,6 +557,43 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: `make help` lists the new targets; `make -n run-api` and
   `make -n run-web` print uvicorn and bun respectively.
 
+### 070 — Phase 13C.9 repair the deterministic fixture path (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Claude (Opus 5), agent session
+- Plan task: 13C.9
+- Prompt intent: the product returned a fit score of 0 for a real CV and a real
+  job advert; find out why and repair the fixture extractors.
+- Suggestion: three regression tests reproducing the shapes a PDF really
+  produces, then the minimum fixes — accept a bullet glyph with no following
+  space, treat a section boundary as a short standalone heading rather than any
+  line beginning with a section word, and parse abbreviated month ranges.
+- Outcome: accepted.
+- Reason: observed on the real document. `pypdf` emits list items as
+  "•Text" with no space; normalisation rewrites that to "-Text"; the bullet
+  pattern required whitespace, so the claim extractor returned zero claims and
+  every requirement mapped to `missing`. With that corrected, a wrapped body line
+  reading "education customers. Live in production for two years." matched
+  `_SECTION_STOP` and ended the experience section at the second role. Role dates
+  were written "Jan 2026 - Present" and the range pattern only accepted full
+  month names, so every claim came out undated.
+- Changed from the proposal: one assertion in the new tests was wrong and
+  exposed a fourth issue — a bullet that wraps is truncated at the line break.
+  That is outside 13C.9 and disappears once 13C.3 has the model return a
+  verified quote, so it is recorded as a named limitation test rather than
+  fixed here.
+- Rejected alternatives: using the maintainer's real CV as the fixture (personal
+  contact details in a public repository; the manifest already says synthetic
+  only) — a synthetic fixture carrying the same pypdf shapes is used instead.
+  Also rejected: widening the extractor to join wrapped bullets, which would
+  have grown this task into the work 13C.3 replaces entirely.
+- Human validation: 4 of 6 new tests observed failing for the intended reasons
+  before any source change; after the fixes `pytest --no-cov` reports
+  `279 passed, 3 skipped, 52 deselected, 2 warnings`; `ruff check` clean,
+  `ruff format` applied to one file, `mypy` clean over 125 source files.
+  Integration tests were not run in this session — the agent shell cannot reach
+  the developer's local PostgreSQL.
+
 ### 069 — Wire embedding similarity into requirement mapping (TDD)
 
 - Date: 2026-09-21
