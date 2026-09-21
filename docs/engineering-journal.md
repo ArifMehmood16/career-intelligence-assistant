@@ -18,6 +18,22 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.5 — Database-backed retrieval and span resolution
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/api/test_span_routes.py::test_get_span_returns_evidence_for_uploaded_cover_letter -q --no-cov` — red first (404); then green after workspace span lookup
+  - `pytest tests/api/test_span_routes.py::test_get_span_returns_evidence_for_role_job_description -q --no-cov` — red first (404); then green after role-store `get_span`
+  - `pytest tests/api/test_retrieval_http.py -q --no-cov` — red first (cover-letter and same-role JD ids absent from Ask citations); then green after retrieval pool
+  - `pytest -m integration tests/integration/test_retrieval_http_sql.py -q --no-cov` — 4 passed against PostgreSQL
+  - `make test` — 242 passed, 3 skipped, 46 deselected; coverage 80.12%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 46 passed
+  - `make lint` — ruff, mypy 119 files, frontend tsc and eslint green
+- Observed result: `GET /api/spans/{id}` and generated-artefact evidence share one workspace-scoped resolver over the active CV, uploaded cover letters and role JD spans. Open questions retrieve those same kinds; a role-scoped question cannot cite another role's JD. Cover-letter text that would meet a requirement if it were a CV does not change mappings or scores. Cross-workspace span GET returns `span_not_found`. The same behaviours hold on SQL stores.
+- Decisions made: lookup lives in application code (`lookup_workspace_span` / `retrieval_pool`); HTTP routes only translate. SQL finds any stored span row by workspace id, then filters by document kind at the supporting/role adapters.
+- Problems hit: first JD GET fixture had no bullets so rules extraction produced no spans; switched to a Requirements list. Cover-letter Ask first asserted `spans[0]`, which was the greeting paragraph; the test now selects the Kubernetes span.
+- Carried forward: 13A.6 route generated prose through the grounded-generation use case.
+
 ## Phase 13A.4 — Provider selection drives extraction, Ask and phrasing
 
 - Date: 2026-09-21

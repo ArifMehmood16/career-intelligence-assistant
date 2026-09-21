@@ -102,9 +102,9 @@ def test_get_span_returns_evidence_for_role_job_description() -> None:
     assert body["spanId"] == span_id
     assert body["documentId"] == bundle.jd_document_id
     assert body["highlight"] in body["paragraph"]
-    assert "fastapi" in body["highlight"].lower() or "fastapi" in body[
-        "paragraph"
-    ].lower()
+    assert (
+        "fastapi" in body["highlight"].lower() or "fastapi" in body["paragraph"].lower()
+    )
 
 
 def test_get_span_rejects_cross_workspace_citation() -> None:

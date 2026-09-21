@@ -596,7 +596,7 @@ real application.
       provenance plus accounting. Remove hard-coded hermetic provenance from routes;
       tests must use scripted adapters to prove the selected provider is called and a
       rejected hosted choice makes no network attempt.
-- [ ] **13A.5 Complete database-backed retrieval and span resolution.** Open questions
+- [x] **13A.5 Complete database-backed retrieval and span resolution.** Open questions
       may retrieve workspace-scoped spans from the active CV and uploaded supporting
       cover letters, while role-scoped retrieval may additionally use only that
       role's job description. A single workspace-scoped span resolver must open every

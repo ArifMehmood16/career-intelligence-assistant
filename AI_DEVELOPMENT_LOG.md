@@ -538,6 +538,26 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 061 — Phase 13A.5 workspace retrieval and span resolution (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13A.5
+- Prompt intent: continue the next phase in the same TDD style with regular commits.
+- Suggestion: one workspace-scoped span resolver for CV, supporting cover letters and
+  role JDs; feed those kinds into Ask retrieval; keep cover letters out of claims,
+  mappings and scores; prove it on hermetic and PostgreSQL HTTP tests.
+- Outcome: accepted.
+- Reason: GET /api/spans and Ask's retrieved pool were active-CV only, so cover-letter
+  and JD citations 404'd and open questions could not cite them even though domain
+  selection rules already existed.
+- Rejected alternatives: widening CvStore.get_span to every document kind (lied about
+  the store); putting retrieval assembly in the HTTP route (routes must not hold that
+  policy).
+- Human validation: cover-letter and JD GET tests failed 404 then passed; Ask retrieval
+  tests failed on missing citation ids then passed; make test 242 passed, coverage
+  80.12%; make test-integration 46 passed; make lint green.
+
 ### 060 — Phase 13A.4 provider selection drives actual work (TDD)
 
 - Date: 2026-09-21

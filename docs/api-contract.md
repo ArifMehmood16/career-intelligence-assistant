@@ -337,9 +337,12 @@ Both are derived from stored scores, so they cannot disagree with a role page.
 GET /api/spans/{id} → Evidence
 ```
 
-The citation chip contract. A span id that does not resolve is a `404`, and the
-frontend treats that as a bug worth surfacing rather than an empty panel — an
-unresolvable citation is the one failure this product must never hide.
+The citation chip contract. One workspace-scoped resolver opens every citation
+emitted by Ask or generated artefacts: the active CV, uploaded supporting cover
+letters, and job-description spans in this workspace. A span id that does not
+resolve, or that belongs to another workspace, is a `404`, and the frontend treats
+that as a bug worth surfacing rather than an empty panel — an unresolvable citation
+is the one failure this product must never hide.
 
 ---
 
@@ -388,6 +391,12 @@ event: error     data: { "code": "provider_failed", "message": "..." }
 Citations arrive **after** the text because they are validated against stored spans
 once the answer is complete. An answer whose citations do not all resolve is reduced
 to `kind: "insufficient"` before `done` is sent.
+
+Open questions retrieve workspace-scoped spans from the active CV and uploaded
+supporting cover letters. When `roleId` is set they may also retrieve that role's job
+description, never another role's. Cover-letter text cannot become a claim, mapping
+or score input. Every citation, including supporting-letter and JD spans, opens
+through `GET /api/spans/{id}`.
 
 The user question is committed before processing. Exactly one final validated answer
 or insufficient-evidence result, its citations and provider provenance are committed
