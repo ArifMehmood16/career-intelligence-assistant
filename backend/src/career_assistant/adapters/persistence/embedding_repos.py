@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable, Sequence
+from typing import Protocol
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -16,7 +17,14 @@ def _as_uuid(value: str) -> uuid.UUID:
 
 
 def _as_vector(value: object) -> tuple[float, ...]:
-    return tuple(float(item) for item in value)  # type: ignore[union-attr]
+    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+        raise TypeError("embedding is not a numeric sequence")
+    components: list[float] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
+            raise TypeError("embedding component is not numeric")
+        components.append(float(item))
+    return tuple(components)
 
 
 class SqlEmbeddingRepository:
@@ -129,10 +137,30 @@ class SqlEmbeddingRepository:
         return tuple(rows)
 
 
+class _WorkspaceRepo(Protocol):
+    def ensure(self, workspace_id: str) -> None: ...
+
+
+class _EmbeddingUnitOfWork(Protocol):
+    embeddings: SqlEmbeddingRepository
+    workspaces: _WorkspaceRepo
+
+    def commit(self) -> None: ...
+
+    def __enter__(self) -> _EmbeddingUnitOfWork: ...
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: object,
+    ) -> None: ...
+
+
 class SqlEmbeddingCache:
     """EmbeddingCachePort over PostgreSQL. Opens its own unit of work per call."""
 
-    def __init__(self, uow_factory: Callable[[], object]) -> None:
+    def __init__(self, uow_factory: Callable[[], _EmbeddingUnitOfWork]) -> None:
         self._uow_factory = uow_factory
 
     def get(
