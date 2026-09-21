@@ -296,7 +296,8 @@ class SqlRoleStore:
         body: str,
         citation_span_ids: tuple[str, ...],
     ) -> None:
-        provider, model_tag, left_machine, _grounded, fallback = _provenance_bits(draft)
+        provider, model_tag, left_machine, grounded, fallback = _provenance_bits(draft)
+        verdict = GroundednessVerdict.PASS if grounded else GroundednessVerdict.FAIL
         with self._uow_factory() as uow:
             record = uow.roles.get(workspace_id, role_id)
             if record is None:
@@ -315,7 +316,7 @@ class SqlRoleStore:
                     provider=provider,
                     model_tag=model_tag or "rules-v1",
                     left_machine=left_machine,
-                    groundedness=GroundednessVerdict.PASS,
+                    groundedness=verdict,
                     used_template_fallback=fallback == "template",
                     regeneration_count=0,
                 )

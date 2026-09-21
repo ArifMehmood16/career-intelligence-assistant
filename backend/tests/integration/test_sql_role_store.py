@@ -239,7 +239,7 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
     worker.drain()
 
     requirements = client.get(f"/api/roles/{role_id}/requirements").json()
-    requirement_id = requirements[0]["id"]
+    requirement_id = next(row["id"] for row in requirements if row["status"] == "met")
 
     bullets = client.post(
         f"/api/roles/{role_id}/bullets",

@@ -464,13 +464,26 @@ class SqlAnalysisResultRepository:
                     select(MappingSpanRow).where(MappingSpanRow.mapping_id == row.id)
                 ).all()
             )
+            claim_ids: tuple[str, ...] = ()
+            if span_ids:
+                found = self._session.scalars(
+                    select(ClaimSpanRow.claim_id)
+                    .where(
+                        ClaimSpanRow.workspace_id == _as_uuid(workspace_id),
+                        ClaimSpanRow.span_id.in_(
+                            [_as_uuid(span_id) for span_id in span_ids]
+                        ),
+                    )
+                    .distinct()
+                ).all()
+                claim_ids = tuple(str(claim_id) for claim_id in found)
             results.append(
                 RequirementMapping(
                     requirement_id=str(row.requirement_id),
                     status=MappingStatus(row.status),
                     reason_code=MappingReason(row.reason_code),
                     justifying_span_ids=span_ids,
-                    justifying_claim_ids=(),
+                    justifying_claim_ids=claim_ids,
                 )
             )
         return tuple(results)

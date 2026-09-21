@@ -205,7 +205,7 @@ def _as_cover_letter_wire(draft: object) -> CoverLetterDraftWire:
                 model=draft.model_tag,
                 left_machine=draft.left_machine,
                 generated_at=str(generated_at),
-                grounded=True,
+                grounded=draft.groundedness is GroundednessVerdict.PASS,
                 fallback="template" if draft.used_template_fallback else "none",
             ),
         )
@@ -234,7 +234,7 @@ def _as_bullet_wire(draft: object) -> BulletDraftWire:
                 model=draft.model_tag,
                 left_machine=draft.left_machine,
                 generated_at=str(generated_at),
-                grounded=True,
+                grounded=draft.groundedness is GroundednessVerdict.PASS,
                 fallback="template" if draft.used_template_fallback else "none",
             ),
         )
