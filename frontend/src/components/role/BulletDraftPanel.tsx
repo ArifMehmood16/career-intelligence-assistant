@@ -14,6 +14,7 @@ export interface BulletDraftPanelProps {
   onCopy: (text: string) => void;
   onCitation: (evidence: Evidence) => void;
   onDismiss: () => void;
+  copyError?: string | null;
 }
 
 function provenanceLine(draft: BulletDraft): string {
@@ -32,6 +33,7 @@ export function BulletDraftPanel({
   onCopy,
   onCitation,
   onDismiss,
+  copyError = null,
 }: BulletDraftPanelProps) {
   if (state === "empty" || (state === "ready" && draft === null)) {
     return null;
@@ -117,6 +119,23 @@ export function BulletDraftPanel({
               </li>
             ))}
           </ul>
+
+          {copyError ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">{copyError}</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const first = draft.bullets[0];
+                  if (first) onCopy(first.text);
+                }}
+              >
+                Retry copy
+              </Button>
+            </div>
+          ) : null}
 
           <p className="font-mono text-[11px] text-muted-foreground">
             {provenanceLine(draft)}

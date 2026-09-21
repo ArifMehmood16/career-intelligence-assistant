@@ -72,6 +72,13 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [letterRefusal, setLetterRefusal] = useState<{
     message: string;
   } | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [letterExportError, setLetterExportError] = useState<string | null>(
+    null,
+  );
+  const [prepareExportError, setPrepareExportError] = useState<string | null>(
+    null,
+  );
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
@@ -300,6 +307,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const requestBulletDraft = (requirementId: string) => {
     setDraftRequirementId(requirementId);
     setDraftVisible(true);
+    setCopyError(null);
     bulletMutation.mutate(requirementId);
   };
 
@@ -361,13 +369,17 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       <BulletDraftPanel
         state={draftState}
         draft={bulletMutation.data ?? null}
+        copyError={copyError}
         onRetry={() => {
           if (draftRequirementId) {
             bulletMutation.mutate(draftRequirementId);
           }
         }}
         onCopy={(text) => {
-          void navigator.clipboard.writeText(text);
+          void navigator.clipboard.writeText(text).then(
+            () => setCopyError(null),
+            () => setCopyError("The draft could not be copied."),
+          );
         }}
         onCitation={(evidence) => {
           openEvidence("Cited span", "partial", evidence);
@@ -376,6 +388,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
           setDraftVisible(false);
           bulletMutation.reset();
           setDraftRequirementId(null);
+          setCopyError(null);
         }}
       />
     </div>
@@ -411,6 +424,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
             <PreparePanel
               state={prepareState}
               pack={pack}
+              exportError={prepareExportError}
               onRetry={() => {
                 void interviewPackQuery.refetch();
               }}
@@ -418,9 +432,19 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
                 openEvidence("Interview evidence", "met", evidence);
               }}
               onExport={() => {
-                void exportRoleArtefact(roleId, "interview-pack").then((body) =>
-                  downloadMarkdown(`interview-pack-${roleId}.md`, body),
-                );
+                void exportRoleArtefact(roleId, "interview-pack")
+                  .then((body) => {
+                    setPrepareExportError(null);
+                    return downloadMarkdown(
+                      `interview-pack-${roleId}.md`,
+                      body,
+                    );
+                  })
+                  .catch(() => {
+                    setPrepareExportError(
+                      "The interview pack could not be exported.",
+                    );
+                  });
               }}
             />
           }
@@ -459,6 +483,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               onRetrySupporting={() => {
                 void supportingLettersQuery.refetch();
               }}
+              exportError={letterExportError}
               onToneChange={setLetterTone}
               onIncludeGapLineChange={setIncludeGapLine}
               onGenerate={() => {
@@ -472,9 +497,16 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               onExport={(draft) => {
                 void exportRoleArtefact(roleId, "cover-letter", {
                   version: draft.version,
-                }).then((body) =>
-                  downloadMarkdown(`cover-letter-${roleId}.md`, body),
-                );
+                })
+                  .then((body) => {
+                    setLetterExportError(null);
+                    return downloadMarkdown(`cover-letter-${roleId}.md`, body);
+                  })
+                  .catch(() => {
+                    setLetterExportError(
+                      "The cover letter could not be exported.",
+                    );
+                  });
               }}
               onCitation={(citationSpanId) => {
                 openEvidence("Cited span", "met", {

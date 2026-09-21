@@ -16,6 +16,7 @@ export interface PreparePanelProps {
   onRetry: () => void;
   onSelectEvidence: (evidence: Evidence) => void;
   onExport: () => void;
+  exportError?: string | null;
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -33,6 +34,7 @@ export function PreparePanel({
   onRetry,
   onSelectEvidence,
   onExport,
+  exportError = null,
 }: PreparePanelProps) {
   return (
     <section
@@ -42,9 +44,29 @@ export function PreparePanel({
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <h2 className="text-sm font-semibold">Interview pack</h2>
         {state === "ready" ? (
-          <Button type="button" variant="outline" size="sm" onClick={onExport}>
-            Export Markdown
-          </Button>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onExport}
+            >
+              Export Markdown
+            </Button>
+            {exportError ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">{exportError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onExport}
+                >
+                  Retry export
+                </Button>
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

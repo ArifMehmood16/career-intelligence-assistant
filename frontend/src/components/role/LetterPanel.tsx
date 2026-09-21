@@ -27,6 +27,7 @@ export interface LetterPanelProps {
   supportingState?: AsyncState;
   onRetryGenerated?: () => void;
   onRetrySupporting?: () => void;
+  exportError?: string | null;
   onToneChange: (tone: LetterTone) => void;
   onIncludeGapLineChange: (include: boolean) => void;
   onGenerate: () => void;
@@ -48,6 +49,7 @@ export function LetterPanel({
   supportingState = "ready",
   onRetryGenerated,
   onRetrySupporting,
+  exportError = null,
   onToneChange,
   onIncludeGapLineChange,
   onGenerate,
@@ -146,16 +148,33 @@ export function LetterPanel({
                   : "stayed local"}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                onExport(draft);
-              }}
-            >
-              Export Markdown
-            </Button>
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onExport(draft);
+                }}
+              >
+                Export Markdown
+              </Button>
+              {exportError ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{exportError}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onExport(draft);
+                    }}
+                  >
+                    Retry export
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-4">
