@@ -18,6 +18,20 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13A.3 — PostgreSQL-backed analysis worker
+
+- Date: 2026-09-21
+- Commands run:
+  - `pytest tests/integration/test_analysis_worker_http_sql.py::test_post_role_returns_analysing_and_queued_before_worker_runs -m integration --no-cov` — red first (`ready` vs `analysing`); then green after enqueue-only `create_role`
+  - focused worker / SQL role / chat / CV / wiring tests — green
+  - `make test` — 230 passed, 3 skipped, 40 deselected; coverage 80.04%; frontend Vitest 100 passed / 32 files
+  - `make test-integration` — 40 passed
+  - `make lint` — ruff, mypy 115 files, frontend tsc and eslint green
+- Observed result: production SQL `POST /roles` and reanalyse commit `analysing` plus a queued job and return 202 before extraction. The in-process worker publishes or fails transactionally. CV replace enqueues job ids in the same transaction and never leaves a role `ready` with a stale score. CV delete marks roles `failed`. Startup recovers queued jobs and fails stale-running ones. Hermetic `create_app()` stays in-memory and still returns `ready` immediately.
+- Decisions made: hermetic API tests keep the synchronous in-memory store; only the SQL path is asynchronous. Worker extractors remain hermetic until 13A.4. No Celery.
+- Problems hit: existing SQL role/chat tests assumed in-request `ready`/`succeeded` — they now drain the worker. `fail_job` deletes only the current analysis version so sibling-role claims are not wiped.
+- Carried forward: 13A.4 provider selection must affect actual extraction and answers.
+
 ## Phase 13A.2 — SQL chat and provider settings
 
 - Date: 2026-09-21

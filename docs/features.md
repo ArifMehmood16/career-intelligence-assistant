@@ -17,9 +17,10 @@ slightly blunter product. Nothing depends on a model being clever.
 
 A **workspace** holds one CV, optional supporting cover letters and any number of
 **roles**. PostgreSQL is the source of truth for bounded original uploads, parsed
-spans, analyses, generated artefacts and chat history. Adding a role runs an analysis
-that produces a requirement set, a mapping to CV evidence, and a score. Everything
-else in the product reads that mapping.
+spans, analyses, generated artefacts and chat history. Adding a role queues an
+analysis job that produces a requirement set, a mapping to CV evidence, and a score.
+The HTTP response returns before extraction finishes. Everything else in the product
+reads that mapping.
 
 ```text
 CV ──parse──> spans ──extract──> claims ─┐

@@ -27,7 +27,7 @@ drafts.
 | Fabricated experience in an answer | Every claim requires a resolvable span | Extraction may mis-attribute a real span |
 | Fabricated experience in a generated draft | Groundedness validator; regenerate once; hermetic template fallback; refusal when evidence is thin | Validator false positives become template fallbacks |
 | Malicious PDF or DOCX | Bounded parsing, no embedded execution, size and page caps | Parser library vulnerabilities; mitigated by dependency scanning |
-| Resource exhaustion | Caps on size, pages, characters, context and output | A slow parse can still occupy a worker; timeouts TBD |
+| Resource exhaustion | Caps on size, pages, characters, context and output; one in-process analysis worker with a running-job timeout and startup recovery of stale running rows | A slow extract still occupies that worker until timeout; this build is a local personal tool |
 | Personal data retention | Hard delete of original bytes, parsed text, spans, chunks, embeddings, claims, mappings, generated drafts, questions, answers and citations; configurable retention window | Database backups retain data until they rotate |
 | Original-file disclosure | Bounded originals stored in PostgreSQL `bytea`; workspace-scoped download; no filesystem path; database not publicly exposed in deployment | A database or backup compromise exposes the original documents; volume encryption and host security remain deployment responsibilities |
 | Cross-workspace leakage | Workspace scoping on every query, integration test | No authentication yet — see below |

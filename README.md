@@ -260,6 +260,9 @@ cover letters alongside parsed text and spans. Uploaded cover letters may be que
 and cited, but they never count as evidence for fit scoring: self-authored application
 prose cannot prove experience. Generated cover letters and final cited chat answers
 are also persisted with provenance. Partial streamed tokens are not stored as answers.
+Production role analysis is an in-process worker over queued PostgreSQL jobs: HTTP
+returns `analysing` before extraction finishes, and a process restart recovers queued
+and stale-running work. Hermetic `create_app()` tests stay in-memory and synchronous.
 
 Nothing here downloads a model or needs an API key. Ollama is available but sits
 behind a Compose profile, so it starts only when asked for:

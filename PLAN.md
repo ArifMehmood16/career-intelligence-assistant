@@ -579,7 +579,7 @@ real application.
       HTTP surface that questions, final answers, citations, idempotent retries,
       deletion and provider choices survive construction of a fresh app process and
       remain workspace-scoped.
-- [ ] **13A.3 Use the PostgreSQL-backed analysis worker in production.** Adding or
+- [x] **13A.3 Use the PostgreSQL-backed analysis worker in production.** Adding or
       reanalysing a role must commit an `analysing` role and queued job, return 202
       before extraction completes, and let the bounded worker publish results or a
       safe failure transactionally. Wire startup recovery for persisted queued and

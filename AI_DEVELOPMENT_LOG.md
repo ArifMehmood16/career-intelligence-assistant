@@ -538,6 +538,25 @@ Never record a command output, metric, date or commit hash that was not observed
 - Human validation: supporting + message history API tests green; full API suite
   green; make lint green.
 
+### 059 — Phase 13A.3 PostgreSQL analysis worker (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Composer, agent session
+- Plan task: 13A.3
+- Prompt intent: continue 13A.3 with TDD; commit red then green.
+- Suggestion: stop analysing in the HTTP request; persist JD + queued job; run a
+  bounded SQL worker from FastAPI lifespan; CV replace/delete enqueue or fail in
+  the same transaction; startup recovery for queued and stale-running jobs.
+- Outcome: accepted.
+- Reason: production `SqlRoleStore.create_role` still extracted hermetically and
+  published `ready`/`succeeded` before returning 202, so evaluation would measure
+  process-local behaviour rather than the shipped job path.
+- Rejected alternatives: Celery/RQ (PLAN says in-process); using in-memory
+  `AnalysisService` dicts as the production queue (they do not survive restart).
+- Human validation: first HTTP test failed on `ready` vs `analysing`; worker suite
+  then 7 green; `make test` 230 passed, coverage 80.04%; `make test-integration`
+  40 passed; `make lint` green.
+
 ### 058 — Phase 13A.2 SQL chat and provider settings (TDD)
 
 - Date: 2026-09-21
