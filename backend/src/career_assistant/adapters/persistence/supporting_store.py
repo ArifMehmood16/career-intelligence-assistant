@@ -93,6 +93,13 @@ class SqlSupportingDocumentStore:
                 return None
             return found
 
+    def spans_for_workspace(self, workspace_id: str) -> tuple[Span, ...]:
+        with self._uow_factory() as uow:
+            spans: list[Span] = []
+            for document in uow.documents.list_cover_letters(workspace_id):
+                spans.extend(uow.documents.list_spans(workspace_id, document.id))
+            return tuple(spans)
+
 
 def _to_view(document: StoredDocument) -> SupportingDocumentView:
     created = document.created_at

@@ -29,13 +29,17 @@ from career_assistant.application.ask.service import (
 )
 from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
+from career_assistant.application.documents.supporting import (
+    InMemorySupportingDocumentStore,
+    SupportingDocumentStore,
+)
+from career_assistant.application.intake.workspace_spans import retrieval_pool
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
     RoleView,
 )
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
-from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.prompts import RetrievedSpan
 
 router = APIRouter(tags=["ask"])
@@ -54,6 +58,14 @@ def _role_store(request: Request) -> InMemoryRoleStore:
     if store is None:
         store = InMemoryRoleStore(cv_store=_cv_store(request))
         request.app.state.role_store = store
+    return store
+
+
+def _supporting_store(request: Request) -> SupportingDocumentStore:
+    store = getattr(request.app.state, "supporting_store", None)
+    if store is None:
+        store = InMemorySupportingDocumentStore(cv_store=_cv_store(request))
+        request.app.state.supporting_store = store
     return store
 
 
@@ -93,21 +105,18 @@ def _known_span_ids(
     workspace_id: str,
     roles: tuple[RoleAnalysisView, ...],
 ) -> frozenset[str]:
-    ids: set[str] = set()
-    cv = _cv_store(request).get_active(workspace_id)
-    if cv is not None:
-        ids.update(span.id for span in cv.spans)
+    ids: set[str] = {item.span.id for item in _retrieved_pool(request, workspace_id)}
     for role in roles:
         ids.update(role.span_texts)
     return frozenset(ids)
 
 
 def _retrieved_pool(request: Request, workspace_id: str) -> tuple[RetrievedSpan, ...]:
-    cv = _cv_store(request).get_active(workspace_id)
-    if cv is None:
-        return ()
-    return tuple(
-        RetrievedSpan(span=span, document_kind=DocumentKind.CV) for span in cv.spans
+    return retrieval_pool(
+        workspace_id,
+        cv_store=_cv_store(request),
+        supporting_store=_supporting_store(request),
+        role_store=_role_store(request),
     )
 
 

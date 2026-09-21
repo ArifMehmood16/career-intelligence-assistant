@@ -47,6 +47,7 @@ from career_assistant.domain.jobs import (
     new_role_analysis_job,
 )
 from career_assistant.domain.mapping import MappingStatus
+from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 from career_assistant.parsing.pipeline import parse_pasted_text
@@ -212,6 +213,22 @@ class SqlRoleStore:
             if document is None or document.kind is not DocumentKind.JOB_DESCRIPTION:
                 return None
             return found
+
+    def job_description_spans(self, workspace_id: str) -> tuple[RetrievedSpan, ...]:
+        with self._uow_factory() as uow:
+            items: list[RetrievedSpan] = []
+            for record in uow.roles.list_for_workspace(workspace_id):
+                items.extend(
+                    RetrievedSpan(
+                        span=span,
+                        document_kind=DocumentKind.JOB_DESCRIPTION,
+                        role_id=record.id,
+                    )
+                    for span in uow.documents.list_spans(
+                        workspace_id, record.job_description_document_id
+                    )
+                )
+            return tuple(items)
 
     def get_job(self, workspace_id: str, job_id: str) -> JobView | None:
         with self._uow_factory() as uow:

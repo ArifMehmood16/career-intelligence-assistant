@@ -19,13 +19,16 @@ Kind regards
 """
 
 
-def _cover_letter_span_id(client: TestClient) -> str:
+def _cover_letter_span_id(client: TestClient, *, containing: str) -> str:
     workspace_id = client.cookies["workspace"]
     stored = next(
         iter(client.app.state.supporting_store._letters[workspace_id].values())
     )
-    assert stored.spans
-    return stored.spans[0].id
+    needle = containing.lower()
+    for span in stored.spans:
+        if needle in span.text.lower():
+            return span.id
+    raise AssertionError(f"cover letter has no span containing {containing!r}")
 
 
 def test_open_question_cites_cover_letter_when_asked() -> None:
@@ -39,7 +42,7 @@ def test_open_question_cites_cover_letter_when_asked() -> None:
         json={"text": _LETTER, "filename": "letter.txt"},
     )
     assert created.status_code == 201
-    span_id = _cover_letter_span_id(client)
+    span_id = _cover_letter_span_id(client, containing="Kubernetes")
 
     asked = client.post(
         "/api/messages",

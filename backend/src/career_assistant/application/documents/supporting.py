@@ -78,6 +78,8 @@ class SupportingDocumentStore(Protocol):
         self, workspace_id: str, span_id: str
     ) -> tuple[Span, tuple[Page, ...]] | None: ...
 
+    def spans_for_workspace(self, workspace_id: str) -> tuple[Span, ...]: ...
+
 
 @dataclass
 class InMemorySupportingDocumentStore:
@@ -169,6 +171,12 @@ class InMemorySupportingDocumentStore:
                 if span.id == span_id:
                     return span, stored.pages
         return None
+
+    def spans_for_workspace(self, workspace_id: str) -> tuple[Span, ...]:
+        spans: list[Span] = []
+        for stored in self._letters.get(workspace_id, {}).values():
+            spans.extend(stored.spans)
+        return tuple(spans)
 
 
 def upload_pasted_cover_letter(
