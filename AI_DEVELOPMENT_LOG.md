@@ -27,6 +27,22 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 093 — Name the requirements that distinguish a tie
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (stable ties)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep equal scores on one competition rank, ordered by title then
+  id, and replace the shared met requirements in that group with the ones that
+  are not on every tied role.
+- Outcome: accepted
+- Reason: a role whose reasons are entirely shared keeps those reasons, so a
+  tie of identical evidence is not blank. An untied role is unchanged.
+- Human validation: the new ranking test failed because both tied roles still
+  named `sql`. After the filter, both ranking tests passed. No live model call.
+
 ### 092 — Do not count overlapping jobs as separate years
 
 - Date: 2026-09-22

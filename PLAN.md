@@ -12,9 +12,10 @@ the machine, and a failure status that marks an incomplete assessment apart
 from a poor fit. Duplicate requirement text scores once. Unknown conditions
 and contradictions cap coverage at partial, and a zero score from an incomplete
 assessment is banded `incomplete` rather than `limited`. Overlapping jobs in
-the same skill count as one stretch of time. Still open on 13D.5: stable ties
-that name the differentiating requirements, and Fit, Gaps, Prepare and Letter
-reading that saved result with no further model call on restart. The course-versus-leadership regression is
+the same skill count as one stretch of time. Tied roles stay in title order
+and name the requirements that are not shared. Still open on 13D.5: Fit, Gaps,
+Prepare and Letter reading that saved result with no further model call on
+restart. The course-versus-leadership regression is
 proven at the SQL boundary only. Hermetic analysis still uses the OR fallback.
 13D's closure includes the outstanding 13C verification; do not claim either
 gate has passed or start the full Phase 14 comparison before then.
