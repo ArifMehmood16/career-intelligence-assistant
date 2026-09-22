@@ -138,13 +138,15 @@ flowchart TD
   Q[Question] --> ROUTE{Intent}
   ROUTE -->|gaps / fit / compare / prep| STORE
   ROUTE -->|open question| RET[Scoped retrieval]
-  STORE --> ANS[Answer with span citations]
-  RET --> ANS
+  STORE --> PHRASE[Configured model phrases the stored numbers]
+  RET --> PHRASE
+  PHRASE --> ANS[Answer with span citations]
 ```
 
-Intent routing is deterministic. Gap, fit, comparison and interview-prep questions read
-the stored mapping directly — they do not run a similarity search and hope. Only
-open-ended questions fall through to retrieval.
+Intent routing is deterministic. Gap, fit, comparison and interview-prep questions
+are phrased from the stored mapping and its score. The model does not calculate a
+new score, and it does not run a similarity search for those intents. Open questions
+retrieve spans, including an uploaded letter when the text overlaps the question.
 
 ## Stack
 

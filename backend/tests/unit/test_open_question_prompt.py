@@ -7,6 +7,7 @@ from career_assistant.domain.prompts import (
     PromptBudget,
     RetrievedSpan,
     build_open_question_prompt,
+    clamp_prompt_budget,
     select_spans_for_open_question,
 )
 
@@ -55,6 +56,53 @@ def test_open_question_may_retrieve_cover_letter_when_asked() -> None:
     )
     assert any(s.span.id == "cl-1" for s in selected)
     assert any(s.span.id == "cv-1" for s in selected) or True  # CV optional here
+
+
+def test_cover_letter_is_eligible_by_relevance_without_the_phrase() -> None:
+    pool = (
+        _span(
+            id="cv-1",
+            document_id="cv",
+            text="Owned dbt models in production.",
+            kind=DocumentKind.CV,
+        ),
+        _span(
+            id="cl-1",
+            document_id="cl",
+            text="I operated Kubernetes clusters for the platform team.",
+            kind=DocumentKind.COVER_LETTER,
+        ),
+    )
+    selected = select_spans_for_open_question(
+        "What Kubernetes experience have I described?",
+        pool,
+        role_id=None,
+    )
+    assert any(item.span.id == "cl-1" for item in selected)
+
+
+def test_prompt_budget_uses_the_configured_caps_and_the_model_window() -> None:
+    wide = clamp_prompt_budget(
+        max_question_chars=4000,
+        max_context_chars=24000,
+        requested_output_tokens=2000,
+        model_max_output_tokens=4096,
+        context_window_tokens=128_000,
+    )
+    assert wide.max_output_tokens == 2000
+    assert wide.max_question_chars == 4000
+    assert wide.max_context_chars == 24000
+
+    narrow = clamp_prompt_budget(
+        max_question_chars=4000,
+        max_context_chars=24000,
+        requested_output_tokens=2000,
+        model_max_output_tokens=256,
+        context_window_tokens=2048,
+    )
+    assert narrow.max_output_tokens == 256
+    input_chars = (2048 - 256) * 4
+    assert narrow.max_question_chars + narrow.max_context_chars <= input_chars
 
 
 def test_role_scoped_question_cannot_retrieve_other_role_jd() -> None:

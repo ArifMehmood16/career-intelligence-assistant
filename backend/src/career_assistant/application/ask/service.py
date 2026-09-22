@@ -21,7 +21,9 @@ from career_assistant.domain.intents import Intent, route_intent
 from career_assistant.domain.prompts import (
     PromptBudget,
     RetrievedSpan,
+    build_analysis_prompt,
     build_open_question_prompt,
+    clamp_prompt_budget,
     select_spans_for_open_question,
 )
 from career_assistant.logconfig import log_event
@@ -105,16 +107,24 @@ class AskService:
         known_span_ids: frozenset[str],
         id_factory: Callable[[str], str],
         prompt_budget: PromptBudget | None = None,
+        output_token_limit: int = 2000,
+        max_question_chars: int = 4000,
+        max_context_chars: int = 24000,
     ) -> None:
         self._store = store
         self._completion = completion
         self._known_span_ids = known_span_ids
         self._id_factory = id_factory
-        self._budget = prompt_budget or PromptBudget(
-            max_question_chars=2000,
-            max_context_chars=8000,
-            max_output_tokens=512,
-        )
+        if prompt_budget is None:
+            capabilities = completion.capabilities
+            prompt_budget = clamp_prompt_budget(
+                max_question_chars=max_question_chars,
+                max_context_chars=max_context_chars,
+                requested_output_tokens=output_token_limit,
+                model_max_output_tokens=capabilities.max_output_tokens,
+                context_window_tokens=capabilities.context_window_tokens,
+            )
+        self._budget = prompt_budget
 
     def ask(self, request: AskRequest) -> AnswerResult:
         existing = self._existing(request)
@@ -274,13 +284,39 @@ class AskService:
     def _produce(self, request: AskRequest) -> tuple[AnswerResult, str, str, bool]:
         intent = route_intent(request.content, role_id=request.role_id)
         if intent is not Intent.OPEN_QUESTION:
-            result = answer_structured(
+            structured = answer_structured(
                 intent,
                 request.content,
                 roles=request.roles,
                 known_span_ids=self._known_span_ids,
             )
-            return result, "mapping", "deterministic", False
+            if structured.kind is AnswerKind.INSUFFICIENT:
+                return structured, "mapping", "deterministic", False
+            prompt = build_analysis_prompt(
+                question=request.content,
+                grounding=_analysis_grounding(request.roles),
+                budget=self._budget,
+            )
+            completion = self._completion.complete(
+                CompletionRequest(
+                    system=prompt.system,
+                    user=prompt.user,
+                    max_output_tokens=prompt.max_output_tokens,
+                )
+            )
+            phrased = AnswerResult(
+                kind=AnswerKind.ANSWER,
+                content=completion.text,
+                citations=structured.citations,
+                intent=intent,
+            )
+            result = validate_citations(phrased, known_span_ids=self._known_span_ids)
+            return (
+                result,
+                completion.provider_id,
+                completion.model_tag,
+                completion.left_machine,
+            )
 
         selected = select_spans_for_open_question(
             request.content,
@@ -316,6 +352,23 @@ class AskService:
             completion.model_tag,
             completion.left_machine,
         )
+
+
+def _analysis_grounding(roles: tuple[RoleAnalysisView, ...]) -> str:
+    lines: list[str] = []
+    for role in roles:
+        lines.append(
+            f"role={role.title} stored_score={role.explanation.score:.0f} "
+            f"band={role.explanation.band}"
+        )
+        requirements = {item.id: item for item in role.requirements}
+        for mapping in role.mappings:
+            requirement = requirements.get(mapping.requirement_id)
+            text = (
+                requirement.text if requirement is not None else mapping.requirement_id
+            )
+            lines.append(f"requirement={text} status={mapping.status.value}")
+    return "\n".join(lines)
 
 
 def _chunk_text(text: str, size: int = 24) -> tuple[str, ...]:

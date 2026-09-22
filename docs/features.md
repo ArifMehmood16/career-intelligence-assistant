@@ -313,9 +313,10 @@ produced it. The product does not pretend to have written your CV.
    order. Delete history when it is no longer wanted.
 
 **Intent routing is deterministic.** Gap, fit, comparison, evidence-for-a-requirement
-and interview-prep questions are answered from the stored mapping — no vector search,
-no chance of the chat contradicting the role page. Only genuinely open questions fall
-through to workspace-scoped retrieval over spans.
+and interview-prep questions are phrased by the configured completion model from the
+stored mapping and its score. The model does not calculate a new score. Open
+questions use workspace-scoped retrieval over spans. An uploaded letter is eligible
+when its text overlaps the question.
 
 **Rules**
 

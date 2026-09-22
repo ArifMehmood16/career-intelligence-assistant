@@ -27,6 +27,26 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 088 — Ask phrases every intent from stored analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.4
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: send fit, gaps, compare, evidence and preparation through the
+  configured completion model, using the stored score as grounding; retrieve
+  uploaded letters by token overlap; read the output cap from settings,
+  default 2000, and clamp it to the model window.
+- Outcome: changed
+- Reason: an insufficient-evidence result still returns before any model call,
+  and citations still come from the stored mapping rather than from model
+  text. The model phrases; it does not rescore.
+- Human validation: the new tests failed because `clamp_prompt_budget` was
+  missing and structured intents did not call completion. After the change,
+  the Ask, prompt, provider-default, structured-ask and message API tests
+  passed (31). mypy was clean on the changed modules. No live model call.
+
 ### 087 — Structured assessment replaces boolean adjudication on the model path
 
 - Date: 2026-09-22

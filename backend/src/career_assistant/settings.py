@@ -101,7 +101,7 @@ class ProviderSettings(BaseSettings):
     provider_allow_local_fallback: bool = False
     track_token_usage: bool = True
 
-    llm_max_output_tokens: int = Field(default=1024, ge=1)
+    llm_max_output_tokens: int = Field(default=2000, ge=1)
 
     def secret_values(self) -> tuple[str, ...]:
         """Configured secrets for redaction tests — never expose via routes."""
@@ -145,7 +145,7 @@ class LimitSettings(BaseSettings):
     max_upload_bytes: int = Field(default=10_485_760, ge=1)
     max_document_pages: int = Field(default=40, ge=1)
     max_document_chars: int = Field(default=400_000, ge=1)
-    max_question_chars: int = Field(default=1000, ge=1)
-    max_context_chars: int = Field(default=12_000, ge=1)
+    max_question_chars: int = Field(default=4000, ge=1)
+    max_context_chars: int = Field(default=24_000, ge=1)
     max_excerpt_chars: int = Field(default=600, ge=1)
     max_roles_per_workspace: int = Field(default=25, ge=1)

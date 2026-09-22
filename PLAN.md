@@ -4,12 +4,11 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. 13D.1–13D.3 are implemented: the
-labelled check set, ADR 011, and a structured assessment on the completion
-path. Hermetic analysis still uses the OR fallback. Next: 13D.4, answering
-every Ask intent with the configured model. 13D's closure includes the
-outstanding 13C verification; do not claim either gate has passed or start
-the full Phase 14 comparison before then.
+Its live exit gate has not been observed. 13D.1–13D.4 are implemented. Hermetic
+analysis still uses the OR fallback. Next: 13D.5, one saved analysis result
+that every feature reads. 13D's closure includes the outstanding 13C
+verification; do not claim either gate has passed or start the full Phase 14
+comparison before then.
 
 ## Product objective and quality priority
 
@@ -904,7 +903,7 @@ Do not rebuild Phase 13A or 13C.
       recorded as incomplete and never becomes a match. Keep the existing embeddings
       and lexical matching for evidence retrieval; widen the retrieval limit and
       include adjacent sentences so negation and dates survive.
-- [ ] **13D.4 Answer every Ask question with the configured LLM.** Route all
+- [x] **13D.4 Answer every Ask question with the configured LLM.** Route all
       intents — fit, gaps, compare, evidence, preparation and open questions —
       through the configured completion model. Structured intents supply the saved
       analysis as the grounding material so the model phrases the answer from the

@@ -23,6 +23,7 @@ def test_provider_defaults_are_a_local_model_not_the_test_fixture() -> None:
 
     assert settings.completion_provider == "ollama"
     assert settings.embedding_provider == "ollama"
+    assert settings.llm_max_output_tokens == 2000
 
 
 def test_the_test_app_factory_still_builds_a_hermetic_app() -> None:
