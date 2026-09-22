@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass, field
+import re
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.recency import covered_years, stated_years
 from career_assistant.domain.relatedness import RelatednessSignals, pair_relatedness
 from career_assistant.domain.requirements import Requirement
 
@@ -23,6 +25,7 @@ class MappingReason(StrEnum):
     EVIDENCE_TOO_OLD = "evidence_too_old"
     EVIDENCE_THIN = "evidence_thin"
     MATCHED = "matched"
+    ASSESSMENT_INCOMPLETE = "assessment_incomplete"
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +36,17 @@ class RequirementMapping:
     justifying_span_ids: tuple[str, ...]
     justifying_claim_ids: tuple[str, ...]
     signals: RelatednessSignals = field(default_factory=RelatednessSignals)
+    # Unknown or conflicting evidence is not full coverage. Scoring reads these;
+    # a citation still does not prove the requirement is met.
+    unknown_conditions: tuple[str, ...] = ()
+    contradiction: bool = False
+    # What the assessor was actually shown. A `missing` result means nothing
+    # until this says whether the supporting claim was ever in the prompt.
+    retrieved_claim_ids: tuple[str, ...] = ()
+    # The model's own sentence for its assessment. Diagnostic only: a domain
+    # rule can override the status afterwards, and then this no longer
+    # describes the result.
+    assessment_justification: str = ""
 
 
 def map_requirements(
@@ -43,9 +57,9 @@ def map_requirements(
     adjudications: Mapping[tuple[str, str], bool] | None = None,
     similarity_floor: float = 0.55,
 ) -> tuple[RequirementMapping, ...]:
-    # Benefits, logistics and explicit non-requirements are kept and shown, but
-    # a candidate is never mapped or scored against them. Self-authored cover
-    # letter claims are narrative: citable, never evidence for a mapping.
+    # Benefits, logistics and explicit non-requirements are kept for audit.
+    # Only requirements and responsibilities are mapped and scored.
+    # Self-authored cover letter claims are narrative: citable, never evidence.
     evidence = tuple(claim for claim in claims if not claim.self_authored)
     return tuple(
         map_requirement(
@@ -132,7 +146,7 @@ def map_requirement(
             signals=best_signals,
         )
 
-    return RequirementMapping(
+    matched = RequirementMapping(
         requirement_id=requirement.id,
         status=MappingStatus.MET,
         reason_code=MappingReason.MATCHED,
@@ -140,6 +154,85 @@ def map_requirement(
         justifying_claim_ids=(best.id,),
         signals=best_signals,
     )
+    limited = limit_concurrent_years(
+        requirement, tuple(claim for claim, _signals in pool), matched
+    )
+    return course_does_not_meet_depth(requirement, claims, limited)
+
+
+def limit_concurrent_years(
+    requirement: Requirement,
+    claims: tuple[Claim, ...] | list[Claim],
+    mapping: RequirementMapping,
+) -> RequirementMapping:
+    """Do not treat overlapping jobs as separate years of coverage."""
+    if mapping.status is not MappingStatus.MET:
+        return mapping
+    needed = stated_years(requirement.text)
+    if needed is None:
+        return mapping
+    dated = tuple(
+        claim
+        for claim in claims
+        if claim.period_start is not None and claim.competency == requirement.competency
+    )
+    covered = covered_years(dated)
+    # Calendar spans land a fraction under a whole year. A month of slack
+    # keeps back-to-back jobs that add up, and still rejects a real gap.
+    if covered is None or covered >= needed - (1 / 12):
+        return mapping
+    span_ids = tuple(
+        dict.fromkeys(span_id for claim in dated for span_id in claim.source_span_ids)
+    )
+    return replace(
+        mapping,
+        status=MappingStatus.PARTIAL,
+        reason_code=MappingReason.EVIDENCE_THIN,
+        justifying_span_ids=span_ids or mapping.justifying_span_ids,
+        justifying_claim_ids=tuple(claim.id for claim in dated),
+    )
+
+
+_COURSE_TEXT = re.compile(
+    r"\b(?:introductory|intro)\b.{0,40}\bcourse\b|\bcompleted\b.{0,40}\bcourse\b",
+    re.IGNORECASE,
+)
+
+
+def course_does_not_meet_depth(
+    requirement: Requirement,
+    claims: Sequence[Claim],
+    mapping: RequirementMapping,
+) -> RequirementMapping:
+    """An introductory course is not evidence for years of leadership."""
+    if mapping.status is MappingStatus.MISSING:
+        return mapping
+    signal = (requirement.seniority_signal or "").casefold()
+    asks_for_depth = stated_years(requirement.text) is not None or "lead" in signal
+    if not asks_for_depth:
+        return mapping
+    cited_ids = set(mapping.justifying_claim_ids)
+    cited = tuple(claim for claim in claims if claim.id in cited_ids)
+    if not cited:
+        cited = tuple(
+            claim for claim in claims if claim.competency == requirement.competency
+        )
+    if not cited or not all(_is_course(claim) for claim in cited):
+        return mapping
+    return replace(
+        mapping,
+        status=MappingStatus.MISSING,
+        reason_code=MappingReason.NO_RELATED_CLAIM,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+        signals=replace(mapping.signals, related=False),
+    )
+
+
+def _is_course(claim: Claim) -> bool:
+    if claim.duration_signal == "course":
+        return True
+    return _COURSE_TEXT.search(claim.context) is not None
 
 
 def _best_claim(

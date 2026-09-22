@@ -40,6 +40,7 @@ class CompletionResult:
     output_tokens: int | None = None
     fallback_used: bool = False
     latency_ms: int | None = None
+    finish_reason: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

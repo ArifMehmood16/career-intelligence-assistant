@@ -1,0 +1,43 @@
+SYNTHETIC FIXTURE — not a real job posting. Shape only.
+
+Company: Northbridge Mutual
+Role: Senior Analytics Engineer
+Location: Hybrid — Edinburgh
+
+## About the role
+
+We are hiring a senior analytics engineer to own production warehouse models and
+partner with product analysts on trusted metrics.
+
+## You will be responsible for:
+
+* Owning the production dbt project and release cadence for core marts.
+* Designing incremental models for daily finance and risk reporting.
+* Partnering with analysts on metric definitions used company-wide.
+* Building lightweight Python checks that gate model promotion.
+* Mentoring analysts on SQL and modelling standards.
+* Documenting lineage for regulatory reporting packages.
+* Supporting incident response when a mart fails overnight.
+
+## Skills and experience
+
+* **Python Proficiency:** confident writing production Python for data quality.
+* **SQL Warehousing:** strong SQL on Snowflake or an equivalent cloud warehouse.
+* **dbt Modelling:** production experience owning dbt models end to end.
+* **Orchestration:** experience coordinating multi-step analytics pipelines.
+* **BI Tools:** Looker or an equivalent semantic layer for analyst self-serve.
+* **Stakeholder Communication:** clear written updates for finance partners.
+* **Multi-agent Systems:** designing multi-agent workflows for analytics tasks.
+* **Kubernetes Operators:** hands-on Kubernetes operator development for data jobs.
+
+## Benefits
+
+* Competitive salary and annual bonus.
+* Pension contribution and private medical cover.
+* Share options after the probation period.
+* Twenty-five days holiday plus bank holidays.
+
+## Logistics
+
+* Hybrid working from the Edinburgh office three days a week.
+* Right to work in the UK is required.

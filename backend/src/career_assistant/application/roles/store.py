@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from career_assistant.application.documents.cv import CvStore
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.errors import EgressNotPermittedError
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
@@ -55,6 +56,12 @@ class RoleView:
 
 
 @dataclass(frozen=True, slots=True)
+class JobErrorView:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
 class JobView:
     id: str
     kind: str
@@ -62,7 +69,7 @@ class JobView:
     stage: str | None
     started_at: datetime | None
     finished_at: datetime | None
-    error: str | None
+    error: JobErrorView | None
 
 
 @dataclass
@@ -137,6 +144,13 @@ class InMemoryRoleStore:
             job_id=job.id,
             status=role.status,
         )
+        emit_action(
+            "role.create",
+            outcome="accepted",
+            entity_type="role",
+            entity_id=role.id,
+            attributes={"id_role": role.id, "id_job": job.id},
+        )
         return role, job
 
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:
@@ -201,6 +215,12 @@ class InMemoryRoleStore:
         if job_id is not None:
             self.jobs.get(workspace_id, {}).pop(job_id, None)
         log_event(_log, "role.deleted", role_id=role_id)
+        emit_action(
+            "role.delete",
+            outcome="succeeded",
+            entity_type="role",
+            entity_id=role_id,
+        )
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         role = self.get_role(workspace_id, role_id)
@@ -253,6 +273,13 @@ class InMemoryRoleStore:
             role_id=role_id,
             job_id=job.id,
             status=updated.status,
+        )
+        emit_action(
+            "role.reanalyse",
+            outcome="accepted",
+            entity_type="role",
+            entity_id=role_id,
+            attributes={"id_role": role_id, "id_job": job.id},
         )
         return updated, job
 

@@ -107,6 +107,11 @@ class ReanalyseResponse(ApiModel):
     job_id: str
 
 
+class JobErrorBody(ApiModel):
+    code: str
+    message: str
+
+
 class AnalysisJobResponse(ApiModel):
     id: str
     kind: str
@@ -114,7 +119,7 @@ class AnalysisJobResponse(ApiModel):
     stage: str | None
     started_at: str | None
     finished_at: str | None
-    error: str | None
+    error: JobErrorBody | None
 
 
 class RelatednessSignalsWire(ApiModel):

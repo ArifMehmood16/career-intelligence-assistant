@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Protocol
@@ -16,6 +17,7 @@ from career_assistant.application.documents.cv import (
 )
 from career_assistant.application.intake.admission import AdmissionLimits
 from career_assistant.application.intake.errors import IntakeError
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentFormat, DocumentKind, Page, Span
 from career_assistant.logconfig import log_event
@@ -141,6 +143,12 @@ class InMemorySupportingDocumentStore:
             return False
         del items[document_id]
         log_event(_log, "cover_letter.deleted", document_id=document_id)
+        emit_action(
+            "cover_letter.delete",
+            outcome="succeeded",
+            entity_type="cover_letter",
+            entity_id=document_id,
+        )
         return True
 
     def get_downloadable(
@@ -192,16 +200,31 @@ def upload_pasted_cover_letter(
     filename: str,
     limits: AdmissionLimits,
 ) -> SupportingDocumentView:
-    parsed = parse_pasted_text(
-        text,
-        filename=filename or "cover-letter.txt",
-        kind=DocumentKind.COVER_LETTER,
-        limits=limits,
-    )
-    body = text.encode("utf-8")
-    return _store_parsed_cover_letter(
-        store, workspace_id=workspace_id, parsed=parsed, body=body
-    )
+    started = time.perf_counter()
+    try:
+        parsed = parse_pasted_text(
+            text,
+            filename=filename or "cover-letter.txt",
+            kind=DocumentKind.COVER_LETTER,
+            limits=limits,
+        )
+        body = text.encode("utf-8")
+        return _store_parsed_cover_letter(
+            store,
+            workspace_id=workspace_id,
+            parsed=parsed,
+            body=body,
+            started=started,
+        )
+    except IntakeError as exc:
+        emit_action(
+            "cover_letter.upload",
+            outcome="failed",
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            entity_type="cover_letter",
+            error_code=exc.code.value,
+        )
+        raise
 
 
 def upload_bytes_cover_letter(
@@ -215,16 +238,31 @@ def upload_bytes_cover_letter(
 ) -> SupportingDocumentView:
     from career_assistant.parsing.pipeline import parse_document
 
-    parsed = parse_document(
-        data,
-        filename=filename or "cover-letter",
-        kind=DocumentKind.COVER_LETTER,
-        declared_media_type=declared_media_type,
-        limits=limits,
-    )
-    return _store_parsed_cover_letter(
-        store, workspace_id=workspace_id, parsed=parsed, body=data
-    )
+    started = time.perf_counter()
+    try:
+        parsed = parse_document(
+            data,
+            filename=filename or "cover-letter",
+            kind=DocumentKind.COVER_LETTER,
+            declared_media_type=declared_media_type,
+            limits=limits,
+        )
+        return _store_parsed_cover_letter(
+            store,
+            workspace_id=workspace_id,
+            parsed=parsed,
+            body=data,
+            started=started,
+        )
+    except IntakeError as exc:
+        emit_action(
+            "cover_letter.upload",
+            outcome="failed",
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            entity_type="cover_letter",
+            error_code=exc.code.value,
+        )
+        raise
 
 
 def _store_parsed_cover_letter(
@@ -233,6 +271,7 @@ def _store_parsed_cover_letter(
     workspace_id: str,
     parsed: object,
     body: bytes,
+    started: float,
 ) -> SupportingDocumentView:
     from career_assistant.domain.documents import ParsedDocument
 
@@ -260,6 +299,19 @@ def _store_parsed_cover_letter(
         span_count=len(document.spans),
         byte_length=view.byte_length,
         media_type=view.media_type,
+    )
+    emit_action(
+        "cover_letter.upload",
+        outcome="succeeded",
+        duration_ms=int((time.perf_counter() - started) * 1000),
+        entity_type="cover_letter",
+        entity_id=view.id,
+        attributes={
+            "id_document": view.id,
+            "count_pages": view.page_count,
+            "count_spans": len(document.spans),
+            "count_bytes": view.byte_length,
+        },
     )
     return view
 

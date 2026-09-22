@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+import uuid
 from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,6 +20,12 @@ from career_assistant.api.deps import (
     resolve_workspace_id,
     workspace_cookie_needs_set,
 )
+from career_assistant.application.observability.emit import (
+    bind_recorder,
+    clear_recorder,
+)
+from career_assistant.application.observability.names import QUERY_ID_KEYS
+from career_assistant.application.ports.observability import HttpEnvelope
 from career_assistant.logconfig import (
     bind_request_context,
     clear_request_context,
@@ -27,6 +34,73 @@ from career_assistant.logconfig import (
 
 _UPLOAD_METHODS = frozenset({"POST", "PUT", "PATCH"})
 _http_log = logging.getLogger("career_assistant.http")
+
+
+def _request_bytes(request: Request) -> int | None:
+    raw = request.headers.get("content-length")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
+def _response_bytes(response: Response) -> int | None:
+    raw = response.headers.get("content-length")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
+def _query_id_keys(request: Request) -> dict[str, str]:
+    return {
+        key: value
+        for key, value in request.query_params.items()
+        if key in QUERY_ID_KEYS
+    }
+
+
+def _persist_http_envelope(
+    request: Request,
+    *,
+    status: int,
+    duration_ms: int,
+    error_code: str | None,
+    response_bytes: int | None = None,
+) -> None:
+    recorder = getattr(request.app.state, "audit_recorder", None)
+    if recorder is None:
+        return
+    workspace_id = getattr(request.state, "workspace_id", None)
+    correlation_id = getattr(request.state, "correlation_id", "-")
+    try:
+        recorder.record_http(
+            HttpEnvelope(
+                id=str(uuid.uuid4()),
+                correlation_id=str(correlation_id),
+                method=request.method,
+                path=request.url.path,
+                status=status,
+                duration_ms=duration_ms,
+                workspace_id=str(workspace_id) if workspace_id else None,
+                request_bytes=_request_bytes(request),
+                response_bytes=response_bytes,
+                error_code=error_code,
+                query_id_keys=_query_id_keys(request),
+            )
+        )
+    except Exception:
+        log_event(
+            _http_log,
+            "http.error",
+            code="audit_failed",
+            path=request.url.path,
+            status=status,
+        )
 
 
 class WorkspaceCookieMiddleware(BaseHTTPMiddleware):
@@ -77,6 +151,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             correlation_id=str(correlation_id),
             workspace_id=str(workspace_id) if workspace_id else None,
         )
+        bind_recorder(getattr(request.app.state, "audit_recorder", None))
         started = time.perf_counter()
         try:
             response = await call_next(request)
@@ -90,6 +165,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 duration_ms=duration_ms,
                 correlation_id=correlation_id,
             )
+            _persist_http_envelope(
+                request,
+                status=500,
+                duration_ms=duration_ms,
+                error_code="internal_error",
+            )
             raise
         else:
             duration_ms = int((time.perf_counter() - started) * 1000)
@@ -102,8 +183,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 duration_ms=duration_ms,
                 correlation_id=correlation_id,
             )
+            error_code = getattr(request.state, "error_code", None)
+            _persist_http_envelope(
+                request,
+                status=response.status_code,
+                duration_ms=duration_ms,
+                error_code=str(error_code) if error_code else None,
+                response_bytes=_response_bytes(response),
+            )
             return response
         finally:
+            clear_recorder()
             clear_request_context()
 
 

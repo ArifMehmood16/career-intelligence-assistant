@@ -26,6 +26,7 @@ config/app.env
 
 # Local artefacts
 tmp/
+var/log/
 *.log
 playwright-report/
 test-results/

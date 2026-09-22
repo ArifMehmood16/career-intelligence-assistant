@@ -6,6 +6,7 @@ import json
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from tests.support.scripted_extraction import span_id_extraction_transport
 from tests.support.scripted_transport import ScriptedTransport
 
 from career_assistant.adapters.providers.http_transport import HttpResponse
@@ -13,7 +14,7 @@ from career_assistant.main import create_app
 from career_assistant.settings import ProviderSettings
 
 _CV = """Experience
-Senior Analytics Engineer — Acme — 2022-01 — Present
+Senior Analytics Engineer — Acme — January 2022 – Present
 - Owned dbt models in production for the warehouse.
 """
 
@@ -132,31 +133,7 @@ def test_rejected_hosted_choice_makes_no_network_attempt() -> None:
 
 
 def _scripted_openai_extraction() -> ScriptedTransport:
-    claim = "Owned dbt models in production for the warehouse."
-    payload = {
-        "choices": [
-            {
-                "message": {
-                    "content": json.dumps(
-                        {
-                            "requirements": [
-                                {
-                                    "text": "Must have production dbt experience",
-                                    "must_have": True,
-                                }
-                            ],
-                            "claims": [{"text": claim}],
-                        }
-                    )
-                },
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {"prompt_tokens": 12, "completion_tokens": 20},
-    }
-    return ScriptedTransport(
-        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
-    )
+    return span_id_extraction_transport()
 
 
 def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
@@ -215,7 +192,10 @@ def test_bullet_phrasing_calls_the_selected_scripted_provider() -> None:
     )
     assert created_role.status_code == 202
     role_id = created_role.json()["role"]["id"]
-    requirement_id = client.get(f"/api/roles/{role_id}/requirements").json()[0]["id"]
+    requirements = client.get(f"/api/roles/{role_id}/requirements").json()
+    requirement_id = next(
+        item["id"] for item in requirements if "dbt" in item["text"].lower()
+    )
     calls_after_analysis = len(transport.calls)
 
     drafted = client.post(

@@ -124,6 +124,16 @@ class RulesClaimExtractor:
                     ),
                     source_span_ids=tuple(span_ids),
                     extraction_confidence=0.85,
+                    period_start=(
+                        current.date_range.start
+                        if current.date_range is not None
+                        else None
+                    ),
+                    period_end=(
+                        current.date_range.end
+                        if current.date_range is not None
+                        else None
+                    ),
                     self_authored=self_authored,
                 )
             )

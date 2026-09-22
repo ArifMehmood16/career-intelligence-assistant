@@ -29,11 +29,16 @@ This build inverts it. The model does **extraction and phrasing**, never judgeme
    requirements and responsibilities are scored.
 2. **Extract evidence** from the CV into structured claims — role, competency,
    verbatim quote, duration and recency derived in domain code from parsed dates,
-   source span. Cover letters extract into the same shape flagged self-authored
-   and never enter the mapping.
+   source span. Cover letters extract into the same shape flagged self-authored.
+   [ADR 011](docs/adr/011-evidence-assessment-contract.md) says concrete experience
+   in an uploaded letter can count, with its source shown and duplicates removed;
+   an aspiration does not, and a generated draft must never raise the score. The
+   running matcher still excludes those claims.
 3. **Map** each requirement to `met` / `partial` / `missing` with the CV spans that
-   justify it, or none. Relatedness is lexical overlap, embedding cosine, or
-   model adjudication of disagreements; the domain combines the signals.
+   justify it, or none. Lexical overlap and embedding cosine retrieve evidence.
+   A configured completion model assesses that evidence, including when the
+   signals agree; a missing or invalid assessment is not a match. Hermetic
+   tests still fall back to the OR of the two signals and do not call a model.
 4. **Score deterministically** from the mapping. The fit score is arithmetic over the
    mapping, computed in domain code. No model emits a number.
 5. **Answer and draft** from the mapping and the cited spans only, with a validator
@@ -52,13 +57,53 @@ absent it says so rather than filling the gap.
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |
-| **Cover letter** | A draft anchored paragraph by paragraph to matched requirements. Refuses to write one when too little is matched, and says why |
+| **Cover letter** | A paragraph draft grounded in matched evidence, with numbered citations and a glossary of source passages. Refuses when too little is matched, and says why |
 | **Ranking and compare** | Roles ordered by fit with the deciding requirements named, and two roles side by side |
 | **Ask** | Questions answered from the stored mapping, with citation chips that open the source text |
 | **Provider choice** | Local or hosted models, chosen in the UI, behind an egress gate, with every answer recording what produced it |
 
 Full detail, including the rules that keep each one honest, in
 [docs/features.md](docs/features.md).
+
+## How to use it
+
+1. **Start the stack** with `make run-docker` or `make setup` then `make run`
+   (see [Quick start](#quick-start)). Open the web app (Docker: `http://localhost:3000`,
+   Make: the Vite port printed by `make run-web`, commonly `http://127.0.0.1:3001`).
+2. **Upload a CV** on Workspace (PDF, DOCX or paste). Optionally upload supporting
+   cover letters — they help Ask, and are not used as fit evidence today.
+3. **Add a role** with a job description. Analysis runs as a job; wait until the role
+   is `ready` (or an incomplete analysis is explained, not shown as a fake low score).
+4. **Open the role** and work the tabs:
+   - **Fit** — summary, score breakdown, and every scoreable requirement as met /
+     partial / missing with cited evidence.
+   - **Gaps** — ordered by score impact; draft a CV bullet only when a cited claim
+     already supports it.
+   - **Prepare** — interview probes, lead-with evidence, thin areas.
+   - **Letter** — generate a grounded cover letter; citations appear as `[1]`, `[2]`
+     with the full source passage in the right-hand glossary.
+5. **Ask** questions about gaps, fit or open retrieval; citation chips open the
+   source span.
+6. **Settings** — choose local (Ollama) or hosted providers only when egress is
+   enabled and you acknowledge that document text may leave the machine.
+
+### Screenshots
+
+![Workspace with CV and ranked roles](docs/images/workspace-overview.png)
+
+*Workspace — upload a CV, add roles, and see ranking from stored fit scores.*
+
+![Requirements table with Met, Partial and Missing](docs/images/fit-requirements.png)
+
+*Fit — each scoreable requirement shows status and the CV evidence that justifies it.*
+
+![Gap plan ordered by score impact](docs/images/gap-plan.png)
+
+*Gaps — close the highest-impact gaps first; actions stay tied to stored evidence.*
+
+![Cover letter with numbered citations and glossary](docs/images/cover-letter-glossary.png)
+
+*Letter — numbered citations in the draft; the Citations panel shows the full passage.*
 
 ## What it answers
 
@@ -133,13 +178,15 @@ flowchart TD
   Q[Question] --> ROUTE{Intent}
   ROUTE -->|gaps / fit / compare / prep| STORE
   ROUTE -->|open question| RET[Scoped retrieval]
-  STORE --> ANS[Answer with span citations]
-  RET --> ANS
+  STORE --> PHRASE[Configured model phrases the stored numbers]
+  RET --> PHRASE
+  PHRASE --> ANS[Answer with span citations]
 ```
 
-Intent routing is deterministic. Gap, fit, comparison and interview-prep questions read
-the stored mapping directly — they do not run a similarity search and hope. Only
-open-ended questions fall through to retrieval.
+Intent routing is deterministic. Gap, fit, comparison and interview-prep questions
+are phrased from the stored mapping and its score. The model does not calculate a
+new score, and it does not run a similarity search for those intents. Open questions
+retrieve spans, including an uploaded letter when the text overlaps the question.
 
 ## Stack
 
@@ -262,7 +309,10 @@ make help    # every target, with what it needs
 
 `make run-api` writes INFO events to stderr (`request`, `cv.uploaded`,
 `role.created`, worker stages). Lines carry ids, counts and durations — never
-document text, questions, answers, prompts or API keys.
+document text, questions, answers, prompts or API keys. Set `LOG_FILE` (for
+example `var/log/career-assistant.log`) to also write a rotating file with the
+same field contract; leave it empty to keep stderr only. `PYTHONUNBUFFERED=1`
+is set on `make run-api` so those lines are not stuck in a stdio buffer.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on
@@ -279,8 +329,10 @@ each route uses is listed in [docs/production-wiring.md](docs/production-wiring.
 
 PostgreSQL stores the bounded original bytes for CVs, job descriptions and supporting
 cover letters alongside parsed text and spans. Uploaded cover letters may be queried
-and cited, but they never count as evidence for fit scoring: self-authored application
-prose cannot prove experience. Generated cover letters and final cited chat answers
+and cited. [ADR 011](docs/adr/011-evidence-assessment-contract.md) is the evidence
+contract: concrete experience can count once duplicates are removed, an aspiration
+does not, and a generated draft must never raise the score. The running analysis
+still excludes self-authored claims. Generated cover letters and final cited chat answers
 are also persisted with provenance. Partial streamed tokens are not stored as answers.
 Production role analysis is an in-process worker over queued PostgreSQL jobs: HTTP
 returns `analysing` before extraction finishes, and a process restart recovers queued
@@ -308,7 +360,8 @@ providers stay behind the egress gate.
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract between backend and frontend. |
 | [docs/production-wiring.md](docs/production-wiring.md) | Each route's use case, provider resolver and SQL adapter. |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable design becomes the shipped frontend. |
-| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first. |
+| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first. [ADR 012](docs/adr/012-durable-operational-audit.md) is the operational-audit contract. |
+| [docs/observability-logging-plan.md](docs/observability-logging-plan.md) | Phase 15B tasks: file, action, event and API-envelope logging |
 | [docs/frontend-brief.md](docs/frontend-brief.md) | The Lovable prompt sequence that produced the design. |
 | [docs/evaluation.md](docs/evaluation.md) | Dataset, metrics and thresholds for extraction, mapping and generation quality. |
 | [docs/threat-model.md](docs/threat-model.md) | Trust boundaries, controls and residual risk. |

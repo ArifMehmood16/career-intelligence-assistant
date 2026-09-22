@@ -62,6 +62,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             code=exc.code,
             path=request.url.path,
         )
+        request.state.error_code = exc.code
         return error_response(
             status_code=exc.status_code,
             code=exc.code,
@@ -80,6 +81,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             code="validation_failed",
             path=request.url.path,
         )
+        request.state.error_code = "validation_failed"
         return error_response(
             status_code=422,
             code="validation_failed",
@@ -109,6 +111,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             code=code,
             path=request.url.path,
         )
+        request.state.error_code = code
         return error_response(
             status_code=exc.status_code,
             code=code,
@@ -126,6 +129,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             path=request.url.path,
             exc_type=type(_exc).__name__,
         )
+        request.state.error_code = "internal_error"
         return error_response(
             status_code=500,
             code="internal_error",

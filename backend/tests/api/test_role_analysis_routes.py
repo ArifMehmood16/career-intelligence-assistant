@@ -38,6 +38,51 @@ def _ready_client() -> tuple[TestClient, str]:
     return client, role_id
 
 
+def test_course_does_not_meet_production_leadership() -> None:
+    """PLAN 13D.5 — the API must not score an introductory course as leadership."""
+    client = TestClient(create_app())
+    uploaded = client.post(
+        "/api/cv",
+        json={
+            "text": "Experience\n- Completed an introductory Python course.\n",
+            "filename": "cv.txt",
+        },
+    )
+    assert uploaded.status_code == 201
+    created = client.post(
+        "/api/roles",
+        json={
+            "title": "Platform Engineer",
+            "company": "Northwind",
+            "description": (
+                "Requirements\n- Five years leading production Python systems\n"
+            ),
+        },
+    )
+    assert created.status_code == 202
+    role = created.json()["role"]
+    assert role["status"] == "ready"
+    assert role["fitScore"] == 0
+    requirements = client.get(f"/api/roles/{role['id']}/requirements")
+    assert requirements.status_code == 200
+    rows = requirements.json()
+    assert rows
+    assert all(row["status"] == "missing" for row in rows)
+    assert all(row["evidence"] is None for row in rows)
+
+
+def test_fit_gaps_and_ranking_do_not_call_the_model() -> None:
+    """PLAN 13D.5 — reading the saved analysis does not complete again."""
+    client, role_id = _ready_client()
+    accountant = getattr(client.app.state, "call_accountant", None)
+    before = () if accountant is None else accountant.records
+    assert client.get(f"/api/roles/{role_id}").status_code == 200
+    assert client.get(f"/api/roles/{role_id}/gap-plan").status_code == 200
+    assert client.get("/api/ranking").status_code == 200
+    after = () if accountant is None else accountant.records
+    assert after == before
+
+
 def test_requirements_and_gap_plan_for_ready_role() -> None:
     client, role_id = _ready_client()
 

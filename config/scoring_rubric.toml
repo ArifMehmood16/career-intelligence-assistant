@@ -1,3 +1,5 @@
+version = "scoring-rubric-v1"
+
 # Starting fit-score rubric.
 # Initial configuration documented in docs/features.md.
 # Not measurements. Evaluation may change them; domain code must read

@@ -233,7 +233,57 @@ def test_cover_letter_builds_when_two_must_haves_met() -> None:
     assert "Analytics Engineer" in outcome.body
     assert "dbt" in outcome.body.lower()
     assert "sql" in outcome.body.lower()
+    assert "MET" in outcome.body
     assert set(outcome.cited_span_ids) >= {"cv-c1", "cv-c2"}
+
+
+def test_cover_letter_includes_transferable_partial_evidence() -> None:
+    requirements = (
+        _req("dbt", "dbt"),
+        _req("sql", "SQL"),
+        _req("k8s", "Kubernetes Operators"),
+    )
+    mappings = (
+        RequirementMapping(
+            requirement_id="dbt",
+            status=MappingStatus.MET,
+            reason_code=MappingReason.MATCHED,
+            justifying_span_ids=("cv-c1",),
+            justifying_claim_ids=("c1",),
+        ),
+        RequirementMapping(
+            requirement_id="sql",
+            status=MappingStatus.MET,
+            reason_code=MappingReason.MATCHED,
+            justifying_span_ids=("cv-c2",),
+            justifying_claim_ids=("c2",),
+        ),
+        RequirementMapping(
+            requirement_id="k8s",
+            status=MappingStatus.PARTIAL,
+            reason_code=MappingReason.ADJACENT_CLAIM_ONLY,
+            justifying_span_ids=("cv-c3",),
+            justifying_claim_ids=("c3",),
+        ),
+    )
+    claims = (
+        _claim("c1", "dbt", "Owned dbt models in production."),
+        _claim("c2", "sql", "Wrote SQL for finance packs."),
+        _claim("c3", "airflow", "Coordinated multi-step Airflow pipelines."),
+    )
+    outcome = draft_cover_letter(
+        role_title="Analytics Engineer",
+        company="Acme",
+        requirements=requirements,
+        mappings=mappings,
+        claims=claims,
+        include_gap_line=False,
+    )
+    assert not isinstance(outcome, CoverLetterRefusal)
+    assert "TRANSFER" in outcome.body
+    assert "Kubernetes Operators" in outcome.body
+    assert "Airflow" in outcome.body
+    assert "cv-c3" in outcome.cited_span_ids
 
 
 def test_adjacent_claim_does_not_support_a_cv_bullet() -> None:

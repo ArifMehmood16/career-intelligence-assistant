@@ -124,10 +124,11 @@ SupportingDocument {
 }
 ```
 
-Uploaded cover letters are supporting documents: open questions may retrieve and cite
-their spans, but requirement extraction, candidate claims, mappings and scores must
-ignore them. This prevents self-authored or generated prose from becoming evidence of
-experience. The document download route is workspace-scoped and uses a safe
+Uploaded cover letters may be retrieved and cited. [ADR 011](adr/011-evidence-assessment-contract.md)
+is the evidence contract: concrete experience in an uploaded letter can support a
+mapping, with its source shown and duplicates removed; an aspiration does not count;
+a generated draft must never raise the score. The running analysis still ignores
+self-authored claims. The document download route is workspace-scoped and uses a safe
 `Content-Disposition`; it never exposes a database path or storage implementation.
 
 ---
@@ -187,6 +188,21 @@ AnalysisJob {
 The frontend polls this with react-query while `state` is `queued` or `running`, at a
 fixed interval, and stops on a terminal state. A failed job leaves the role at
 `status: "failed"` with the reason, and `POST /reanalyse` is the retry.
+
+**Incomplete analysis (13D.6a).** An extraction or assessment that does not
+validate is a failed job, not a fit score. The decision uses the existing
+failed-job state: role `status` stays `"failed"` and the job `error.code` is
+`assessment_incomplete`. A job description or CV the model does not fully
+classify fails the same way with `error.code` `extraction_incomplete`. No new role
+status and no new response field.
+`analysis_incomplete` remains the 409 for work that has not finished; it is not
+reused for a finished assessment that failed validation. `fitScore: 0` is not
+a sentinel for this failure. A complete analysis may still score 0 with band
+"Limited match". A role with no scoreable requirements stays unscored
+("Not scored yet"). A failed reanalysis restores the role pointer to the
+previous published analysis version so that score remains visible; the failed
+job still records `assessment_incomplete` or `extraction_incomplete`. A first
+analysis with no prior score stays `status: "failed"` with no fit score.
 
 ---
 

@@ -4,11 +4,57 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. The 2026-09-22 repository review found
-that relatedness is still being mistaken for sufficient evidence. Next: Phase
-13D's labelled baseline and bounded structured-assessment experiment. Its closure
-includes the outstanding 13C verification; do not claim either gate has passed or
-start the full Phase 14 comparison before then.
+Its live exit gate has not been observed. 13D.1–13D.5 are implemented. A saved
+analysis round-trips claim detail and requirement seniority; a saved non-match
+stays missing after reload; the saved result records provider, model, prompt
+version, rubric version, whether content left the machine, and a failure status
+that marks an incomplete assessment apart from a poor fit. Duplicate requirement
+text scores once. Unknown conditions and contradictions cap coverage at partial,
+and a zero score from an incomplete assessment is banded `incomplete` rather
+than `limited`. Overlapping jobs in the same skill count as one stretch of time.
+Tied roles stay in title order and name the requirements that are not shared.
+A course does not meet years of leadership at the domain, API and SQL
+boundaries. A restarted store reads that saved ranking, and Fit, Gaps, Prepare
+and Letter are built from the stored bundle without mapping again. Role, gap-plan
+and ranking reads do not call the completion model. Hermetic analysis still uses
+the OR fallback for other cases. 13D.6 has one local Ollama measurement of this
+pilot recorded in `docs/evaluation.md`; it did not beat the hermetic baseline
+on disagreements or role order, and the rest of 13D.6 is open. On 2026-09-22
+`make lint` and `make test` passed, and `make test-integration` passed after
+stored embeddings could be read back when the driver returned a numpy array.
+That live run was then traced to retrieval rather than the assessment: a claim
+reached the assessor only on a shared keyword or a similarity above the floor,
+so 7 of 24 scoreable requirements were decided with no assessor call and 2
+labelled supporting passages were never shown. The floor now ranks evidence
+instead of gating it, an empty candidate set is recorded rather than handed to
+the lexical path, and every mapping carries what the assessor saw. Both counts
+are zero on the pilot. The repeated live run is recorded in
+`docs/evaluation.md`: retrieval misses zero, but 15 of 24 requirements
+disagreed in both directions, no labelled `met` came back as `met`, and the
+ranking inverted. On the agreed rule the assessment was revised rather than
+given more calls: `evidence-assessment-v2` states a criterion for each level,
+and the completion model is an environment variable so the same labels can be
+run against a stronger local model. Measured on both: `llama3.2` disagreed on 12
+of 24 and credited the injection case, `qwen2.5:7b` on 3 with the held-out split
+clean, so the local default is now `qwen2.5:7b` and the model is part of the
+assessment contract. Two further prompt revisions were measured and one was
+reverted: `evidence-assessment-v3` changed nothing, and v4, which showed cover
+letters to the assessor as uncitable context, took disagreements to 6 and was
+reverted. The measured configuration is v3 with `qwen2.5:7b`, meeting every
+predeclared gate except unsupported `met`, which is the one contradiction case
+whose denial lives only in a cover letter. The two remaining disagreements are
+label questions recorded in `docs/evaluation.md` for the reviewer to settle.
+A private local smoke run on 2026-09-22 then displayed 4/100, and a repeat of
+the same documents displayed 0/100 with band `incomplete`. Those figures are
+one incomplete analysis shown as fit. They are not a candidate-quality result.
+13D.6 stays open as the umbrella; 13D.6a–13D.6g order the completeness
+contract. 13D's closure includes the outstanding 13C verification; do not
+claim either gate has passed, and do not start the full Phase 14 comparison
+before the 13D.6 completeness contract is satisfied.
+On 2026-09-22 the maintainer started Phase 15B (durable operational audit)
+while 13D.6g remains open. 15B does not close 13D, 13C or 15.1–15.4. The
+contract is [ADR 012](docs/adr/012-durable-operational-audit.md); tasks are
+[docs/observability-logging-plan.md](docs/observability-logging-plan.md).
 
 ## Product objective and quality priority
 
@@ -26,8 +72,10 @@ local PostgreSQL; Compose/deployment uses container PostgreSQL.
 discussion, not a shipped feature or approval to send personal data to hosted
 models. Before implementing changed scoring/cover-letter semantics, record the
 decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
-13D.2. Earlier checked tasks remain implementation history; they are not proof
-of ranking accuracy, nor should superseded unchecked 5.3/7.2 be restarted.
+13D.2. 13D.6a–13D.6f are implemented. 13D.6g remains open for observed
+verification. A public API change stops for approval. Earlier checked
+tasks remain implementation history; they are not proof of ranking accuracy,
+nor should superseded unchecked 5.3/7.2 be restarted.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -40,6 +88,7 @@ Read alongside this plan:
 | [docs/features.md](docs/features.md) | What each feature does and how it is used |
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract both halves are built against |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable app becomes the shipped app |
+| [docs/observability-logging-plan.md](docs/observability-logging-plan.md) | Phase 15B: file, action, event and API-envelope logging |
 
 ## How to use this plan
 
@@ -873,7 +922,7 @@ Do not rebuild Phase 13A or 13C.
 
 ### Tasks
 
-- [ ] **13D.1 Build a small check set.** Assemble roughly fifteen labelled cases in
+- [x] **13D.1 Build a small check set.** Assemble roughly fifteen labelled cases in
       the repository as synthetic, public-safe fixtures: strong, partial and poor
       matches, a paraphrase with no shared keywords, matching keywords with too
       little scope or duration, a negation, a contradiction between CV and letter,
@@ -882,7 +931,7 @@ Do not rebuild Phase 13A or 13C.
       Record what the current code gets wrong. This is the before-and-after
       measurement for the rest of the phase; a poor match may score zero and a role
       with no scoreable requirements stays unscored.
-- [ ] **13D.2 Record the evidence contract in one ADR.** State the boundary: the
+- [x] **13D.2 Record the evidence contract in one ADR.** State the boundary: the
       model assesses evidence against the stated criteria, the server validates the
       assessment, and the domain calculates the score. A citation proves where text
       came from, not that it supports the claim. Decide the letter policy in the
@@ -890,7 +939,7 @@ Do not rebuild Phase 13A or 13C.
       with its source shown and duplicates removed; aspirations and generated drafts
       never raise the score. Reconcile AGENTS, `docs/features.md` and ADRs 004, 009
       and 010 with that decision.
-- [ ] **13D.3 Replace the boolean adjudicator with one structured assessment step.**
+- [x] **13D.3 Replace the boolean adjudicator with one structured assessment step.**
       Reuse the existing completion port and extraction prompts. Send one versioned
       prompt per requirement batch containing the requirement, its conditions and
       the retrieved evidence with source labels. Require `requirementId`, an
@@ -903,7 +952,7 @@ Do not rebuild Phase 13A or 13C.
       recorded as incomplete and never becomes a match. Keep the existing embeddings
       and lexical matching for evidence retrieval; widen the retrieval limit and
       include adjacent sentences so negation and dates survive.
-- [ ] **13D.4 Answer every Ask question with the configured LLM.** Route all
+- [x] **13D.4 Answer every Ask question with the configured LLM.** Route all
       intents — fit, gaps, compare, evidence, preparation and open questions —
       through the configured completion model. Structured intents supply the saved
       analysis as the grounding material so the model phrases the answer from the
@@ -918,7 +967,7 @@ Do not rebuild Phase 13A or 13C.
       paragraphs for a comparison or an explanation — with no padding and no answer
       cut off mid-sentence. Citation validation and the insufficient-evidence result
       stay exactly as they are; streamed and non-streamed answers must still agree.
-- [ ] **13D.5 Save one analysis result and make every feature read it.** Round-trip
+- [x] **13D.5 Save one analysis result and make every feature read it.** Round-trip
       employer, title, scope, technologies, outcome, dates, real extraction
       confidence and requirement conditions. Persist the validated assessments,
       cited span ids, provider, model, prompt and rubric versions and a safe failure
@@ -930,16 +979,265 @@ Do not rebuild Phase 13A or 13C.
       Prepare and Letter all read this saved result, and a restart reproduces the
       same ranking with no further model calls. Add the course-versus-leadership
       case as a regression test at the domain, API and SQL round-trip boundaries.
-- [ ] **13D.6 Verify and polish.** Run the check set from 13D.1 against the real
-      production path on local Ollama with no API key, and record the before-and-after
-      error rate, ranking agreement and latency. Run `make lint`, `make typecheck`,
-      `make test` and `make test-integration`. Then finish the journey: loading and
-      progress states on analysis and Ask, clear and actionable error messages,
-      citations that resolve and are readable, honest refusals where evidence is
-      missing, and working exports. Complete the walkthrough carried over from 13C.
-      Update README, `docs/features.md`, `docs/production-wiring.md`, the API
-      contract and the journal to say what is implemented, what was measured and
-      what was deferred.
+
+### Private application smoke-run defect — 2026-09-22
+
+These figures are defect evidence from one private local smoke run. They are
+not golden accuracy expectations. The private CV, cover letter, job-description
+upload, prompts and provider responses stay local and uncommitted. They must
+not be committed as fixtures.
+
+The run used the configured local `qwen2.5:7b` completion model and
+`nomic-embed-text` embeddings. Content stayed on the machine.
+
+One user-facing run displayed 4/100. A repeat with the same revised CV and the
+Aviva job description produced 0/100 with band `incomplete`. The swing from 4
+to 0 is evidence that the displayed number is not a stable candidate-fit
+measurement.
+
+The interface presented that number as genuine fit. The plan has to keep four
+states apart:
+
+1. Genuine missing candidate evidence: the assessor reviewed the supplied
+   evidence and deliberately returned `missing`.
+2. Incomplete extraction: proposed items failed verification and were dropped,
+   so the scoreable set was not the document.
+3. Incomplete or invalid model assessment: a scoreable requirement did not
+   receive exactly one valid assessment.
+4. A valid low fit score: every scoreable requirement was assessed, and the
+   rubric result is low. A genuinely poor but complete analysis may still score
+   zero.
+
+What the run did:
+
+- Requirement extraction returned 32 proposed items. Eleven failed exact quote
+  verification and were silently discarded. Twenty-one remained: one
+  `requirement`, nine `responsibility`, ten `benefit`, one `logistics`. Only
+  ten items were scoreable.
+- The retained scoreable set contained headings such as "You will be
+  responsible for", while the substantive "Skills and experience" bullets did
+  not reach scoring.
+- CV extraction retained ten claims and discarded two proposed claims as
+  unverifiable.
+- The assessment request contained ten scoreable requirements. The model
+  returned one assessment item. No assessment validated for the ten
+  requirements. All ten mappings became `assessment_incomplete`.
+- The score nevertheless passed through the arithmetic and persistence path.
+  A non-zero surviving partial assessment can therefore produce a small number
+  such as 4/100 even though the rest of the analysis is incomplete.
+- The application already records `failure_status=assessment_incomplete`. The
+  role-list and role-read API do not expose that status, and the frontend
+  displays the stored number as a genuine fit score.
+
+13D.5 stored the failure status and bands an all-zero incomplete score
+`incomplete`. That does not keep a partial surviving assessment from publishing
+a small positive score, and it does not keep the role view from presenting the
+stored number as fit. 13D.6a–13D.6g close that gap. The rubric weights stay as
+they are.
+
+- [ ] **13D.6 Verify and polish.** Umbrella for the completeness contract below,
+      then the walkthrough. 13D.6a–13D.6g are the ordered work. Leave this
+      unchecked until every subtask's observed gate has passed. A green unit
+      suite does not close it. Fixing the incomplete-result defect does not
+      assign the CV a particular score. Keep the existing rubric, one local
+      model, exact span verification and validated assessments. No Phase 13E,
+      no Phase 14, and no restart of superseded Phase 5 or Phase 7 tasks.
+  - [x] **13D.6a — Define the incomplete-analysis contract.** An incomplete
+        extraction or assessment is a failed analysis, not a low fit score.
+        Today `assessment_incomplete` is stored on the score row and mapped as
+        status `missing` with that reason, then `score_fit` still divides a
+        numerator by a denominator. The band is `incomplete` only when that
+        quotient is exactly zero; any positive result uses the ordinary
+        limited, partial or strong band. `band_label` has no label for
+        `incomplete`, so a zero incomplete score is shown as "Not scored yet"
+        and a positive one as "Limited match". The role view returns
+        `fitScore` and `bandLabel` and drops `failure_status`.
+        Acceptance: a score is publishable only when every scoreable
+        requirement has exactly one valid assessment. `assessment_incomplete`
+        must never be converted into an ordinary `missing` item for published
+        scoring. A missing, malformed, truncated, duplicate or unverifiable
+        assessment must not contribute zero to an otherwise published
+        denominator. No `0/100`, `4/100`, "Limited match" or ranking position
+        may be shown for an incomplete analysis. Genuine `missing` remains
+        valid only when the assessor successfully reviewed the supplied
+        evidence and deliberately returned `missing`. A genuinely poor but
+        complete analysis may still score zero. A role with no scoreable
+        requirements remains unscored. Failed reanalysis must not overwrite a
+        previously valid saved analysis.
+        Human decision checkpoint, before any implementation: decide whether
+        incomplete analysis uses the existing failed job state with error code
+        `assessment_incomplete`, or introduces a separate persisted
+        `incomplete` state. Prefer the existing failed job state unless the
+        repository evidence demonstrates that a new state is necessary. The
+        role status enum already includes `failed`, and analysis jobs already
+        carry an error code. The API code `analysis_incomplete` already means
+        the job has not finished (409 on Fit, Gaps, Prepare and Letter). Do
+        not overload that in-progress code with a finished-but-invalid
+        assessment. Record the decision in `docs/api-contract.md` before
+        changing code. Stop for approval if the decision needs a public
+        response-shape change.
+  - [x] **13D.6b — Require complete structured assessments.** The reproduced
+        call received ten requirements and returned one assessment, and the
+        pipeline continued as if it had assessed the candidate. Do not send
+        every requirement in one unbounded assessment response. Partition
+        scoreable requirements into bounded batches from explicit prompt and
+        output-token budgets, configured rather than hidden in the adapter.
+        Validate that each requested requirement ID appears exactly once.
+        Reject omitted IDs, duplicate IDs, unknown requirement IDs, unknown
+        supporting span IDs, malformed arrays, empty justifications, truncated
+        JSON, a provider refusal, and `met` or `partial` without a valid cited
+        span. Retry only the missing or invalid items once, in a smaller
+        batch. Leave requirements that already produced valid assessments
+        alone. If any item remains incomplete after that bounded retry, fail
+        the analysis with `assessment_incomplete`. Log only safe counts and
+        identifiers: requested, returned, accepted and rejected assessments,
+        retry count, provider, model and latency. Never log requirement text,
+        CV text, evidence text or provider payloads.
+        Tests: ten inputs with one returned assessment fail the analysis; a
+        truncated batch publishes no score; a retry that supplies the missing
+        assessments may complete; duplicate and unknown IDs are rejected;
+        unknown span IDs are rejected; one invalid assessment does not
+        invalidate already accepted items, and it blocks score publication
+        until resolved. Hermetic tests stay offline and deterministic.
+        Provider contract tests cover both native-schema and prompted-JSON
+        adapters.
+  - [x] **13D.6c — Replace model-rewritten quotes with server-owned span
+        selection.** Eleven proposed job-description items were discarded
+        because exact quote reproduction failed, which removed the substantive
+        skills and retained generic headings. Amend ADR 010, and ADR 011 if
+        the evidence contract changes, before changing the extractor. The
+        server segments the stored, normalised job description and CV into
+        stable candidate spans or paragraph/line units. Each unit has a
+        server-issued ID and exact stored text. The model classifies or
+        selects those IDs. It is not required to reproduce Markdown
+        punctuation, bullet glyphs, bold markers or exact typography to keep
+        an otherwise valid item. The server resolves the returned IDs to its
+        own stored text. Unknown IDs, duplicated IDs and IDs from another
+        document are rejected. No fuzzy quote matching. No model-authored text
+        becomes evidence. If a span contains multiple distinct requirements,
+        define a server-verifiable subdivision mechanism before implementation.
+        Do not silently merge unrelated requirements.
+        Job-description classification still distinguishes requirement,
+        responsibility, benefit, logistics, and non-requirement or narrative
+        heading. Acceptance: Markdown such as `* **Python Proficiency:** ...`
+        survives extraction without the model reproducing the asterisks.
+        Section introductions such as "You will be responsible for:" are not
+        scoreable. Salary, pension, holiday, shares and other benefits never
+        enter scoring. Location, hybrid working and right-to-work statements
+        remain logistics. Every supplied candidate span receives one validated
+        classification, or the extraction is incomplete. A partially valid
+        model response must not silently become a complete extraction.
+        Existing prompt-injection and cross-document span protections continue
+        to pass.
+  - [x] **13D.6d — Make CV claim extraction complete and measurable.** Apply
+        the same server-owned span principle to CV extraction. The reproduction
+        retained ten claims and silently dropped two, and the score gave no
+        indication that evidence extraction was incomplete. Preserve employer,
+        title, date range, claim text, scope, technologies and outcome.
+        Preserve role association for every extracted claim. Include relevant
+        portfolio-project evidence. A bare skills list is not proof of
+        delivery unless the recorded evidence contract permits it. Track
+        candidate claim spans supplied, claims returned, claims accepted,
+        claims rejected, roles detected, and roles with no accepted claims.
+        Missing roles, lost date associations or rejected claim spans make
+        extraction incomplete when they affect scoreable evidence. A small
+        surviving subset is not the whole CV. Uploaded and generated letter
+        rules stay consistent with ADR 011. Generated drafts never become
+        scoring evidence.
+        Tests: a synthetic DOCX-shaped CV with six roles, role-line dates and
+        seventeen labelled experience bullets preserves all labelled role
+        associations; a project claim stays attributable to the project rather
+        than the nearest employment role; formatting differences do not remove
+        otherwise valid server-owned spans; an extraction returning only the
+        first role fails completeness validation; a claim with an unknown span
+        ID is rejected; a failed extraction does not replace a previously
+        valid claim set.
+  - [x] **13D.6e — Propagate incomplete status through persistence, API and
+        frontend.** `failure_status` is stored and then dropped from the role
+        view, and the frontend renders the surviving number as genuine fit.
+        Backend: do not publish a `ScoreExplanationRow` for an incomplete
+        assessment; do not mark the role `ready`; store or expose a safe
+        failure code such as `assessment_incomplete`; preserve safe diagnostic
+        counts without storing model payloads. A failed reanalysis preserves
+        the previous valid version and marks the attempted version failed.
+        Ranking and comparison exclude incomplete roles. Fit, Gaps, Prepare,
+        Letter and Ask must not read or phrase an incomplete score. Export
+        refuses incomplete analysis with a documented safe error.
+        API: update `docs/api-contract.md` before any response-shape change.
+        Return a machine-readable incomplete or failure state and an
+        actionable safe message. Do not use `fitScore: 0` as a sentinel for
+        incomplete work. If the existing failed-role response can express this
+        without a breaking API change, prefer it. If a public API change is
+        necessary, stop for approval before implementing it.
+        Frontend: never display `/100` for incomplete analysis. Show "Analysis
+        incomplete" rather than "Limited match". Explain that the CV was not
+        fully assessed and the result is not a fit judgement. Offer "Retry
+        analysis". Keep an incomplete role out of the numerical ranking.
+        Loading, failed, incomplete, unscored and valid-zero states are
+        visually and semantically distinct. Add accessible status text and
+        focus behaviour for the retry result.
+        Tests: the API returns the chosen failure contract and no score; SQL
+        leaves no active score row; the worker marks the job failed and
+        continues; a previous valid result survives a failed new version; the
+        frontend shows neither `4 / 100` nor `0 / 100` for an incomplete
+        result; ranking and comparison exclude or separately identify
+        incomplete roles; a complete genuine zero still renders as a valid
+        zero with the correct explanation.
+  - [x] **13D.6f — Add an Aviva-shaped synthetic regression fixture.**
+        Synthetic, public-safe data only. Reproduce the observed document
+        shapes without copying the private CV. Job-description shape: Markdown
+        headings, bold-labelled requirements, asterisk bullets, seven
+        responsibility bullets, eight skill/experience bullets, multiple
+        benefit bullets, one logistics line, and generic headings that must
+        not be scored. CV shape: DOCX-style paragraph extraction, six roles,
+        dates on the role heading, seventeen labelled experience bullets, two
+        portfolio projects, recent, mid-age and old evidence, direct matches,
+        partial evidence and genuine gaps, one unsupported framework
+        requirement, and one multi-agent requirement supported only by
+        transferable orchestration evidence.
+        Label every intended requirement, item type, must/desirable status,
+        every intended claim, role and dates, expected `met`, `partial` or
+        `missing`, expected cited spans, and expected role order.
+        Predeclared gates: zero headings, benefits or logistics scored; every
+        labelled scoreable requirement extracted; every labelled role
+        preserved; every labelled claim attached to the correct source span
+        and role; every scoreable requirement receives exactly one valid
+        assessment; zero published scores when assessment completeness is
+        below 100%; zero unsupported `met` results; zero unresolved citations;
+        deterministic replay from saved assessments; no private files, names,
+        contact details or document text committed. A real-model smoke run may
+        report accuracy and latency. Tests must not require a particular
+        stochastic score. The hard gate is safe behaviour: a complete
+        validated analysis, or an explicit incomplete failure.
+  - [ ] **13D.6g — Re-run verification and close the phase honestly.** The
+        broad verification that used to sit on 13D.6 lives here, after
+        13D.6a–13D.6f. Run the check set from 13D.1 against the real production
+        path on local Ollama with no API key, and record the before-and-after
+        error rate, ranking agreement and latency. Finish the journey: loading
+        and progress states on analysis and Ask, clear and actionable error
+        messages, citations that resolve and are readable, honest refusals
+        where evidence is missing, and working exports. Complete the
+        walkthrough carried over from 13C, including the synthetic
+        Aviva-shaped end-to-end walkthrough.
+        Commands, after implementation: focused unit tests for extraction,
+        assessment, scoring and failure propagation; API tests; frontend
+        component and accessibility tests; PostgreSQL integration tests;
+        `make lint`; `make typecheck`; `make test`; `make test-integration`;
+        the local Ollama labelled check set; the synthetic Aviva-shaped
+        walkthrough.
+        After observed verification, update README, `docs/features.md`,
+        `docs/api-contract.md`, `docs/production-wiring.md`,
+        `docs/evaluation.md`, `docs/engineering-journal.md`,
+        `docs/adr/010-model-first-extraction.md`,
+        `docs/adr/011-evidence-assessment-contract.md` if the evidence contract
+        changes, `docs/threat-model.md` only if the span or classification
+        trust boundary changes, and `AI_DEVELOPMENT_LOG.md`. State that
+        incomplete analysis is not a fit score; what extraction completeness
+        means; what assessment completeness means; how retries are bounded;
+        how a genuine zero differs from failure; which provider, model and
+        prompt version was measured; the observed extraction, assessment,
+        ranking and latency results; and the remaining limitations. Leave
+        13D.6 unchecked until those observed gates pass.
 
 **Exit gate:** on the check set, unsupported leadership cannot be `met`, a missing
 or malformed assessment cannot raise a score, generated drafts cannot raise a score,
@@ -947,7 +1245,33 @@ and letter handling matches the recorded policy. Ask answers every intent throug
 the configured model at a sensible length with resolvable citations. A restart
 reproduces the saved ranking. The four Make targets pass and the walkthrough runs
 end to end. If the new assessment does not beat the old one on the check set,
-record that and revise it rather than adding more calls.
+record that and revise it rather than adding more calls. In addition: a model
+returning fewer assessments than requested cannot publish a score; a partially
+verified extraction cannot publish a score; an incomplete analysis is visibly
+different from a genuine poor match; incomplete roles are excluded from ranking,
+comparison, generation and export; every published score is based on a complete,
+persisted and replayable assessment set; headings, benefits and logistics cannot
+enter the denominator; Markdown or DOCX formatting cannot remove valid evidence
+merely because the model omitted formatting characters; failed reanalysis
+preserves the last valid analysis; the synthetic Aviva-shaped fixture passes
+end to end; private smoke documents remain local and uncommitted.
+
+### Constraints and rejected shortcuts
+
+These bind 13D.6. They do not reopen Phase 14's later provider comparison, and
+they do not change the rubric.
+
+- Do not tune the numerical rubric to conceal extraction failure.
+- Do not add job-advert keywords to a CV without supporting evidence.
+- Do not turn `assessment_incomplete` into ordinary `missing`.
+- Do not accept a partial assessment batch.
+- Do not use fuzzy quote matching.
+- Do not trust model-provided text as evidence.
+- Do not commit the private CV, cover letter, job-description upload, prompts
+  or provider responses.
+- Do not send personal documents to a hosted provider.
+- Do not add another model before the existing contract is safe.
+- Do not mark Phase 13D complete merely because unit tests pass.
 
 **Deferred — revisit only if the check set shows a real need.** PostgreSQL
 full-text and pgvector hybrid retrieval with fusion and ablations; an approximate
@@ -957,10 +1281,19 @@ retrieval and provider comparisons, which stay in Phase 14.
 
 ## Phase 14 — Evaluation
 
+Wider evaluation begins only after the 13D.6 completeness contract is
+satisfied. Do not start this phase while 13D.6a–13D.6g are open.
+
 Expand the check set from 13D.1 into a reproducible quality report.
 Measure extraction, retrieval, assessment, ranking and generation separately.
-Committed fixtures must be synthetic or public-safe; optional private local smoke
-data never goes into Git, logs, public reports or hosted-provider comparisons.
+An aggregate fit score must not hide a failure in any of these stages. Report
+them apart: extraction recall and classification accuracy; unverifiable and
+unknown span rate; assessment completeness; assessment confusion matrix;
+unsupported `met`; retrieval recall; score publication refusal rate; role-order
+agreement; replay stability; latency by extraction, embedding and assessment
+stage. Committed fixtures must be synthetic or public-safe; optional private
+local smoke data never goes into Git, logs, public reports or hosted-provider
+comparisons.
 
 - [ ] **14.1** Expand and version the pilot labels across job families, seniorities
       and advert formats (bulleted, prose, numbered, agency-reformatted). Include
@@ -1030,6 +1363,33 @@ Operation events and the redaction test were delivered by Phase 13B (13B.3, 13B.
 
 **Exit gate:** `make verify` passes; the 13B.6 redaction test still holds after the
 13C extraction changes.
+
+## Phase 15B — Durable operational audit
+
+Started by human override while 13D.6g is still open. Does not close 13D, 13C
+or 15.1–15.4. Instruction: [docs/observability-logging-plan.md](docs/observability-logging-plan.md).
+Decision: [ADR 012](docs/adr/012-durable-operational-audit.md).
+
+Stdlib plus PostgreSQL. No logging framework, no body dumps, no `GET /api/logs`,
+no per-function tracing. Domain stays silent. Recording is fail-open. Hard
+delete removes audit rows with the workspace.
+
+- [x] **15B.1** ADR and threat-model contract. `docs/adr/012-durable-operational-audit.md`;
+      audit logging moved in-scope in `docs/threat-model.md`; residual risk of
+      metadata-only disclosure recorded. No application code.
+- [x] **15B.2** Optional rotating `LOG_FILE` beside stderr; redaction holds at DEBUG.
+- [x] **15B.3** `AuditRecorder` port and in-memory adapter; planted phrases never stored.
+- [x] **15B.4** HTTP envelope persisted (method, path, status, duration) — never the body.
+- [x] **15B.5** Action rows at use-case boundaries.
+- [ ] **15B.6** Event rows from worker and persistence.
+- [ ] **15B.7** SQL adapter, Alembic migration, cascade hard delete.
+- [ ] **15B.8** Provider in/out metadata on `provider_call_accounting` — no payloads.
+- [ ] **15B.9** Module logger presence and 13B redaction regression on stderr, file and store.
+- [ ] **15B.10** README, production-wiring, engineering journal, this checklist.
+
+**Exit gate:** planted-phrase tests pass on stderr, log file and SQL; hard delete
+removes audit rows; hermetic suite green; no document text in any sink; ADR 012
+holds.
 
 ## Phase 16 — Containers and walkthrough
 

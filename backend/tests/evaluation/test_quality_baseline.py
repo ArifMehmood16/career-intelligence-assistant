@@ -9,7 +9,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from career_assistant.evaluation.baseline import load_pilot
+from career_assistant.application.analysis.relatedness import NullAdjudicator
+from career_assistant.domain.assessment import EvidenceAssessment
+from career_assistant.evaluation.baseline import (
+    current_policy_baseline,
+    load_pilot,
+    measured_policy_baseline,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
@@ -59,3 +65,108 @@ def test_labels_cite_passages_and_do_not_store_matcher_output() -> None:
     heldout = pilot.role("heldout-insufficient-scope")
     assert heldout.split == "held_out"
     assert heldout.expected_assessments["req-sql-leadership"] == "missing"
+
+
+def test_current_policy_does_not_score_a_course_as_leadership() -> None:
+    """A course no longer comes back as meeting years of leadership.
+
+    Observed 2026-09-22 on the hermetic path after that rule. The remaining
+    disagreements are still recorded here and updated with the policy.
+    """
+    pilot = load_pilot(DATASET)
+    report = current_policy_baseline(pilot)
+    disagreed = {(item.role_id, item.requirement_id) for item in report.disagreements}
+    assert ("dev-insufficient-scope", "req-python-leadership") not in disagreed
+    assert ("heldout-insufficient-scope", "req-sql-leadership") not in disagreed
+    assert report.calls_model is False
+    assert len(report.disagreements) == 7
+    assert len(report.unsupported_met) == 5
+    assert len(report.order_disagreements) == 0
+
+
+def test_measured_hermetic_path_matches_the_recorded_policy() -> None:
+    """The same labels, with no model and no embeddings, match the hermetic baseline."""
+    pilot = load_pilot(DATASET)
+    measured = measured_policy_baseline(pilot, adjudicator=NullAdjudicator())
+    current = current_policy_baseline(pilot)
+    assert measured.calls_model is False
+    assert len(measured.role_latency_seconds) == sum(
+        len(group.roles) for group in pilot.groups
+    )
+    assert {
+        (item.role_id, item.requirement_id, item.expected, item.observed)
+        for item in measured.disagreements
+    } == {
+        (item.role_id, item.requirement_id, item.expected, item.observed)
+        for item in current.disagreements
+    }
+    assert len(measured.order_disagreements) == len(current.order_disagreements)
+
+
+class _SilentAssessor:
+    """Decides support and answers nothing, so only retrieval is measured."""
+
+    @property
+    def decides_support(self) -> bool:
+        return True
+
+    def assessment_source(self) -> tuple[str, str, bool]:
+        return ("scripted", "silent-v1", False)
+
+    def adjudicate(self, pairs: object) -> dict[tuple[str, str], bool]:
+        return {}
+
+    def assess(self, items: object) -> dict[str, object]:
+        return {}
+
+
+def test_every_labelled_supporting_passage_reaches_the_assessor() -> None:
+    """A missing result is only informative once the evidence was shown.
+
+    Six requirements came back missing in the live pilot. Retrieval has to be
+    measured separately, or a gated candidate set reads as a model error.
+    """
+    pilot = load_pilot(DATASET)
+    report = measured_policy_baseline(pilot, adjudicator=_SilentAssessor())
+    assert report.calls_model is True
+    assert report.retrieval_misses == ()
+
+
+class _RefusingAssessor:
+    """Answers `missing` everywhere with a fixed reason, so the reason is checked."""
+
+    reason = "No cited passage mentions this work."
+
+    @property
+    def decides_support(self) -> bool:
+        return True
+
+    def assessment_source(self) -> tuple[str, str, bool]:
+        return ("scripted", "refusing-v1", False)
+
+    def adjudicate(self, pairs: object) -> dict[tuple[str, str], bool]:
+        return {}
+
+    def assess(self, items: object) -> dict[str, EvidenceAssessment]:
+        return {
+            item.requirement_id: EvidenceAssessment(
+                requirement_id=item.requirement_id,
+                status="missing",
+                supporting_span_ids=(),
+                unmet_conditions=(),
+                unknown_conditions=(),
+                contradiction=False,
+                justification=self.reason,
+            )
+            for item in items  # type: ignore[attr-defined]
+        }
+
+
+def test_a_disagreement_carries_the_reason_the_model_gave() -> None:
+    """A run that only counts disagreements cannot say why the next fix is."""
+    pilot = load_pilot(DATASET)
+    report = measured_policy_baseline(pilot, adjudicator=_RefusingAssessor())
+    assert report.disagreements
+    assert {item.justification for item in report.disagreements} == {
+        _RefusingAssessor.reason
+    }

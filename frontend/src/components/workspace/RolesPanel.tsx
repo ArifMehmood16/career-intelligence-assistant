@@ -1,6 +1,10 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  incompleteAnalysisDetail,
+  isIncompleteAnalysisCode,
+} from "@/components/role/analysis-status";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Role } from "@/types";
@@ -21,6 +25,7 @@ export interface RolesPanelProps {
   onReanalyse?: (roleId: string) => void;
   onDelete?: (roleId: string) => void;
   failureReasons?: Record<string, string>;
+  failureCodes?: Record<string, string>;
   addRoleSlot: ReactNode;
   layout?: RolesLayout;
 }
@@ -36,10 +41,12 @@ const COLUMNS: { key: RolesSortKey; label: string; numeric: boolean }[] = [
 function FitCell({
   role,
   failureReason,
+  failureCode,
   onReanalyse,
 }: {
   role: Role;
   failureReason?: string | undefined;
+  failureCode?: string | undefined;
   onReanalyse?: ((roleId: string) => void) | undefined;
 }) {
   if (role.status === "analysing") {
@@ -50,12 +57,22 @@ function FitCell({
     );
   }
   if (role.status === "failed") {
+    const incomplete = isIncompleteAnalysisCode(failureCode);
     return (
       <div className="space-y-1">
-        <span className="text-muted-foreground">Failed</span>
-        {failureReason ? (
-          <p className="text-sm text-muted-foreground">{failureReason}</p>
-        ) : null}
+        <span
+          role="status"
+          aria-live="polite"
+          className="text-muted-foreground"
+        >
+          {incomplete ? "Analysis incomplete" : "Failed"}
+        </span>
+        <p className="text-sm text-muted-foreground">
+          {failureReason ??
+            (incomplete
+              ? incompleteAnalysisDetail(failureCode)
+              : incompleteAnalysisDetail(null))}
+        </p>
         {onReanalyse ? (
           <Button
             type="button"
@@ -122,6 +139,7 @@ export function RolesPanel({
   onReanalyse,
   onDelete,
   failureReasons = {},
+  failureCodes = {},
   addRoleSlot,
   layout = "responsive",
 }: RolesPanelProps) {
@@ -283,6 +301,7 @@ export function RolesPanel({
                       <FitCell
                         role={role}
                         failureReason={failureReasons[role.id]}
+                        failureCode={failureCodes[role.id]}
                         onReanalyse={onReanalyse}
                       />
                     </td>
@@ -326,6 +345,7 @@ export function RolesPanel({
                       <FitCell
                         role={role}
                         failureReason={failureReasons[role.id]}
+                        failureCode={failureCodes[role.id]}
                         onReanalyse={onReanalyse}
                       />
                     </span>

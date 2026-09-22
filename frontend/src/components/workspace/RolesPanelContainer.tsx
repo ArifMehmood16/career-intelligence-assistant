@@ -49,6 +49,7 @@ export function RolesPanelContainer() {
   const [failureReasons, setFailureReasons] = useState<Record<string, string>>(
     {},
   );
+  const [failureCodes, setFailureCodes] = useState<Record<string, string>>({});
 
   const cvQuery = useQuery({ queryKey: ["cv"], queryFn: getCv });
   const rolesQuery = useQuery({
@@ -101,6 +102,11 @@ export function RolesPanelContainer() {
         delete next[roleId];
         return next;
       });
+      setFailureCodes((prev) => {
+        const next = { ...prev };
+        delete next[roleId];
+        return next;
+      });
     }
 
     if (job.state === "failed") {
@@ -109,6 +115,10 @@ export function RolesPanelContainer() {
         ...prev,
         [roleId]:
           job.error?.message ?? "Analysis failed. Try running it again.",
+      }));
+      setFailureCodes((prev) => ({
+        ...prev,
+        [roleId]: job.error?.code ?? "analysis_failed",
       }));
       setRoleJobs((prev) => {
         const next = { ...prev };
@@ -136,6 +146,11 @@ export function RolesPanelContainer() {
         delete next[roleId];
         return next;
       });
+      setFailureCodes((prev) => {
+        const next = { ...prev };
+        delete next[roleId];
+        return next;
+      });
       void queryClient.invalidateQueries({ queryKey: ["roles"] });
     },
   });
@@ -149,6 +164,11 @@ export function RolesPanelContainer() {
         return next;
       });
       setFailureReasons((prev) => {
+        const next = { ...prev };
+        delete next[roleId];
+        return next;
+      });
+      setFailureCodes((prev) => {
         const next = { ...prev };
         delete next[roleId];
         return next;
@@ -190,6 +210,7 @@ export function RolesPanelContainer() {
       sortKey={sortKey}
       sortDirection={sortDirection}
       failureReasons={failureReasons}
+      failureCodes={failureCodes}
       onSort={(key) => {
         if (key === sortKey) {
           setSortDirection(sortDirection === "asc" ? "desc" : "asc");

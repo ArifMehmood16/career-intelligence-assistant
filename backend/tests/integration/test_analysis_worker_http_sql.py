@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.scripted_transport import ScriptedTransport
+from tests.support.scripted_extraction import span_id_extraction_transport
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
@@ -18,7 +17,6 @@ from career_assistant.adapters.persistence.provider_settings_store import (
 )
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
-from career_assistant.adapters.providers.http_transport import HttpResponse
 from career_assistant.application.ports.extraction import (
     RequirementExtractionPort,
     RequirementExtractionResult,
@@ -31,7 +29,7 @@ from career_assistant.settings import ProviderSettings
 pytestmark = pytest.mark.integration
 
 _CV = """Experience
-Senior Analytics Engineer — Acme — 2022-01 — Present
+Senior Analytics Engineer — Acme — January 2022 – Present
 - Owned dbt models in production for the warehouse.
 """
 
@@ -158,7 +156,11 @@ def test_worker_failure_marks_failed_without_partial_results(
     assert done.state is JobState.FAILED
     job = client.get(f"/api/jobs/{job_id}").json()
     assert job["state"] == "failed"
-    assert "extracting_requirements_failed" in (job["error"] or "")
+    error = job["error"]
+    if isinstance(error, dict):
+        assert error["code"] == "extracting_requirements_failed"
+    else:
+        assert "extracting_requirements_failed" in (error or "")
     assert client.get(f"/api/roles/{role_id}").json()["status"] == "failed"
     assert client.get(f"/api/roles/{role_id}/requirements").status_code == 409
     with uow_factory() as uow:
@@ -291,31 +293,7 @@ def test_startup_recovers_queued_and_stale_running_jobs(
 def test_worker_extraction_calls_the_selected_scripted_provider(
     session_factory: sessionmaker[Session],
 ) -> None:
-    claim = "Owned dbt models in production for the warehouse."
-    payload = {
-        "choices": [
-            {
-                "message": {
-                    "content": json.dumps(
-                        {
-                            "requirements": [
-                                {
-                                    "text": "Must have production dbt experience",
-                                    "must_have": True,
-                                }
-                            ],
-                            "claims": [{"text": claim}],
-                        }
-                    )
-                },
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {"prompt_tokens": 12, "completion_tokens": 20},
-    }
-    transport = ScriptedTransport(
-        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
-    )
+    transport = span_id_extraction_transport()
     settings = ProviderSettings(
         completion_provider="hermetic",
         embedding_provider="hermetic",

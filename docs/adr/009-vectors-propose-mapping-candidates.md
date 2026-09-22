@@ -64,6 +64,14 @@ still complete.
 - Hosted embedding dimensions (768, 1536) persist without a schema change per
   model.
 - Ask behaviour is unchanged.
+
+## Amendment — 2026-09-22
+
+Agreement of lexical overlap and embedding cosine is retrieval, not proof of
+support. [ADR 011](011-evidence-assessment-contract.md) requires a validated
+assessment even when those signals agree. A missing assessment does not become
+a match. The OR fallback in this ADR describes the hermetic path until that
+assessment ships.
 - Hard delete of a CV removes every embedding for that workspace. Role delete
   removes requirement-owned vectors. Workspace CASCADE remains the table-level
   guarantee.

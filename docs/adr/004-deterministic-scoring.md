@@ -25,3 +25,11 @@ without a stored span that supports it.
 - Extraction errors surface as wrong mappings, which the evaluation harness measures,
   instead of hiding inside a plausible paragraph.
 - The product cannot tell the user what they want to hear.
+
+## Amendment — 2026-09-22
+
+[ADR 011](011-evidence-assessment-contract.md) keeps the score in domain code.
+The model may propose an assessment of retrieved evidence. The server validates
+it. A citation proves where text came from and does not prove that the text
+supports the requirement. Domain code still calculates the score; a model number
+never becomes one.

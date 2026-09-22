@@ -34,6 +34,7 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentStore,
 )
 from career_assistant.application.intake.workspace_spans import retrieval_pool
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
@@ -41,6 +42,7 @@ from career_assistant.application.roles.store import (
 )
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
 from career_assistant.domain.prompts import RetrievedSpan
+from career_assistant.settings import LimitSettings, ProviderSettings
 
 router = APIRouter(tags=["ask"])
 
@@ -125,11 +127,23 @@ def _ask_service(
     workspace_id: str,
     roles: tuple[RoleAnalysisView, ...],
 ) -> AskService:
+    providers = getattr(request.app.state, "providers", None)
+    output_limit = (
+        providers.llm_max_output_tokens
+        if isinstance(providers, ProviderSettings)
+        else 2000
+    )
+    limits = getattr(request.app.state, "limits", None)
+    if not isinstance(limits, LimitSettings):
+        limits = LimitSettings(_env_file=None)
     return AskService(
         store=_conversation_store(request),
         completion=completion_port_for(request, workspace_id),
         known_span_ids=_known_span_ids(request, workspace_id, roles),
         id_factory=lambda _prefix: str(uuid.uuid4()),
+        output_token_limit=output_limit,
+        max_question_chars=limits.max_question_chars,
+        max_context_chars=limits.max_context_chars,
     )
 
 
@@ -237,6 +251,12 @@ def delete_messages(request: Request, workspace_id: WorkspaceId) -> Response:
     conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is not None:
         store.hard_delete(workspace_id, conversation_id)
+        emit_action(
+            "messages.delete",
+            outcome="succeeded",
+            entity_type="conversation",
+            entity_id=conversation_id,
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

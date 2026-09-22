@@ -15,6 +15,11 @@ from career_assistant.application.analysis.service import (
     AnalysisService,
     JobClock,
 )
+from career_assistant.application.ports.adjudication import (
+    AdjudicationPair,
+    AdjudicationPort,
+    AssessmentItem,
+)
 from career_assistant.application.ports.embedding import (
     EmbeddingCachePort,
     EmbeddingPort,
@@ -26,6 +31,7 @@ from career_assistant.application.ports.extraction import (
     RequirementExtractionResult,
 )
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.domain.assessment import EvidenceAssessment
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import JobStage, JobState, RoleStatus
@@ -148,11 +154,30 @@ class _FailClaims:
         raise RuntimeError("claim extractor exploded")
 
 
+class _SilentAssessor:
+    """Returns no assessments, so every retrieved requirement stays incomplete."""
+
+    @property
+    def decides_support(self) -> bool:
+        return True
+
+    def assess(
+        self, items: tuple[AssessmentItem, ...] | list[AssessmentItem]
+    ) -> dict[str, EvidenceAssessment]:
+        return {}
+
+    def adjudicate(
+        self, pairs: tuple[AdjudicationPair, ...] | list[AdjudicationPair]
+    ) -> dict[tuple[str, str], bool]:
+        return {}
+
+
 def _service(
     *,
     claims: ClaimExtractionPort | None = None,
     requirements: RequirementExtractionPort | None = None,
     publisher: _MemPublisher | None = None,
+    adjudicator: AdjudicationPort | None = None,
     clock: JobClock | None = None,
     docs: AnalysisDocuments | None = None,
     rubric: ScoringRubric | None = None,
@@ -179,8 +204,96 @@ def _service(
         embedding_cache=embedding_cache,
         embedding_provider_id=embedding_provider_id,
         embedding_model_tag=embedding_model_tag,
+        adjudicator=adjudicator,
     )
     return service, pub
+
+
+def test_incomplete_assessment_fails_the_job_and_publishes_no_score() -> None:
+    """PLAN 13D.6a — a missing assessment is a failed job, not a fit score."""
+    service, pub = _service(adjudicator=_SilentAssessor())
+    service.create_role(
+        workspace_id="ws-1",
+        role_id="role-1",
+        title="AE",
+        job_id="job-1",
+    )
+    done = service.process_next()
+    assert done is not None
+    assert done.state is JobState.FAILED
+    assert done.error is not None
+    assert done.error.code == "assessment_incomplete"
+    assert service.get_role("ws-1", "role-1").status is RoleStatus.FAILED
+    assert pub.published == []
+
+
+class _PartialRequirements(_OkRequirements):
+    def extract(
+        self,
+        *,
+        document_id: str,
+        document_kind: DocumentKind,
+        normalised_text: str,
+    ) -> RequirementExtractionResult:
+        result = super().extract(
+            document_id=document_id,
+            document_kind=document_kind,
+            normalised_text=normalised_text,
+        )
+        return RequirementExtractionResult(
+            requirements=result.requirements,
+            spans=result.spans,
+            complete=False,
+        )
+
+
+class _PartialClaims:
+    def extract(
+        self,
+        *,
+        document_id: str,
+        document_kind: DocumentKind,
+        normalised_text: str,
+    ) -> ClaimExtractionResult:
+        assert document_kind is DocumentKind.CV
+        return ClaimExtractionResult(claims=(), spans=(), complete=False)
+
+
+def test_incomplete_claim_extraction_does_not_replace_a_valid_claim_set() -> None:
+    """PLAN 13D.6d — a failed CV extraction leaves the previous claims in place."""
+    publisher = _MemPublisher()
+    publisher.published.append({"role_id": "role-1", "claims": ("previous",)})
+    service, pub = _service(claims=_PartialClaims(), publisher=publisher)
+    service.create_role(
+        workspace_id="ws-1",
+        role_id="role-1",
+        title="AE",
+        job_id="job-1",
+    )
+    done = service.process_next()
+    assert done is not None
+    assert done.state is JobState.FAILED
+    assert done.error is not None
+    assert done.error.code == "extraction_incomplete"
+    assert pub.published == [{"role_id": "role-1", "claims": ("previous",)}]
+
+
+def test_incomplete_extraction_fails_the_job_and_publishes_no_score() -> None:
+    """PLAN 13D.6c — a partial extraction is not a fit score."""
+    service, pub = _service(requirements=_PartialRequirements())
+    service.create_role(
+        workspace_id="ws-1",
+        role_id="role-1",
+        title="AE",
+        job_id="job-1",
+    )
+    done = service.process_next()
+    assert done is not None
+    assert done.state is JobState.FAILED
+    assert done.error is not None
+    assert done.error.code == "extraction_incomplete"
+    assert service.get_role("ws-1", "role-1").status is RoleStatus.FAILED
+    assert pub.published == []
 
 
 def test_create_role_returns_immediately_with_queued_job_and_analysing_status() -> None:

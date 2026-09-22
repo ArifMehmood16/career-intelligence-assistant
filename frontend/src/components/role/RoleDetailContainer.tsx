@@ -1,6 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   ApiError,
   createBulletDraft,
@@ -12,6 +17,7 @@ import {
   getGapPlan,
   getGeneratedCoverLetters,
   getInterviewPack,
+  getJob,
   getRequirements,
   getRole,
   getSpan,
@@ -22,7 +28,12 @@ import { EvidencePanel } from "@/components/EvidencePanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { GapsPanel } from "@/components/role/GapsPanel";
-import { LetterPanel, type LetterTone } from "@/components/role/LetterPanel";
+import {
+  LetterPanel,
+  type LetterCitation,
+  type LetterTone,
+} from "@/components/role/LetterPanel";
+import { numberLetterCitations } from "@/components/role/letterCitations";
 import { PreparePanel } from "@/components/role/PreparePanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
@@ -80,6 +91,9 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [prepareExportError, setPrepareExportError] = useState<string | null>(
     null,
   );
+  const [analysisJobId, setAnalysisJobId] = useState<string | null>(null);
+  const [failureCode, setFailureCode] = useState<string | null>(null);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
@@ -88,6 +102,33 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       query.state.data?.status === "analysing" ? 1500 : false,
     retry: false,
   });
+  const jobQuery = useQuery({
+    queryKey: ["jobs", analysisJobId],
+    queryFn: () => getJob(analysisJobId!),
+    enabled: Boolean(analysisJobId),
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      return state === "queued" || state === "running" ? 1500 : false;
+    },
+  });
+
+  useEffect(() => {
+    const job = jobQuery.data;
+    if (!job || !analysisJobId) return;
+    if (job.state === "succeeded") {
+      setAnalysisJobId(null);
+      setFailureCode(null);
+      setFailureReason(null);
+      void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+      return;
+    }
+    if (job.state === "failed") {
+      setFailureCode(job.error?.code ?? "analysis_failed");
+      setFailureReason(job.error?.message ?? null);
+      setAnalysisJobId(null);
+      void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+    }
+  }, [jobQuery.data, analysisJobId, queryClient, roleId]);
   const roleStatus = roleQuery.data?.status;
   const fetchFit = shouldFetchRoleTabResource({
     roleStatus,
@@ -142,7 +183,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
 
   const reanalyse = useMutation({
     mutationFn: () => reanalyseRole(roleId),
-    onSuccess: () => {
+    onSuccess: ({ jobId }) => {
+      setAnalysisJobId(jobId);
+      setFailureCode(null);
+      setFailureReason(null);
       void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
     },
   });
@@ -209,6 +253,47 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     enabled: panelOpen && Boolean(spanId),
     retry: false,
   });
+
+  const activeLetterDraft: CoverLetterDraft | null =
+    selectedLetter ??
+    generatedLettersQuery.data?.[
+      (generatedLettersQuery.data?.length ?? 0) - 1
+    ] ??
+    null;
+
+  const letterCitationRefs = useMemo(
+    () =>
+      activeLetterDraft
+        ? numberLetterCitations(activeLetterDraft.paragraphs)
+        : [],
+    [activeLetterDraft],
+  );
+
+  const letterSpanQueries = useQueries({
+    queries: letterCitationRefs.map((item) => ({
+      queryKey: ["span", item.spanId],
+      queryFn: () => getSpan(item.spanId),
+      enabled: fetchLetter && Boolean(item.spanId),
+      retry: false,
+    })),
+  });
+
+  const letterCitations: LetterCitation[] = letterCitationRefs.map(
+    (item, index) => {
+      const query = letterSpanQueries[index];
+      const passage =
+        query?.data?.highlight?.trim() ||
+        query?.data?.paragraph?.trim() ||
+        null;
+      return {
+        number: item.number,
+        spanId: item.spanId,
+        text: passage,
+        loading: query?.isPending ?? false,
+        error: query?.isError ?? false,
+      };
+    },
+  );
 
   const requirements = useMemo(
     () => requirementsQuery.data ?? [],
@@ -411,6 +496,8 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         role={roleQuery.data ?? null}
         loading={headerState === "loading"}
         state={headerState}
+        failureCode={failureCode}
+        failureReason={failureReason}
         onRetry={() => {
           if (headerState === "failed") {
             reanalyse.mutate();
@@ -465,16 +552,11 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               tone={letterTone}
               includeGapLine={includeGapLine}
               generating={letterMutation.isPending}
-              draft={
-                selectedLetter ??
-                generatedLettersQuery.data?.[
-                  (generatedLettersQuery.data?.length ?? 0) - 1
-                ] ??
-                null
-              }
+              draft={activeLetterDraft}
               versions={generatedLettersQuery.data ?? []}
               refusal={letterRefusal}
               supportingDocuments={supportingLettersQuery.data ?? []}
+              citations={letterCitations}
               generatedState={
                 generatedLettersQuery.isPending
                   ? "loading"

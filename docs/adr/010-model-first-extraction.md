@@ -90,6 +90,11 @@ alone.
 - Output depth (13C.8) is shipped: a prose fit summary on GET `/roles/{id}`,
   full quoted CV evidence on each requirement, and interview prompts that
   quote the candidate's own claims.
+- [ADR 011](011-evidence-assessment-contract.md) supersedes consequence 4 for
+  scoring: concrete experience in an uploaded letter can count, with its source
+  shown and duplicates removed. An aspiration does not count, and a generated
+  draft never raises the score. The extractor still flags uploaded letters
+  `self_authored`; the running matcher still ignores them until 13D.5.
 - Pay and logistics are classified by the extraction prompt and JSON schema,
   not by a post-filter. The local Ollama adapter sends that schema as
   `format` so the enum descriptions reach the model.
@@ -114,3 +119,51 @@ alone.
 - **Drop unscoreable items at extraction time.** Salary, location and "this role
   is not" are real content a reader wants. They are kept and shown; they are
   simply never mapped.
+
+## Amendment — 2026-09-22 (13D.6c)
+
+The quote-copying contract dropped real requirements when the model omitted
+Markdown markers, and it kept generic headings that the model copied exactly.
+That is amended as follows. The original decision stays as the record of what
+13C shipped.
+
+The server segments the stored normalised text into stable spans before the
+model runs. A non-empty line is one span. A line with more than one sentence
+is one span per sentence, so unrelated requirements on one line are not
+merged. The server does not split a single sentence further. Each span has a
+server-issued id and the exact stored text.
+
+The model classifies those ids. It does not supply the evidence text. Unknown
+ids, duplicated ids and ids from another document are rejected. Span ids are
+deterministic UUIDs derived from the document id and offsets so PostgreSQL can
+store them. Every server span needs exactly one accepted classification;
+otherwise the extraction is incomplete and no fit score is published. The job
+fails with `extraction_incomplete`. There is no fuzzy quote match and no
+fallback to the rules extractor for a partial model response.
+
+A line that is only a section introduction, ending in a colon, is
+`non_requirement` even if the model calls it a responsibility. Body copy under
+About or Why-company headings, and employer-pitch openers such as "This is an
+opportunity…", are forced to `non_requirement` the same way. Benefits and
+logistics stay unscoreable kinds. The requirements API lists only scoreable
+items so headings and package lines cannot appear as Missing gaps.
+
+## Amendment — 2026-09-22 (13D.6d)
+
+CV claim extraction uses the same server-owned spans. The model assigns each
+span id a kind: employment heading, project heading, experience, project,
+skills or narrative. It does not copy the claim text. Employer and title are
+kept only when they appear inside the heading span. Dates, recency and
+duration are parsed from that heading in domain code. A project claim cites
+its project heading. A bare skills list is classified and is not a claim.
+Completeness is about scoreable evidence: unclassified employment or claim-like
+spans. Empty role headings are counted but do not fail alone. A missing
+`roleSpanId` attaches to the nearest preceding heading of the matching kind;
+orphan project claims may fall back to the nearest employment heading when no
+project heading precedes them. Claims that still cannot attach are dropped and
+counted; they fail the job only when no claims remain. An unparsed date becomes
+undated. Classification runs in bounded batches with one retry for skipped ids.
+Safe logs record per-batch and aggregate counts only — never CV text. The job
+fails with `extraction_incomplete` only when that gate fails, and it does not
+publish a replacement claim set. Uploaded letters stay self-authored. Generated
+drafts still never raise a score.

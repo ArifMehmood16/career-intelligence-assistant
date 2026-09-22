@@ -150,7 +150,7 @@ def _completion_for(
     if provider_id == "ollama":
         return OllamaCompletionAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=model_tag or settings.ollama_completion_model or "llama3.2",
+            model_tag=model_tag or settings.ollama_completion_model or "qwen2.5:7b",
             transport=transport,
             resilience=resilience,
         )

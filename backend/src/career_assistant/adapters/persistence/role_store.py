@@ -22,6 +22,7 @@ from career_assistant.adapters.persistence.models import (
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import CvStore
 from career_assistant.application.intake.errors import IntakeError
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import (
     GeneratedDraftRecord,
     NewDocument,
@@ -35,10 +36,12 @@ from career_assistant.application.roles.hermetic_analysis import (
     count_statuses,
 )
 from career_assistant.application.roles.store import (
+    JobErrorView,
     JobView,
     RoleOperationRejected,
     RoleView,
 )
+from career_assistant.domain.attribution import AnalysisAttribution
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, ParsedDocument, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
@@ -156,6 +159,13 @@ class SqlRoleStore:
                 job_id=job_id,
                 jd_document_id=parsed.document.id,
             )
+            emit_action(
+                "role.create",
+                outcome="accepted",
+                entity_type="role",
+                entity_id=role_id,
+                attributes={"id_role": role_id, "id_job": job_id},
+            )
             return self._role_view(uow, workspace_id, record), _job_view(queued)
 
     def delete_role(self, workspace_id: str, role_id: str) -> None:
@@ -170,6 +180,12 @@ class SqlRoleStore:
             uow.documents.hard_delete(workspace_id, jd_id)
             uow.commit()
             log_event(_log, "sql.role.deleted", role_id=role_id)
+            emit_action(
+                "role.delete",
+                outcome="succeeded",
+                entity_type="role",
+                entity_id=role_id,
+            )
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         if self.cv_store.get_active(workspace_id) is None:
@@ -204,6 +220,13 @@ class SqlRoleStore:
                 "sql.role.reanalysed",
                 role_id=role_id,
                 job_id=queued.id,
+            )
+            emit_action(
+                "role.reanalyse",
+                outcome="accepted",
+                entity_type="role",
+                entity_id=role_id,
+                attributes={"id_role": role_id, "id_job": queued.id},
             )
             return self._role_view(uow, workspace_id, updated), _job_view(queued)
 
@@ -439,7 +462,7 @@ class SqlRoleStore:
                 id=str(row.id),
                 text=row.text,
                 competency=row.competency,
-                seniority_signal=None,
+                seniority_signal=row.seniority_signal,
                 must_have=row.must_have,
                 source_span_id=str(row.source_span_id) if row.source_span_id else "",
                 extraction_confidence=row.extraction_confidence or 0.0,
@@ -467,6 +490,13 @@ class SqlRoleStore:
                         select(ClaimSpanRow).where(ClaimSpanRow.claim_id == row.id)
                     ).all()
                 )
+                stored_technologies = row.technologies
+                technologies = (
+                    tuple(str(item) for item in stored_technologies)
+                    if isinstance(stored_technologies, list)
+                    else ()
+                )
+                confidence = row.extraction_confidence
                 loaded.append(
                     Claim(
                         id=str(row.id),
@@ -475,7 +505,16 @@ class SqlRoleStore:
                         duration_signal=row.duration_signal or "",
                         recency_signal=row.recency_signal or "",
                         source_span_ids=span_ids,
-                        extraction_confidence=0.85,
+                        extraction_confidence=(
+                            float(confidence) if confidence is not None else 0.0
+                        ),
+                        employer=row.employer or "",
+                        title=row.title or "",
+                        scope=row.scope or "",
+                        technologies=technologies,
+                        outcome=row.outcome or "",
+                        period_start=row.period_start,
+                        period_end=row.period_end,
                         self_authored=bool(row.self_authored),
                     )
                 )
@@ -509,12 +548,14 @@ class SqlRoleStore:
             )
             for c in payload.get("components", [])
         )
+        band = str(score_row.band)
         explanation = ScoreExplanation(
             score=float(score_row.score),
-            band=str(score_row.band),
+            band=band,
             components=components,
             denominator=float(payload.get("denominator", 0.0)),
             numerator=float(payload.get("numerator", 0.0)),
+            publishable=band not in {"incomplete", "unscored"},
         )
         return AnalysisBundle(
             requirements=requirements,
@@ -523,6 +564,14 @@ class SqlRoleStore:
             explanation=explanation,
             jd_document_id=record.job_description_document_id,
             cv_document_id=cv.id if cv is not None else "",
+            attribution=AnalysisAttribution(
+                provider=score_row.assessment_provider,
+                model=score_row.assessment_model,
+                prompt_version=score_row.prompt_version,
+                rubric_version=score_row.rubric_version,
+                left_machine=bool(score_row.left_machine),
+                failure_status=score_row.failure_status or None,
+            ),
         )
 
 
@@ -589,7 +638,7 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
 def _job_view(job: AnalysisJob) -> JobView:
     error = None
     if job.error is not None:
-        error = f"{job.error.code}: {job.error.message}"
+        error = JobErrorView(code=job.error.code, message=job.error.message)
     return JobView(
         id=job.id,
         kind=job.kind.value,

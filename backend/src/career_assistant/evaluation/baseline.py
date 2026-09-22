@@ -2,13 +2,34 @@
 
 The dataset is a reviewer's reading of synthetic passages. Loading it does not
 run the matcher, and nothing in here treats a positive score as success.
+
+``current_policy_baseline`` is the separate measurement: the hermetic path
+(no embeddings, no adjudicator) compared with those labels. It does not write
+back into the dataset.
 """
 
 from __future__ import annotations
 
 import json
+import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
+
+from career_assistant.application.analysis.relatedness import (
+    NullAdjudicator,
+    map_role_requirements,
+)
+from career_assistant.application.ports.adjudication import AdjudicationPort
+from career_assistant.application.scoring.rubric_loader import (
+    load_mapping_config,
+    load_scoring_rubric,
+)
+from career_assistant.domain.claims import Claim
+from career_assistant.domain.mapping import RequirementMapping
+from career_assistant.domain.requirements import ItemType, Requirement
+from career_assistant.domain.scoring import score_fit
 
 REQUIRED_PHENOMENA = frozenset(
     {
@@ -125,6 +146,67 @@ class PilotDataset:
         raise KeyError(role_id)
 
 
+@dataclass(frozen=True, slots=True)
+class AssessmentDisagreement:
+    role_id: str
+    requirement_id: str
+    expected: str
+    observed: str
+    # The model's own sentence. Counting disagreements says how many; this says
+    # what the next fix is.
+    justification: str = ""
+
+    @property
+    def unsupported_met(self) -> bool:
+        return self.expected != "met" and self.observed == "met"
+
+
+@dataclass(frozen=True, slots=True)
+class OrderDisagreement:
+    group_id: str
+    ahead: str
+    behind: str
+    ahead_score: float
+    behind_score: float
+
+
+@dataclass(frozen=True, slots=True)
+class RetrievalMiss:
+    """A labelled supporting passage that never reached the assessor."""
+
+    role_id: str
+    requirement_id: str
+    span_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class CurrentPolicyReport:
+    """Labelled pilot compared with one mapping run.
+
+    ``current_policy_baseline`` is the hermetic run: ``calls_model`` is false.
+    ``measured_policy_baseline`` records the same comparison for a supplied
+    adjudicator, including per-role latency.
+    """
+
+    disagreements: tuple[AssessmentDisagreement, ...]
+    order_disagreements: tuple[OrderDisagreement, ...]
+    calls_model: bool
+    role_latency_seconds: tuple[float, ...] = ()
+    # Only recorded on the assessor path. The hermetic matcher has no separate
+    # retrieval step, so an empty tuple there means not measured, not perfect.
+    retrieval_misses: tuple[RetrievalMiss, ...] = ()
+
+    def disagreement(self, role_id: str, requirement_id: str) -> AssessmentDisagreement:
+        for item in self.disagreements:
+            if item.role_id == role_id and item.requirement_id == requirement_id:
+                return item
+        raise KeyError((role_id, requirement_id))
+
+    @property
+    def unsupported_met(self) -> tuple[AssessmentDisagreement, ...]:
+        return tuple(item for item in self.disagreements if item.unsupported_met)
+
+
 def load_pilot(path: Path | str) -> PilotDataset:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or "pilot" not in payload:
@@ -138,6 +220,216 @@ def load_pilot(path: Path | str) -> PilotDataset:
     )
     _validate(dataset)
     return dataset
+
+
+def current_policy_baseline(
+    dataset: PilotDataset,
+    *,
+    rubric_path: Path | str | None = None,
+) -> CurrentPolicyReport:
+    """Score the labelled pilot with today's hermetic matcher.
+
+    Similarities stay at 0 and the adjudicator answers nothing, which is the
+    NullAdjudicator path: lexical overlap decides, and a lexical/embedding
+    disagreement falls back to OR. Labels are not updated.
+    """
+    return measured_policy_baseline(
+        dataset,
+        adjudicator=NullAdjudicator(),
+        rubric_path=rubric_path,
+    )
+
+
+def measured_policy_baseline(
+    dataset: PilotDataset,
+    *,
+    adjudicator: AdjudicationPort,
+    similarities_for: Callable[
+        [Sequence[Requirement], Sequence[Claim]],
+        Mapping[tuple[str, str], float],
+    ]
+    | None = None,
+    rubric_path: Path | str | None = None,
+) -> CurrentPolicyReport:
+    """Score the labelled pilot with a supplied adjudicator.
+
+    Labels are not updated. An empty similarity function is the hermetic
+    retrieval path. A live run passes embeddings from the configured local model.
+    """
+    config_path = Path(rubric_path) if rubric_path is not None else _rubric_path()
+    rubric = load_scoring_rubric(config_path)
+    floor = load_mapping_config(config_path).similarity_floor
+    disagreements: list[AssessmentDisagreement] = []
+    order_disagreements: list[OrderDisagreement] = []
+    retrieval_misses: list[RetrievalMiss] = []
+    latencies: list[float] = []
+    decides_support = bool(getattr(adjudicator, "decides_support", False))
+    for group in dataset.groups:
+        claims = tuple(_domain_claim(claim) for claim in group.claims)
+        scores: dict[str, float] = {}
+        for role in group.roles:
+            started = time.perf_counter()
+            requirements = tuple(
+                _domain_requirement(item) for item in role.requirements
+            )
+            similarities = (
+                dict(similarities_for(requirements, claims))
+                if similarities_for is not None
+                else {}
+            )
+            mappings = map_role_requirements(
+                requirements,
+                claims,
+                similarities=similarities,
+                adjudicator=adjudicator,
+                similarity_floor=floor,
+            )
+            observed = {
+                mapping.requirement_id: mapping.status.value for mapping in mappings
+            }
+            reasons = {
+                mapping.requirement_id: mapping.assessment_justification
+                for mapping in mappings
+            }
+            if decides_support:
+                retrieval_misses.extend(
+                    _retrieval_misses(role, claims, mappings),
+                )
+            for requirement in role.requirements:
+                if not requirement.is_scoreable:
+                    continue
+                expected = role.expected_assessments[requirement.id]
+                actual = observed.get(requirement.id, "missing")
+                if actual != expected:
+                    disagreements.append(
+                        AssessmentDisagreement(
+                            role_id=role.id,
+                            requirement_id=requirement.id,
+                            expected=expected,
+                            observed=actual,
+                            justification=reasons.get(requirement.id, ""),
+                        )
+                    )
+            scores[role.id] = score_fit(requirements, mappings, claims, rubric).score
+            latencies.append(time.perf_counter() - started)
+        order_disagreements.extend(_order_disagreements(group, scores))
+    return CurrentPolicyReport(
+        disagreements=tuple(disagreements),
+        order_disagreements=tuple(order_disagreements),
+        calls_model=decides_support,
+        role_latency_seconds=tuple(latencies),
+        retrieval_misses=tuple(retrieval_misses),
+    )
+
+
+def _retrieval_misses(
+    role: PilotRole,
+    claims: Sequence[Claim],
+    mappings: Sequence[RequirementMapping],
+) -> tuple[RetrievalMiss, ...]:
+    """Labelled supporting passages the assessor was never shown.
+
+    Separating this from the assessment disagreements is the whole point: a
+    requirement the model called missing without the evidence in front of it
+    is a retrieval failure, and no prompt change can fix it.
+    """
+    spans_by_claim = {claim.id: frozenset(claim.source_span_ids) for claim in claims}
+    misses: list[RetrievalMiss] = []
+    for mapping in mappings:
+        labelled = frozenset(role.supporting_passages.get(mapping.requirement_id, ()))
+        if not labelled:
+            continue
+        shown: set[str] = set()
+        for claim_id in mapping.retrieved_claim_ids:
+            shown |= spans_by_claim.get(claim_id, frozenset())
+        unseen = tuple(sorted(labelled - shown))
+        if unseen:
+            misses.append(
+                RetrievalMiss(
+                    role_id=role.id,
+                    requirement_id=mapping.requirement_id,
+                    span_ids=unseen,
+                )
+            )
+    return tuple(misses)
+
+
+def _year_date(year: int | None) -> date | None:
+    if year is None:
+        return None
+    return date(year, 1, 1)
+
+
+def _rubric_path() -> Path:
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "config" / "scoring_rubric.toml"
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError("config/scoring_rubric.toml")
+
+
+def _domain_requirement(item: PilotRequirement) -> Requirement:
+    return Requirement(
+        id=item.id,
+        text=item.text,
+        competency=item.competency,
+        seniority_signal=item.seniority_signal,
+        must_have=item.must_have,
+        source_span_id=item.source_span_id,
+        extraction_confidence=item.extraction_confidence,
+        is_vague=item.is_vague,
+        item_type=ItemType(item.item_type),
+    )
+
+
+def _domain_claim(item: PilotClaim) -> Claim:
+    return Claim(
+        id=item.id,
+        competency=item.competency,
+        context=item.context,
+        duration_signal=item.duration_signal,
+        recency_signal=item.recency_signal,
+        source_span_ids=item.source_span_ids,
+        extraction_confidence=item.extraction_confidence,
+        self_authored=item.self_authored,
+        period_start=_year_date(item.period_start),
+        period_end=_year_date(item.period_end),
+    )
+
+
+def _order_disagreements(
+    group: PilotGroup, scores: dict[str, float]
+) -> list[OrderDisagreement]:
+    found: list[OrderDisagreement] = []
+    for constraint in group.expected_order:
+        if constraint.tie:
+            distinct = {scores[role_id] for role_id in constraint.tie}
+            if len(distinct) > 1:
+                ordered = sorted(constraint.tie, key=lambda role_id: scores[role_id])
+                found.append(
+                    OrderDisagreement(
+                        group_id=group.id,
+                        ahead=ordered[0],
+                        behind=ordered[-1],
+                        ahead_score=scores[ordered[0]],
+                        behind_score=scores[ordered[-1]],
+                    )
+                )
+            continue
+        assert constraint.ahead is not None and constraint.behind is not None
+        ahead_score = scores[constraint.ahead]
+        behind_score = scores[constraint.behind]
+        if ahead_score <= behind_score:
+            found.append(
+                OrderDisagreement(
+                    group_id=group.id,
+                    ahead=constraint.ahead,
+                    behind=constraint.behind,
+                    ahead_score=ahead_score,
+                    behind_score=behind_score,
+                )
+            )
+    return found
 
 
 def _gates(value: object) -> PilotGates:

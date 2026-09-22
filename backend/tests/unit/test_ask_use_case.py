@@ -158,6 +158,7 @@ class _MemStore:
 
 class _TrackingCompletion:
     calls: int = 0
+    last_request: CompletionRequest | None = None
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -174,6 +175,7 @@ class _TrackingCompletion:
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
         self.calls += 1
+        self.last_request = request
         return CompletionResult(
             text="From the CV: Owned dbt models in production.",
             provider_id="hermetic",
@@ -263,7 +265,7 @@ def test_question_is_persisted_before_answer() -> None:
     assert any(m.author == "assistant" for m in store.messages)
 
 
-def test_structured_intent_does_not_call_completion() -> None:
+def test_structured_intent_is_phrased_from_the_stored_analysis() -> None:
     service, _, completion = _service()
     service.ask(
         AskRequest(
@@ -275,6 +277,29 @@ def test_structured_intent_does_not_call_completion() -> None:
             roles=(_role_view(),),
         )
     )
+    assert completion.calls == 1
+    request = completion.last_request
+    assert request is not None
+    assert "stored_score=0" in request.user
+    assert "do not calculate a new score" in request.system.lower()
+    assert "couple of sentences" in request.system.lower()
+    assert "several paragraphs" in request.system.lower()
+    assert request.max_output_tokens == 256
+
+
+def test_insufficient_evidence_does_not_call_the_model() -> None:
+    service, _, completion = _service()
+    result = service.ask(
+        AskRequest(
+            workspace_id="ws-1",
+            conversation_id="conv-1",
+            client_request_id="cr-empty",
+            content="How well do I fit this role?",
+            role_id=None,
+            roles=(),
+        )
+    )
+    assert result.kind is AnswerKind.INSUFFICIENT
     assert completion.calls == 0
 
 
@@ -331,7 +356,7 @@ def test_repeated_client_request_id_returns_existing_without_duplicate() -> None
     assert first.content == second.content
     assert sum(1 for m in store.messages if m.author == "user") == 1
     assert sum(1 for m in store.messages if m.author == "assistant") == 1
-    assert completion.calls == 0
+    assert completion.calls == 1
 
 
 def test_partial_tokens_are_never_persisted_as_answers() -> None:
@@ -396,4 +421,4 @@ def test_stream_meta_includes_intent_and_provider() -> None:
     )
     meta = next(e for e in events if e.type == "meta")
     assert meta.intent is Intent.GAPS
-    assert meta.provider == "mapping"
+    assert meta.provider == "hermetic"

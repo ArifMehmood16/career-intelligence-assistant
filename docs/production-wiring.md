@@ -15,9 +15,17 @@ Provider resolvers:
 - `analysis_ports_for_choice` — hermetic stays on rules extractors and a
   null adjudicator so `make test` is offline; any other workspace answer
   choice uses the quote-verified model extractors (item types classified in
-  the prompt and schema) and a model adjudicator for lexical/embedding
-  disagreements. Cover letters extract as self-authored claims and are not
-  mapped. Salary, benefit and logistics items are stored and never mapped.
+  the prompt and schema) and one structured evidence assessment for every
+  retrieved requirement, including when lexical and embedding signals agree.
+  A missing or invalid assessment is `assessment_incomplete` and is not a
+  match. The job fails with that code and no fit score is published. Hermetic analysis still uses the null adjudicator and the OR
+  fallback so `make test` stays offline. Cover letters extract as
+  self-authored claims and are not
+  mapped yet. [ADR 011](adr/011-evidence-assessment-contract.md) records the
+  contract those claims will follow: concrete experience can count, with its
+  source shown and duplicates removed; an aspiration does not, and a generated
+  draft must never raise the score. Salary, benefit and logistics items are
+  stored and never mapped.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
@@ -54,7 +62,7 @@ Provider resolvers:
 | GET /api/ranking | rank_roles | none | SqlRoleStore |
 | GET /api/compare | compare_requirement_sets | none | SqlRoleStore |
 | GET /api/messages | list persisted conversation | none | SqlConversationStore |
-| POST /api/messages | AskService (stream or JSON) | completion_port_for on open questions; mapping intents call none | SqlConversationStore; retrieval via SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
+| POST /api/messages | AskService (stream or JSON) | completion_port_for for every intent; insufficient evidence does not call the model | SqlConversationStore; retrieval via SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | DELETE /api/messages | hard-delete conversation | none | SqlConversationStore |
 | GET /api/providers | list_provider_catalogue | list_provider_catalogue | none (server config) |
 | GET /api/settings/providers | get persisted choice | none | SqlProviderSettingsStore |

@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -221,6 +223,7 @@ class RequirementRow(Base):
         nullable=True,
     )
     extraction_confidence: Mapped[float | None] = mapped_column(nullable=True)
+    seniority_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_vague: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     item_type: Mapped[str] = mapped_column(
         String(32), nullable=False, default="requirement"
@@ -247,6 +250,24 @@ class ClaimRow(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False)
     duration_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     recency_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    employer: Mapped[str] = mapped_column(
+        String(256), nullable=False, default="", server_default=""
+    )
+    title: Mapped[str] = mapped_column(
+        String(256), nullable=False, default="", server_default=""
+    )
+    scope: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    technologies: Mapped[list[Any]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    outcome: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    extraction_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     self_authored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
@@ -364,6 +385,25 @@ class ScoreExplanationRow(Base):
     band: Mapped[str] = mapped_column(String(32), nullable=False)
     explanation: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    assessment_provider: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="hermetic", server_default="hermetic"
+    )
+    assessment_model: Mapped[str] = mapped_column(
+        String(128), nullable=False, default="rules-v1", server_default="rules-v1"
+    )
+    prompt_version: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="", server_default=""
+    )
+    rubric_version: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="scoring-rubric-v1",
+        server_default="scoring-rubric-v1",
+    )
+    left_machine: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    failure_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class AnalysisJobRow(Base):

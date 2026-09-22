@@ -21,6 +21,11 @@ from career_assistant.adapters.persistence.models import (
     ScoreExplanationRow,
 )
 from career_assistant.application.ports.persistence import RoleRecord
+from career_assistant.domain.attribution import (
+    RUBRIC_VERSION,
+    AnalysisAttribution,
+    analysis_failure_status,
+)
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.jobs import (
     AnalysisJob,
@@ -36,6 +41,7 @@ from career_assistant.domain.mapping import (
     MappingStatus,
     RequirementMapping,
 )
+from career_assistant.domain.reanalysis import resolve_failed_analysis_pointer
 from career_assistant.domain.relatedness import RelatednessSignals
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
@@ -166,6 +172,27 @@ class SqlRoleRepository:
         )
         if row is None:
             raise KeyError(role_id)
+        row.status = status.value
+        self._session.flush()
+        return _to_role(row)
+
+    def set_analysis_pointer(
+        self,
+        workspace_id: str,
+        role_id: str,
+        *,
+        analysis_version: int,
+        status: RoleStatus,
+    ) -> RoleRecord:
+        row = self._session.scalar(
+            select(RoleRow).where(
+                RoleRow.workspace_id == _as_uuid(workspace_id),
+                RoleRow.id == _as_uuid(role_id),
+            )
+        )
+        if row is None:
+            raise KeyError(role_id)
+        row.analysis_version = analysis_version
         row.status = status.value
         self._session.flush()
         return _to_role(row)
@@ -367,6 +394,7 @@ class SqlAnalysisResultRepository:
         mappings: tuple[RequirementMapping, ...],
         explanation: ScoreExplanation,
         job: AnalysisJob,
+        attribution: AnalysisAttribution | None = None,
     ) -> None:
         wid = _as_uuid(workspace_id)
         rid = _as_uuid(role_id)
@@ -384,6 +412,7 @@ class SqlAnalysisResultRepository:
                     must_have=req.must_have,
                     source_span_id=_as_uuid(req.source_span_id),
                     extraction_confidence=req.extraction_confidence,
+                    seniority_signal=req.seniority_signal,
                     is_vague=req.is_vague,
                     item_type=req.item_type.value,
                     analysis_version=analysis_version,
@@ -401,6 +430,14 @@ class SqlAnalysisResultRepository:
                     context=claim.context,
                     duration_signal=claim.duration_signal,
                     recency_signal=claim.recency_signal,
+                    employer=claim.employer,
+                    title=claim.title,
+                    scope=claim.scope,
+                    technologies=list(claim.technologies),
+                    outcome=claim.outcome,
+                    extraction_confidence=claim.extraction_confidence,
+                    period_start=claim.period_start,
+                    period_end=claim.period_end,
                     self_authored=claim.self_authored,
                 )
             )
@@ -439,6 +476,14 @@ class SqlAnalysisResultRepository:
                     )
                 )
 
+        stored = attribution or AnalysisAttribution(
+            provider="hermetic",
+            model="rules-v1",
+            prompt_version="",
+            rubric_version=RUBRIC_VERSION,
+            left_machine=False,
+            failure_status=analysis_failure_status(mappings),
+        )
         self._session.add(
             ScoreExplanationRow(
                 id=uuid.uuid4(),
@@ -449,6 +494,12 @@ class SqlAnalysisResultRepository:
                 band=explanation.band,
                 explanation=_explanation_payload(explanation),
                 invalidated=False,
+                assessment_provider=stored.provider,
+                assessment_model=stored.model,
+                prompt_version=stored.prompt_version,
+                rubric_version=stored.rubric_version,
+                left_machine=stored.left_machine,
+                failure_status=stored.failure_status,
             )
         )
         self._jobs.save(job)
@@ -479,8 +530,25 @@ class SqlAnalysisResultRepository:
             _as_uuid(role_id),
             analysis_version=version,
         )
-        self._jobs.save(job)
-        self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
+        # The role status is what the interface shows. Record it even when the
+        # job row has gone, or a role sits in `analysing` for ever with no error.
+        job_recorded = self._jobs.get(workspace_id, job.id) is not None
+        if job_recorded:
+            self._jobs.save(job)
+        if role is not None and version is not None:
+            published = self._published_versions(workspace_id, role_id)
+            restore_to, status = resolve_failed_analysis_pointer(
+                current_version=version,
+                published_versions=published,
+            )
+            self._roles.set_analysis_pointer(
+                workspace_id,
+                role_id,
+                analysis_version=restore_to,
+                status=status,
+            )
+        else:
+            self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
         self._session.flush()
         log_event(
             _log,
@@ -488,7 +556,17 @@ class SqlAnalysisResultRepository:
             role_id=role_id,
             job_id=job.id,
             code=job.error.code if job.error else "unknown",
+            job_recorded=job_recorded,
         )
+
+    def _published_versions(self, workspace_id: str, role_id: str) -> tuple[int, ...]:
+        rows = self._session.scalars(
+            select(ScoreExplanationRow.analysis_version).where(
+                ScoreExplanationRow.workspace_id == _as_uuid(workspace_id),
+                ScoreExplanationRow.role_id == _as_uuid(role_id),
+            )
+        ).all()
+        return tuple(int(version) for version in rows)
 
     def list_mappings(
         self, workspace_id: str, role_id: str

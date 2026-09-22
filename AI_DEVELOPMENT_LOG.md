@@ -27,6 +27,636 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 123 — README how-to and feature screenshots; PR package
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: commit + PR docs
+- Prompt intent: commit changes, create/update PR, document how to use features with screenshots in README.
+- Suggestion: How to use section; docs/images screenshots; push onto existing PR 34.
+- Outcome: accepted
+- Reason: reviewers need a walkthrough and visuals for letter citations, fit evidence and gaps alongside the assessment accuracy fixes.
+- Human validation: README updated; images under docs/images/; commit and PR update pending in the same turn.
+
+### 122 — Numbered cover-letter citation glossary
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: Letter UI polish
+- Prompt intent: replace hash span ids with numbered citations and a right-hand glossary of full passage text.
+- Suggestion: `[n]` markers in the letter; sticky Citations panel; resolve passages via `getSpan` / `useQueries`.
+- Outcome: accepted
+- Reason: hashes are not readable; numbers plus the source passage keep provenance without exposing raw ids in the draft view.
+- Human validation: `vitest` LetterPanel + letterCitations passed (7); `tsc --noEmit` clean.
+
+### 121 — Cover letter STAR phrasing and transferability
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: grounded generation polish (cover letter prompt)
+- Prompt intent: natural paragraph cover letters using STAR, covering important criteria and transferring CV evidence to gaps.
+- Suggestion: versioned `cover-letter-v2` system prompt; brief labels MET/TRANSFER/GAP; limit met paragraphs; raise output tokens to 1200; strip labels in hermetic fallback.
+- Outcome: accepted
+- Reason: ADR 007 still binds facts to cited spans; the model only rephrases. Transfer paragraphs use partial/adjacent claims, never invented skills.
+- Human validation: `pytest tests/unit/test_cover_letter_prompt.py tests/unit/test_generation_pipeline.py tests/api/test_grounded_generation_http.py --no-cov` passed (15); ruff clean.
+
+### 120 — Reject non-evidential Met citations
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6g corrective (assessment false Mets)
+- Prompt intent: Met rows cited location lines, profile headlines and role titles instead of work evidence; user asked for an LLM pass on match quality.
+- Suggestion: keep the existing assessor; exclude non-evidential claims from retrieval; cite claim bodies only; demote met/partial without evidential bodies; bump prompt to `evidence-assessment-v5`.
+- Outcome: accepted
+- Reason: an LLM assessment already ran; the failure was accepting titles and locations as support. Domain validation decides what may justify Met; the model still assesses real work bullets.
+- Human validation: `pytest tests/unit/test_structured_assessment.py tests/unit/test_evidence_support.py --no-cov` passed (14); ruff clean on changed modules.
+
+### 119 — JD headings and About/Why pitch not scored as gaps
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6g corrective (requirement list noise)
+- Prompt intent: Missing rows included section headings and About/Why marketing copy that are not requirements.
+- Suggestion: force About/Why body and employer-pitch lines to `non_requirement`; list only scoreable items on `/requirements`.
+- Outcome: accepted
+- Reason: colon headings were already unscoreable but still rendered as Missing when unmapped; OpenAI also labelled About/Why paragraphs as responsibilities. Domain overrides decide; GenAI skill bullets stay scoreable.
+- Human validation: `pytest tests/unit/test_model_requirement_extraction.py --no-cov` passed (18); ruff clean on changed modules.
+
+### 118 — Soft claim-attach gate and project→role recovery
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective
+- Prompt intent: OpenAI run failed with `claim_attach_failed` despite 34 accepted claims and zero scoreable unclassified spans.
+- Suggestion: recover orphan project claims onto the nearest role heading; treat attach drops as incomplete only when no claims remain.
+- Outcome: accepted
+- Reason: five unattachable lines were failing a usable extraction. Scoreable unclassified spans still fail completeness; orphan drops stay diagnostic when claims remain.
+- Human validation: `pytest tests/unit/test_model_claim_extraction.py --no-cov` passed (21); ruff clean on `claims_model.py`.
+
+### 117 — Phase 15B.5 use-case action rows
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.5
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: bind the recorder on each request and emit allowlisted actions from CV, role, Ask, generation and provider-choice use cases.
+- Outcome: accepted
+- Reason: one ContextVar keeps HTTP and use cases aligned without putting FastAPI types in application code. Attributes stay prefixed ids/counts so planted phrases never persist.
+- Human validation: `pytest` on audit actions, operational logging, architecture guard, generation, messages, CV and provider routes passed (45) with `--no-cov`.
+
+### 116 — Phase 15B.4 persist HTTP envelopes
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.4
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: middleware records method/path/status/duration on the in-memory recorder; exception handlers stamp `error_code` on request state.
+- Outcome: accepted
+- Reason: envelopes answer which call failed without storing headers or bodies. Recording is fail-open so an audit write cannot fail the request.
+- Human validation: `pytest tests/api/test_operational_logging.py --no-cov` passed (9).
+
+### 115 — Phase 15B.3 in-memory audit recorder
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.3
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: `AuditRecorder` port, allowlisted names, sanitize attributes before an in-memory store.
+- Outcome: accepted
+- Reason: durable rows must drop free-text keys before they exist in memory so a later SQL adapter cannot persist a planted phrase.
+- Human validation: `pytest tests/unit/test_audit_recorder.py tests/unit/test_architecture_guard.py --no-cov` passed (5).
+
+### 114 — Phase 15B.2 rotating log file
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.2
+- Prompt intent: continue with the next logging work.
+- Suggestion: optional `RotatingFileHandler` when `LOG_FILE` is set; same redaction as stderr; `LoggingSettings` at construction.
+- Outcome: accepted
+- Reason: stderr-only 13B lines die with the terminal; a file is opt-in so `make test` stays silent on disk. Bodies and planted phrases stay out of the file even at DEBUG.
+- Human validation: `pytest tests/unit/test_logconfig.py tests/api/test_operational_logging.py --no-cov` passed (12).
+
+### 113 — Phase 15B.1 durable operational audit contract
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.1
+- Prompt intent: continue with the next task in the observability logging plan.
+- Suggestion: record ADR 012, move audit logging in-scope in the threat model, and add Phase 15B to `PLAN.md` without application code.
+- Outcome: accepted
+- Reason: the human continued into 15B while 13D.6g is open. Recommended defaults apply except sequence: durable HTTP envelopes, no bodies, no read API, cascade delete, optional `LOG_FILE`. Per-function tracing and payload dumps stay rejected.
+- Human validation: documentation only; no tests run for this task.
+
+### 112 — Analysis accounting, spans before publish, truncation split
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective + observability
+- Prompt intent: failed analysis again; logging incomplete; no outgoing-call rows for analysis; no spans/claim spans in the database.
+- Suggestion: only improve log lines.
+- Outcome: changed
+- Reason: live batches hit `output_tokens=max` with `parse_ok=False` (truncated JSON). Claim batches now use a higher per-span token budget, default size 12, and split when `finish_reason=length`. Analysis completion ports wrap `AccountingCompletion` with purposes `extract_requirements`, `extract_claims`, and `assess` so `provider_call_accounting` records those calls. Candidate JD/CV spans are persisted at analysis start so they exist even when claim publication is withheld on incomplete. Job stage is written while running.
+- Human validation: `pytest` on claim extraction and analysis pipeline passed (31) with `--no-cov`.
+
+### 111 — Claim attach recovery and analysis diagnostics
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective + observability
+- Prompt intent: analysis still failed; user asked for logging on every backend function.
+- Suggestion: add a log statement to every function in every backend file.
+- Outcome: rejected then corrected
+- Reason: logging every function would drown signal and risk document text in logs (threat model). Instrumented the analysis path with stage counts, per-batch claim classification, `incomplete_reasons`, and workspace-bound context. Live failure showed `roles_without_claims=7` and attach drops; empty role headings no longer fail completeness alone, and a missing `roleSpanId` attaches to the nearest preceding heading.
+- Human validation: `pytest` on claim extraction and analysis pipeline passed (29) with `--no-cov`.
+
+### 110 — Claim extraction batches so a real CV finishes
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective
+- Prompt intent: live analysis still failed `extraction_incomplete` after the scoreable-evidence gate; user said CV items should not remain unclassified and that this was an app limitation.
+- Suggestion: treat the failure as document quality or leave single-shot classification.
+- Outcome: rejected then corrected
+- Reason: the active CV produced 135 server spans; one response capped near 4096 output tokens cannot return an assignment for each. Claim extraction now classifies spans in bounded batches (`CLAIM_BATCH_MAX_SPANS`, default 20) with one retry for skipped ids, matching the assessment batching pattern. Safe counts are logged. The worker message no longer says "every part of the CV".
+- Human validation: `pytest` on `test_model_claim_extraction.py` passed (16) with `--no-cov`. Observed live job `8c9f6bfe-…` failed at `extracting_claims` with 135 spans / ~4050-token estimated full assignment JSON.
+
+### 109 — CV completeness is scoreable evidence, not every line
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d
+- Prompt intent: live OpenAI analysis failed incomplete; user rejected blaming the CV or cover letter and required the PLAN acceptance criterion.
+- Suggestion: treat every unclassified CV span, or an unparsed year on a role heading, as `extraction_incomplete`.
+- Outcome: rejected then corrected
+- Reason: PLAN 13D.6d makes extraction incomplete when missing roles, lost associations or rejected claim spans affect scoreable evidence — not when skills, education or narrative lines are left unclassified, and not when an unparsed date becomes undated. Completeness now fails for unclassified employment or claim-like spans, claims without a valid heading, and roles with no claims. ADR 010 updated. ISO role dates such as `2022-01 — Present` parse in domain code.
+- Human validation: `pytest` on `test_model_claim_extraction.py` and `test_analysis_pipeline.py` passed (25) with `--no-cov`.
+
+### 108 — Aviva-shaped synthetic regression fixture
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6f
+- Prompt intent: continue 13D.6 with the synthetic shape fixture after incomplete-status work.
+- Suggestion: copy private smoke documents into the repo for an end-to-end score assertion.
+- Outcome: changed
+- Reason: added a public-safe Markdown JD and DOCX-shaped CV with labels. Hermetic tests lock the safe gates (no heading/benefit/logistics scoring, six roles and seventeen claims preserved, incomplete assessment unpublished) without requiring a stochastic fit score.
+- Human validation: `pytest` on `test_aviva_shaped_fixture.py` passed (5). Ruff passed on the test file.
+
+### 107 — Incomplete analysis is not a fit score on screen
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6a, 13D.6e
+- Prompt intent: continue 13D.6 in TDD with regular commits; tick when acceptance is met.
+- Suggestion: leave failed roles showing a generic failure and keep the role pointer on the empty reanalysis version.
+- Outcome: changed
+- Reason: a failed reanalysis now restores the previous published version so the last valid score stays visible. Job errors return `{code, message}` as the contract already described. The UI shows "Analysis incomplete" for `assessment_incomplete` and `extraction_incomplete`, never `/100` for those states, and offers Retry analysis. Ranking still excludes failed roles; a restored prior score returns to ready.
+- Human validation: unit tests for the reanalysis pointer and job error shape passed; integration tests for fail-and-restore and first-failure passed; frontend RoleHeader, RolesPanel and analysis-status tests passed (16).
+
+### 106 — The server owns CV claim spans
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6d
+- Prompt intent: continue 13D.6 and tick a subtask only when its acceptance is met.
+- Suggestion: keep verbatim CV quotes and fall back to the rules extractor when verification fails.
+- Outcome: changed
+- Reason: quote copying silently dropped claims and a rules fallback could publish a partial CV as complete. The server now segments the CV and the model assigns span ids. Dates are parsed from the heading. A skills list is not a claim. A project claim cites the project heading. Incomplete extraction fails the job with `extraction_incomplete` and does not replace a previous claim set. 13D.6b and 13D.6c are ticked. 13D.6a stays open because the screen still does not say the analysis is incomplete and a failed reanalysis is not yet shown as the previous valid result.
+- Human validation: `pytest` on the claim extraction, cover-letter, analysis pipeline and worker failure tests passed (39). Ruff and mypy passed on the changed Python files.
+
+### 105 — The server owns extraction spans
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c
+- Prompt intent: continue 13D.6 so job-description extraction no longer depends on the model copying quotes.
+- Suggestion: keep verbatim quote matching and drop lines the model fails to reproduce.
+- Outcome: changed
+- Reason: exact quote copying discarded real requirements when Markdown markers were omitted and kept generic headings the model copied. The server now segments the stored text and the model classifies those ids. A missing classification fails the job with `extraction_incomplete` and publishes no score. A colon-only heading is not scoreable. ADR 010 records the amendment. CV claims are still 13D.6d.
+- Human validation: `pytest` on the requirement extraction, model extraction, PDF-shape and analysis pipeline tests passed (42). Ruff check passed on the changed Python files.
+
+### 104 — Assessment calls are batched and retried once
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6b
+- Prompt intent: continue 13D.6 in TDD order after the unpublished-score contract.
+- Suggestion: send every requirement in one assessment response and accept whatever comes back.
+- Outcome: changed
+- Reason: the reproduced call sent ten requirements and got one assessment back. The batch size now comes from an explicit output-token budget. A missing item is retried once, already accepted items are not sent again, and the log records counts rather than requirement or evidence text.
+- Human validation: the new batch, retry and ten-item tests failed on import of `AssessmentBatchBudget`, then passed with the rest of `test_structured_assessment.py` (8). Ruff check and format passed on the changed files.
+
+### 103 — An incomplete assessment is not a fit score
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6a
+- Prompt intent: start Phase 13D.6 in TDD order, beginning with the incomplete-analysis contract.
+- Suggestion: keep publishing a numeric score and only change the band when the arithmetic is zero.
+- Outcome: changed
+- Reason: a surviving partial assessment was producing a small positive score such as 4/100 while the rest of the requirements had no valid assessment. The existing failed-job state already has an error code, so incomplete analysis uses `assessment_incomplete` on that state. `analysis_incomplete` stays the 409 for work that has not finished. No new role status.
+- Human validation: failing tests written first for an unpublished partial assessment and for a job that returns no assessments. `pytest` on `test_mapping_scoring.py`, `test_analysis_pipeline.py` and `test_analysis_attribution.py` passed (32). Ruff check and format passed on the changed Python files. `make test` and `make test-integration` were not run for this commit.
+
+### 102 — A failing job took the whole worker down
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6 (walkthrough)
+- Prompt intent: fix the crash seen during a live run.
+- Suggestion: treat the stack trace as three defects rather than one — the
+  foreign-key violation that started it, the failure handler that raised on
+  the job row, and the loop that ended on that exception.
+- Outcome: accepted
+- Reason: the reported error was the constraint violation, but the damaging
+  one was the third. `run_forever` had no guard, so the thread ended and every
+  later analysis in that process stayed queued with nothing shown anywhere in
+  the interface. A crash that is loud in the log and silent in the product is
+  worse than the error that caused it. The trigger is a real race: extraction
+  runs for minutes, and a document replaced or deleted in that window takes its
+  row with it, so the write now checks the documents and fails as
+  `documents_changed` instead of surfacing a driver constraint.
+- Human validation: three failing tests written first — the loop continuing
+  after a job raises, the failure handler not raising when the job row is
+  absent, and the named document check. Backend pytest exited 0 with coverage
+  82.11%; ruff check, ruff format --check and mypy on 134 source files passed.
+  `fail_job` also changed, and `make test-integration` has not been run against
+  it from this session.
+
+### 101 — Showing the cover letter made it worse, and was reverted
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: close the last gate failure, the contradiction case.
+- Suggestion: show up to two self-authored claims to the assessor as context
+  that cannot be cited, so a letter denying the CV is visible.
+- Outcome: rejected after measurement
+- Reason: on the same labels with `qwen2.5:7b`, disagreements went from 3 to 6
+  and the contradiction case still was not `partial`. Two of the new failures
+  printed an empty reason, which means the assessment was rejected in
+  validation: the model was shown the letter, cited it, and lost the whole
+  assessment because that span is not citable. `dev-letter-dup` was correct
+  before the change and broke on it. Showing evidence that may not be cited
+  turns a wrong answer into no answer. Reverted; a denial that lives only in a
+  cover letter needs a contradiction check the server performs itself.
+- Human validation: observed live output for v3 and v4 recorded in
+  `docs/evaluation.md`, including the empty justifications. After the revert,
+  backend pytest exited 0 with coverage 82.11%; ruff check, ruff format --check
+  and mypy on 134 source files passed. `dev-overlap` and `dev-injection` also
+  changed between the two runs with no code touching them, so the comparison is
+  reported as one run per configuration rather than averaged.
+
+### 100 — The completion model is part of the assessment contract
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: run the same labels against two local completion models and
+  act on the result.
+- Suggestion: ship the model that was measured, record the one that was not,
+  and make one targeted prompt change for the single remaining gate failure.
+- Outcome: accepted
+- Reason: on `evidence-assessment-v2`, `llama3.2` disagreed on 12 of 24
+  requirements, returned four unsupported `met` results and credited
+  `dev-injection` / `req-inject` — the case whose untrusted text asks to be
+  treated as a match. `qwen2.5:7b` on the same labels disagreed on 3, left the
+  held-out split clean and passed every predeclared gate except unsupported
+  `met`, which was the contradiction case. Defining the levels made the small
+  model confidently wrong rather than uniformly refusing, which is the worse
+  of the two failures, so the default model moved rather than the prompt being
+  softened for it.
+- Human validation: observed live output for both runs recorded in
+  `docs/evaluation.md`. Failing tests written first for the default model, the
+  shipped configuration example and the conflict rule. Backend pytest exited 0
+  with coverage 82.11%; ruff check, ruff format --check and mypy on 134 source
+  files passed. No run has been recorded against `evidence-assessment-v3`, and
+  the held-out split is the check on whether that change is an improvement or
+  an overfit to three development cases.
+
+### 099 — Define the assessment levels after the model hedged
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: re-run the live pilot after the retrieval fix and act on the
+  numbers.
+- Suggestion: with retrieval measured at zero misses, revise the prompt rather
+  than the retrieval, and make the completion model configurable so a weak
+  model can be told apart from a weak prompt.
+- Outcome: accepted
+- Reason: the observed run disagreed on 15 of 24 requirements in both
+  directions. No labelled `met` came back as `met`, and six labelled `missing`
+  requirements came back `partial` with a cited span, including two that share
+  no subject matter with the evidence. The prompt named met, partial and
+  missing and defined none of them. Unsupported `met` of zero was not taken as
+  progress, because the model returned `met` for nothing at all.
+- Human validation: observed live output recorded in `docs/evaluation.md`:
+  roles 20, disagreements 15, unsupported_met 0, order_disagreements 2,
+  retrieval_misses 0, completion calls 19, p50 1.90s, p95 2.36s. Failing test
+  written first for the level definitions and the version bump. Backend pytest
+  exited 0 with coverage 82.10%; ruff check, ruff format --check and mypy on
+  134 source files passed. No run has been recorded against the new prompt
+  version.
+
+### 098 — Rank retrieved evidence instead of gating it
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.3 (retrieval), 13D.6 (measurement)
+- Prompt intent: decide whether to continue after the live pilot came back worse
+  on disagreements and role order, then make the changes in TDD order.
+- Suggestion: do not revise the assessment prompt yet. Six of the nine live
+  disagreements were labelled `met` returned `missing`, which cannot be read
+  until retrieval is measured. Record what the assessor was shown, replace the
+  retrieval gate with a bounded ranked shortlist, stop falling back to the
+  lexical path, and re-measure.
+- Outcome: accepted
+- Reason: a claim reached the assessor only on a shared keyword or a similarity
+  above the floor. A paraphrase has neither, so `missing` was decided before the
+  model saw anything and no prompt change could have fixed it. Measured on the
+  pilot, the old gate decided 7 of 24 scoreable requirements with no assessor
+  call and never showed 2 labelled supporting passages — the two paraphrase
+  cases from the live run. Both are now zero. The assessment prompt was not
+  touched.
+- Human validation: four failing tests written first, each passing after its
+  change: the recorded retrieval set, the paraphrase below the floor, the
+  bounded candidate set, and a monkeypatched `map_requirements` proving the
+  lexical path no longer runs behind the assessor. Backend pytest exited 0 with
+  coverage 82.10%; ruff check, ruff format --check and mypy on 134 source files
+  all passed. Run in a Linux virtual environment built for this session, not on
+  the developer's machine: `make test-integration`, the frontend suite and the
+  live Ollama smoke run have not been repeated since this change.
+
+### 097 — Read a stored embedding when the driver returns an array
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6 (quality targets)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep the four Make quality targets moving. Wrap the one ruff
+  line-length failure, format the four test files ruff format rejected, and
+  accept a numpy embedding array as a numeric vector.
+- Outcome: accepted
+- Reason: `make lint` was already failing on tests from this branch, and the
+  integration failure was a real read-back bug. The assessment prompt was not
+  changed. 13D.6 stays open because the walkthrough and the remaining
+  documentation are not done.
+- Human validation: `make lint` failed first on a long assertion, then on four
+  unformatted test files. After those edits, `make lint` passed, including
+  mypy on 134 source files and the frontend typecheck and eslint. `make test`
+  passed: backend 365 passed, 3 skipped, coverage 81.82%; frontend 119 passed.
+  `make test-integration` then failed because a 1536-dimension numpy vector
+  was not a sequence. The new unit test failed the same way. After the read
+  accepted an iterable of numeric scalars, that unit test and the embedding
+  integration test passed, and `make test-integration` exited 0.
+
+### 096 — Measure the labelled pilot on local Ollama
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6 (check set on the local model)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: score the labelled pilot through the local completion and
+  embedding models, keep that run out of the default suite, and record the
+  counts without changing the hermetic baseline.
+- Outcome: accepted
+- Reason: the live run did not beat the hermetic baseline on disagreements or
+  role order. The assessment prompt was not revised, and no second model was
+  added. 13D.6 stays open.
+- Human validation: the new hermetic comparison failed to import
+  `measured_policy_baseline`, then the baseline file passed (4) and mypy was
+  clean on that module. `RUN_LLM_SMOKE=1` pytest of the smoke test passed in
+  30.77s: 20 roles, 9 disagreements, 1 unsupported met, 1 order disagreement,
+  p50 1.72s, p95 3.93s, 14 completion calls, 19 embedding calls, provider
+  ollama, `left_machine` false. Ruff was clean on the smoke test.
+
+### 095 — A restart reads the saved analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (Fit, Gaps, Prepare and Letter read the saved result)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: lock a new SQL store to the saved ranking, fit, gaps, interview
+  pack and letter, and lock the role, gap-plan and ranking reads so they do
+  not add a completion call.
+- Outcome: accepted
+- Reason: the behaviour was already in the store and the read routes. These
+  tests are regression locks. The first API assertion treated call records as
+  a method; the corrected check compares the record tuple before and after
+  the three reads. Interview-pack and cover-letter phrasing routes still call
+  the completion model and are outside this lock. 13D.6 and both exit gates
+  stay open.
+- Human validation: the SQL restart test passed on the first run. The API
+  test then failed with `TypeError: 'tuple' object is not callable`, and
+  passed after the assertion used the `records` property. Ruff was clean on
+  both test files. No production code changed. No live model call.
+
+### 094 — A course does not meet years of leadership
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (course-versus-leadership regression)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep an introductory course from meeting a years-of-leadership
+  requirement in domain mapping, on the API, and in the SQL worker. Apply the
+  same cap when a validated model assessment says met.
+- Outcome: accepted
+- Reason: the prompted-JSON test was changed to use a production claim, so it
+  still proves that a valid met is accepted. The course case is a separate
+  test. The hermetic baseline was re-measured rather than edited by hand.
+- Human validation: the domain test failed with status met, the model-path
+  test failed with status met, and the API test failed with fit score 85.
+  After the rule, those tests, the structured-assessment file, the mapping
+  score file, the baseline, and the SQL worker test passed (30). The
+  re-measured hermetic baseline is 7 disagreements, 5 unsupported met results,
+  and 0 order reversals. mypy was clean on the mapping and relatedness
+  modules. No live model call.
+
+### 093 — Name the requirements that distinguish a tie
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (stable ties)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep equal scores on one competition rank, ordered by title then
+  id, and replace the shared met requirements in that group with the ones that
+  are not on every tied role.
+- Outcome: accepted
+- Reason: a role whose reasons are entirely shared keeps those reasons, so a
+  tie of identical evidence is not blank. An untied role is unchanged.
+- Human validation: the new ranking test failed because both tied roles still
+  named `sql`. After the filter, both ranking tests passed. No live model call.
+
+### 092 — Do not count overlapping jobs as separate years
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (concurrent employment)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: merge overlapping employment periods for the same skill, and
+  keep a years requirement at partial when the merged stretch is shorter than
+  the requirement states. Back-to-back jobs still add up. A single dated claim
+  is left to the existing matcher.
+- Outcome: accepted
+- Reason: the year count is domain arithmetic. The model may still say met;
+  the mapping is capped afterwards. A month of slack stops a calendar-year
+  boundary from looking like a shortfall.
+- Human validation: the overlap test failed with status `met`. After the merge,
+  that test and the back-to-back test passed. Re-running the hermetic baseline
+  observed 10 assessment disagreements and 8 unsupported `met` results;
+  `dev-overlap` left the list. The course-versus-leadership pin is unchanged.
+  Mapping, baseline and structured-assessment tests passed (26). mypy was clean
+  on the four changed modules. No live model call.
+
+### 091 — Score duplicate requirements once and cap uncertain coverage
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (coverage and deduplication)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: count identical requirement text once, cap a met assessment at
+  partial when conditions are unknown or the evidence contradicts, and band a
+  zero score from a failed assessment as incomplete rather than limited.
+- Outcome: accepted
+- Reason: the rubric weights stay as configured. A role that also has a met
+  requirement keeps its numeric band; only an all-zero incomplete analysis
+  changes band. Duplicate lines remain in the explanation with zero weight.
+- Human validation: the three new scoring tests failed because
+  `RequirementMapping` had no `unknown_conditions`. After the scoring rules,
+  mapping, structured-assessment, item-type, cover-letter, fit and gap tests
+  passed (39). mypy was clean on the three changed modules. No live model call.
+
+### 090 — Record who assessed a saved analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (attribution slice)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: store the assessment provider, model, prompt version, rubric
+  version and whether content left the machine on the saved score, and record
+  `assessment_incomplete` as a failure status rather than as a low fit.
+- Outcome: accepted
+- Reason: the score row stays the arithmetic. Attribution is a separate record.
+  A missing stored attribution on a direct publish still fills the hermetic
+  defaults and derives the failure status from the mappings.
+- Human validation: `tests/unit/test_analysis_attribution.py` failed on import
+  of `analysis_failure_status`. After the domain function, migration and
+  worker wiring, that test, the claim-detail reload test and the SQL role-store
+  analysis test passed (3). mypy was clean on the nine changed modules. No live
+  model call.
+
+### 089 — Persist claim detail and requirement seniority
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (field round-trip only)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: store employer, title, scope, technologies, outcome, employment
+  dates, the real extraction confidence and requirement seniority, and reload
+  them instead of inventing confidence 0.85 or dropping seniority. Keep a
+  saved missing assessment as missing after a new unit of work.
+- Outcome: changed
+- Reason: a missing stored confidence reloads as 0.0 rather than the old
+  invented 0.85. The rest of 13D.5 (provenance versions, coverage, dedupe,
+  concurrent employment, ties, and every feature reading one saved result) is
+  not in this change. The 13D.5 checkbox stays open.
+- Human validation: the integration test failed first because `Claim` had no
+  `period_start`, then because reloaded seniority was `None`. After the
+  migration and mapper, that test, the analysis persistence file, and the
+  claim extraction unit tests passed (21). mypy was clean on the six changed
+  modules. No live model call.
+
+### 088 — Ask phrases every intent from stored analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.4
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: send fit, gaps, compare, evidence and preparation through the
+  configured completion model, using the stored score as grounding; retrieve
+  uploaded letters by token overlap; read the output cap from settings,
+  default 2000, and clamp it to the model window.
+- Outcome: changed
+- Reason: an insufficient-evidence result still returns before any model call,
+  and citations still come from the stored mapping rather than from model
+  text. The model phrases; it does not rescore.
+- Human validation: the new tests failed because `clamp_prompt_budget` was
+  missing and structured intents did not call completion. After the change,
+  the Ask, prompt, provider-default, structured-ask and message API tests
+  passed (31). mypy was clean on the changed modules. No live model call.
+
+### 087 — Structured assessment replaces boolean adjudication on the model path
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.3
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: validate a structured assessment server-side and, when the
+  completion adapter decides support, treat a missing or invalid assessment as
+  incomplete even if lexical and embedding signals agree. Keep the hermetic OR
+  fallback so offline tests still score.
+- Outcome: changed
+- Reason: the boolean adjudicator stays on the hermetic fixture. Replacing it
+  there would make every `make test` role incomplete. The model path no longer
+  uses that boolean to decide a match.
+- Human validation: `tests/unit/test_structured_assessment.py` failed on import
+  of `parse_assessments`. After the validator, adapter and mapping branch, that
+  file plus adjudication, three-signal, mapping-score and cover-letter tests
+  passed (36 tests). mypy was clean on the three changed modules. No live model
+  call.
+
+### 086 — Record the evidence-assessment contract
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.2
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: add ADR 011 stating that the model assesses, the server validates
+  and the domain calculates the score; concrete uploaded-letter experience can
+  count, aspirations and generated drafts cannot; reconcile AGENTS, features and
+  ADRs 004, 009 and 010.
+- Outcome: accepted
+- Reason: PLAN 13D.2 already stated the letter policy. The record says the
+  running matcher still excludes self-authored claims, so the ADR is not a claim
+  that the code already does this.
+- Human validation: `tests/unit/test_evidence_contract.py` failed because ADR 011
+  was absent and the older documents still forbade letter evidence. After the
+  ADR and the reconciliations, that file, `test_phase0_baseline.py` and
+  `test_production_wiring_matrix.py` passed (17 tests). No application code
+  changed.
+
+### 085 — Record the hermetic matcher against the labelled pilot
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.1
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: the labelled pilot already existed; add a comparison that runs
+  today's NullAdjudicator path and records disagreements without writing them
+  back into the labels.
+- Outcome: accepted
+- Reason: 13D.1 asked for the before-measurement. The cases and loader were
+  already merged; the missing piece was what the current code gets wrong.
+- Human validation: the new test failed on import of `current_policy_baseline`.
+  After the runner, `tests/evaluation/test_quality_baseline.py` passed (3 tests).
+  The observed hermetic result was 11 assessment disagreements, 9 unsupported
+  `met` results and 1 order reversal. ruff and mypy were clean on the changed
+  module. No live model call.
+
 ### 084 — CI runs only when a pull request is opened into main
 
 - Date: 2026-09-22

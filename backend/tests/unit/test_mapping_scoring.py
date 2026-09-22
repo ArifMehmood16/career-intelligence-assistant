@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
@@ -9,6 +10,7 @@ from career_assistant.domain.claims import Claim
 from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
+    RequirementMapping,
     map_requirement,
     map_requirements,
 )
@@ -369,3 +371,269 @@ def test_no_scoreable_requirements_is_unscored_not_a_limited_match() -> None:
     assert explanation.score == 0
     assert explanation.band == "unscored"
     assert explanation.components == ()
+
+
+def _scored(
+    requirement: Requirement,
+    *,
+    status: MappingStatus,
+    reason: MappingReason,
+    unknown_conditions: tuple[str, ...] = (),
+    contradiction: bool = False,
+) -> RequirementMapping:
+    return RequirementMapping(
+        requirement_id=requirement.id,
+        status=status,
+        reason_code=reason,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+        unknown_conditions=unknown_conditions,
+        contradiction=contradiction,
+    )
+
+
+def test_duplicate_requirement_text_scores_once() -> None:
+    """PLAN 13D.5 — the same requirement stated twice does not inflate the fit."""
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    sql_a = _req(id="a", text="Write production SQL", competency="sql")
+    sql_b = _req(id="b", text="write   production sql", competency="sql")
+    python = _req(id="c", text="Production Python", competency="python")
+    scored = score_fit(
+        (sql_a, sql_b, python),
+        (
+            _scored(sql_a, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(sql_b, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(
+                python,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.NO_RELATED_CLAIM,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert scored.score == 50.0
+    assert scored.denominator == 6.0
+
+
+def test_unknown_or_conflicting_evidence_is_not_full_coverage() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    requirement = _req(id="r1", text="Lead a platform team", competency="leadership")
+    full = score_fit(
+        (requirement,),
+        (_scored(requirement, status=MappingStatus.MET, reason=MappingReason.MATCHED),),
+        (),
+        rubric,
+    )
+    unknown = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MET,
+                reason=MappingReason.MATCHED,
+                unknown_conditions=("team size",),
+            ),
+        ),
+        (),
+        rubric,
+    )
+    conflict = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MET,
+                reason=MappingReason.MATCHED,
+                contradiction=True,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert full.score == 100.0
+    assert unknown.score == 50.0
+    assert conflict.score == 50.0
+
+
+def test_incomplete_assessment_is_not_banded_as_a_poor_fit() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    requirement = _req(id="r1", text="Five years leading Python", competency="python")
+    poor = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.NO_RELATED_CLAIM,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    incomplete = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.ASSESSMENT_INCOMPLETE,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert poor.score == 0.0
+    assert poor.publishable is True
+    assert poor.band == "limited"
+    assert incomplete.publishable is False
+    assert incomplete.band == "incomplete"
+    assert incomplete.denominator == 0.0
+
+
+def test_partial_assessment_does_not_publish_a_fit_score() -> None:
+    """PLAN 13D.6a — one surviving assessment must not become 4/100.
+
+    Incomplete items are a failed analysis. They are not zeros in a published
+    denominator, and a genuine all-missing review can still score zero.
+    """
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    met = _req(id="r-met", text="Production Python", competency="python")
+    dropped = _req(id="r-dropped", text="Kubernetes operations", competency="k8s")
+    published = score_fit(
+        (met, dropped),
+        (
+            _scored(met, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(
+                dropped,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.ASSESSMENT_INCOMPLETE,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert published.publishable is False
+    assert published.band == "incomplete"
+    assert published.score == 0.0
+    assert published.denominator == 0.0
+
+
+def test_introductory_course_does_not_meet_production_leadership() -> None:
+    """PLAN 13D.5 — a Python course is not five years of production leadership."""
+    requirement = _req(
+        id="req-python-leadership",
+        text="Five years leading production Python systems",
+        competency="python",
+    )
+    requirement = Requirement(
+        id=requirement.id,
+        text=requirement.text,
+        competency=requirement.competency,
+        seniority_signal="five_years_leadership",
+        must_have=True,
+        source_span_id=requirement.source_span_id,
+        extraction_confidence=0.9,
+        is_vague=False,
+    )
+    course = _claim(
+        id="claim-course",
+        competency="python",
+        context="Completed an introductory Python course.",
+    )
+    course = Claim(
+        id=course.id,
+        competency=course.competency,
+        context=course.context,
+        duration_signal="course",
+        recency_signal="recent",
+        source_span_ids=course.source_span_ids,
+        extraction_confidence=0.9,
+    )
+    result = map_requirement(requirement, (course,))
+    assert result.status is MappingStatus.MISSING
+    assert result.justifying_span_ids == ()
+    scored = score_fit(
+        (requirement,),
+        (result,),
+        (course,),
+        load_scoring_rubric(RUBRIC_PATH),
+    )
+    assert scored.score == 0.0
+
+
+def test_overlapping_employment_is_not_counted_as_separate_years() -> None:
+    """PLAN 13D.5 — two concurrent Java jobs are not six years."""
+    requirement = _req(
+        id="req-java-years",
+        text="Six years of Java backend development",
+        competency="java",
+    )
+    northwind = _claim(
+        id="claim-java-a",
+        competency="java",
+        context="Java backend developer at Northwind from 2019 to 2022.",
+    )
+    contoso = _claim(
+        id="claim-java-b",
+        competency="java",
+        context="Java backend developer at Contoso from 2021 to 2024.",
+    )
+    # _claim has no dates; replace with the employment periods.
+    northwind = Claim(
+        id=northwind.id,
+        competency=northwind.competency,
+        context=northwind.context,
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=northwind.source_span_ids,
+        extraction_confidence=0.9,
+        period_start=date(2019, 1, 1),
+        period_end=date(2022, 1, 1),
+    )
+    contoso = Claim(
+        id=contoso.id,
+        competency=contoso.competency,
+        context=contoso.context,
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=contoso.source_span_ids,
+        extraction_confidence=0.9,
+        period_start=date(2021, 1, 1),
+        period_end=date(2024, 1, 1),
+    )
+    result = map_requirement(requirement, (northwind, contoso))
+    assert result.status is MappingStatus.PARTIAL
+    assert set(result.justifying_claim_ids) == {"claim-java-a", "claim-java-b"}
+
+
+def test_back_to_back_employment_still_adds_up() -> None:
+    requirement = _req(
+        id="req-java-years",
+        text="Six years of Java backend development",
+        competency="java",
+    )
+    first = Claim(
+        id="early",
+        competency="java",
+        context="Java backend developer from 2018 to 2021.",
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=("early-span",),
+        extraction_confidence=0.9,
+        period_start=date(2018, 1, 1),
+        period_end=date(2021, 1, 1),
+    )
+    second = Claim(
+        id="later",
+        competency="java",
+        context="Java backend developer from 2021 to 2024.",
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=("later-span",),
+        extraction_confidence=0.9,
+        period_start=date(2021, 1, 1),
+        period_end=date(2024, 1, 1),
+    )
+    result = map_requirement(requirement, (first, second))
+    assert result.status is MappingStatus.MET
