@@ -2,6 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  incompleteAnalysisDetail,
+  incompleteAnalysisTitle,
+  isIncompleteAnalysisCode,
+} from "@/components/role/analysis-status";
 import type { Role } from "@/types";
 
 export type RoleHeaderState =
@@ -11,6 +16,8 @@ export interface RoleHeaderProps {
   role: Role | null;
   loading: boolean;
   state?: RoleHeaderState;
+  failureCode?: string | null;
+  failureReason?: string | null;
   onRetry?: () => void;
   onDelete?: () => void;
 }
@@ -19,11 +26,14 @@ export function RoleHeader({
   role,
   loading,
   state,
+  failureCode = null,
+  failureReason = null,
   onRetry,
   onDelete,
 }: RoleHeaderProps) {
   const resolved: RoleHeaderState =
     state ?? (loading || !role ? "loading" : "ready");
+  const incomplete = isIncompleteAnalysisCode(failureCode);
 
   const deleteControl =
     onDelete && role ? (
@@ -98,9 +108,21 @@ export function RoleHeader({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Analysis failed.
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-sm text-muted-foreground"
+                >
+                  {incompleteAnalysisTitle(failureCode)}.
                 </p>
+                <p className="text-sm text-muted-foreground">
+                  {failureReason ?? incompleteAnalysisDetail(failureCode)}
+                </p>
+                {incomplete ? (
+                  <p className="sr-only">
+                    No fit score is shown because the analysis did not complete.
+                  </p>
+                ) : null}
                 {onRetry ? (
                   <Button
                     type="button"

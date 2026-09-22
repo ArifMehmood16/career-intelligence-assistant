@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,7 @@ import {
   getGapPlan,
   getGeneratedCoverLetters,
   getInterviewPack,
+  getJob,
   getRequirements,
   getRole,
   getSpan,
@@ -80,6 +81,9 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const [prepareExportError, setPrepareExportError] = useState<string | null>(
     null,
   );
+  const [analysisJobId, setAnalysisJobId] = useState<string | null>(null);
+  const [failureCode, setFailureCode] = useState<string | null>(null);
+  const [failureReason, setFailureReason] = useState<string | null>(null);
 
   const roleQuery = useQuery({
     queryKey: ["role", roleId],
@@ -88,6 +92,33 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       query.state.data?.status === "analysing" ? 1500 : false,
     retry: false,
   });
+  const jobQuery = useQuery({
+    queryKey: ["jobs", analysisJobId],
+    queryFn: () => getJob(analysisJobId!),
+    enabled: Boolean(analysisJobId),
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      return state === "queued" || state === "running" ? 1500 : false;
+    },
+  });
+
+  useEffect(() => {
+    const job = jobQuery.data;
+    if (!job || !analysisJobId) return;
+    if (job.state === "succeeded") {
+      setAnalysisJobId(null);
+      setFailureCode(null);
+      setFailureReason(null);
+      void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+      return;
+    }
+    if (job.state === "failed") {
+      setFailureCode(job.error?.code ?? "analysis_failed");
+      setFailureReason(job.error?.message ?? null);
+      setAnalysisJobId(null);
+      void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+    }
+  }, [jobQuery.data, analysisJobId, queryClient, roleId]);
   const roleStatus = roleQuery.data?.status;
   const fetchFit = shouldFetchRoleTabResource({
     roleStatus,
@@ -142,7 +173,10 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
 
   const reanalyse = useMutation({
     mutationFn: () => reanalyseRole(roleId),
-    onSuccess: () => {
+    onSuccess: ({ jobId }) => {
+      setAnalysisJobId(jobId);
+      setFailureCode(null);
+      setFailureReason(null);
       void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
     },
   });
@@ -411,6 +445,8 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         role={roleQuery.data ?? null}
         loading={headerState === "loading"}
         state={headerState}
+        failureCode={failureCode}
+        failureReason={failureReason}
         onRetry={() => {
           if (headerState === "failed") {
             reanalyse.mutate();

@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 107 — Incomplete analysis is not a fit score on screen
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6a, 13D.6e
+- Prompt intent: continue 13D.6 in TDD with regular commits; tick when acceptance is met.
+- Suggestion: leave failed roles showing a generic failure and keep the role pointer on the empty reanalysis version.
+- Outcome: changed
+- Reason: a failed reanalysis now restores the previous published version so the last valid score stays visible. Job errors return `{code, message}` as the contract already described. The UI shows "Analysis incomplete" for `assessment_incomplete` and `extraction_incomplete`, never `/100` for those states, and offers Retry analysis. Ranking still excludes failed roles; a restored prior score returns to ready.
+- Human validation: unit tests for the reanalysis pointer and job error shape passed; integration tests for fail-and-restore and first-failure passed; frontend RoleHeader, RolesPanel and analysis-status tests passed (16).
+
 ### 106 — The server owns CV claim spans
 
 - Date: 2026-09-22

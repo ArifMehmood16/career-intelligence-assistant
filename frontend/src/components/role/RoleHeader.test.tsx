@@ -111,8 +111,34 @@ describe("RoleHeader states", () => {
       />,
     );
     expect(screen.getByText(/analysis failed/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /retry analysis/i }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it("shows incomplete analysis without a fit score", () => {
+    render(
+      <RoleHeader
+        loading={false}
+        state="failed"
+        failureCode="assessment_incomplete"
+        role={{
+          id: "role-1",
+          title: "Analytics Engineer",
+          company: "Acme",
+          fitScore: 4,
+          bandLabel: "Limited match",
+          counts: { met: 0, partial: 0, missing: 0 },
+          status: "failed",
+          updatedAt: "2026-09-18T12:00:00Z",
+        }}
+      />,
+    );
+    expect(screen.getByText(/analysis incomplete/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a fit judgement/i)).toBeInTheDocument();
+    expect(screen.queryByText("4")).toBeNull();
+    expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/limited match/i)).not.toBeInTheDocument();
   });
 
   it("shows a retryable load error instead of a skeleton", async () => {

@@ -68,10 +68,8 @@ local PostgreSQL; Compose/deployment uses container PostgreSQL.
 discussion, not a shipped feature or approval to send personal data to hosted
 models. Before implementing changed scoring/cover-letter semantics, record the
 decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
-13D.2. 13D.6b, 13D.6c and 13D.6d are implemented. 13D.6a stays open until a
-failed analysis is shown as incomplete and a failed reanalysis keeps the
-previous result. 13D.6e–13D.6g remain open. A public API change stops for
-approval. Earlier checked
+13D.2. 13D.6a–13D.6e are implemented. 13D.6f–13D.6g remain open. A public
+API change stops for approval. Earlier checked
 tasks remain implementation history; they are not proof of ranking accuracy,
 nor should superseded unchecked 5.3/7.2 be restarted.
 
@@ -1039,7 +1037,7 @@ they are.
       assign the CV a particular score. Keep the existing rubric, one local
       model, exact span verification and validated assessments. No Phase 13E,
       no Phase 14, and no restart of superseded Phase 5 or Phase 7 tasks.
-  - [ ] **13D.6a — Define the incomplete-analysis contract.** An incomplete
+  - [x] **13D.6a — Define the incomplete-analysis contract.** An incomplete
         extraction or assessment is a failed analysis, not a low fit score.
         Today `assessment_incomplete` is stored on the score row and mapped as
         status `missing` with that reason, then `score_fit` still divides a
@@ -1149,7 +1147,7 @@ they are.
         first role fails completeness validation; a claim with an unknown span
         ID is rejected; a failed extraction does not replace a previously
         valid claim set.
-  - [ ] **13D.6e — Propagate incomplete status through persistence, API and
+  - [x] **13D.6e — Propagate incomplete status through persistence, API and
         frontend.** `failure_status` is stored and then dropped from the role
         view, and the frontend renders the surviving number as genuine fit.
         Backend: do not publish a `ScoreExplanationRow` for an incomplete

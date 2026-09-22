@@ -150,10 +150,43 @@ describe("RolesPanel analysis status", () => {
     expect(screen.getAllByText("Provider timed out.").length).toBeGreaterThan(
       0,
     );
+    expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
     await user.click(
       screen.getAllByRole("button", { name: "Retry analysis" })[0]!,
     );
     expect(onReanalyse).toHaveBeenCalledWith("role-f");
+  });
+
+  it("shows Analysis incomplete without a fit score", () => {
+    render(
+      <RolesPanel
+        state="ready"
+        roles={[
+          {
+            ...failedRole,
+            fitScore: 4,
+            bandLabel: "Limited match",
+          },
+        ]}
+        sortKey="fit"
+        sortDirection="desc"
+        onSort={vi.fn()}
+        onRetry={vi.fn()}
+        failureCodes={{ "role-f": "assessment_incomplete" }}
+        addRoleSlot={null}
+        layout="table"
+      />,
+    );
+
+    expect(screen.getAllByText("Analysis incomplete").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText(/not a fit judgement/i).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.queryByText("4")).toBeNull();
+    expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/limited match/i)).not.toBeInTheDocument();
   });
 
   it("asks for confirmation before deleting a role and does not open it", async () => {

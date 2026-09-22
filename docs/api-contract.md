@@ -199,8 +199,10 @@ status and no new response field.
 reused for a finished assessment that failed validation. `fitScore: 0` is not
 a sentinel for this failure. A complete analysis may still score 0 with band
 "Limited match". A role with no scoreable requirements stays unscored
-("Not scored yet"). A failed reanalysis must not overwrite a previously valid
-saved analysis.
+("Not scored yet"). A failed reanalysis restores the role pointer to the
+previous published analysis version so that score remains visible; the failed
+job still records `assessment_incomplete` or `extraction_incomplete`. A first
+analysis with no prior score stays `status: "failed"` with no fit score.
 
 ---
 
