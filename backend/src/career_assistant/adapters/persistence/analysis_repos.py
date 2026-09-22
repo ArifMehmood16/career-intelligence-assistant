@@ -41,6 +41,7 @@ from career_assistant.domain.mapping import (
     MappingStatus,
     RequirementMapping,
 )
+from career_assistant.domain.reanalysis import resolve_failed_analysis_pointer
 from career_assistant.domain.relatedness import RelatednessSignals
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
@@ -171,6 +172,27 @@ class SqlRoleRepository:
         )
         if row is None:
             raise KeyError(role_id)
+        row.status = status.value
+        self._session.flush()
+        return _to_role(row)
+
+    def set_analysis_pointer(
+        self,
+        workspace_id: str,
+        role_id: str,
+        *,
+        analysis_version: int,
+        status: RoleStatus,
+    ) -> RoleRecord:
+        row = self._session.scalar(
+            select(RoleRow).where(
+                RoleRow.workspace_id == _as_uuid(workspace_id),
+                RoleRow.id == _as_uuid(role_id),
+            )
+        )
+        if row is None:
+            raise KeyError(role_id)
+        row.analysis_version = analysis_version
         row.status = status.value
         self._session.flush()
         return _to_role(row)
@@ -513,7 +535,20 @@ class SqlAnalysisResultRepository:
         job_recorded = self._jobs.get(workspace_id, job.id) is not None
         if job_recorded:
             self._jobs.save(job)
-        self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
+        if role is not None and version is not None:
+            published = self._published_versions(workspace_id, role_id)
+            restore_to, status = resolve_failed_analysis_pointer(
+                current_version=version,
+                published_versions=published,
+            )
+            self._roles.set_analysis_pointer(
+                workspace_id,
+                role_id,
+                analysis_version=restore_to,
+                status=status,
+            )
+        else:
+            self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
         self._session.flush()
         log_event(
             _log,
@@ -523,6 +558,17 @@ class SqlAnalysisResultRepository:
             code=job.error.code if job.error else "unknown",
             job_recorded=job_recorded,
         )
+
+    def _published_versions(
+        self, workspace_id: str, role_id: str
+    ) -> tuple[int, ...]:
+        rows = self._session.scalars(
+            select(ScoreExplanationRow.analysis_version).where(
+                ScoreExplanationRow.workspace_id == _as_uuid(workspace_id),
+                ScoreExplanationRow.role_id == _as_uuid(role_id),
+            )
+        ).all()
+        return tuple(int(version) for version in rows)
 
     def list_mappings(
         self, workspace_id: str, role_id: str

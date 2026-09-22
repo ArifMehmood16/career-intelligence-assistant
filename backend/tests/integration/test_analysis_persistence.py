@@ -381,6 +381,159 @@ def test_failed_job_discards_partials_and_leaves_role_failed(
         assert uow.analysis.list_mappings(workspace_id, role_id) == ()
 
 
+def test_failed_reanalysis_restores_the_previous_published_score(
+    uow: SqlUnitOfWork,
+) -> None:
+    """PLAN 13D.6e — a failed new version must not hide the last valid score."""
+    workspace_id, role_id, _, cv_id, jd_span_id, cv_span_id = _seed_workspace_with_role(
+        uow
+    )
+    req = Requirement(
+        id=str(uuid.uuid4()),
+        text="Production dbt experience",
+        competency="dbt",
+        seniority_signal=None,
+        must_have=True,
+        source_span_id=jd_span_id,
+        extraction_confidence=0.9,
+        is_vague=False,
+    )
+    claim = Claim(
+        id=str(uuid.uuid4()),
+        competency="dbt",
+        context="Owned dbt models in production.",
+        duration_signal="2y",
+        recency_signal="recent",
+        source_span_ids=(cv_span_id,),
+        extraction_confidence=0.9,
+    )
+    mapping = RequirementMapping(
+        requirement_id=req.id,
+        status=MappingStatus.MET,
+        reason_code=MappingReason.MATCHED,
+        justifying_span_ids=claim.source_span_ids,
+        justifying_claim_ids=(claim.id,),
+    )
+    explanation = ScoreExplanation(
+        score=82.0,
+        band="strong",
+        components=(
+            ScoreComponent(
+                requirement_id=req.id,
+                must_have=True,
+                status=MappingStatus.MET,
+                weight=3.0,
+                status_factor=1.0,
+                recency_factor=1.0,
+                contribution=3.0,
+            ),
+        ),
+        denominator=3.0,
+        numerator=3.0,
+    )
+    first_job = str(uuid.uuid4())
+    with uow:
+        uow.jobs.enqueue(
+            new_role_analysis_job(
+                job_id=first_job,
+                workspace_id=workspace_id,
+                role_id=role_id,
+                created_at=NOW,
+            )
+        )
+        uow.analysis.publish(
+            workspace_id=workspace_id,
+            role_id=role_id,
+            analysis_version=1,
+            cv_document_id=cv_id,
+            requirements=(req,),
+            claims=(claim,),
+            mappings=(mapping,),
+            explanation=explanation,
+            job=mark_succeeded(
+                mark_stage(
+                    mark_running(
+                        new_role_analysis_job(
+                            job_id=first_job,
+                            workspace_id=workspace_id,
+                            role_id=role_id,
+                            created_at=NOW,
+                        ),
+                        at=NOW,
+                    ),
+                    JobStage.SCORING,
+                ),
+                at=NOW + timedelta(seconds=1),
+            ),
+            attribution=AnalysisAttribution(
+                provider="hermetic",
+                model="rules-v1",
+                prompt_version=PROMPT_VERSION,
+                rubric_version=RUBRIC_VERSION,
+                left_machine=False,
+            ),
+        )
+        uow.roles.bump_analysis_version(workspace_id, role_id)
+        uow.commit()
+
+    failed_job = str(uuid.uuid4())
+    failed = mark_failed(
+        mark_stage(
+            mark_running(
+                new_role_analysis_job(
+                    job_id=failed_job,
+                    workspace_id=workspace_id,
+                    role_id=role_id,
+                    created_at=NOW + timedelta(seconds=2),
+                ),
+                at=NOW + timedelta(seconds=2),
+            ),
+            JobStage.SCORING,
+        ),
+        at=NOW + timedelta(seconds=3),
+        error=JobError(
+            code="assessment_incomplete",
+            message=(
+                "Analysis did not assess every scoreable requirement. "
+                "This is not a fit score."
+            ),
+        ),
+    )
+    with uow:
+        uow.jobs.enqueue(
+            new_role_analysis_job(
+                job_id=failed_job,
+                workspace_id=workspace_id,
+                role_id=role_id,
+                created_at=NOW + timedelta(seconds=2),
+            )
+        )
+        uow.analysis.fail_job(
+            workspace_id=workspace_id,
+            role_id=role_id,
+            job=failed,
+        )
+        uow.commit()
+
+    def uow_factory() -> SqlUnitOfWork:
+        return SqlUnitOfWork(uow._session_factory)  # noqa: SLF001
+
+    role_store = SqlRoleStore(
+        cv_store=SqlCvStore(uow_factory),
+        uow_factory=uow_factory,
+    )
+    view = role_store.get_role(workspace_id, role_id)
+    assert view is not None
+    assert view.status == "ready"
+    assert view.fit_score == 82
+    with uow:
+        role = uow.roles.get(workspace_id, role_id)
+        assert role is not None
+        assert role.analysis_version == 1
+        assert role.status is RoleStatus.READY
+        assert uow.jobs.get(workspace_id, failed_job).state is JobState.FAILED
+
+
 def test_duplicate_enqueue_returns_existing_active_job(uow: SqlUnitOfWork) -> None:
     workspace_id, role_id, _, _, _, _ = _seed_workspace_with_role(uow)
     first_id = str(uuid.uuid4())
