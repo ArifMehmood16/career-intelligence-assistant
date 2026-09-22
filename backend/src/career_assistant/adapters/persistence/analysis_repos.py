@@ -559,9 +559,7 @@ class SqlAnalysisResultRepository:
             job_recorded=job_recorded,
         )
 
-    def _published_versions(
-        self, workspace_id: str, role_id: str
-    ) -> tuple[int, ...]:
+    def _published_versions(self, workspace_id: str, role_id: str) -> tuple[int, ...]:
         rows = self._session.scalars(
             select(ScoreExplanationRow.analysis_version).where(
                 ScoreExplanationRow.workspace_id == _as_uuid(workspace_id),

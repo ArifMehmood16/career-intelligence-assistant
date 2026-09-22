@@ -60,7 +60,11 @@ function FitCell({
     const incomplete = isIncompleteAnalysisCode(failureCode);
     return (
       <div className="space-y-1">
-        <span role="status" aria-live="polite" className="text-muted-foreground">
+        <span
+          role="status"
+          aria-live="polite"
+          className="text-muted-foreground"
+        >
           {incomplete ? "Analysis incomplete" : "Failed"}
         </span>
         <p className="text-sm text-muted-foreground">

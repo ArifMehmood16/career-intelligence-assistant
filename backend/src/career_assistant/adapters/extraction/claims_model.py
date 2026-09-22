@@ -312,9 +312,7 @@ def _accepted(
             continue
         counts[issued] = counts.get(issued, 0) + 1
         latest[issued] = item
-    accepted = {
-        issued: item for issued, item in latest.items() if counts[issued] == 1
-    }
+    accepted = {issued: item for issued, item in latest.items() if counts[issued] == 1}
     dropped += sum(count for count in counts.values() if count > 1)
     return accepted, dropped
 

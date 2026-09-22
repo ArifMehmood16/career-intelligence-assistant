@@ -107,8 +107,7 @@ def _full_payload(text: str = PROSE_CV) -> dict[str, object]:
     ]
     blue = ids["Blue Harbour Retail — Data Analyst, March 2020 – December 2022."]
     dbt = (
-        "Owned dbt models that cover the core order and "
-        "inventory marts in production."
+        "Owned dbt models that cover the core order and inventory marts in production."
     )
     snowflake = "Designed incremental models in Snowflake for daily sales reporting."
     looker = "Built Looker dashboards for store performance and inventory turn."
@@ -302,8 +301,7 @@ def test_six_roles_and_seventeen_bullets_keep_their_associations() -> None:
         bullets = 3 if index < 5 else 2
         for bullet in range(bullets):
             line = (
-                f"Delivered labelled outcome {index}-{bullet} "
-                "for production systems."
+                f"Delivered labelled outcome {index}-{bullet} for production systems."
             )
             assignments.append(_assign(ids[line], "experience", role=heading_id))
 
@@ -329,9 +327,7 @@ def test_a_project_claim_stays_on_the_project_not_the_nearest_job() -> None:
         "Shipped a portfolio orchestration tool used by the team.\n"
     )
     ids = _ids(text)
-    job = ids[
-        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
-    ]
+    job = ids["Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."]
     project = ids["Portfolio — Side Project, January 2019 – June 2019."]
     payload = {
         "assignments": [

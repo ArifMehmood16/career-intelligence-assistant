@@ -7,15 +7,23 @@ export const INCOMPLETE_ANALYSIS_CODES = new Set([
   "extraction_incomplete",
 ]);
 
-export function isIncompleteAnalysisCode(code: string | null | undefined): boolean {
+export function isIncompleteAnalysisCode(
+  code: string | null | undefined,
+): boolean {
   return Boolean(code && INCOMPLETE_ANALYSIS_CODES.has(code));
 }
 
-export function incompleteAnalysisTitle(code: string | null | undefined): string {
-  return isIncompleteAnalysisCode(code) ? "Analysis incomplete" : "Analysis failed";
+export function incompleteAnalysisTitle(
+  code: string | null | undefined,
+): string {
+  return isIncompleteAnalysisCode(code)
+    ? "Analysis incomplete"
+    : "Analysis failed";
 }
 
-export function incompleteAnalysisDetail(code: string | null | undefined): string {
+export function incompleteAnalysisDetail(
+  code: string | null | undefined,
+): string {
   if (code === "assessment_incomplete") {
     return "The CV was not fully assessed. This is not a fit judgement.";
   }

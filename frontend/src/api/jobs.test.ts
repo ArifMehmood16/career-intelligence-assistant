@@ -33,7 +33,8 @@ describe("getJob", () => {
         stage: null,
         startedAt: "2026-09-18T12:00:00Z",
         finishedAt: "2026-09-18T12:01:00Z",
-        error: "assessment_incomplete: Analysis did not assess every scoreable requirement.",
+        error:
+          "assessment_incomplete: Analysis did not assess every scoreable requirement.",
       });
     });
 

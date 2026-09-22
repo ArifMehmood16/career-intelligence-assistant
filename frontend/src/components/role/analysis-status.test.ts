@@ -23,6 +23,8 @@ describe("incomplete analysis copy", () => {
     expect(incompleteAnalysisDetail("assessment_incomplete")).toMatch(
       /not a fit judgement/i,
     );
-    expect(incompleteAnalysisTitle("provider_timed_out")).toBe("Analysis failed");
+    expect(incompleteAnalysisTitle("provider_timed_out")).toBe(
+      "Analysis failed",
+    );
   });
 });

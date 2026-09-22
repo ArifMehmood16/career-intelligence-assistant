@@ -169,6 +169,8 @@ def _cv_assignments(user: str) -> list[dict[str, str]]:
         else:
             assignments.append({"spanId": issued, "kind": "narrative"})
     return assignments
+
+
 _BULLET = re.compile(r"^\s*[-*•]\s+(.+)$")
 
 

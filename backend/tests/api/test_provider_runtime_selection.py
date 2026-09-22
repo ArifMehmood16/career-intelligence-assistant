@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
@@ -132,31 +133,92 @@ def test_rejected_hosted_choice_makes_no_network_attempt() -> None:
 
 
 def _scripted_openai_extraction() -> ScriptedTransport:
-    claim = "Owned dbt models in production for the warehouse."
-    payload = {
-        "choices": [
-            {
-                "message": {
-                    "content": json.dumps(
+    """Return span-id classifications/assignments from the extractor prompt."""
+    import re
+
+    span_block = re.compile(
+        r"SPAN (\S+)\nUNTRUSTED_SPAN_BEGIN\n(.*?)\nUNTRUSTED_SPAN_END",
+        re.DOTALL,
+    )
+
+    def _payload_for(json_body: Mapping[str, object] | None) -> dict[str, object]:
+        messages = []
+        if isinstance(json_body, Mapping):
+            raw = json_body.get("messages")
+            if isinstance(raw, list):
+                messages = raw
+        user = ""
+        for message in messages:
+            if isinstance(message, dict) and message.get("role") == "user":
+                user = str(message.get("content") or "")
+        blocks = list(span_block.findall(user))
+        if "UNTRUSTED_CV" in user or "UNTRUSTED_COVER_LETTER" in user:
+            last_role: str | None = None
+            assignments: list[dict[str, object]] = []
+            for span, text in blocks:
+                if re.search(r"\b(?:19|20)\d{2}\b", text) and "—" in text:
+                    last_role = span
+                    assignments.append({"spanId": span, "kind": "role_heading"})
+                elif last_role is not None and text.lstrip().startswith("-"):
+                    assignments.append(
                         {
-                            "requirements": [
-                                {
-                                    "text": "Must have production dbt experience",
-                                    "must_have": True,
-                                }
-                            ],
-                            "claims": [{"text": claim}],
+                            "spanId": span,
+                            "kind": "experience",
+                            "roleSpanId": last_role,
                         }
                     )
-                },
-                "finish_reason": "stop",
-            }
-        ],
-        "usage": {"prompt_tokens": 12, "completion_tokens": 20},
-    }
-    return ScriptedTransport(
-        {"/chat/completions": HttpResponse(200, json.dumps(payload).encode(), {})}
-    )
+                else:
+                    assignments.append({"spanId": span, "kind": "narrative"})
+            content: dict[str, object] = {"assignments": assignments}
+        else:
+            classifications: list[dict[str, object]] = []
+            for span, text in blocks:
+                if "must have" in text.lower() or "dbt" in text.lower():
+                    kind = "requirement"
+                    must_have = True
+                    competency = "dbt"
+                else:
+                    kind = "non_requirement"
+                    must_have = False
+                    competency = "general"
+                classifications.append(
+                    {
+                        "spanId": span,
+                        "item_type": kind,
+                        "must_have": must_have,
+                        "competency": competency,
+                    }
+                )
+            content = {"classifications": classifications}
+        return {
+            "choices": [
+                {
+                    "message": {"content": json.dumps(content)},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 12, "completion_tokens": 20},
+        }
+
+    class _ExtractionTransport(ScriptedTransport):
+        def request(
+            self,
+            method: str,
+            url: str,
+            *,
+            headers: Mapping[str, str] | None = None,
+            json_body: Mapping[str, object] | None = None,
+            timeout_seconds: float,
+        ) -> HttpResponse:
+            del headers, timeout_seconds
+            self.calls.append((method, url))
+            if "/chat/completions" in url:
+                return HttpResponse(
+                    200, json.dumps(_payload_for(json_body)).encode(), {}
+                )
+            raise AssertionError(f"no recorded response for {method} {url}")
+
+    return _ExtractionTransport(responses={})
 
 
 def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
@@ -215,7 +277,10 @@ def test_bullet_phrasing_calls_the_selected_scripted_provider() -> None:
     )
     assert created_role.status_code == 202
     role_id = created_role.json()["role"]["id"]
-    requirement_id = client.get(f"/api/roles/{role_id}/requirements").json()[0]["id"]
+    requirements = client.get(f"/api/roles/{role_id}/requirements").json()
+    requirement_id = next(
+        item["id"] for item in requirements if "dbt" in item["text"].lower()
+    )
     calls_after_analysis = len(transport.calls)
 
     drafted = client.post(
