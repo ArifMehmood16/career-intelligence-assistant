@@ -234,3 +234,90 @@ def test_the_lexical_path_never_decides_when_an_assessor_is_in_charge(
     assert mappings[0].reason_code is MappingReason.NO_RELATED_CLAIM
     assert mappings[0].retrieved_claim_ids == ()
     assert mappings[0].justifying_span_ids == ()
+
+
+def _letter(claim_id: str, context: str, span_id: str) -> Claim:
+    return Claim(
+        id=claim_id,
+        competency="databases",
+        context=context,
+        duration_signal="none",
+        recency_signal="recent",
+        source_span_ids=(span_id,),
+        extraction_confidence=1.0,
+        self_authored=True,
+    )
+
+
+def test_a_letter_that_denies_the_cv_is_visible_but_cannot_support() -> None:
+    """A denial the assessor never sees is a contradiction it cannot report.
+
+    Self-authored text is not candidate evidence and never awards a match. It
+    still has to be in front of the assessor, or a letter saying the work was
+    not done reads as agreement.
+    """
+    completion = _ScriptedCompletion(_missing_payload())
+    cv = _claim(
+        "claim-databases",
+        "Administered relational databases for three years.",
+        "span-databases",
+    )
+    denial = _letter(
+        "claim-denial",
+        "I have not administered a database and the earlier line should not count.",
+        "span-denial",
+    )
+
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (cv, denial),
+        similarities={(_REQUIREMENT_ID, "claim-databases"): 0.9},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    request = completion.last_request
+    assert request is not None
+    assert "span-denial" in request.user
+    assert "claim-denial" in mappings[0].retrieved_claim_ids
+    assert mappings[0].status is MappingStatus.MISSING
+
+
+def test_a_match_cited_only_to_self_authored_text_is_not_accepted() -> None:
+    """The letter is context. A citation of it cannot be the support for a match."""
+    payload = {
+        "assessments": [
+            {
+                "requirementId": _REQUIREMENT_ID,
+                "assessment": "met",
+                "supportingSpanIds": ["span-denial"],
+                "unmetConditions": [],
+                "unknownConditions": [],
+                "contradiction": False,
+                "justification": "The letter mentions databases.",
+            }
+        ]
+    }
+    completion = _ScriptedCompletion(payload)
+    cv = _claim(
+        "claim-databases",
+        "Administered relational databases for three years.",
+        "span-databases",
+    )
+    denial = _letter(
+        "claim-denial",
+        "I have not administered a database and the earlier line should not count.",
+        "span-denial",
+    )
+
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (cv, denial),
+        similarities={(_REQUIREMENT_ID, "claim-databases"): 0.9},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    assert mappings[0].status is MappingStatus.MISSING
+    assert mappings[0].reason_code is MappingReason.ASSESSMENT_INCOMPLETE
+    assert mappings[0].justifying_span_ids == ()

@@ -280,7 +280,40 @@ closing paragraph where the capable model missed it. The held-out split is the
 check on that: it had no disagreements on v2, so a v3 that disturbs it is
 overfitting to the three development cases and is reverted.
 
-**Not yet measured:** no run has been recorded against `evidence-assessment-v3`.
+Measured on 2026-09-22, `evidence-assessment-v3` with `qwen2.5:7b` returned the
+same three disagreements, the same unsupported `met` and the same order error as
+v2. Stating the conflict rule more plainly changed nothing, and the printed
+reason said why: *"The evidence shows the candidate operated Kubernetes in
+production for three years, which meets the requirement."* The model was not
+ignoring the conflict. It never saw it.
+
+`dev-contradiction` puts the denial in a cover letter, and self-authored claims
+were excluded from retrieval entirely, because they cannot support a match. They
+were therefore invisible, and a letter saying the work was not done read as
+agreement. That is the same class of failure as the paraphrase gate: evidence
+kept out of the prompt, read afterwards as a model error.
+
+`evidence-assessment-v4` shows up to two self-authored claims as context marked
+`source=self-authored-cannot-support`. Their spans stay out of the allowlist, so
+a match cited only to the letter is still rejected as incomplete.
+
+The other two disagreements are label questions, not defects, and are left for
+the reviewer rather than resolved here:
+
+- `role-strong` / `req-sql`. The requirement is "Write SQL for a cloud
+  warehouse"; the evidence is "Wrote SQL reports for the warehouse team". The
+  model would not infer *cloud* and answered `missing`. The label says `met`.
+- `role-partial` / `req-reliability`. The requirement is "Owned the warehouse
+  reliability programme"; the evidence is the same SQL-reports line. The model
+  wrote that the evidence "is about building SQL reports and dbt models, but it
+  does not show ownership of the warehouse reliability programme" — which is the
+  definition of `partial` — and then answered `missing`. The label says
+  `partial`.
+
+Neither label is changed to match the model. Both are recorded so the decision
+is made once, by a person, and written down.
+
+**Not yet measured:** no run has been recorded against `evidence-assessment-v4`.
 
 
 ## Known measurement limits

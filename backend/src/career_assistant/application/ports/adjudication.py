@@ -21,6 +21,10 @@ class AssessmentEvidence:
     span_ids: tuple[str, ...]
     text: str
     adjacent: bool
+    # Self-authored text is shown so a denial or a conflict is visible, and is
+    # never eligible to support a match. False keeps its spans out of the
+    # allowlist the assessment is validated against.
+    supports: bool = True
 
 
 @dataclass(frozen=True, slots=True)
