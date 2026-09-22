@@ -88,10 +88,10 @@ export function GapsPanel({
       </div>
       {state === "ready" ? (
         <p className="mb-4 text-sm text-muted-foreground">
-          Ordered by how many points the fit score would gain if you closed
-          the gap. Missing or partial is the mapping; must or desirable is how
-          the job listed it. The lift is the same arithmetic as the Fit tab,
-          not a model guess.
+          Ordered by how many points the fit score would gain if you closed the
+          gap. Missing or partial is the mapping; must or desirable is how the
+          job listed it. The lift is the same arithmetic as the Fit tab, not a
+          model guess.
         </p>
       ) : null}
 

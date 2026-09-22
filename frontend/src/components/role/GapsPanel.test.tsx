@@ -175,9 +175,7 @@ describe("GapsPanel", () => {
     );
     expect(screen.queryByText(/6\.666666666666671/)).not.toBeInTheDocument();
     expect(screen.getByText(/\+6\.7/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/if this must-have were met/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/if this must-have were met/i)).toBeInTheDocument();
     expect(screen.getByText(/90 → 96\.7/)).toBeInTheDocument();
     expect(
       screen.getByText(/same arithmetic as the fit tab/i),
