@@ -24,9 +24,9 @@ from career_assistant.domain.assessment import (
     AssessmentBatchBudget,
     EvidenceAssessment,
     assessment_batch_slices,
-    parse_assessments,
+    parse_assessments_with_stats,
 )
-from career_assistant.logconfig import log_event
+from career_assistant.logconfig import log_event, log_failure
 
 _log = logging.getLogger(__name__)
 _DEFAULT_BUDGET = AssessmentBatchBudget(
@@ -107,13 +107,15 @@ _SYSTEM = (
 _ASSESS_SYSTEM = (
     f"prompt_version: {PROMPT_VERSION}\n"
     "Assess each requirement against its stated conditions and the delimited "
-    "untrusted evidence. Cite only span ids from the evidence.\n"
+    "untrusted evidence. Cite only span ids listed after spans= on each "
+    "EVIDENCE line. Never cite a claim id. Never invent span ids.\n"
     "met: the cited evidence shows the candidate has done what the requirement "
     "asks, at the scope, seniority and duration it states.\n"
     "partial: the cited evidence is about the same work but falls short of the "
     "stated scope, seniority or duration.\n"
     "missing: nothing shown is about this requirement, or it is only an "
-    "intention, an aspiration, or a statement that the work was not done.\n"
+    "intention, an aspiration, or a statement that the work was not done. "
+    "For missing, supportingSpanIds must be an empty array.\n"
     "Evidence that plainly meets the requirement is met. Choose missing, not "
     "partial, when the evidence is unrelated. Do not choose partial because you "
     "are unsure.\n"
@@ -154,6 +156,13 @@ class ModelAdjudicator:
         pending = list(items)
         accepted: dict[str, EvidenceAssessment] = {}
         returned = 0
+        drop_totals: dict[str, int] = {
+            "dropped_duplicate": 0,
+            "dropped_unknown_only": 0,
+            "dropped_empty_support": 0,
+            "dropped_invalid": 0,
+            "claim_aliases_expanded": 0,
+        }
         per_call = self._budget.requirements_per_call()
         retries = 0
         for attempt in (0, 1):
@@ -163,8 +172,11 @@ class ModelAdjudicator:
             still_missing: list[AssessmentItem] = []
             for start, end in assessment_batch_slices(len(pending), size):
                 batch = pending[start:end]
-                parsed, raw_count = self._complete_batch(batch)
+                parsed, raw_count, batch_stats = self._complete_batch(batch)
                 returned += raw_count
+                for key, value in batch_stats.items():
+                    if key in drop_totals:
+                        drop_totals[key] += value
                 for item in batch:
                     found = parsed.get(item.requirement_id)
                     if found is None:
@@ -182,15 +194,35 @@ class ModelAdjudicator:
             accepted=len(accepted),
             rejected=len(items) - len(accepted),
             retry_count=retries,
+            dropped_duplicate=drop_totals["dropped_duplicate"],
+            dropped_unknown_only=drop_totals["dropped_unknown_only"],
+            dropped_empty_support=drop_totals["dropped_empty_support"],
+            dropped_invalid=drop_totals["dropped_invalid"],
+            claim_aliases_expanded=drop_totals["claim_aliases_expanded"],
             provider=self._completion.capabilities.provider_id,
             model=self.assessment_source()[1],
             latency_ms=round((time.perf_counter() - started) * 1000),
         )
+        if len(accepted) < len(items):
+            log_failure(
+                _log,
+                "assessment.incomplete",
+                requested=len(items),
+                accepted=len(accepted),
+                missing=len(items) - len(accepted),
+                input=(
+                    f"requested={len(items)},accepted={len(accepted)},"
+                    f"dropped_unknown_only={drop_totals['dropped_unknown_only']},"
+                    f"dropped_duplicate={drop_totals['dropped_duplicate']},"
+                    f"dropped_empty_support={drop_totals['dropped_empty_support']},"
+                    f"dropped_invalid={drop_totals['dropped_invalid']}"
+                ),
+            )
         return accepted
 
     def _complete_batch(
         self, batch: Sequence[AssessmentItem]
-    ) -> tuple[Mapping[str, EvidenceAssessment], int]:
+    ) -> tuple[Mapping[str, EvidenceAssessment], int, dict[str, int]]:
         structured = self._completion.capabilities.supports_structured_output
         system = _ASSESS_SYSTEM
         schema: dict[str, Any] | None = ASSESSMENT_JSON_SCHEMA
@@ -216,9 +248,61 @@ class ModelAdjudicator:
             )
             for item in batch
         }
-        return parse_assessments(result.text, allowed=allowed), _returned_count(
-            result.text
+        claim_aliases = {
+            evidence.claim_id: frozenset(evidence.span_ids)
+            for item in batch
+            for evidence in item.evidence
+        }
+        truncated = (
+            result.finish_reason == "length"
+            or (
+                isinstance(result.output_tokens, int)
+                and result.output_tokens >= max(1, int(output_tokens * 0.95))
+                and not result.text.strip().endswith("}")
+            )
         )
+        parsed, stats = parse_assessments_with_stats(
+            result.text, allowed=allowed, claim_aliases=claim_aliases
+        )
+        log_event(
+            _log,
+            "assessment.batch",
+            spans_requested=len(batch),
+            returned=stats["returned"],
+            accepted=stats["accepted"],
+            truncated=truncated,
+            finish_reason=result.finish_reason or "-",
+            output_tokens=result.output_tokens,
+            max_output_tokens=output_tokens,
+            claim_aliases_expanded=stats["claim_aliases_expanded"],
+            dropped_unknown_only=stats["dropped_unknown_only"],
+            dropped_duplicate=stats["dropped_duplicate"],
+            dropped_invalid=stats["dropped_invalid"],
+        )
+        if truncated and len(batch) > 1:
+            mid = len(batch) // 2
+            left, left_n, left_stats = self._complete_batch(batch[:mid])
+            right, right_n, right_stats = self._complete_batch(batch[mid:])
+            merged = dict(left)
+            merged.update(right)
+            combined = {
+                key: left_stats.get(key, 0) + right_stats.get(key, 0)
+                for key in (
+                    "dropped_duplicate",
+                    "dropped_unknown_only",
+                    "dropped_empty_support",
+                    "dropped_invalid",
+                    "claim_aliases_expanded",
+                )
+            }
+            return merged, left_n + right_n, combined
+        return parsed, stats["returned"], {
+            "dropped_duplicate": stats["dropped_duplicate"],
+            "dropped_unknown_only": stats["dropped_unknown_only"],
+            "dropped_empty_support": stats["dropped_empty_support"],
+            "dropped_invalid": stats["dropped_invalid"],
+            "claim_aliases_expanded": stats["claim_aliases_expanded"],
+        }
 
     def adjudicate(
         self, pairs: Sequence[AdjudicationPair]
@@ -236,7 +320,7 @@ class ModelAdjudicator:
         )
         try:
             payload = json.loads(result.text)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return {}
         decisions = payload.get("decisions") if isinstance(payload, dict) else None
         if not isinstance(decisions, list):
@@ -255,19 +339,6 @@ class ModelAdjudicator:
         return accepted
 
 
-def _returned_count(text: str) -> int:
-    try:
-        payload = json.loads(text)
-    except TypeError, ValueError:
-        return 0
-    if not isinstance(payload, dict):
-        return 0
-    items = payload.get("assessments")
-    if not isinstance(items, list):
-        return 0
-    return len(items)
-
-
 def _assessment_message(items: Sequence[AssessmentItem]) -> str:
     blocks: list[str] = []
     for item in items:
@@ -276,7 +347,7 @@ def _assessment_message(items: Sequence[AssessmentItem]) -> str:
         for evidence in item.evidence:
             label = "adjacent" if evidence.adjacent else "retrieved"
             evidence_blocks.append(
-                f"EVIDENCE {evidence.claim_id} source={label} "
+                f"EVIDENCE claimLabel={evidence.claim_id} source={label} "
                 f"spans={','.join(evidence.span_ids)}\n"
                 "UNTRUSTED_EVIDENCE_BEGIN\n"
                 f"{evidence.text}\n"

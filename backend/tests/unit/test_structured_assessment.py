@@ -226,6 +226,41 @@ def test_unknown_span_refusal_and_truncation_do_not_match() -> None:
     assert parse_assessments("I must refuse.", allowed=allowed) == {}
 
 
+def test_claim_id_citation_expands_to_server_spans() -> None:
+    """Models often cite the claim label; the server maps it to span ids."""
+    allowed = {"req-python-leadership": frozenset({"span-course"})}
+    aliases = {"claim-course": frozenset({"span-course"})}
+    accepted = parse_assessments(
+        _met_payload("claim-course"),
+        allowed=allowed,
+        claim_aliases=aliases,
+    )
+    assert "req-python-leadership" in accepted
+    assert accepted["req-python-leadership"].supporting_span_ids == ("span-course",)
+
+
+def test_missing_with_forged_spans_becomes_empty_missing() -> None:
+    allowed = {"req-python-leadership": frozenset({"span-course"})}
+    accepted = parse_assessments(
+        {
+            "assessments": [
+                {
+                    "requirementId": "req-python-leadership",
+                    "assessment": "missing",
+                    "supportingSpanIds": ["span-forged"],
+                    "unmetConditions": [],
+                    "unknownConditions": [],
+                    "contradiction": False,
+                    "justification": "Nothing shown meets this requirement.",
+                }
+            ]
+        },
+        allowed=allowed,
+    )
+    assert accepted["req-python-leadership"].status == "missing"
+    assert accepted["req-python-leadership"].supporting_span_ids == ()
+
+
 def _item(requirement_id: str) -> AssessmentItem:
     return AssessmentItem(
         requirement_id=requirement_id,
