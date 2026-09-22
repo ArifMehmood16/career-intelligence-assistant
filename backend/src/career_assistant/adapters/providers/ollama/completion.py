@@ -64,7 +64,10 @@ class OllamaCompletionAdapter:
             "options": {"num_predict": request.max_output_tokens},
         }
         if request.json_schema is not None:
-            payload["format"] = "json"
+            # The schema is the structured-output contract. "json" alone only
+            # constrains syntax, so item_type enum descriptions never reach
+            # the local model.
+            payload["format"] = request.json_schema
 
         def _call() -> CompletionResult:
             response = self._transport.request(

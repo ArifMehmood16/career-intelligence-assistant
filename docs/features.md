@@ -121,6 +121,10 @@ the configuration file rather than hard-coding these literals.
 
 **Rules**
 
+- Pay, equity, location, travel and right-to-work are extracted as `benefit` or
+  `logistics` by the model, from the quote's meaning — not from a heading or the
+  word "must". Only `requirement` and `responsibility` items enter the mapping
+  and the score.
 - A requirement with no justifying span is `missing`. Never "probably met".
 - Relatedness is three signals: lexical overlap, embedding cosine at or above
   the configured floor, and model adjudication of the pairs those two disagree

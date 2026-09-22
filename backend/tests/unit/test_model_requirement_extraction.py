@@ -40,6 +40,17 @@ PROSE_ADVERT = normalise_text(
     "This is not a platform support role.\n"
 )
 
+PACKAGE_ADVERT = normalise_text(
+    "You will need strong experience with APIs, JSON and webhooks.\n"
+    "Package and practicalities\n"
+    "£70,000 - £80,000 depending on experience\n"
+    "Share options, awarded on performance\n"
+    "Delivery commission once you lead client accounts\n"
+    "Remote (UK) with quarterly team days in Newcastle, travel and hotels "
+    "covered; London co-working available\n"
+    "Full-time employee role: applicants must have the right to work in the UK\n"
+)
+
 
 class _ScriptedCompletion:
     """Returns a fixed structured payload; records what it was asked."""
@@ -280,3 +291,83 @@ def test_falls_back_to_the_rules_result_when_nothing_verifies() -> None:
 
     assert [r.text for r in result.requirements] == ["Own production for live agents"]
     assert result.dropped_unverifiable == 1
+
+
+def test_the_system_prompt_teaches_the_model_to_structure_package_lines() -> None:
+    """Pay, equity and location are language, not a regex. The prompt must say so."""
+    result, completion = _extract(_FULL_PAYLOAD)
+
+    assert result.requirements
+    assert completion.last_request is not None
+    system = completion.last_request.system.lower()
+    schema = completion.last_request.json_schema
+    assert schema is not None
+    item_type = schema["properties"]["requirements"]["items"]["properties"]["item_type"]
+    description = str(item_type.get("description", "")).lower()
+
+    assert "share options" in system
+    assert "right to work" in system
+    assert "must_have is priority" in system
+    assert "benefit" in description
+    assert "logistics" in description
+    assert "salary" in description
+
+
+def test_classification_instructions_follow_the_untrusted_job_text() -> None:
+    """A long advert buries a system prompt; restating kind after the JD is the ask."""
+    _, completion = _extract(_FULL_PAYLOAD)
+
+    assert completion.last_request is not None
+    user = completion.last_request.user
+    marker = "UNTRUSTED_JOB_DESCRIPTION_END"
+    assert marker in user
+    after = user.split(marker, 1)[1].lower()
+    assert "benefit" in after
+    assert "logistics" in after
+    assert "requirement" in after
+
+
+def test_a_package_block_is_extracted_structured_and_not_scored() -> None:
+    payload = {
+        "requirements": [
+            _item(
+                "You will need strong experience with APIs, JSON and webhooks.",
+                "requirement",
+                competency="api",
+            ),
+            _item("£70,000 - £80,000 depending on experience", "benefit"),
+            _item("Share options, awarded on performance", "benefit"),
+            _item("Delivery commission once you lead client accounts", "benefit"),
+            _item(
+                "Remote (UK) with quarterly team days in Newcastle, travel and "
+                "hotels covered; London co-working available",
+                "logistics",
+            ),
+            _item(
+                "Full-time employee role: applicants must have the right to work "
+                "in the UK",
+                "logistics",
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=PACKAGE_ADVERT)
+
+    by_text = {r.text: r.item_type for r in result.requirements}
+    assert by_text["£70,000 - £80,000 depending on experience"] is ItemType.BENEFIT
+    assert by_text["Share options, awarded on performance"] is ItemType.BENEFIT
+    assert (
+        by_text["Delivery commission once you lead client accounts"] is ItemType.BENEFIT
+    )
+    assert any(kind is ItemType.LOGISTICS for kind in by_text.values())
+    assert ItemType.REQUIREMENT in by_text.values()
+
+    mappings = map_requirements(result.requirements, [])
+    mapped_text = {
+        req.text
+        for req in result.requirements
+        if req.id in {row.requirement_id for row in mappings}
+    }
+    assert mapped_text == {
+        "You will need strong experience with APIs, JSON and webhooks."
+    }

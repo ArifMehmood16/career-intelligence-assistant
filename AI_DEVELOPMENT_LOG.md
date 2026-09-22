@@ -27,6 +27,18 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 081 — Requirement extraction classifies package lines (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: live extraction defect (13C exit gate: no salary, benefit or logistics line is scored)
+- Prompt intent: a "Package and practicalities" block (salary, share options, commission, remote/travel, right to work) was extracted as must-have requirements and lowered the fit score. Classify via the LLM, not a post-filter.
+- Suggestion: domain heuristics to demote salary/location after extraction; alternatively enrich the extraction system prompt, JSON schema descriptions, a classification restatement after the untrusted JD, and pass the schema to Ollama as `format`.
+- Outcome: changed.
+- Reason: the human rejected filters. Item type is an extraction decision; the model must structure it. Scoring already ignores unscoreable kinds. The local adapter previously sent `format: "json"`, so schema enum descriptions never reached Ollama.
+- Rejected alternatives: regex/keyword reclassification of extracted items; dropping package lines at extraction time (ADR 010 keeps them, unmapped).
+- Human validation: new extraction tests failed on the old one-sentence prompt; after the change, focused extraction tests, the Ollama schema test and the completion contract suite pass.
+
 ### 080 — Phase 13C.8 output depth (TDD)
 
 - Date: 2026-09-21
