@@ -178,14 +178,7 @@ def _map_with_required_assessment(
     mappings: list[RequirementMapping] = []
     for requirement, batch, signals in prepared:
         if batch is None:
-            mappings.append(
-                map_requirements(
-                    (requirement,),
-                    claim_list,
-                    similarities=similarities,
-                    similarity_floor=similarity_floor,
-                )[0]
-            )
+            mappings.append(_no_evidence_mapping(requirement))
             continue
         mappings.append(
             _mapping_from_assessment(
@@ -199,6 +192,23 @@ def _map_with_required_assessment(
             )
         )
     return tuple(mappings)
+
+
+def _no_evidence_mapping(requirement: Requirement) -> RequirementMapping:
+    """Nothing eligible to show the assessor.
+
+    Falling back to the lexical path here would let the superseded rules decide
+    a requirement whenever retrieval returned nothing, which is exactly the
+    failure this phase is closing. An empty candidate set is recorded instead.
+    """
+    return RequirementMapping(
+        requirement_id=requirement.id,
+        status=MappingStatus.MISSING,
+        reason_code=MappingReason.NO_RELATED_CLAIM,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+        retrieved_claim_ids=(),
+    )
 
 
 def _retrieved_indexes(

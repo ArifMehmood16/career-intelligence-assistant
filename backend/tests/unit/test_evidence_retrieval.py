@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from career_assistant.adapters.relatedness.model import ModelAdjudicator
+from career_assistant.application.analysis import relatedness
 from career_assistant.application.analysis.relatedness import map_role_requirements
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
@@ -17,6 +20,7 @@ from career_assistant.application.ports.types import (
     CompletionResult,
 )
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.mapping import MappingReason, MappingStatus
 from career_assistant.domain.requirements import Requirement
 
 _REQUIREMENT_ID = "req-dba"
@@ -194,3 +198,39 @@ def test_the_candidate_set_stays_bounded() -> None:
     request = completion.last_request
     assert request is not None
     assert "span-11" not in request.user
+
+
+def test_the_lexical_path_never_decides_when_an_assessor_is_in_charge(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No eligible evidence is a recorded outcome, not a silent fall back."""
+
+    def _forbidden(*args: object, **kwargs: object) -> object:
+        raise AssertionError("the lexical path decided a requirement")
+
+    monkeypatch.setattr(relatedness, "map_requirements", _forbidden)
+    completion = _ScriptedCompletion(_missing_payload())
+    letter = Claim(
+        id="claim-letter",
+        competency="databases",
+        context="I would relish the chance to run a database estate.",
+        duration_signal="none",
+        recency_signal="recent",
+        source_span_ids=("span-letter",),
+        extraction_confidence=1.0,
+        self_authored=True,
+    )
+
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (letter,),
+        similarities={},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    assert completion.calls == 0
+    assert mappings[0].status is MappingStatus.MISSING
+    assert mappings[0].reason_code is MappingReason.NO_RELATED_CLAIM
+    assert mappings[0].retrieved_claim_ids == ()
+    assert mappings[0].justifying_span_ids == ()
