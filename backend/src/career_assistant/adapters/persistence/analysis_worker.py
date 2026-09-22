@@ -52,6 +52,7 @@ from career_assistant.domain.attribution import (
     AnalysisAttribution,
     analysis_failure_status,
 )
+from career_assistant.domain.candidate_spans import spans_for_document
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
     AnalysisJob,
@@ -240,6 +241,22 @@ class SqlAnalysisWorker:
                 cv_id = cv.id
                 cv_text = cv.normalised_text
                 analysis_version = role.analysis_version
+            jd_spans = spans_for_document(jd_id, jd_text)
+            cv_spans = spans_for_document(cv_id, cv_text)
+            running = (
+                job
+                if job.state is JobState.RUNNING
+                else mark_running(job, at=self._clock())
+            )
+            staged = mark_stage(running, JobStage.EXTRACTING_REQUIREMENTS)
+            with self._uow_factory() as uow:
+                require_role(uow.roles, job.workspace_id, job.role_id)
+                require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
+                uow.documents.ensure_spans(job.workspace_id, jd_id, jd_spans)
+                uow.documents.ensure_spans(job.workspace_id, cv_id, cv_spans)
+                uow.jobs.save(staged)
+                uow.commit()
+            job = staged
             log_event(
                 _log,
                 "worker.documents",
@@ -249,6 +266,8 @@ class SqlAnalysisWorker:
                 cv_id=cv_id,
                 jd_chars=len(jd_text),
                 cv_chars=len(cv_text),
+                jd_spans=len(jd_spans),
+                cv_spans=len(cv_spans),
                 analysis_version=analysis_version,
             )
 
@@ -316,6 +335,11 @@ class SqlAnalysisWorker:
                 )
                 return failed
             stage = JobStage.EXTRACTING_CLAIMS
+            job = mark_stage(job, stage)
+            with self._uow_factory() as uow:
+                require_role(uow.roles, job.workspace_id, job.role_id)
+                uow.jobs.save(job)
+                uow.commit()
             log_event(
                 _log,
                 "worker.stage",
@@ -628,7 +652,14 @@ class SqlAnalysisWorker:
             choice = uow.provider_settings.get(workspace_id)
         if choice is None:
             choice = default_provider_choice(settings)
-        return analysis_ports_for_choice(settings, choice, transport=self._transport)
+        accountant = self._call_accountant or SqlCallAccountant(self._uow_factory)
+        return analysis_ports_for_choice(
+            settings,
+            choice,
+            transport=self._transport,
+            accountant=accountant,
+            workspace_id=workspace_id,
+        )
 
     def _embedding_for(
         self, workspace_id: str
@@ -652,7 +683,7 @@ class SqlAnalysisWorker:
                 provider_id=provider_id,
                 model_tag=model_tag,
             )
-        except EgressNotPermittedError, ProviderUnavailableError:
+        except (EgressNotPermittedError, ProviderUnavailableError):
             return None, provider_id, model_tag
         accountant = self._call_accountant or SqlCallAccountant(self._uow_factory)
         return (

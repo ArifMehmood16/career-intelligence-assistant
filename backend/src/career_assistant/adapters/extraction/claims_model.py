@@ -58,9 +58,11 @@ _CLAIM_LEAD = re.compile(
     r"Shipped|Published|Coordinated)\b)",
     re.IGNORECASE,
 )
-# Keep each response well under typical provider max_output_tokens.
-_DEFAULT_BATCH_SIZE = 20
-_OUTPUT_TOKENS_PER_SPAN = 80
+# Keep each response under typical provider max_output_tokens. Live CVs
+# needed ~160 tokens per span when optional claim fields were filled.
+_DEFAULT_BATCH_SIZE = 12
+_OUTPUT_TOKENS_PER_SPAN = 160
+_MAX_OUTPUT_TOKENS = 4096
 
 CLAIMS_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -218,8 +220,8 @@ class ModelClaimExtractor:
                 f"SPAN {issued}\nUNTRUSTED_SPAN_BEGIN\n{text}\nUNTRUSTED_SPAN_END"
             )
         max_tokens = min(
-            4096,
-            max(512, len(batch_ids) * _OUTPUT_TOKENS_PER_SPAN),
+            _MAX_OUTPUT_TOKENS,
+            max(1024, len(batch_ids) * _OUTPUT_TOKENS_PER_SPAN),
         )
         result = self._completion.complete(
             CompletionRequest(
@@ -248,6 +250,9 @@ class ModelClaimExtractor:
         for item in items:
             if isinstance(item, dict) and item.get("spanId") in by_id:
                 accepted_in_batch += 1
+        truncated = _response_truncated(
+            result, max_tokens=max_tokens, parse_ok=parse_ok
+        )
         log_event(
             _log,
             "claims.batch",
@@ -257,12 +262,55 @@ class ModelClaimExtractor:
             assignments_returned=len(items),
             assignments_known=accepted_in_batch,
             parse_ok=parse_ok,
+            truncated=truncated,
+            finish_reason=result.finish_reason or "-",
             output_tokens=result.output_tokens,
             max_output_tokens=max_tokens,
             provider=self._completion.capabilities.provider_id,
             model=result.model_tag,
         )
+        if truncated and len(batch_ids) > 1:
+            mid = len(batch_ids) // 2
+            log_event(
+                _log,
+                "claims.batch_split",
+                batch_index=batch_index,
+                spans_requested=len(batch_ids),
+                left=mid,
+                right=len(batch_ids) - mid,
+            )
+            return self._classify_batch(
+                list(batch_ids)[:mid],
+                by_id=by_id,
+                normalised_text=normalised_text,
+                self_authored=self_authored,
+                batch_index=batch_index,
+                attempt=f"{attempt}_split_a",
+            ) + self._classify_batch(
+                list(batch_ids)[mid:],
+                by_id=by_id,
+                normalised_text=normalised_text,
+                self_authored=self_authored,
+                batch_index=batch_index,
+                attempt=f"{attempt}_split_b",
+            )
         return items if parse_ok else []
+
+
+def _response_truncated(
+    result: object, *, max_tokens: int, parse_ok: bool
+) -> bool:
+    finish = getattr(result, "finish_reason", None)
+    if finish == "length":
+        return True
+    output = getattr(result, "output_tokens", None)
+    if (
+        not parse_ok
+        and isinstance(output, int)
+        and output >= max(1, int(max_tokens * 0.95))
+    ):
+        return True
+    return False
 
 
 def _assemble(

@@ -693,3 +693,104 @@ def test_missing_scoreable_span_is_retried_once() -> None:
     assert completion.calls > len(by_span) // 8
     assert result.complete is True
     assert result.claims_accepted == 17
+
+
+class _TruncatingThenOkCompletion:
+    """First response for a large batch is truncated JSON; splits must recover."""
+
+    def __init__(self, by_span: dict[str, dict[str, object]]) -> None:
+        self._by_span = by_span
+        self.calls = 0
+        self.finish_reasons: list[str | None] = []
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return CapabilityDescriptor(
+            provider_id="scripted",
+            supports_completion=True,
+            supports_embedding=False,
+            supports_structured_output=True,
+            context_window_tokens=8192,
+            max_output_tokens=4096,
+            embedding_dimensions=None,
+            leaves_machine=False,
+        )
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.calls += 1
+        ids = _span_ids_in_request(request)
+        # First call for 4+ spans returns truncated garbage at the token cap.
+        if self.calls == 1 and len(ids) >= 4:
+            self.finish_reasons.append("length")
+            return CompletionResult(
+                text="{not-json",
+                provider_id="scripted",
+                model_tag="scripted-v1",
+                left_machine=False,
+                output_tokens=request.max_output_tokens,
+                finish_reason="length",
+            )
+        self.finish_reasons.append("stop")
+        assignments = [self._by_span[i] for i in ids if i in self._by_span]
+        return CompletionResult(
+            text=json.dumps({"assignments": assignments}),
+            provider_id="scripted",
+            model_tag="scripted-v1",
+            left_machine=False,
+            output_tokens=80,
+            finish_reason="stop",
+        )
+
+
+def test_truncated_claim_batch_is_split_and_retried() -> None:
+    text = normalise_text(
+        "Employer 0 — Title 0, January 2020 – December 2020\n"
+        "Delivered labelled outcome 0-0 for production systems.\n"
+        "Delivered labelled outcome 0-1 for production systems.\n"
+        "Delivered labelled outcome 0-2 for production systems.\n"
+        "Skills: Python\n"
+    )
+    by_span = _assignments_covering(text)
+    completion = _TruncatingThenOkCompletion(by_span)
+    result = ModelClaimExtractor(completion, as_of=AS_OF, batch_size=5).extract(
+        document_id="doc-cv",
+        document_kind=DocumentKind.CV,
+        normalised_text=text,
+    )
+
+    assert "length" in completion.finish_reasons
+    assert completion.calls >= 3
+    assert result.complete is True
+    assert result.claims_accepted == 3
+
+
+def test_accounting_completion_records_extract_claims_purpose() -> None:
+    from career_assistant.application.providers.accounting import (
+        AccountingCompletion,
+        CallAccountant,
+    )
+
+    text = normalise_text(
+        "Employer 0 — Title 0, January 2020 – Present\n"
+        "Delivered labelled outcome 0-0 for production systems.\n"
+    )
+    by_span = _assignments_covering(text)
+    accountant = CallAccountant()
+    wrapped = AccountingCompletion(
+        _BatchAwareCompletion(by_span),
+        accountant,
+        workspace_id="ws-1",
+        purpose="extract_claims",
+    )
+    result = ModelClaimExtractor(wrapped, as_of=AS_OF, batch_size=10).extract(
+        document_id="doc-cv",
+        document_kind=DocumentKind.CV,
+        normalised_text=text,
+    )
+
+    assert result.complete is True
+    assert accountant.records
+    assert all(
+        r.metadata.get("purpose") == "extract_claims" for r in accountant.records
+    )
+    assert all(r.metadata.get("workspace_id") == "ws-1" for r in accountant.records)

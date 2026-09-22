@@ -95,6 +95,7 @@ class OpenAICompletionAdapter:
                 if choice.get("finish_reason") == "content_filter":
                     raise ProviderRefusedError("openai refused the request")
             usage = data.get("usage") or {}
+            finish_reason = choice.get("finish_reason")
             return CompletionResult(
                 text=text,
                 provider_id=self.provider_id,
@@ -102,6 +103,7 @@ class OpenAICompletionAdapter:
                 left_machine=True,
                 input_tokens=_int_or_none(usage.get("prompt_tokens")),
                 output_tokens=_int_or_none(usage.get("completion_tokens")),
+                finish_reason=str(finish_reason) if finish_reason else None,
             )
 
         return self._resilience.run(_call)

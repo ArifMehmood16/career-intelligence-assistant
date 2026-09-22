@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 112 — Analysis accounting, spans before publish, truncation split
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective + observability
+- Prompt intent: failed analysis again; logging incomplete; no outgoing-call rows for analysis; no spans/claim spans in the database.
+- Suggestion: only improve log lines.
+- Outcome: changed
+- Reason: live batches hit `output_tokens=max` with `parse_ok=False` (truncated JSON). Claim batches now use a higher per-span token budget, default size 12, and split when `finish_reason=length`. Analysis completion ports wrap `AccountingCompletion` with purposes `extract_requirements`, `extract_claims`, and `assess` so `provider_call_accounting` records those calls. Candidate JD/CV spans are persisted at analysis start so they exist even when claim publication is withheld on incomplete. Job stage is written while running.
+- Human validation: `pytest` on claim extraction and analysis pipeline passed (31) with `--no-cov`.
+
 ### 111 — Claim attach recovery and analysis diagnostics
 
 - Date: 2026-09-22

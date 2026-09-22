@@ -12,6 +12,8 @@ from __future__ import annotations
 import re
 import uuid
 
+from career_assistant.domain.documents import Span
+
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 _MARKDOWN = re.compile(r"[*_`]+")
 _LEADING_MARK = re.compile(r"^[\s>#*+\-]+")
@@ -41,6 +43,21 @@ def span_id(document_id: str, start: int, end: int) -> str:
     """Deterministic UUID for a server-owned (document, offset) span."""
     return str(
         uuid.uuid5(_SPAN_NAMESPACE, f"{document_id}:{start}:{end}")
+    )
+
+
+def spans_for_document(document_id: str, normalised_text: str) -> tuple[Span, ...]:
+    """Build persisted Span rows for every candidate unit — no model involved."""
+    return tuple(
+        Span(
+            id=span_id(document_id, start, end),
+            document_id=document_id,
+            page_number=1,
+            start_offset=start,
+            end_offset=end,
+            text=text,
+        )
+        for start, end, text in candidate_units(normalised_text)
     )
 
 
