@@ -27,6 +27,35 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 098 — Rank retrieved evidence instead of gating it
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.3 (retrieval), 13D.6 (measurement)
+- Prompt intent: decide whether to continue after the live pilot came back worse
+  on disagreements and role order, then make the changes in TDD order.
+- Suggestion: do not revise the assessment prompt yet. Six of the nine live
+  disagreements were labelled `met` returned `missing`, which cannot be read
+  until retrieval is measured. Record what the assessor was shown, replace the
+  retrieval gate with a bounded ranked shortlist, stop falling back to the
+  lexical path, and re-measure.
+- Outcome: accepted
+- Reason: a claim reached the assessor only on a shared keyword or a similarity
+  above the floor. A paraphrase has neither, so `missing` was decided before the
+  model saw anything and no prompt change could have fixed it. Measured on the
+  pilot, the old gate decided 7 of 24 scoreable requirements with no assessor
+  call and never showed 2 labelled supporting passages — the two paraphrase
+  cases from the live run. Both are now zero. The assessment prompt was not
+  touched.
+- Human validation: four failing tests written first, each passing after its
+  change: the recorded retrieval set, the paraphrase below the floor, the
+  bounded candidate set, and a monkeypatched `map_requirements` proving the
+  lexical path no longer runs behind the assessor. Backend pytest exited 0 with
+  coverage 82.10%; ruff check, ruff format --check and mypy on 134 source files
+  all passed. Run in a Linux virtual environment built for this session, not on
+  the developer's machine: `make test-integration`, the frontend suite and the
+  live Ollama smoke run have not been repeated since this change.
+
 ### 097 — Read a stored embedding when the driver returns an array
 
 - Date: 2026-09-22

@@ -22,6 +22,14 @@ pilot recorded in `docs/evaluation.md`; it did not beat the hermetic baseline
 on disagreements or role order, and the rest of 13D.6 is open. On 2026-09-22
 `make lint` and `make test` passed, and `make test-integration` passed after
 stored embeddings could be read back when the driver returned a numpy array.
+That live run was then traced to retrieval rather than the assessment: a claim
+reached the assessor only on a shared keyword or a similarity above the floor,
+so 7 of 24 scoreable requirements were decided with no assessor call and 2
+labelled supporting passages were never shown. The floor now ranks evidence
+instead of gating it, an empty candidate set is recorded rather than handed to
+the lexical path, and every mapping carries what the assessor saw. Both counts
+are zero on the pilot. The live measurement has not been repeated since, so the
+13D.6 numbers in `docs/evaluation.md` are still the last observed ones.
 13D's closure includes the outstanding 13C verification; do not claim either
 gate has passed or start the full Phase 14 comparison before then.
 

@@ -157,6 +157,40 @@ The other disagreements were `role-strong` `req-dbt` (`met`/`partial`),
 `req-ci` (`met`/`missing`). The course-versus-leadership cases were not in
 this list. The assessment was not revised and no second model was called.
 
+## Retrieval measured separately (Phase 13D)
+
+The live run above returned `missing` for six requirements labelled `met`. That
+number could not be read, because the report did not say whether the supporting
+passage was ever in the prompt. Retrieval is now measured on its own.
+
+Before the change, candidate evidence reached the assessor only when a claim
+shared a keyword with the requirement or cleared the similarity floor. Measured
+on 2026-09-22 against the same pilot, with no embeddings supplied:
+
+| Quantity | Gated retrieval | Ranked shortlist |
+|---|---|---|
+| Scoreable requirements | 24 | 24 |
+| Decided with no assessor call | 7 | 0 |
+| Labelled supporting passages never shown | 2 | 0 |
+
+The two passages were `dev-paraphrase` / `req-dba` and `heldout-paraphrase` /
+`req-ci` — the same paraphrase cases that failed the live run. A paraphrase
+shares no keywords and sat under the floor, so the requirement was decided
+before the model saw anything, and no prompt change could have fixed it. The
+seven uncalled requirements were being decided by the superseded lexical path.
+
+The floor now ranks evidence rather than gating it: the five best claims and
+their neighbours go to the assessor, and a requirement with no eligible claims
+is recorded rather than handed back to the old rules. Candidate sets on this
+pilot are one to two claims, so the call budget is unchanged.
+
+The hermetic baseline is unaffected — it has no separate retrieval step — and
+still shows 7 disagreements, 5 unsupported `met` and 0 order disagreements.
+
+**Not yet measured:** the live Ollama run has not been repeated since this
+change. The 9 disagreements, 1 unsupported `met` and 1 order disagreement
+recorded above are still the last observed live numbers.
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove
