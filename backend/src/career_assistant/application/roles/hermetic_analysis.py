@@ -111,6 +111,7 @@ def band_label(band: str) -> str:
         "strong": "Strong match",
         "partial": "Partial match",
         "limited": "Limited match",
+        "unscored": "Not scored yet",
     }.get(band, "Not scored yet")
 
 

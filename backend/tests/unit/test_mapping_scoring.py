@@ -361,3 +361,12 @@ def test_fixture_cv_and_jd_produce_stable_score_without_model() -> None:
     assert a.score == b.score
     assert 0 <= a.score <= 100
     assert len(a.components) == len(reqs)
+
+
+def test_no_scoreable_requirements_is_unscored_not_a_limited_match() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    explanation = score_fit((), (), (), rubric)
+    assert explanation.score == 0
+    assert explanation.band == "unscored"
+    assert explanation.components == ()
+

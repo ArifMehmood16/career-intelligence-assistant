@@ -82,9 +82,14 @@ def score_fit(
         )
 
     if denominator <= 0:
-        score = 0.0
-    else:
-        score = 100.0 * numerator / denominator
+        return ScoreExplanation(
+            score=0.0,
+            band="unscored",
+            components=tuple(components),
+            denominator=denominator,
+            numerator=numerator,
+        )
+    score = 100.0 * numerator / denominator
     score = max(0.0, min(100.0, score))
     return ScoreExplanation(
         score=score,
