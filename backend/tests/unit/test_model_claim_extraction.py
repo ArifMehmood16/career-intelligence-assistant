@@ -242,8 +242,12 @@ def test_recency_and_duration_come_from_parsed_role_dates_not_the_model() -> Non
     by_employer = {c.employer: c for c in result.claims}
     assert by_employer["Northwind Analytics Ltd"].recency_signal == "recent"
     assert by_employer["Northwind Analytics Ltd"].duration_signal.endswith("y")
+    assert by_employer["Northwind Analytics Ltd"].period_start == date(2023, 1, 1)
+    assert by_employer["Northwind Analytics Ltd"].period_end is None
     assert by_employer["Blue Harbour Retail"].recency_signal in {"mid", "old"}
     assert by_employer["Blue Harbour Retail"].recency_signal != "recent"
+    assert by_employer["Blue Harbour Retail"].period_start == date(2020, 3, 1)
+    assert by_employer["Blue Harbour Retail"].period_end == date(2022, 12, 1)
 
 
 def test_claim_structure_carries_scope_technologies_and_outcome() -> None:

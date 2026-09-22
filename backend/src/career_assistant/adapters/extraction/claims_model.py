@@ -203,6 +203,8 @@ def _claims_for_role(
             scope=str(item.get("scope", "")).strip(),
             technologies=technologies,
             outcome=str(item.get("outcome", "")).strip(),
+            period_start=date_range.start if date_range is not None else None,
+            period_end=date_range.end if date_range is not None else None,
             self_authored=self_authored,
         )
         kept.append((claim, tuple(spans)))

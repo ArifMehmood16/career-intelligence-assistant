@@ -384,6 +384,7 @@ class SqlAnalysisResultRepository:
                     must_have=req.must_have,
                     source_span_id=_as_uuid(req.source_span_id),
                     extraction_confidence=req.extraction_confidence,
+                    seniority_signal=req.seniority_signal,
                     is_vague=req.is_vague,
                     item_type=req.item_type.value,
                     analysis_version=analysis_version,
@@ -401,6 +402,14 @@ class SqlAnalysisResultRepository:
                     context=claim.context,
                     duration_signal=claim.duration_signal,
                     recency_signal=claim.recency_signal,
+                    employer=claim.employer,
+                    title=claim.title,
+                    scope=claim.scope,
+                    technologies=list(claim.technologies),
+                    outcome=claim.outcome,
+                    extraction_confidence=claim.extraction_confidence,
+                    period_start=claim.period_start,
+                    period_end=claim.period_end,
                     self_authored=claim.self_authored,
                 )
             )

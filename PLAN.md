@@ -4,11 +4,16 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. 13D.1–13D.4 are implemented. Hermetic
-analysis still uses the OR fallback. Next: 13D.5, one saved analysis result
-that every feature reads. 13D's closure includes the outstanding 13C
-verification; do not claim either gate has passed or start the full Phase 14
-comparison before then.
+Its live exit gate has not been observed. 13D.1–13D.4 are implemented. 13D.5
+has started: claim employer, title, scope, technologies, outcome, dates and
+extraction confidence, plus requirement seniority, round-trip through
+PostgreSQL, and a saved non-match stays missing after reload. Still open on
+13D.5: assessment provenance, incomplete-versus-poor-fit coverage, requirement
+deduplication, concurrent employment counted once, stable ties, and Fit, Gaps,
+Prepare and Letter reading that saved result with no further model call on
+restart. Hermetic analysis still uses the OR fallback. 13D's closure includes
+the outstanding 13C verification; do not claim either gate has passed or start
+the full Phase 14 comparison before then.
 
 ## Product objective and quality priority
 

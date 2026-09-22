@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -221,6 +223,7 @@ class RequirementRow(Base):
         nullable=True,
     )
     extraction_confidence: Mapped[float | None] = mapped_column(nullable=True)
+    seniority_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_vague: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     item_type: Mapped[str] = mapped_column(
         String(32), nullable=False, default="requirement"
@@ -247,6 +250,24 @@ class ClaimRow(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False)
     duration_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     recency_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    employer: Mapped[str] = mapped_column(
+        String(256), nullable=False, default="", server_default=""
+    )
+    title: Mapped[str] = mapped_column(
+        String(256), nullable=False, default="", server_default=""
+    )
+    scope: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    technologies: Mapped[list[Any]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    outcome: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=""
+    )
+    extraction_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
+    period_end: Mapped[date | None] = mapped_column(Date, nullable=True)
     self_authored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 

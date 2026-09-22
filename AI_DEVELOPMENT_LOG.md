@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 089 — Persist claim detail and requirement seniority
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (field round-trip only)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: store employer, title, scope, technologies, outcome, employment
+  dates, the real extraction confidence and requirement seniority, and reload
+  them instead of inventing confidence 0.85 or dropping seniority. Keep a
+  saved missing assessment as missing after a new unit of work.
+- Outcome: changed
+- Reason: a missing stored confidence reloads as 0.0 rather than the old
+  invented 0.85. The rest of 13D.5 (provenance versions, coverage, dedupe,
+  concurrent employment, ties, and every feature reading one saved result) is
+  not in this change. The 13D.5 checkbox stays open.
+- Human validation: the integration test failed first because `Claim` had no
+  `period_start`, then because reloaded seniority was `None`. After the
+  migration and mapper, that test, the analysis persistence file, and the
+  claim extraction unit tests passed (21). mypy was clean on the six changed
+  modules. No live model call.
+
 ### 088 — Ask phrases every intent from stored analysis
 
 - Date: 2026-09-22

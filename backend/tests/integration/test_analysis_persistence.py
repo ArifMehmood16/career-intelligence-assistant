@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from tests.integration.conftest import make_document
 
+from career_assistant.adapters.persistence.cv_store import SqlCvStore
+from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind
@@ -190,6 +192,130 @@ def test_publish_analysis_is_visible_only_after_commit(uow: SqlUnitOfWork) -> No
         mappings = uow.analysis.list_mappings(workspace_id, role_id)
         assert len(mappings) == 1
         assert mappings[0].status is MappingStatus.MET
+
+
+def test_reload_keeps_claim_detail_requirement_conditions_and_assessment(
+    uow: SqlUnitOfWork,
+) -> None:
+    """PLAN 13D.5 — a restart reads the saved analysis, including a non-match.
+
+    An introductory course must not come back as meeting production leadership,
+    and the stored employer, dates, confidence and seniority must not be replaced.
+    """
+    workspace_id, role_id, _, cv_id, jd_span_id, cv_span_id = _seed_workspace_with_role(
+        uow
+    )
+    job_id = str(uuid.uuid4())
+    requirement = Requirement(
+        id=str(uuid.uuid4()),
+        text="Five years leading production Python systems",
+        competency="python",
+        seniority_signal="lead",
+        must_have=True,
+        source_span_id=jd_span_id,
+        extraction_confidence=0.42,
+        is_vague=False,
+    )
+    claim = Claim(
+        id=str(uuid.uuid4()),
+        competency="python",
+        context="Completed an introductory Python course.",
+        duration_signal="course",
+        recency_signal="recent",
+        source_span_ids=(cv_span_id,),
+        extraction_confidence=0.42,
+        employer="Northwind",
+        title="Student",
+        scope="one classroom",
+        technologies=("Python",),
+        outcome="finished the exercises",
+        period_start=date(2024, 1, 1),
+        period_end=date(2024, 3, 1),
+    )
+    mapping = RequirementMapping(
+        requirement_id=requirement.id,
+        status=MappingStatus.MISSING,
+        reason_code=MappingReason.ASSESSMENT_INCOMPLETE,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+    )
+    explanation = ScoreExplanation(
+        score=0.0,
+        band="limited",
+        components=(
+            ScoreComponent(
+                requirement_id=requirement.id,
+                must_have=True,
+                status=MappingStatus.MISSING,
+                weight=3.0,
+                status_factor=0.0,
+                recency_factor=1.0,
+                contribution=0.0,
+            ),
+        ),
+        denominator=3.0,
+        numerator=0.0,
+    )
+    terminal = mark_succeeded(
+        mark_stage(
+            mark_running(
+                new_role_analysis_job(
+                    job_id=job_id,
+                    workspace_id=workspace_id,
+                    role_id=role_id,
+                    created_at=NOW,
+                ),
+                at=NOW,
+            ),
+            JobStage.SCORING,
+        ),
+        at=NOW + timedelta(seconds=2),
+    )
+    with uow:
+        uow.jobs.enqueue(
+            new_role_analysis_job(
+                job_id=job_id,
+                workspace_id=workspace_id,
+                role_id=role_id,
+                created_at=NOW,
+            )
+        )
+        uow.analysis.publish(
+            workspace_id=workspace_id,
+            role_id=role_id,
+            analysis_version=1,
+            cv_document_id=cv_id,
+            requirements=(requirement,),
+            claims=(claim,),
+            mappings=(mapping,),
+            explanation=explanation,
+            job=terminal,
+        )
+        uow.commit()
+
+    def uow_factory() -> SqlUnitOfWork:
+        return SqlUnitOfWork(uow._session_factory)  # noqa: SLF001
+
+    role_store = SqlRoleStore(
+        cv_store=SqlCvStore(uow_factory),
+        uow_factory=uow_factory,
+    )
+    bundle = role_store.require_analysis(workspace_id, role_id)
+    loaded_requirement = bundle.requirements[0]
+    loaded_claim = bundle.claims[0]
+    assert loaded_requirement.seniority_signal == "lead"
+    assert loaded_requirement.extraction_confidence == 0.42
+    assert loaded_claim.employer == "Northwind"
+    assert loaded_claim.title == "Student"
+    assert loaded_claim.scope == "one classroom"
+    assert loaded_claim.technologies == ("Python",)
+    assert loaded_claim.outcome == "finished the exercises"
+    assert loaded_claim.extraction_confidence == 0.42
+    assert loaded_claim.period_start == date(2024, 1, 1)
+    assert loaded_claim.period_end == date(2024, 3, 1)
+    assert bundle.mappings[0].status is MappingStatus.MISSING
+    assert bundle.mappings[0].reason_code is MappingReason.ASSESSMENT_INCOMPLETE
+    assert bundle.explanation.score == 0.0
 
 
 def test_failed_job_discards_partials_and_leaves_role_failed(

@@ -439,7 +439,7 @@ class SqlRoleStore:
                 id=str(row.id),
                 text=row.text,
                 competency=row.competency,
-                seniority_signal=None,
+                seniority_signal=row.seniority_signal,
                 must_have=row.must_have,
                 source_span_id=str(row.source_span_id) if row.source_span_id else "",
                 extraction_confidence=row.extraction_confidence or 0.0,
@@ -467,6 +467,13 @@ class SqlRoleStore:
                         select(ClaimSpanRow).where(ClaimSpanRow.claim_id == row.id)
                     ).all()
                 )
+                stored_technologies = row.technologies
+                technologies = (
+                    tuple(str(item) for item in stored_technologies)
+                    if isinstance(stored_technologies, list)
+                    else ()
+                )
+                confidence = row.extraction_confidence
                 loaded.append(
                     Claim(
                         id=str(row.id),
@@ -475,7 +482,16 @@ class SqlRoleStore:
                         duration_signal=row.duration_signal or "",
                         recency_signal=row.recency_signal or "",
                         source_span_ids=span_ids,
-                        extraction_confidence=0.85,
+                        extraction_confidence=(
+                            float(confidence) if confidence is not None else 0.0
+                        ),
+                        employer=row.employer or "",
+                        title=row.title or "",
+                        scope=row.scope or "",
+                        technologies=technologies,
+                        outcome=row.outcome or "",
+                        period_start=row.period_start,
+                        period_end=row.period_end,
                         self_authored=bool(row.self_authored),
                     )
                 )

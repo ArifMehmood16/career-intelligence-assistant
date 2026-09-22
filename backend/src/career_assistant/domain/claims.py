@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +20,11 @@ class Claim:
     scope: str = ""
     technologies: tuple[str, ...] = ()
     outcome: str = ""
+    # Dates are the source of the duration and recency buckets. The buckets
+    # survive a restart; without the dates the assessment cannot see how long
+    # the experience actually was.
+    period_start: date | None = None
+    period_end: date | None = None
     self_authored: bool = False
 
     def __post_init__(self) -> None:
@@ -30,3 +36,9 @@ class Claim:
             raise ValueError("extraction_confidence must be between 0 and 1")
         if self.recency_signal not in {"recent", "mid", "old", "undated"}:
             raise ValueError(f"unknown recency_signal: {self.recency_signal!r}")
+        if (
+            self.period_start is not None
+            and self.period_end is not None
+            and self.period_end < self.period_start
+        ):
+            raise ValueError("claim period_end must not precede period_start")
