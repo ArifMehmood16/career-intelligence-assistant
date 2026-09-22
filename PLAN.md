@@ -51,6 +51,10 @@ one incomplete analysis shown as fit. They are not a candidate-quality result.
 contract. 13D's closure includes the outstanding 13C verification; do not
 claim either gate has passed, and do not start the full Phase 14 comparison
 before the 13D.6 completeness contract is satisfied.
+On 2026-09-22 the maintainer started Phase 15B (durable operational audit)
+while 13D.6g remains open. 15B does not close 13D, 13C or 15.1–15.4. The
+contract is [ADR 012](docs/adr/012-durable-operational-audit.md); tasks are
+[docs/observability-logging-plan.md](docs/observability-logging-plan.md).
 
 ## Product objective and quality priority
 
@@ -84,6 +88,7 @@ Read alongside this plan:
 | [docs/features.md](docs/features.md) | What each feature does and how it is used |
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract both halves are built against |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable app becomes the shipped app |
+| [docs/observability-logging-plan.md](docs/observability-logging-plan.md) | Phase 15B: file, action, event and API-envelope logging |
 
 ## How to use this plan
 
@@ -1358,6 +1363,33 @@ Operation events and the redaction test were delivered by Phase 13B (13B.3, 13B.
 
 **Exit gate:** `make verify` passes; the 13B.6 redaction test still holds after the
 13C extraction changes.
+
+## Phase 15B — Durable operational audit
+
+Started by human override while 13D.6g is still open. Does not close 13D, 13C
+or 15.1–15.4. Instruction: [docs/observability-logging-plan.md](docs/observability-logging-plan.md).
+Decision: [ADR 012](docs/adr/012-durable-operational-audit.md).
+
+Stdlib plus PostgreSQL. No logging framework, no body dumps, no `GET /api/logs`,
+no per-function tracing. Domain stays silent. Recording is fail-open. Hard
+delete removes audit rows with the workspace.
+
+- [x] **15B.1** ADR and threat-model contract. `docs/adr/012-durable-operational-audit.md`;
+      audit logging moved in-scope in `docs/threat-model.md`; residual risk of
+      metadata-only disclosure recorded. No application code.
+- [x] **15B.2** Optional rotating `LOG_FILE` beside stderr; redaction holds at DEBUG.
+- [ ] **15B.3** `AuditRecorder` port and in-memory adapter; planted phrases never stored.
+- [ ] **15B.4** HTTP envelope persisted (method, path, status, duration) — never the body.
+- [ ] **15B.5** Action rows at use-case boundaries.
+- [ ] **15B.6** Event rows from worker and persistence.
+- [ ] **15B.7** SQL adapter, Alembic migration, cascade hard delete.
+- [ ] **15B.8** Provider in/out metadata on `provider_call_accounting` — no payloads.
+- [ ] **15B.9** Module logger presence and 13B redaction regression on stderr, file and store.
+- [ ] **15B.10** README, production-wiring, engineering journal, this checklist.
+
+**Exit gate:** planted-phrase tests pass on stderr, log file and SQL; hard delete
+removes audit rows; hermetic suite green; no document text in any sink; ADR 012
+holds.
 
 ## Phase 16 — Containers and walkthrough
 

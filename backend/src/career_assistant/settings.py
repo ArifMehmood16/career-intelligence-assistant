@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -155,3 +156,21 @@ class LimitSettings(BaseSettings):
     max_context_chars: int = Field(default=24_000, ge=1)
     max_excerpt_chars: int = Field(default=600, ge=1)
     max_roles_per_workspace: int = Field(default=25, ge=1)
+
+
+class LoggingSettings(BaseSettings):
+    """Optional rotating file beside stderr. Empty log_file keeps 13B stderr-only."""
+
+    model_config = SettingsConfigDict(
+        env_file=("config/app.env", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    log_level: str = "INFO"
+    log_file: str = ""
+    log_file_max_bytes: int = Field(default=10_485_760, ge=1)
+    log_file_backup_count: int = Field(default=5, ge=0)
+
+    def resolved_level(self) -> int:
+        return logging.getLevelNamesMapping().get(self.log_level.upper(), logging.INFO)

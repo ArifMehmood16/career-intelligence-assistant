@@ -49,8 +49,9 @@ Non-negotiable boundaries for this build:
 - **No scanned-image** / OCR intake until that work is explicitly justified.
 - **No authentication** or multi-tenancy yet — required before any untrusted user
   touches a deployment.
-- Hard delete removes documents, spans, chunks, embeddings, claims, mappings and
-  **generated drafts**. Nothing soft-survives.
+- Hard delete removes documents, spans, chunks, embeddings, claims, mappings,
+  **generated drafts**, and operational audit rows (actions, events, HTTP
+  envelopes, provider-call accounting). Nothing soft-survives.
 - Absence of auto-apply, job-board ingestion, email integration, writing back into the
   CV file, and an overall "should I apply?" verdict is intentional.
 
@@ -184,10 +185,13 @@ untrusted.
 - Never branch on a provider's name in the application. Read the capability descriptor
   and degrade deterministically.
 - Do not log document text, raw uploads, questions, answers, embeddings, full prompts,
-  credentials or model responses.
+  credentials or model responses. Durable audit tables follow the same field
+  contract: ids, counts, durations and codes only — never HTTP or model bodies.
+  See [ADR 012](docs/adr/012-durable-operational-audit.md).
 - Personal data: implement hard delete that removes original document bytes, parsed
   text, chunks, embeddings, extracted claims, mappings, generated drafts, questions,
-  answers and citations. Test that nothing survives it.
+  answers, citations, action rows, event rows, HTTP envelopes and provider-call
+  accounting. Test that nothing survives it.
 - Secrets in environment variables locally, a secret manager in production.
 
 Update `docs/threat-model.md` when a trust boundary or control changes.

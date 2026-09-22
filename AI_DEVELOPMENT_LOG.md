@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 114 — Phase 15B.2 rotating log file
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.2
+- Prompt intent: continue with the next logging work.
+- Suggestion: optional `RotatingFileHandler` when `LOG_FILE` is set; same redaction as stderr; `LoggingSettings` at construction.
+- Outcome: accepted
+- Reason: stderr-only 13B lines die with the terminal; a file is opt-in so `make test` stays silent on disk. Bodies and planted phrases stay out of the file even at DEBUG.
+- Human validation: `pytest tests/unit/test_logconfig.py tests/api/test_operational_logging.py --no-cov` passed (12).
+
+### 113 — Phase 15B.1 durable operational audit contract
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.1
+- Prompt intent: continue with the next task in the observability logging plan.
+- Suggestion: record ADR 012, move audit logging in-scope in the threat model, and add Phase 15B to `PLAN.md` without application code.
+- Outcome: accepted
+- Reason: the human continued into 15B while 13D.6g is open. Recommended defaults apply except sequence: durable HTTP envelopes, no bodies, no read API, cascade delete, optional `LOG_FILE`. Per-function tracing and payload dumps stay rejected.
+- Human validation: documentation only; no tests run for this task.
+
 ### 112 — Analysis accounting, spans before publish, truncation split
 
 - Date: 2026-09-22

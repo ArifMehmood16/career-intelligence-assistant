@@ -1,16 +1,16 @@
 # Observability logging plan — files, actions, events, API envelopes
 
-Instruction set for coding agents and the human reviewer. This is a **proposal**,
-not an approved `PLAN.md` phase. Do not implement until the decisions in
-[Human decisions required](#human-decisions-required) are answered.
+Instruction set for coding agents and the human reviewer. Phase **15B** is
+approved to proceed under [ADR 012](adr/012-durable-operational-audit.md).
+15B.1 and 15B.2 are done. Implement one remaining 15B.n task at a time.
 
 **Related current work:** Phase 13D.6 completeness is still open. Phase 13B already
-ships stderr operational logging. Phase 15 currently repeats none of 13B and still
-lists audit logging as out of scope in `docs/threat-model.md`. This document would
-become **Phase 15B** (working title) after approval, inserted after 13D's exit gate
-unless the human explicitly overrides sequencing.
+ships stderr operational logging. Phase 15 (15.1–15.4) is unchanged. On 2026-09-22
+the maintainer overrode sequencing and started 15B while 13D.6g remains open.
+15B does not close 13D, 13C or 15.1–15.4.
 
-Read with: `AGENTS.md`, `PLAN.md` Phase 13B and Phase 15, `docs/threat-model.md`,
+Read with: `AGENTS.md`, `PLAN.md` Phase 13B, Phase 15 and Phase 15B,
+`docs/threat-model.md`, `docs/adr/012-durable-operational-audit.md`,
 `backend/src/career_assistant/logconfig.py`,
 `backend/src/career_assistant/application/providers/accounting.py`.
 
@@ -42,8 +42,9 @@ the documents.
 | Redaction | `RedactingFilter`, `format_fields` | drops multiline and over-long values; masks keys |
 | Provider call accounting | `SqlCallAccountant` → `provider_call_accounting` | provider, model, `left_machine`, purpose, tokens, latency |
 
-Known gap: `docs/threat-model.md` currently lists **audit logging** as out of
-scope. This plan would reverse that for workspace-scoped operational records.
+Known gap closed at the contract layer: `docs/threat-model.md` now treats
+workspace-scoped operational audit as in scope ([ADR 012](adr/012-durable-operational-audit.md)).
+Implementation of tables and file handlers remains 15B.2–15B.10.
 
 Already rejected (AI log **111**): a log statement in every backend function.
 That drowns signal and risks document text in traces. This plan does **not**
@@ -379,42 +380,20 @@ rejected name truncated to 64 chars of `[a-z0-9._]` and drop the rest.
 
 ## Sequencing vs PLAN.md
 
-Default: **do not start this while 13D.6g is open.** Accuracy of evidence
-assessment is the product priority. This work is observability.
+Default was: do not start this while 13D.6g is open. The maintainer overrode
+that on 2026-09-22. Phase 15B is in `PLAN.md`. Do not tick 13D or 15.1–15.4 as
+a side effect.
 
-If the human overrides, implement as Phase **15B** with tasks below, and add a
-short pointer in `PLAN.md` under Phase 15. Do not tick 13D or 15.1–15.4 as a
-side effect.
+## Human decisions (accepted 2026-09-22)
 
-This is an architectural change: durable audit tables plus taking "audit
-logging" out of the threat-model out-of-scope list. It needs an ADR
-(`docs/adr/012-durable-operational-audit.md`) **before** the migration is
-written.
+The maintainer continued into 15B. Recommended defaults apply except sequence:
 
----
-
-## Human decisions required
-
-Stop and wait if any of these is unanswered.
-
-1. **Sequence.** Start after 13D.6g, or override and start now?
-2. **Durable HTTP envelopes.** Approve storing method/path/status/duration in
-   PostgreSQL (recommended), or files-only for HTTP?
-3. **Bodies.** Confirm **no** request/response/prompt/completion bodies in the
-   database. (Recommended: confirm. Storing bodies would copy CVs into a log
-   table and break the threat model.)
-4. **Read API.** Confirm **no** `GET /api/logs` until authentication exists.
-5. **Retention.** Audit rows follow workspace/CV hard delete (recommended), or
-   a separate longer retention? A longer retention after CV delete keeps a
-   trail that the document existed; that is a privacy choice.
-6. **Log file path.** Default `LOG_FILE` empty, document a `var/log/` example
-   for `make run-api`?
-
-Assumptions this plan proceeds with unless told otherwise: (1) after 13D.6g,
-(2) yes durable HTTP envelopes, (3) no bodies, (4) no read API, (5) cascade
-delete with the workspace/CV, (6) `LOG_FILE` optional.
-
----
+1. **Sequence.** Override: start now while 13D.6g is open.
+2. **Durable HTTP envelopes.** Yes — method/path/status/duration in PostgreSQL.
+3. **Bodies.** No request/response/prompt/completion bodies in the database.
+4. **Read API.** No `GET /api/logs` until authentication exists.
+5. **Retention.** Audit rows cascade-delete with the workspace/CV.
+6. **Log file path.** `LOG_FILE` optional; document a `var/log/` example.
 
 ## TDD delivery tasks
 
@@ -422,26 +401,17 @@ Work one task at a time. Red-green-refactor. Hermetic tests first; SQL tests
 under `backend/tests/integration/`. Do not add a logging framework. Do not
 change scoring, mapping or extraction behaviour.
 
-### 15B.1 ADR and contract
+### 15B.1 ADR and contract — done
 
-- Write `docs/adr/012-durable-operational-audit.md`: purpose, privacy contract,
-  fail-open, no read API, cascade delete, stdlib only, reuse `log_event`.
-- Amend `docs/threat-model.md`: move audit logging from out-of-scope into a
-  named control; add residual risk (DBA can read action metadata; bodies still
-  absent).
-- Tests: none yet.
+- [x] `docs/adr/012-durable-operational-audit.md`
+- [x] `docs/threat-model.md` — audit writes in scope; residual metadata risk named
+- Tests: none (documentation contract only)
 
-### 15B.2 File handler and level
+### 15B.2 File handler and level — done
 
-- Failing tests in `backend/tests/unit/test_logconfig.py` (new) or extend
-  `test_operational_logging.py`:
-  - when `LOG_FILE` points at a temp path, an emitted event is in the file
-  - planted CV phrase and planted key are absent from the file even at DEBUG
-  - multiline and over-long fields still redact
-  - when `LOG_FILE` is empty, no file handler is attached
-- Implement in `logconfig.py` + settings.
-- `make run-api` documentation in README: optional `LOG_FILE`, unbuffered
-  stderr unchanged.
+- [x] Rotating `LOG_FILE` beside stderr when set; empty stays stderr-only
+- [x] Planted phrase and key absent from the file at DEBUG
+- [x] README `make run-api` notes optional `LOG_FILE`
 
 ### 15B.3 Recorder port and in-memory adapter
 

@@ -269,7 +269,10 @@ make help    # every target, with what it needs
 
 `make run-api` writes INFO events to stderr (`request`, `cv.uploaded`,
 `role.created`, worker stages). Lines carry ids, counts and durations — never
-document text, questions, answers, prompts or API keys.
+document text, questions, answers, prompts or API keys. Set `LOG_FILE` (for
+example `var/log/career-assistant.log`) to also write a rotating file with the
+same field contract; leave it empty to keep stderr only. `PYTHONUNBUFFERED=1`
+is set on `make run-api` so those lines are not stuck in a stdio buffer.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on
@@ -317,7 +320,8 @@ providers stay behind the egress gate.
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract between backend and frontend. |
 | [docs/production-wiring.md](docs/production-wiring.md) | Each route's use case, provider resolver and SQL adapter. |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable design becomes the shipped frontend. |
-| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first. |
+| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first. [ADR 012](docs/adr/012-durable-operational-audit.md) is the operational-audit contract. |
+| [docs/observability-logging-plan.md](docs/observability-logging-plan.md) | Phase 15B tasks: file, action, event and API-envelope logging |
 | [docs/frontend-brief.md](docs/frontend-brief.md) | The Lovable prompt sequence that produced the design. |
 | [docs/evaluation.md](docs/evaluation.md) | Dataset, metrics and thresholds for extraction, mapping and generation quality. |
 | [docs/threat-model.md](docs/threat-model.md) | Trust boundaries, controls and residual risk. |

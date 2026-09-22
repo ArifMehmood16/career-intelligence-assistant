@@ -60,18 +60,39 @@ from career_assistant.application.providers.choice_store import (
 )
 from career_assistant.application.roles.store import ExtractorFactory, InMemoryRoleStore
 from career_assistant.logconfig import configure_logging, load_secret_values, log_event
-from career_assistant.settings import DatabaseSettings, LimitSettings, ProviderSettings
+from career_assistant.settings import (
+    DatabaseSettings,
+    LimitSettings,
+    LoggingSettings,
+    ProviderSettings,
+)
 
 router = APIRouter(prefix="/api")
+
+
+def _configure_process_logging(
+    *,
+    force: bool,
+    extra_secrets: tuple[str, ...] = (),
+) -> None:
+    settings = LoggingSettings()
+    configure_logging(
+        force=force,
+        secret_values=load_secret_values() + extra_secrets,
+        log_file=settings.log_file,
+        level=settings.resolved_level(),
+        max_bytes=settings.log_file_max_bytes,
+        backup_count=settings.log_file_backup_count,
+    )
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     providers = getattr(app.state, "providers", None)
-    secrets = load_secret_values()
+    extra_secrets: tuple[str, ...] = ()
     if isinstance(providers, ProviderSettings):
-        secrets = secrets + providers.secret_values()
-    configure_logging(force=True, secret_values=secrets)
+        extra_secrets = providers.secret_values()
+    _configure_process_logging(force=True, extra_secrets=extra_secrets)
     log_event(
         logging.getLogger("career_assistant.config"),
         "process_start",
@@ -177,7 +198,7 @@ def create_app(
     ``app`` used by uvicorn/Docker is built with ``create_production_app``.
     """
     upload_limits = limits or LimitSettings()
-    configure_logging(secret_values=load_secret_values())
+    _configure_process_logging(force=False)
     app = FastAPI(
         title="Career Intelligence Assistant",
         version="0.1.0",
