@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import Protocol
 
 from sqlalchemy import delete, select
@@ -17,14 +17,28 @@ def _as_uuid(value: str) -> uuid.UUID:
 
 
 def _as_vector(value: object) -> tuple[float, ...]:
-    if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
+    """Accept a list or a driver array.
+
+    pgvector returns a numpy array when numpy is installed. That array is
+    iterable, but it is not a ``Sequence``, and its scalars are not ``float``.
+    """
+    if isinstance(value, (str, bytes)) or not isinstance(value, Iterable):
         raise TypeError("embedding is not a numeric sequence")
-    components: list[float] = []
-    for item in value:
-        if isinstance(item, bool) or not isinstance(item, (int, float)):
-            raise TypeError("embedding component is not numeric")
-        components.append(float(item))
-    return tuple(components)
+    return tuple(_component(item) for item in value)
+
+
+def _component(item: object) -> float:
+    if isinstance(item, bool) or isinstance(item, (str, bytes)):
+        raise TypeError("embedding component is not numeric")
+    if isinstance(item, (int, float)):
+        return float(item)
+    convert = getattr(item, "__float__", None)
+    if not callable(convert):
+        raise TypeError("embedding component is not numeric")
+    try:
+        return float(convert())
+    except (TypeError, ValueError) as exc:
+        raise TypeError("embedding component is not numeric") from exc
 
 
 class SqlEmbeddingRepository:

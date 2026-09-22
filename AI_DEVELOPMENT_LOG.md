@@ -27,6 +27,30 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 097 — Read a stored embedding when the driver returns an array
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6 (quality targets)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep the four Make quality targets moving. Wrap the one ruff
+  line-length failure, format the four test files ruff format rejected, and
+  accept a numpy embedding array as a numeric vector.
+- Outcome: accepted
+- Reason: `make lint` was already failing on tests from this branch, and the
+  integration failure was a real read-back bug. The assessment prompt was not
+  changed. 13D.6 stays open because the walkthrough and the remaining
+  documentation are not done.
+- Human validation: `make lint` failed first on a long assertion, then on four
+  unformatted test files. After those edits, `make lint` passed, including
+  mypy on 134 source files and the frontend typecheck and eslint. `make test`
+  passed: backend 365 passed, 3 skipped, coverage 81.82%; frontend 119 passed.
+  `make test-integration` then failed because a 1536-dimension numpy vector
+  was not a sequence. The new unit test failed the same way. After the read
+  accepted an iterable of numeric scalars, that unit test and the embedding
+  integration test passed, and `make test-integration` exited 0.
+
 ### 096 — Measure the labelled pilot on local Ollama
 
 - Date: 2026-09-22

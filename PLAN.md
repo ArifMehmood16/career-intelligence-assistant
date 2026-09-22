@@ -19,9 +19,11 @@ and Letter are built from the stored bundle without mapping again. Role, gap-pla
 and ranking reads do not call the completion model. Hermetic analysis still uses
 the OR fallback for other cases. 13D.6 has one local Ollama measurement of this
 pilot recorded in `docs/evaluation.md`; it did not beat the hermetic baseline
-on disagreements or role order, and the rest of 13D.6 is open. 13D's closure includes the
-outstanding 13C verification; do not claim either gate has passed or start the
-full Phase 14 comparison before then.
+on disagreements or role order, and the rest of 13D.6 is open. On 2026-09-22
+`make lint` and `make test` passed, and `make test-integration` passed after
+stored embeddings could be read back when the driver returned a numpy array.
+13D's closure includes the outstanding 13C verification; do not claim either
+gate has passed or start the full Phase 14 comparison before then.
 
 ## Product objective and quality priority
 
