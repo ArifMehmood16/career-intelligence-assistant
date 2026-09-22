@@ -440,7 +440,7 @@ class AnalysisService:
                 similarity_pairs=len(similarities),
             )
             return done
-        except Exception:
+        except Exception as exc:
             stage = job.stage or JobStage.PARSING
             code = f"{stage.value}_failed"
             self._publisher.discard_partial(workspace_id=workspace_id, role_id=role_id)
@@ -466,5 +466,6 @@ class AnalysisService:
                 role_id=role_id,
                 stage=stage.value,
                 code=code,
+                error_type=type(exc).__name__,
             )
             return failed

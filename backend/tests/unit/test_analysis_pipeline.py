@@ -5,6 +5,7 @@ These specs lock orchestration behaviour before persistence/worker code exists.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -217,7 +218,10 @@ def test_worker_runs_pipeline_stages_and_publishes_ready_role() -> None:
     assert explanation.score >= 0  # type: ignore[union-attr]
 
 
-def test_forced_failure_sets_failed_role_and_discards_partial_results() -> None:
+def test_forced_failure_sets_failed_role_and_discards_partial_results(
+    caplog: logging.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.INFO, logger="career_assistant")
     service, pub = _service(claims=_FailClaims())
     service.create_role(
         workspace_id="ws-1",
@@ -235,6 +239,8 @@ def test_forced_failure_sets_failed_role_and_discards_partial_results() -> None:
     assert role.status is RoleStatus.FAILED
     assert not pub.has_published_mappings("role-1")
     assert pub.discarded == ["ws-1:role-1"]
+    assert "worker.failed" in caplog.text
+    assert "error_type=RuntimeError" in caplog.text
 
 
 def test_duplicate_enqueue_does_not_double_run() -> None:

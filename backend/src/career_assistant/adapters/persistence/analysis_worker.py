@@ -274,10 +274,11 @@ class SqlAnalysisWorker:
                 requirement_count=len(req_result.requirements),
                 claim_count=len(claim_result.claims),
                 mapping_count=len(mappings),
+                dropped_unverifiable=req_result.dropped_unverifiable,
             )
             return terminal
-        except Exception:
-            return self._fail(job, stage)
+        except Exception as exc:
+            return self._fail(job, stage, exc)
 
     def process_next(self) -> AnalysisJob | None:
         claimed = self.claim_next()
@@ -298,7 +299,9 @@ class SqlAnalysisWorker:
             if processed is None:
                 stop.wait(timeout=idle_wait_seconds)
 
-    def _fail(self, job: AnalysisJob, stage: JobStage) -> AnalysisJob:
+    def _fail(
+        self, job: AnalysisJob, stage: JobStage, cause: BaseException | None = None
+    ) -> AnalysisJob:
         with self._uow_factory() as uow:
             current = uow.jobs.get(job.workspace_id, job.id) or job
             running = (
@@ -327,6 +330,7 @@ class SqlAnalysisWorker:
             role_id=job.role_id,
             stage=stage.value,
             code=failed.error.code if failed.error else "unknown",
+            error_type=type(cause).__name__ if cause is not None else "unknown",
         )
         return failed
 
