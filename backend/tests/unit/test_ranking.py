@@ -27,9 +27,7 @@ def test_tied_roles_name_only_the_requirements_that_differ() -> None:
     """PLAN 13D.5 — a tie stays in title order and names what is not shared."""
     ranked = rank_roles(
         (
-            RankableRole(
-                id="b", title="Beta", fit_score=80, because=("sql", "python")
-            ),
+            RankableRole(id="b", title="Beta", fit_score=80, because=("sql", "python")),
             RankableRole(id="a", title="Alpha", fit_score=80, because=("sql", "dbt")),
             RankableRole(id="c", title="Gamma", fit_score=40, because=("looker",)),
         )

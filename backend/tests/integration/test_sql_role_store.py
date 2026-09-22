@@ -199,9 +199,7 @@ def test_sql_worker_does_not_score_a_course_as_leadership(
         workspace_id=workspace_id,
         title="Platform Engineer",
         company="Northwind",
-        description=(
-            "Requirements\n- Five years leading production Python systems\n"
-        ),
+        description=("Requirements\n- Five years leading production Python systems\n"),
     )
     worker.drain()
     ready = role_store.get_role(workspace_id, role.id)

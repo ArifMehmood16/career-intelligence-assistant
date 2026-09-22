@@ -42,7 +42,8 @@ def test_agents_and_features_follow_the_letter_policy() -> None:
     features = FEATURES.read_text(encoding="utf-8")
     assert "must never produce claims or affect" not in agents
     assert "never count as proof of experience" not in features
-    assert "Neither uploaded nor generated letter text can affect a fit score" not in features
+    retired = "Neither uploaded nor generated letter text can affect a fit score"
+    assert retired not in features
     for document in (agents, features):
         lowered = document.lower()
         assert "adr 011" in lowered

@@ -421,11 +421,7 @@ def test_unknown_or_conflicting_evidence_is_not_full_coverage() -> None:
     requirement = _req(id="r1", text="Lead a platform team", competency="leadership")
     full = score_fit(
         (requirement,),
-        (
-            _scored(
-                requirement, status=MappingStatus.MET, reason=MappingReason.MATCHED
-            ),
-        ),
+        (_scored(requirement, status=MappingStatus.MET, reason=MappingReason.MATCHED),),
         (),
         rubric,
     )

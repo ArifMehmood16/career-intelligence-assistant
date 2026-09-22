@@ -55,8 +55,7 @@ def test_course_does_not_meet_production_leadership() -> None:
             "title": "Platform Engineer",
             "company": "Northwind",
             "description": (
-                "Requirements\n"
-                "- Five years leading production Python systems\n"
+                "Requirements\n- Five years leading production Python systems\n"
             ),
         },
     )
