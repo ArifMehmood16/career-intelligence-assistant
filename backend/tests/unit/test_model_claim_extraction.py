@@ -40,6 +40,7 @@ class _ScriptedCompletion:
     def __init__(self, payload: dict[str, object]) -> None:
         self._payload = payload
         self.calls = 0
+        self.requests: list[CompletionRequest] = []
         self.last_request: CompletionRequest | None = None
 
     @property
@@ -57,9 +58,68 @@ class _ScriptedCompletion:
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
         self.calls += 1
+        self.requests.append(request)
         self.last_request = request
         return CompletionResult(
             text=json.dumps(self._payload),
+            provider_id="scripted",
+            model_tag="scripted-v1",
+            left_machine=False,
+        )
+
+
+def _span_ids_in_request(request: CompletionRequest) -> list[str]:
+    return re.findall(r"SPAN ([0-9a-f-]{36})", request.user, flags=re.IGNORECASE)
+
+
+class _BatchAwareCompletion:
+    """Returns assignments only for span ids present in the request.
+
+    Omits one configured id on its first appearance so the extractor must retry.
+    """
+
+    def __init__(
+        self,
+        by_span: dict[str, dict[str, object]],
+        *,
+        omit_once: str | None = None,
+    ) -> None:
+        self._by_span = by_span
+        self._omit_once = omit_once
+        self._omitted = False
+        self.calls = 0
+        self.requests: list[CompletionRequest] = []
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return CapabilityDescriptor(
+            provider_id="scripted",
+            supports_completion=True,
+            supports_embedding=False,
+            supports_structured_output=True,
+            context_window_tokens=8192,
+            max_output_tokens=1024,
+            embedding_dimensions=None,
+            leaves_machine=False,
+        )
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.calls += 1
+        self.requests.append(request)
+        assignments: list[dict[str, object]] = []
+        for issued in _span_ids_in_request(request):
+            if (
+                self._omit_once is not None
+                and issued == self._omit_once
+                and not self._omitted
+            ):
+                self._omitted = True
+                continue
+            item = self._by_span.get(issued)
+            if item is not None:
+                assignments.append(item)
+        return CompletionResult(
+            text=json.dumps({"assignments": assignments}),
             provider_id="scripted",
             model_tag="scripted-v1",
             left_machine=False,
@@ -501,3 +561,64 @@ def test_iso_role_dates_are_parsed() -> None:
     assert parsed is not None
     assert parsed.start == date(2022, 1, 1)
     assert parsed.end is None
+
+
+def _assignments_covering(text: str) -> dict[str, dict[str, object]]:
+    """Label every unit so a batched extractor can finish the six-role CV."""
+    ids = _ids(text)
+    by_span: dict[str, dict[str, object]] = {}
+    current_role = ""
+    for unit, issued in ids.items():
+        if " — Title " in unit and "January" in unit:
+            employer = unit.split(" — ", 1)[0]
+            title = unit.split(" — ", 1)[1].split(",", 1)[0]
+            by_span[issued] = _assign(
+                issued, "role_heading", employer=employer, title=title
+            )
+            current_role = issued
+        elif unit.startswith("Delivered labelled"):
+            by_span[issued] = _assign(issued, "experience", role=current_role)
+        elif unit.startswith("Skills:"):
+            by_span[issued] = _assign(issued, "skills")
+        else:
+            by_span[issued] = _assign(issued, "narrative")
+    return by_span
+
+
+def test_claim_extraction_classifies_in_bounded_batches() -> None:
+    """One response cannot cover a real CV; the adapter must split the work."""
+    text = _six_role_cv()
+    by_span = _assignments_covering(text)
+    completion = _BatchAwareCompletion(by_span)
+    result = ModelClaimExtractor(completion, as_of=AS_OF, batch_size=5).extract(
+        document_id="doc-cv",
+        document_kind=DocumentKind.CV,
+        normalised_text=text,
+    )
+
+    assert result.complete is True
+    assert result.claims_accepted == 17
+    assert completion.calls >= 4
+    for request in completion.requests:
+        assert len(_span_ids_in_request(request)) <= 5
+
+
+def test_missing_scoreable_span_is_retried_once() -> None:
+    text = _six_role_cv()
+    by_span = _assignments_covering(text)
+    omit = next(
+        issued
+        for issued, item in by_span.items()
+        if item.get("kind") == "experience"
+    )
+    completion = _BatchAwareCompletion(by_span, omit_once=omit)
+    result = ModelClaimExtractor(completion, as_of=AS_OF, batch_size=8).extract(
+        document_id="doc-cv",
+        document_kind=DocumentKind.CV,
+        normalised_text=text,
+    )
+
+    assert completion._omitted is True
+    assert completion.calls > len(by_span) // 8
+    assert result.complete is True
+    assert result.claims_accepted == 17

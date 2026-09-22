@@ -157,7 +157,9 @@ Completeness is about scoreable evidence: rejected experience or project
 assignments, employment or claim-like spans left unclassified, and role
 headings with no claims. Unclassified narrative, skills or education lines do
 not fail the job by themselves. An unparsed date becomes undated; it does not
-fail the job alone. The job fails with `extraction_incomplete` only when that
+fail the job alone. Classification runs in bounded batches with one retry for
+ids the model skipped, so a multi-role CV is not truncated by a single
+output-token budget. The job fails with `extraction_incomplete` only when that
 scoreable-evidence gate fails, and it does not publish a replacement claim
 set. Uploaded letters stay self-authored. Generated drafts still never raise a
 score.

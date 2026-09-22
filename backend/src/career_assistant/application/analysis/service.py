@@ -399,8 +399,8 @@ class AnalysisService:
                     error=JobError(
                         code="extraction_incomplete",
                         message=(
-                            "Claim extraction did not classify every part of "
-                            "the CV. This is not a fit score."
+                            "Claim extraction could not classify scoreable "
+                            "parts of the CV. This is not a fit score."
                         ),
                     ),
                 )

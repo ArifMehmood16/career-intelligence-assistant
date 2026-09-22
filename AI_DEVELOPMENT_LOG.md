@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 110 — Claim extraction batches so a real CV finishes
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective
+- Prompt intent: live analysis still failed `extraction_incomplete` after the scoreable-evidence gate; user said CV items should not remain unclassified and that this was an app limitation.
+- Suggestion: treat the failure as document quality or leave single-shot classification.
+- Outcome: rejected then corrected
+- Reason: the active CV produced 135 server spans; one response capped near 4096 output tokens cannot return an assignment for each. Claim extraction now classifies spans in bounded batches (`CLAIM_BATCH_MAX_SPANS`, default 20) with one retry for skipped ids, matching the assessment batching pattern. Safe counts are logged. The worker message no longer says "every part of the CV".
+- Human validation: `pytest` on `test_model_claim_extraction.py` passed (16) with `--no-cov`. Observed live job `8c9f6bfe-…` failed at `extracting_claims` with 135 spans / ~4050-token estimated full assignment JSON.
+
 ### 109 — CV completeness is scoreable evidence, not every line
 
 - Date: 2026-09-22

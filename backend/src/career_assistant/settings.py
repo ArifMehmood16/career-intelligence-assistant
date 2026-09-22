@@ -106,6 +106,8 @@ class ProviderSettings(BaseSettings):
     # as many as max output tokens divided by the per-requirement reserve.
     assessment_batch_max_requirements: int = Field(default=4, ge=1)
     assessment_output_tokens_per_requirement: int = Field(default=256, ge=1)
+    # Claim classification batches so a real CV is not truncated by one response.
+    claim_batch_max_spans: int = Field(default=20, ge=1)
 
     def secret_values(self) -> tuple[str, ...]:
         """Configured secrets for redaction tests — never expose via routes."""
