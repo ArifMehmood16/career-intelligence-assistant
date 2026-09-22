@@ -102,7 +102,7 @@ class ModelRequirementExtractor:
                     f"{normalised_text}\n"
                     "UNTRUSTED_JOB_DESCRIPTION_END"
                 ),
-                max_output_tokens=1024,
+                max_output_tokens=4096,
                 json_schema=REQUIREMENTS_JSON_SCHEMA,
             )
         )
@@ -146,7 +146,7 @@ def _verify(
 ) -> tuple[Requirement, Span] | None:
     if not isinstance(item, dict):
         return None
-    quote = str(item.get("quote", "")).strip()
+    quote = str(item.get("quote", "")).strip().strip("\"'`“”‘’").strip()
     if not quote:
         return None
     start = normalised_text.find(quote)

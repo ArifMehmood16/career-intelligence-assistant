@@ -137,6 +137,7 @@ def test_the_model_finds_prose_requirements_the_regex_cannot() -> None:
     assert completion.calls == 1
     assert completion.last_request is not None
     assert "UNTRUSTED_JOB_DESCRIPTION" in completion.last_request.user
+    assert completion.last_request.max_output_tokens == 4096
 
 
 def test_an_unverifiable_quote_is_dropped_and_counted() -> None:
@@ -253,6 +254,22 @@ def test_a_quote_the_document_does_not_contain_is_never_repaired() -> None:
 
     assert result.requirements == ()
     assert result.dropped_unverifiable == 1
+
+
+def test_wrapping_quotation_marks_on_the_model_quote_still_verify() -> None:
+    payload = {
+        "requirements": [
+            _item(
+                '"You will need strong experience with APIs, JSON and webhooks."',
+                "requirement",
+                competency="api",
+            )
+        ]
+    }
+    result, _ = _extract(payload)
+    assert result.requirements
+    assert "APIs, JSON and webhooks" in result.requirements[0].text
+    assert result.dropped_unverifiable == 0
 
 
 def test_falls_back_to_the_rules_result_when_nothing_verifies() -> None:
