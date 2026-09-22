@@ -123,6 +123,7 @@ def test_local_ollama_measures_the_labelled_pilot() -> None:
         f"disagreements={len(report.disagreements)}",
         f"unsupported_met={len(report.unsupported_met)}",
         f"order_disagreements={len(report.order_disagreements)}",
+        f"retrieval_misses={len(report.retrieval_misses)}",
         f"p50_seconds={_percentile(report.role_latency_seconds, 0.50):.2f}",
         f"p95_seconds={_percentile(report.role_latency_seconds, 0.95):.2f}",
         f"completion_calls={len(completions)}",
@@ -137,5 +138,12 @@ def test_local_ollama_measures_the_labelled_pilot() -> None:
         f"order {item.group_id} {item.ahead}={item.ahead_score} "
         f"{item.behind}={item.behind_score}"
         for item in report.order_disagreements
+    )
+    # A missing result means nothing until this list is empty: the requirement
+    # may simply never have been shown its labelled supporting passage.
+    lines.extend(
+        f"retrieval miss {item.role_id} {item.requirement_id} "
+        f"spans={','.join(item.span_ids)}"
+        for item in report.retrieval_misses
     )
     print("\n".join(lines))
