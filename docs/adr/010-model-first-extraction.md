@@ -119,3 +119,28 @@ alone.
 - **Drop unscoreable items at extraction time.** Salary, location and "this role
   is not" are real content a reader wants. They are kept and shown; they are
   simply never mapped.
+
+## Amendment — 2026-09-22 (13D.6c)
+
+The quote-copying contract dropped real requirements when the model omitted
+Markdown markers, and it kept generic headings that the model copied exactly.
+That is amended as follows. The original decision stays as the record of what
+13C shipped.
+
+The server segments the stored normalised text into stable spans before the
+model runs. A non-empty line is one span. A line with more than one sentence
+is one span per sentence, so unrelated requirements on one line are not
+merged. The server does not split a single sentence further. Each span has a
+server-issued id and the exact stored text.
+
+The model classifies those ids. It does not supply the evidence text. Unknown
+ids, duplicated ids and ids from another document are rejected. Every server
+span needs exactly one accepted classification; otherwise the extraction is
+incomplete and no fit score is published. The job fails with
+`extraction_incomplete`. There is no fuzzy quote match and no fallback to the
+rules extractor for a partial model response.
+
+A line that is only a section introduction, ending in a colon, is
+`non_requirement` even if the model calls it a responsibility. Benefits and
+logistics stay unscoreable kinds. CV claim extraction is the same principle
+and is 13D.6d, not this amendment.

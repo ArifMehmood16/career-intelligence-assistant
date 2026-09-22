@@ -88,6 +88,18 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
     """Deterministic stand-in for structured extraction."""
     requirements = _extract_requirement_lines(user)
     properties = schema.get("properties")
+    if isinstance(properties, dict) and "classifications" in properties:
+        return {
+            "classifications": [
+                {
+                    "spanId": issued,
+                    "item_type": "requirement",
+                    "must_have": True,
+                    "competency": "general",
+                }
+                for issued in _SPAN_ID.findall(user)
+            ]
+        }
     if isinstance(properties, dict) and "requirements" in properties:
         return {
             "requirements": [
@@ -127,6 +139,7 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
     return {"items": requirements}
 
 
+_SPAN_ID = re.compile(r"^SPAN (\S+)$", re.MULTILINE)
 _BULLET = re.compile(r"^\s*[-*•]\s+(.+)$")
 
 

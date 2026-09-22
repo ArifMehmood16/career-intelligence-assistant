@@ -192,7 +192,9 @@ fixed interval, and stops on a terminal state. A failed job leaves the role at
 **Incomplete analysis (13D.6a).** An extraction or assessment that does not
 validate is a failed job, not a fit score. The decision uses the existing
 failed-job state: role `status` stays `"failed"` and the job `error.code` is
-`assessment_incomplete`. No new role status and no new response field.
+`assessment_incomplete`. A job description the model does not fully classify
+fails the same way with `error.code` `extraction_incomplete`. No new role
+status and no new response field.
 `analysis_incomplete` remains the 409 for work that has not finished; it is not
 reused for a finished assessment that failed validation. `fitScore: 0` is not
 a sentinel for this failure. A complete analysis may still score 0 with band

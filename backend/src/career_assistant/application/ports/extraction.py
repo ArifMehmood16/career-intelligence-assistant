@@ -14,8 +14,11 @@ from career_assistant.domain.requirements import Requirement
 class RequirementExtractionResult:
     requirements: tuple[Requirement, ...]
     spans: tuple[Span, ...]
-    # Items the model returned whose quote does not appear in the stored text.
+    # Items the model returned that are not one classification of a server span.
     dropped_unverifiable: int = 0
+    # False when any server span lacks exactly one accepted classification.
+    # A partial response is not a complete extraction.
+    complete: bool = True
 
 
 @dataclass(frozen=True, slots=True)

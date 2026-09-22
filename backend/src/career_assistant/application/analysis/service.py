@@ -353,6 +353,29 @@ class AnalysisService:
                 document_kind=DocumentKind.JOB_DESCRIPTION,
                 normalised_text=jd_text,
             )
+            if not req_result.complete:
+                failed = mark_failed(
+                    job,
+                    at=self._clock(),
+                    error=JobError(
+                        code="extraction_incomplete",
+                        message=(
+                            "Requirement extraction did not classify every part "
+                            "of the job description. This is not a fit score."
+                        ),
+                    ),
+                )
+                self._jobs[job_id] = failed
+                self._roles[role_id] = replace(role, status=RoleStatus.FAILED)
+                log_event(
+                    _log,
+                    "worker.failed",
+                    job_id=job_id,
+                    role_id=role_id,
+                    stage=JobStage.EXTRACTING_REQUIREMENTS.value,
+                    code="extraction_incomplete",
+                )
+                return failed
 
             job = mark_stage(job, JobStage.EXTRACTING_CLAIMS)
             self._jobs[job_id] = job

@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 105 — The server owns extraction spans
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c
+- Prompt intent: continue 13D.6 so job-description extraction no longer depends on the model copying quotes.
+- Suggestion: keep verbatim quote matching and drop lines the model fails to reproduce.
+- Outcome: changed
+- Reason: exact quote copying discarded real requirements when Markdown markers were omitted and kept generic headings the model copied. The server now segments the stored text and the model classifies those ids. A missing classification fails the job with `extraction_incomplete` and publishes no score. A colon-only heading is not scoreable. ADR 010 records the amendment. CV claims are still 13D.6d.
+- Human validation: `pytest` on the requirement extraction, model extraction, PDF-shape and analysis pipeline tests passed (42). Ruff check passed on the changed Python files.
+
 ### 104 — Assessment calls are batched and retried once
 
 - Date: 2026-09-22

@@ -227,6 +227,44 @@ def test_incomplete_assessment_fails_the_job_and_publishes_no_score() -> None:
     assert pub.published == []
 
 
+class _PartialRequirements(_OkRequirements):
+    def extract(
+        self,
+        *,
+        document_id: str,
+        document_kind: DocumentKind,
+        normalised_text: str,
+    ) -> RequirementExtractionResult:
+        result = super().extract(
+            document_id=document_id,
+            document_kind=document_kind,
+            normalised_text=normalised_text,
+        )
+        return RequirementExtractionResult(
+            requirements=result.requirements,
+            spans=result.spans,
+            complete=False,
+        )
+
+
+def test_incomplete_extraction_fails_the_job_and_publishes_no_score() -> None:
+    """PLAN 13D.6c — a partial extraction is not a fit score."""
+    service, pub = _service(requirements=_PartialRequirements())
+    service.create_role(
+        workspace_id="ws-1",
+        role_id="role-1",
+        title="AE",
+        job_id="job-1",
+    )
+    done = service.process_next()
+    assert done is not None
+    assert done.state is JobState.FAILED
+    assert done.error is not None
+    assert done.error.code == "extraction_incomplete"
+    assert service.get_role("ws-1", "role-1").status is RoleStatus.FAILED
+    assert pub.published == []
+
+
 def test_create_role_returns_immediately_with_queued_job_and_analysing_status() -> None:
     service, _ = _service()
     role, job = service.create_role(

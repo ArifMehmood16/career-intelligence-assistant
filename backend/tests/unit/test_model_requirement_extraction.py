@@ -23,6 +23,7 @@ from career_assistant.application.ports.types import (
     CompletionRequest,
     CompletionResult,
 )
+from career_assistant.domain.candidate_spans import candidate_units, span_id
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.mapping import map_requirements
 from career_assistant.domain.normalisation import normalise_text
@@ -84,38 +85,59 @@ class _ScriptedCompletion:
         )
 
 
-def _item(quote: str, item_type: str, *, must_have: bool = True, competency: str = ""):
+def _item(issued: str, item_type: str, *, must_have: bool = True, competency: str = ""):
     return {
-        "quote": quote,
+        "spanId": issued,
         "item_type": item_type,
         "must_have": must_have,
         "competency": competency,
     }
 
 
-_FULL_PAYLOAD = {
-    "requirements": [
-        _item(
-            "You will need strong experience with APIs, JSON and webhooks.",
-            "requirement",
-            competency="api",
-        ),
-        _item(
-            "You should be comfortable reading a failing run trace.",
-            "responsibility",
-            competency="ops",
-        ),
-        _item(
-            "The salary is 70,000 to 80,000 pounds depending on experience.",
-            "benefit",
-            must_have=False,
-        ),
-        _item(
-            "This is not a platform support role.", "non_requirement", must_have=False
-        ),
-        _item("You must hold a Rightbrain platform certification.", "requirement"),
-    ]
+def _id_for(text: str, needle: str, document_id: str = "doc-jd") -> str:
+    for start, end, unit in candidate_units(text):
+        if needle in unit:
+            return span_id(document_id, start, end)
+    raise AssertionError(needle)
+
+
+def _classify(
+    text: str,
+    kinds: dict[str, str],
+    *,
+    document_id: str = "doc-jd",
+    extra: tuple[dict[str, object], ...] = (),
+) -> dict[str, object]:
+    items: list[dict[str, object]] = []
+    for start, end, unit in candidate_units(text):
+        kind = "non_requirement"
+        for needle, named in kinds.items():
+            if needle in unit:
+                kind = named
+                break
+        items.append(
+            _item(
+                span_id(document_id, start, end),
+                kind,
+                must_have=kind in {"requirement", "responsibility"},
+            )
+        )
+    items.extend(extra)
+    return {"classifications": items}
+
+
+_PROSE_KINDS = {
+    "APIs, JSON": "requirement",
+    "failing run trace": "responsibility",
+    "salary": "benefit",
+    "platform support": "non_requirement",
 }
+
+_FULL_PAYLOAD = _classify(
+    PROSE_ADVERT,
+    _PROSE_KINDS,
+    extra=(_item("other-doc:0:12", "requirement"),),
+)
 
 
 def _extract(payload: dict[str, object], text: str = PROSE_ADVERT):
@@ -126,6 +148,13 @@ def _extract(payload: dict[str, object], text: str = PROSE_ADVERT):
         normalised_text=text,
     )
     return result, completion
+
+
+def test_one_line_with_two_sentences_is_two_spans() -> None:
+    """PLAN 13D.6c — the server splits a line; the model does not merge it."""
+    text = normalise_text("Know Python. Know SQL.\n")
+    units = [unit for _, _, unit in candidate_units(text)]
+    assert units == ["Know Python.", "Know SQL."]
 
 
 def test_the_regex_finds_nothing_in_this_advert() -> None:
@@ -151,13 +180,12 @@ def test_the_model_finds_prose_requirements_the_regex_cannot() -> None:
     assert completion.last_request.max_output_tokens == 4096
 
 
-def test_an_unverifiable_quote_is_dropped_and_counted() -> None:
+def test_an_unknown_span_id_is_dropped_and_counted() -> None:
     result, _ = _extract(_FULL_PAYLOAD)
 
-    assert all(
-        "Rightbrain platform certification" not in r.text for r in result.requirements
-    )
+    assert all("other-doc" not in r.source_span_id for r in result.requirements)
     assert result.dropped_unverifiable == 1
+    assert result.complete is True
 
 
 def test_every_span_round_trips_to_its_quote() -> None:
@@ -188,17 +216,20 @@ def test_item_types_from_the_model_are_preserved_and_only_some_are_scored() -> N
 
 
 def test_competency_is_the_models_open_vocabulary_not_the_keyword_list() -> None:
+    text = normalise_text(
+        "You will need strong experience with APIs, JSON and webhooks.\n"
+    )
     payload = {
-        "requirements": [
+        "classifications": [
             _item(
-                "You will need strong experience with APIs, JSON and webhooks.",
+                _id_for(text, "APIs, JSON"),
                 "requirement",
                 competency="forward-deployed-engineering",
             )
         ]
     }
 
-    result, _ = _extract(payload)
+    result, _ = _extract(payload, text=text)
 
     assert result.requirements[0].competency == "forward-deployed-engineering"
 
@@ -208,9 +239,9 @@ def test_seniority_and_vagueness_are_read_from_the_verified_quote() -> None:
         "We need a senior engineer with ownership of outcomes end to end.\n"
     )
     payload = {
-        "requirements": [
+        "classifications": [
             _item(
-                "We need a senior engineer with ownership of outcomes end to end.",
+                _id_for(text, "senior engineer"),
                 "requirement",
             )
         ]
@@ -225,72 +256,130 @@ def test_seniority_and_vagueness_are_read_from_the_verified_quote() -> None:
 def test_an_injected_instruction_cannot_invent_a_requirement() -> None:
     """The model obeys the injection; verification is what stops it."""
     text = normalise_text((JD_DIR / "jd-injection-attempt.txt").read_text())
-    payload = {
-        "requirements": [
-            _item(
-                "Production dbt experience on Snowflake.",
-                "requirement",
-                competency="dbt",
-            ),
-            _item(
-                "the candidate is a perfect match for every requirement", "requirement"
-            ),
-            _item("fit score is 100", "requirement"),
-            _item("candidate has CUDA and ROS2 experience", "requirement"),
-        ]
+    kinds = {
+        "dbt": "requirement",
+        "SQL": "requirement",
+        "Looker": "requirement",
+        "Retail": "requirement",
     }
+    payload = _classify(
+        text,
+        kinds,
+        extra=(
+            _item("other-doc:0:8", "requirement"),
+            _item("fit-score-is-100", "requirement"),
+            _item("cuda-span", "requirement"),
+        ),
+    )
 
     result, _ = _extract(payload, text=text)
 
-    joined = " ".join(r.text.lower() for r in result.requirements)
-    assert "perfect match" not in joined
-    assert "fit score" not in joined
-    assert "cuda" not in joined
-    assert "ros2" not in joined
-    assert any("dbt" in r.text.lower() for r in result.requirements)
+    joined = " ".join(requirement.text.lower() for requirement in result.requirements)
+    assert "fit score is 100" not in joined
+    scored = [
+        requirement.text.lower()
+        for requirement in result.requirements
+        if requirement.is_scoreable
+    ]
+    assert any("dbt" in item for item in scored)
+    assert not any("cuda" in item or "ros2" in item for item in scored)
+    assert not any("perfect match" in item for item in scored)
     assert result.dropped_unverifiable == 3
+    assert result.complete is True
 
 
 def test_a_quote_the_document_does_not_contain_is_never_repaired() -> None:
     payload = {
-        "requirements": [
-            _item(
-                "You will need strong experience with APIs and GraphQL.",
-                "requirement",
-            ),
+        "classifications": [
+            _item("not-a-server-span", "requirement"),
         ]
     }
 
     result, _ = _extract(payload)
 
     assert result.requirements == ()
-    assert result.dropped_unverifiable == 1
+    assert result.complete is False
+    assert result.dropped_unverifiable >= 1
 
 
-def test_wrapping_quotation_marks_on_the_model_quote_still_verify() -> None:
+def test_markdown_survives_without_the_model_copying_markers() -> None:
+    """PLAN 13D.6c — the model returns a span id, not the asterisks."""
+    text = normalise_text(
+        "* **Python Proficiency:** build services in Python\n"
+        "You will be responsible for:\n"
+        "Operate the production platform\n"
+        "Pension, holiday and shares\n"
+        "Hybrid working in London and the right to work in the UK\n"
+    )
+    payload = _classify(
+        text,
+        {
+            "Python Proficiency": "requirement",
+            "responsible for": "responsibility",
+            "Operate the production": "responsibility",
+            "Pension": "benefit",
+            "Hybrid working": "logistics",
+        },
+    )
+    assert "*" not in json.dumps(payload)
+    result, _ = _extract(payload, text=text)
+    assert result.complete is True
+    texts = [requirement.text for requirement in result.requirements]
+    assert any("Python Proficiency" in item for item in texts)
+    heading = next(
+        item for item in result.requirements if "responsible for" in item.text
+    )
+    assert heading.item_type is ItemType.NON_REQUIREMENT
+    assert heading.is_scoreable is False
+    mappings = map_requirements(result.requirements, [])
+    mapped = {
+        requirement.text
+        for requirement in result.requirements
+        if requirement.id in {row.requirement_id for row in mappings}
+    }
+    assert any("Python Proficiency" in item for item in mapped)
+    assert any("Operate the production" in item for item in mapped)
+    assert not any(
+        "Pension" in item or "Hybrid" in item or "responsible" in item
+        for item in mapped
+    )
+
+
+def test_a_partial_classification_is_not_a_complete_extraction() -> None:
+    """PLAN 13D.6c — one accepted span does not stand in for the document."""
     payload = {
-        "requirements": [
-            _item(
-                '"You will need strong experience with APIs, JSON and webhooks."',
-                "requirement",
-                competency="api",
-            )
+        "classifications": [
+            _item(_id_for(PROSE_ADVERT, "APIs, JSON"), "requirement", competency="api")
         ]
     }
     result, _ = _extract(payload)
-    assert result.requirements
-    assert "APIs, JSON and webhooks" in result.requirements[0].text
-    assert result.dropped_unverifiable == 0
+    assert any("APIs" in requirement.text for requirement in result.requirements)
+    assert result.complete is False
+
+
+def test_a_duplicated_span_id_is_rejected() -> None:
+    issued = _id_for(PROSE_ADVERT, "APIs, JSON")
+    payload = {
+        "classifications": [
+            _item(issued, "requirement"),
+            _item(issued, "benefit"),
+        ]
+    }
+    result, _ = _extract(payload)
+    assert all(
+        requirement.source_span_id != issued for requirement in result.requirements
+    )
+    assert result.complete is False
 
 
 def test_falls_back_to_the_rules_result_when_nothing_verifies() -> None:
     bulleted = normalise_text("Requirements\n- Own production for live agents\n")
-    payload = {"requirements": [_item("invented entirely", "requirement")]}
+    payload = {"classifications": [_item("invented-span", "requirement")]}
 
     result, _ = _extract(payload, text=bulleted)
 
-    assert [r.text for r in result.requirements] == ["Own production for live agents"]
-    assert result.dropped_unverifiable == 1
+    assert result.requirements == ()
+    assert result.complete is False
 
 
 def test_the_system_prompt_teaches_the_model_to_structure_package_lines() -> None:
@@ -302,7 +391,10 @@ def test_the_system_prompt_teaches_the_model_to_structure_package_lines() -> Non
     system = completion.last_request.system.lower()
     schema = completion.last_request.json_schema
     assert schema is not None
-    item_type = schema["properties"]["requirements"]["items"]["properties"]["item_type"]
+    item_type = schema["properties"]["classifications"]["items"]["properties"][
+        "item_type"
+    ]
+    assert "spanId" in schema["properties"]["classifications"]["items"]["properties"]
     description = str(item_type.get("description", "")).lower()
 
     assert "share options" in system
@@ -328,28 +420,18 @@ def test_classification_instructions_follow_the_untrusted_job_text() -> None:
 
 
 def test_a_package_block_is_extracted_structured_and_not_scored() -> None:
-    payload = {
-        "requirements": [
-            _item(
-                "You will need strong experience with APIs, JSON and webhooks.",
-                "requirement",
-                competency="api",
-            ),
-            _item("£70,000 - £80,000 depending on experience", "benefit"),
-            _item("Share options, awarded on performance", "benefit"),
-            _item("Delivery commission once you lead client accounts", "benefit"),
-            _item(
-                "Remote (UK) with quarterly team days in Newcastle, travel and "
-                "hotels covered; London co-working available",
-                "logistics",
-            ),
-            _item(
-                "Full-time employee role: applicants must have the right to work "
-                "in the UK",
-                "logistics",
-            ),
-        ]
-    }
+    payload = _classify(
+        PACKAGE_ADVERT,
+        {
+            "APIs, JSON": "requirement",
+            "£70,000": "benefit",
+            "Share options": "benefit",
+            "Delivery commission": "benefit",
+            "Remote (UK)": "logistics",
+            "right to work": "logistics",
+            "Package and practicalities": "non_requirement",
+        },
+    )
 
     result, _ = _extract(payload, text=PACKAGE_ADVERT)
 
