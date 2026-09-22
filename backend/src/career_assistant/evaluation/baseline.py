@@ -11,6 +11,8 @@ back into the dataset.
 from __future__ import annotations
 
 import json
+import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -19,6 +21,7 @@ from career_assistant.application.analysis.relatedness import (
     NullAdjudicator,
     map_role_requirements,
 )
+from career_assistant.application.ports.adjudication import AdjudicationPort
 from career_assistant.application.scoring.rubric_loader import (
     load_mapping_config,
     load_scoring_rubric,
@@ -165,11 +168,17 @@ class OrderDisagreement:
 
 @dataclass(frozen=True, slots=True)
 class CurrentPolicyReport:
-    """Hermetic mapping compared with the labelled pilot. No model was called."""
+    """Labelled pilot compared with one mapping run.
+
+    ``current_policy_baseline`` is the hermetic run: ``calls_model`` is false.
+    ``measured_policy_baseline`` records the same comparison for a supplied
+    adjudicator, including per-role latency.
+    """
 
     disagreements: tuple[AssessmentDisagreement, ...]
     order_disagreements: tuple[OrderDisagreement, ...]
     calls_model: bool
+    role_latency_seconds: tuple[float, ...] = ()
 
     def disagreement(self, role_id: str, requirement_id: str) -> AssessmentDisagreement:
         for item in self.disagreements:
@@ -208,23 +217,52 @@ def current_policy_baseline(
     NullAdjudicator path: lexical overlap decides, and a lexical/embedding
     disagreement falls back to OR. Labels are not updated.
     """
+    return measured_policy_baseline(
+        dataset,
+        adjudicator=NullAdjudicator(),
+        rubric_path=rubric_path,
+    )
+
+
+def measured_policy_baseline(
+    dataset: PilotDataset,
+    *,
+    adjudicator: AdjudicationPort,
+    similarities_for: Callable[
+        [Sequence[Requirement], Sequence[Claim]],
+        Mapping[tuple[str, str], float],
+    ]
+    | None = None,
+    rubric_path: Path | str | None = None,
+) -> CurrentPolicyReport:
+    """Score the labelled pilot with a supplied adjudicator.
+
+    Labels are not updated. An empty similarity function is the hermetic
+    retrieval path. A live run passes embeddings from the configured local model.
+    """
     config_path = Path(rubric_path) if rubric_path is not None else _rubric_path()
     rubric = load_scoring_rubric(config_path)
     floor = load_mapping_config(config_path).similarity_floor
-    adjudicator = NullAdjudicator()
     disagreements: list[AssessmentDisagreement] = []
     order_disagreements: list[OrderDisagreement] = []
+    latencies: list[float] = []
     for group in dataset.groups:
         claims = tuple(_domain_claim(claim) for claim in group.claims)
         scores: dict[str, float] = {}
         for role in group.roles:
+            started = time.perf_counter()
             requirements = tuple(
                 _domain_requirement(item) for item in role.requirements
+            )
+            similarities = (
+                dict(similarities_for(requirements, claims))
+                if similarities_for is not None
+                else {}
             )
             mappings = map_role_requirements(
                 requirements,
                 claims,
-                similarities={},
+                similarities=similarities,
                 adjudicator=adjudicator,
                 similarity_floor=floor,
             )
@@ -246,11 +284,13 @@ def current_policy_baseline(
                         )
                     )
             scores[role.id] = score_fit(requirements, mappings, claims, rubric).score
+            latencies.append(time.perf_counter() - started)
         order_disagreements.extend(_order_disagreements(group, scores))
     return CurrentPolicyReport(
         disagreements=tuple(disagreements),
         order_disagreements=tuple(order_disagreements),
-        calls_model=False,
+        calls_model=bool(getattr(adjudicator, "decides_support", False)),
+        role_latency_seconds=tuple(latencies),
     )
 
 

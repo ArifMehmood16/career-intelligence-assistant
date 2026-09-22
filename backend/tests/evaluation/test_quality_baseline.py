@@ -9,7 +9,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from career_assistant.evaluation.baseline import current_policy_baseline, load_pilot
+from career_assistant.application.analysis.relatedness import NullAdjudicator
+from career_assistant.evaluation.baseline import (
+    current_policy_baseline,
+    load_pilot,
+    measured_policy_baseline,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
@@ -69,12 +74,29 @@ def test_current_policy_does_not_score_a_course_as_leadership() -> None:
     """
     pilot = load_pilot(DATASET)
     report = current_policy_baseline(pilot)
-    disagreed = {
-        (item.role_id, item.requirement_id) for item in report.disagreements
-    }
+    disagreed = {(item.role_id, item.requirement_id) for item in report.disagreements}
     assert ("dev-insufficient-scope", "req-python-leadership") not in disagreed
     assert ("heldout-insufficient-scope", "req-sql-leadership") not in disagreed
     assert report.calls_model is False
     assert len(report.disagreements) == 7
     assert len(report.unsupported_met) == 5
     assert len(report.order_disagreements) == 0
+
+
+def test_measured_hermetic_path_matches_the_recorded_policy() -> None:
+    """The same labels, with no model and no embeddings, match the hermetic baseline."""
+    pilot = load_pilot(DATASET)
+    measured = measured_policy_baseline(pilot, adjudicator=NullAdjudicator())
+    current = current_policy_baseline(pilot)
+    assert measured.calls_model is False
+    assert len(measured.role_latency_seconds) == sum(
+        len(group.roles) for group in pilot.groups
+    )
+    assert {
+        (item.role_id, item.requirement_id, item.expected, item.observed)
+        for item in measured.disagreements
+    } == {
+        (item.role_id, item.requirement_id, item.expected, item.observed)
+        for item in current.disagreements
+    }
+    assert len(measured.order_disagreements) == len(current.order_disagreements)

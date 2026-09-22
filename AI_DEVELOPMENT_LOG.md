@@ -27,6 +27,27 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 096 — Measure the labelled pilot on local Ollama
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6 (check set on the local model)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: score the labelled pilot through the local completion and
+  embedding models, keep that run out of the default suite, and record the
+  counts without changing the hermetic baseline.
+- Outcome: accepted
+- Reason: the live run did not beat the hermetic baseline on disagreements or
+  role order. The assessment prompt was not revised, and no second model was
+  added. 13D.6 stays open.
+- Human validation: the new hermetic comparison failed to import
+  `measured_policy_baseline`, then the baseline file passed (4) and mypy was
+  clean on that module. `RUN_LLM_SMOKE=1` pytest of the smoke test passed in
+  30.77s: 20 roles, 9 disagreements, 1 unsupported met, 1 order disagreement,
+  p50 1.72s, p95 3.93s, 14 completion calls, 19 embedding calls, provider
+  ollama, `left_machine` false. Ruff was clean on the smoke test.
+
 ### 095 — A restart reads the saved analysis
 
 - Date: 2026-09-22

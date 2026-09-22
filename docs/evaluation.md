@@ -123,6 +123,40 @@ keywords were labelled `met` and returned `missing`: `dev-paraphrase` and
 `heldout-paraphrase`. The labelled `heldout-ordering` pair no longer reverses,
 because the leadership role is not scored as a match.
 
+## Local Ollama measurement (Phase 13D.6, not a gate)
+
+Measured on 2026-09-22 with `RUN_LLM_SMOKE=1` against the same pilot. Completion
+was `llama3.2` and embeddings were `nomic-embed-text`, both on
+`http://127.0.0.1:11434`. No API key was supplied. Every recorded call had
+`left_machine` false. The runner is `measured_policy_baseline` with
+`ModelAdjudicator`. Labels were not changed. Latency is per role, nearest-rank,
+from that run.
+
+| Quantity | Observed |
+|---|---|
+| Roles | 20 |
+| Completion calls | 14 |
+| Embedding calls | 19 |
+| Assessment disagreements | 9 |
+| Labelled non-`met` returned as `met` | 1 |
+| Pairwise order disagreements | 1 |
+| Per-role latency p50 / p95 | 1.72s / 3.93s |
+
+The hermetic baseline on the same labels was 7 disagreements, 5 unsupported
+`met` results and 0 order disagreements. This run reduced unsupported `met`
+results to one and increased disagreements and order errors, so it does not
+replace that baseline. The unsupported `met` is `role-partial` /
+`req-reliability` (expected `partial`, observed `met`). The order error is
+`dev-ordering`: `role-strong` scored 25 and `role-partial` scored 100.
+
+The other disagreements were `role-strong` `req-dbt` (`met`/`partial`),
+`role-strong` `req-sql` (`met`/`missing`), `dev-negation` `req-terraform`
+(`missing`/`partial`), `dev-duplicate` `req-sql-a` and `req-sql-b`
+(`met`/`missing`), `dev-paraphrase` `req-dba` (`met`/`missing`),
+`dev-injection` `req-dbt-inj` (`met`/`missing`) and `heldout-paraphrase`
+`req-ci` (`met`/`missing`). The course-versus-leadership cases were not in
+this list. The assessment was not revised and no second model was called.
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove
