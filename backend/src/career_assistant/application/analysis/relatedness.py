@@ -189,6 +189,9 @@ def _map_with_required_assessment(
                 claim_list,
                 assessments.get(requirement.id),
                 signals,
+                retrieved_claim_ids=tuple(
+                    evidence.claim_id for evidence in batch.evidence
+                ),
             )
         )
     return tuple(mappings)
@@ -282,6 +285,8 @@ def _mapping_from_assessment(
     claims: list[Claim],
     assessment: EvidenceAssessment | None,
     signals: RelatednessSignals,
+    *,
+    retrieved_claim_ids: tuple[str, ...],
 ) -> RequirementMapping:
     if assessment is None:
         return RequirementMapping(
@@ -290,6 +295,7 @@ def _mapping_from_assessment(
             reason_code=MappingReason.ASSESSMENT_INCOMPLETE,
             justifying_span_ids=(),
             justifying_claim_ids=(),
+            retrieved_claim_ids=retrieved_claim_ids,
             signals=RelatednessSignals(
                 lexical=signals.lexical,
                 lexical_overlap=signals.lexical_overlap,
@@ -320,6 +326,7 @@ def _mapping_from_assessment(
         reason_code=reason,
         justifying_span_ids=assessment.supporting_span_ids,
         justifying_claim_ids=claim_ids,
+        retrieved_claim_ids=retrieved_claim_ids,
         unknown_conditions=assessment.unknown_conditions,
         contradiction=assessment.contradiction,
         signals=RelatednessSignals(

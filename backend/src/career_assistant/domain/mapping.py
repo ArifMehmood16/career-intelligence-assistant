@@ -40,6 +40,9 @@ class RequirementMapping:
     # a citation still does not prove the requirement is met.
     unknown_conditions: tuple[str, ...] = ()
     contradiction: bool = False
+    # What the assessor was actually shown. A `missing` result means nothing
+    # until this says whether the supporting claim was ever in the prompt.
+    retrieved_claim_ids: tuple[str, ...] = ()
 
 
 def map_requirements(
@@ -177,15 +180,12 @@ def limit_concurrent_years(
     span_ids = tuple(
         dict.fromkeys(span_id for claim in dated for span_id in claim.source_span_ids)
     )
-    return RequirementMapping(
-        requirement_id=mapping.requirement_id,
+    return replace(
+        mapping,
         status=MappingStatus.PARTIAL,
         reason_code=MappingReason.EVIDENCE_THIN,
         justifying_span_ids=span_ids or mapping.justifying_span_ids,
         justifying_claim_ids=tuple(claim.id for claim in dated),
-        signals=mapping.signals,
-        unknown_conditions=mapping.unknown_conditions,
-        contradiction=mapping.contradiction,
     )
 
 
@@ -215,15 +215,13 @@ def course_does_not_meet_depth(
         )
     if not cited or not all(_is_course(claim) for claim in cited):
         return mapping
-    return RequirementMapping(
-        requirement_id=mapping.requirement_id,
+    return replace(
+        mapping,
         status=MappingStatus.MISSING,
         reason_code=MappingReason.NO_RELATED_CLAIM,
         justifying_span_ids=(),
         justifying_claim_ids=(),
         signals=replace(mapping.signals, related=False),
-        unknown_conditions=mapping.unknown_conditions,
-        contradiction=mapping.contradiction,
     )
 
 
