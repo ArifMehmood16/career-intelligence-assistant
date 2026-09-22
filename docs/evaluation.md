@@ -236,6 +236,43 @@ model without changing the prompt.
 
 **Not yet measured:** no run has been recorded against `evidence-assessment-v2`.
 
+## Local Ollama, two models on the same labels (Phase 13D.6)
+
+Measured on 2026-09-22, same pilot, same labels, same prompt
+(`evidence-assessment-v2`), embeddings `nomic-embed-text` throughout, no API
+key, every call `left_machine` false. Only the completion model changed.
+
+| Quantity | Hermetic | llama3.2 | qwen2.5:7b | Gate |
+|---|---|---|---|---|
+| Assessment disagreements (of 24) | 7 | 12 | 3 | — |
+| Labelled non-`met` returned as `met` | 5 | 4 | 1 | 0 |
+| Pairwise order disagreements | 0 | 3 | 1 | — |
+| Held-out order agreement | 1.0 | below 1.0 | 1.0 | 1.0 |
+| Retrieval misses | not measured | 0 | 0 | — |
+| Completion calls per role | 0 | 0.95 | 0.95 | 12 |
+| Per-role latency p50 / p95 | — | 2.04s / 4.33s | 4.46s / 8.62s | 180s / 300s |
+
+`qwen2.5:7b` passes every predeclared gate except one: unsupported `met` must be
+zero and it returned one. That case is `dev-contradiction` / `req-k8s-conflict`,
+where two cited passages disagree and the model answered `met` without setting
+the contradiction flag. Its other two errors are `role-strong` / `req-sql` and
+`role-partial` / `req-reliability`, both under-credited, and the single order
+error is the tie that follows from the first. All three sit in the development
+split; the held-out split had no disagreements.
+
+`llama3.2` does not meet the bar and the failure is not only accuracy. Under
+the defined levels it stopped refusing everything and started crediting
+unrelated evidence as `met`, including `dev-injection` / `req-inject` — the
+case where the untrusted text asks to be treated as a match. A 3B model was
+given a judgement it cannot make, and the safe-looking zero unsupported `met`
+in the previous run was only the same model refusing everything.
+
+**Conclusion recorded against the agreed rule:** the structured assessment beats
+the hermetic baseline on disagreements and unsupported `met` when the completion
+model is capable, and loses to it when the model is not. The model is therefore
+part of the contract, not a deployment preference, and the local default moves
+to `qwen2.5:7b`.
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove
