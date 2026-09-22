@@ -4,12 +4,12 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. Phase 13D.1's labelled check set and
-the hermetic disagreement record are in. ADR 011 records the evidence contract
-(13D.2); the running matcher does not implement it yet. Next: 13D.3, the
-structured assessment step. 13D's closure includes the outstanding 13C
-verification; do not claim either gate has passed or start the full Phase 14
-comparison before then.
+Its live exit gate has not been observed. 13D.1–13D.3 are implemented: the
+labelled check set, ADR 011, and a structured assessment on the completion
+path. Hermetic analysis still uses the OR fallback. Next: 13D.4, answering
+every Ask intent with the configured model. 13D's closure includes the
+outstanding 13C verification; do not claim either gate has passed or start
+the full Phase 14 comparison before then.
 
 ## Product objective and quality priority
 
@@ -891,7 +891,7 @@ Do not rebuild Phase 13A or 13C.
       with its source shown and duplicates removed; aspirations and generated drafts
       never raise the score. Reconcile AGENTS, `docs/features.md` and ADRs 004, 009
       and 010 with that decision.
-- [ ] **13D.3 Replace the boolean adjudicator with one structured assessment step.**
+- [x] **13D.3 Replace the boolean adjudicator with one structured assessment step.**
       Reuse the existing completion port and extraction prompts. Send one versioned
       prompt per requirement batch containing the requirement, its conditions and
       the retrieved evidence with source labels. Require `requirementId`, an

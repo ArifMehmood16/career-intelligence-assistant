@@ -23,6 +23,7 @@ class MappingReason(StrEnum):
     EVIDENCE_TOO_OLD = "evidence_too_old"
     EVIDENCE_THIN = "evidence_thin"
     MATCHED = "matched"
+    ASSESSMENT_INCOMPLETE = "assessment_incomplete"
 
 
 @dataclass(frozen=True, slots=True)

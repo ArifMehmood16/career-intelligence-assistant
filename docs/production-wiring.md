@@ -15,8 +15,12 @@ Provider resolvers:
 - `analysis_ports_for_choice` — hermetic stays on rules extractors and a
   null adjudicator so `make test` is offline; any other workspace answer
   choice uses the quote-verified model extractors (item types classified in
-  the prompt and schema) and a model adjudicator for lexical/embedding
-  disagreements. Cover letters extract as self-authored claims and are not
+  the prompt and schema) and one structured evidence assessment for every
+  retrieved requirement, including when lexical and embedding signals agree.
+  A missing or invalid assessment is `assessment_incomplete` and is not a
+  match. Hermetic analysis still uses the null adjudicator and the OR
+  fallback so `make test` stays offline. Cover letters extract as
+  self-authored claims and are not
   mapped yet. [ADR 011](adr/011-evidence-assessment-contract.md) records the
   contract those claims will follow: concrete experience can count, with its
   source shown and duplicates removed; an aspiration does not, and a generated

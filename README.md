@@ -35,8 +35,10 @@ This build inverts it. The model does **extraction and phrasing**, never judgeme
    an aspiration does not, and a generated draft must never raise the score. The
    running matcher still excludes those claims.
 3. **Map** each requirement to `met` / `partial` / `missing` with the CV spans that
-   justify it, or none. Relatedness is lexical overlap, embedding cosine, or
-   model adjudication of disagreements; the domain combines the signals.
+   justify it, or none. Lexical overlap and embedding cosine retrieve evidence.
+   A configured completion model assesses that evidence, including when the
+   signals agree; a missing or invalid assessment is not a match. Hermetic
+   tests still fall back to the OR of the two signals and do not call a model.
 4. **Score deterministically** from the mapping. The fit score is arithmetic over the
    mapping, computed in domain code. No model emits a number.
 5. **Answer and draft** from the mapping and the cited spans only, with a validator

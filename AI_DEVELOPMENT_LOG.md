@@ -27,6 +27,27 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 087 — Structured assessment replaces boolean adjudication on the model path
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.3
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: validate a structured assessment server-side and, when the
+  completion adapter decides support, treat a missing or invalid assessment as
+  incomplete even if lexical and embedding signals agree. Keep the hermetic OR
+  fallback so offline tests still score.
+- Outcome: changed
+- Reason: the boolean adjudicator stays on the hermetic fixture. Replacing it
+  there would make every `make test` role incomplete. The model path no longer
+  uses that boolean to decide a match.
+- Human validation: `tests/unit/test_structured_assessment.py` failed on import
+  of `parse_assessments`. After the validator, adapter and mapping branch, that
+  file plus adjudication, three-signal, mapping-score and cover-letter tests
+  passed (36 tests). mypy was clean on the three changed modules. No live model
+  call.
+
 ### 086 — Record the evidence-assessment contract
 
 - Date: 2026-09-22
