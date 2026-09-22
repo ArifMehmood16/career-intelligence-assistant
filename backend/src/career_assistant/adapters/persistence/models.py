@@ -222,6 +222,9 @@ class RequirementRow(Base):
     )
     extraction_confidence: Mapped[float | None] = mapped_column(nullable=True)
     is_vague: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    item_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="requirement"
+    )
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
@@ -244,6 +247,7 @@ class ClaimRow(Base):
     context: Mapped[str] = mapped_column(Text, nullable=False)
     duration_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
     recency_signal: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    self_authored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class ClaimSpanRow(Base):
@@ -303,6 +307,7 @@ class MappingRow(Base):
     )
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     reason_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    signals: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     analysis_version: Mapped[int] = mapped_column(Integer, nullable=False)
     invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

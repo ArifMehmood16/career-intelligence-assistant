@@ -154,6 +154,8 @@ def test_embedding_adapter_is_called_once_per_analysis_with_batched_texts() -> N
     assert _CLAIM.context in batched
     mapping = pub.published[0]["mappings"][0]  # type: ignore[index]
     assert mapping.status is not MappingStatus.MISSING
+    assert mapping.signals.embedding is True
+    assert mapping.signals.related is True
 
     again = service.enqueue_reanalysis(
         workspace_id="ws-1", role_id="role-1", job_id="job-2"

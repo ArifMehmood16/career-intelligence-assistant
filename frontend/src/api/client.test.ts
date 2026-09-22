@@ -59,6 +59,7 @@ describe("request", () => {
         counts: { met: 2, partial: 1, missing: 0 },
         status: "ready",
         updatedAt: "2026-09-18T12:00:00Z",
+        fitSummary: null,
       },
     ]);
     expect(fetch).toHaveBeenCalledWith(

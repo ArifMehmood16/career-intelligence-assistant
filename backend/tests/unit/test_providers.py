@@ -276,3 +276,60 @@ def test_complete_rechecks_egress_and_makes_no_network_call() -> None:
     with pytest.raises(EgressNotPermittedError):
         port.complete(CompletionRequest(system="s", user="u", max_output_tokens=5))
     assert transport.calls == []
+
+
+class _RecordingTransport:
+    def __init__(self, response: HttpResponse) -> None:
+        self._response = response
+        self.json_body: dict[str, object] | None = None
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        *,
+        headers: object = None,
+        json_body: dict[str, object] | None = None,
+        timeout_seconds: float,
+    ) -> HttpResponse:
+        del method, url, headers, timeout_seconds
+        self.json_body = json_body
+        return self._response
+
+
+def test_ollama_sends_the_json_schema_as_structured_format() -> None:
+    from career_assistant.adapters.providers.ollama.completion import (
+        OllamaCompletionAdapter,
+    )
+
+    schema = {
+        "type": "object",
+        "properties": {"requirements": {"type": "array"}},
+        "required": ["requirements"],
+    }
+    transport = _RecordingTransport(
+        HttpResponse(200, json.dumps({"response": "{}"}).encode(), {})
+    )
+    adapter = OllamaCompletionAdapter(
+        base_url="http://ollama.test",
+        model_tag="llama-test",
+        transport=transport,
+        resilience=ResiliencePolicy(
+            timeout_seconds=1.0,
+            max_retries=0,
+            breaker=CircuitBreaker(5),
+            sleep=lambda _seconds: None,
+        ),
+    )
+
+    adapter.complete(
+        CompletionRequest(
+            system="Extract.",
+            user="untrusted",
+            max_output_tokens=64,
+            json_schema=schema,
+        )
+    )
+
+    assert transport.json_body is not None
+    assert transport.json_body["format"] == schema

@@ -325,6 +325,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     <div className="space-y-6">
       <FitBreakdown
         state={breakdownState}
+        summary={roleQuery.data?.fitSummary ?? null}
         rows={breakdownRows}
         requirementsById={requirementsById}
         expandedRowIds={expandedRowIds}

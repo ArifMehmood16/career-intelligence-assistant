@@ -35,6 +35,18 @@ const ACTION_LABEL: Record<GapItemAction, string> = {
   accept_it: "Accept it",
 };
 
+function formatScore(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function liftCopy(item: GapItem, currentScore: number): string {
+  const kind = item.type === "must" ? "must-have" : "desirable";
+  const from = formatScore(currentScore);
+  const to = formatScore(currentScore + item.scoreDelta);
+  return `If this ${kind} were met, the fit score would rise from ${from} → ${to} / 100.`;
+}
+
 function TypeBadge({ type }: { type: RequirementType }) {
   return (
     <span className="inline-flex items-center rounded-none border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -68,10 +80,20 @@ export function GapsPanel({
         {state === "ready" || state === "empty" ? (
           <p className="font-mono text-sm text-muted-foreground">
             Current score{" "}
-            <span className="text-foreground tabular-nums">{currentScore}</span>
+            <span className="text-foreground tabular-nums">
+              {formatScore(currentScore)}
+            </span>
           </p>
         ) : null}
       </div>
+      {state === "ready" ? (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Ordered by how many points the fit score would gain if you closed the
+          gap. Missing or partial is the mapping; must or desirable is how the
+          job listed it. The lift is the same arithmetic as the Fit tab, not a
+          model guess.
+        </p>
+      ) : null}
 
       {state === "loading" && (
         <div aria-busy="true" className="space-y-4">
@@ -115,11 +137,14 @@ export function GapsPanel({
                     <StatusMark status={item.status} />
                     <TypeBadge type={item.type} />
                     <span className="font-mono text-sm tabular-nums text-foreground">
-                      +{item.scoreDelta}
+                      +{formatScore(item.scoreDelta)} if met
                     </span>
                   </div>
                   <p className="text-sm font-medium text-foreground">
                     {item.requirementText}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {liftCopy(item, currentScore)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {REASON_LABEL[item.reason]}

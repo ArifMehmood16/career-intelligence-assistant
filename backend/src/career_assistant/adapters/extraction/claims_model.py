@@ -107,7 +107,7 @@ class ModelClaimExtractor:
             CompletionRequest(
                 system=_SYSTEM,
                 user=f"{envelope}\n{normalised_text}\n{close}",
-                max_output_tokens=1024,
+                max_output_tokens=4096,
                 json_schema=CLAIMS_JSON_SCHEMA,
             )
         )
@@ -178,7 +178,7 @@ def _claims_for_role(
         if not isinstance(item, dict):
             dropped += 1
             continue
-        quote = str(item.get("quote", "")).strip()
+        quote = str(item.get("quote", "")).strip().strip("\"'`“”‘’").strip()
         quote_span = _span_for_quote(quote, document_id, normalised_text)
         if quote_span is None:
             dropped += 1

@@ -18,6 +18,17 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 13C.10 — Documentation reconciled with model-first extraction
+
+- Date: 2026-09-22
+- Commands run:
+  - `pytest tests/unit/test_production_wiring_matrix.py tests/unit/test_phase0_baseline.py -q --no-cov` — red first (README still called hermetic the product default; ADR 010 still said 13C.8 remained; features.md had no `unscored` band); then 14 passed
+  - `ruff check` / `ruff format --check` on `test_production_wiring_matrix.py` — green
+- Observed result: README names Ollama as the product default and hermetic as the test fixture, and links ADR 010. Features documents the empty-extract `unscored` band. The threat model records a salary/benefit/logistics line as a scoring-boundary risk. ADR 010 records 13C.5, 13C.6 and 13C.8 as landed. PLAN 13C.10 is ticked; the 13C exit gate (real CV, five adverts, `make test-integration`) is not claimed.
+- Decisions made: keep ADR 010 as the audit record rather than writing a second ADR. Stale README phrases are pinned in the wiring-matrix suite so they cannot return.
+- Problems hit: none after the red docs tests.
+- Carried forward: Phase 13C exit gate, then Phase 14 evaluation. Do not start Phase 14 from this checkpoint.
+
 ## Phase 13B — Operational logging (console)
 
 - Date: 2026-09-21

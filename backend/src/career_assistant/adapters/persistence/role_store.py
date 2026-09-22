@@ -50,7 +50,7 @@ from career_assistant.domain.jobs import (
 from career_assistant.domain.mapping import MappingStatus
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
-from career_assistant.domain.requirements import Requirement
+from career_assistant.domain.requirements import ItemType, Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 from career_assistant.logconfig import log_event
 from career_assistant.parsing.pipeline import parse_pasted_text
@@ -444,6 +444,9 @@ class SqlRoleStore:
                 source_span_id=str(row.source_span_id) if row.source_span_id else "",
                 extraction_confidence=row.extraction_confidence or 0.0,
                 is_vague=row.is_vague,
+                item_type=ItemType(row.item_type)
+                if row.item_type
+                else ItemType.REQUIREMENT,
             )
             for row in req_rows
         )
@@ -473,6 +476,7 @@ class SqlRoleStore:
                         recency_signal=row.recency_signal or "",
                         source_span_ids=span_ids,
                         extraction_confidence=0.85,
+                        self_authored=bool(row.self_authored),
                     )
                 )
             claims = tuple(loaded)
@@ -501,6 +505,7 @@ class SqlRoleStore:
                 status_factor=float(c["status_factor"]),
                 recency_factor=float(c["recency_factor"]),
                 contribution=float(c["contribution"]),
+                adjudicated=bool(c.get("adjudicated", False)),
             )
             for c in payload.get("components", [])
         )

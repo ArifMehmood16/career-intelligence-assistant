@@ -10,7 +10,7 @@ drafts.
 |---|---|---|
 | Browser to API | Uploads, questions | Type sniffing, size and page caps, schema validation, safe errors |
 | File to parser | PDF/DOCX structure | Bounded parsing, no macro or embedded-object execution, resource limits |
-| Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence |
+| Document text to prompt | CV, job-description and supporting-cover-letter content | Delimited and labelled untrusted; instructions in the text are data; cover letters cannot become score evidence; adjudication pairs are delimited the same way and only submitted pair ids are accepted |
 | Model to application | Extraction JSON, answer text | Schema validation, span verification, drop unresolvable output |
 | Generated draft to browser | Model-phrased or template prose | Groundedness validator against cited spans; template fallback; real verdict persisted (FAIL never rewritten to PASS); provenance on every artefact |
 | Application to browser | Excerpts and drafts | Escaped text rendering, no raw HTML |
@@ -32,6 +32,7 @@ drafts.
 | Original-file disclosure | Bounded originals stored in PostgreSQL `bytea`; workspace-scoped download; no filesystem path; database not publicly exposed in deployment | A database or backup compromise exposes the original documents; volume encryption and host security remain deployment responsibilities |
 | Cross-workspace leakage | Workspace scoping on every query, including span lookup and retrieval; integration test | No authentication yet — see below |
 | Cover-letter claims treated as experience | Uploaded letters extract as `self_authored` claims; `map_requirements` ignores them; they stay citable for Ask | A user may still copy unsupported claims into a replacement CV; the system can only reason over submitted evidence |
+| Salary, benefit or logistics line scored as a skill | The model extracts `item_type`; only `requirement` and `responsibility` reach the mapping and the score. Pay, equity, location, travel and right-to-work are `benefit` or `logistics` | A small local model may still tag a package line as a requirement until the role is re-analysed |
 | Partial or duplicate chat history | Persist the question first; store one final validated answer under a workspace-scoped idempotency key; never persist SSE token fragments. Production chat is `SqlConversationStore`; `create_app()` in-memory chat is test-only. | A client can abandon a request and leave a safely failed question record |
 | SQL injection or accidental unscoped mutation | SQLAlchemy parameterisation; repository methods require workspace id; cross-workspace read and mutation tests | A future raw-SQL escape hatch would need separate review |
 | Application data reaching a third party | Hermetic and local providers by default; hosted adapters unreachable unless egress is enabled and a key is present, re-checked on every call; the notice covers CVs, job descriptions, cover letters and questions; selection is recorded on every artefact | A user who enables a hosted provider accepts that vendor's retention terms; the product makes that visible, it cannot make it safe |

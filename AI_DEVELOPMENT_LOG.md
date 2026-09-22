@@ -27,6 +27,100 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 082 — Phase 13C.10 documentation reconciliation (TDD)
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.10
+- Prompt intent: continue 13C.10 on the same branch and PR after 13C.5 and 13C.8 landed.
+- Suggestion: extend the wiring-matrix docs tests so README cannot call hermetic the product default or leave 13C.8 open; update README, ADR 010, features.md, the threat model and production-wiring; tick PLAN 13C.10.
+- Outcome: accepted.
+- Reason: ADR 010 already existed from the first 13C.10 pass and is the audit page PLAN asked for. What remained was stale claims written before three-signal matching, output depth and live extraction fixes. The 13C exit gate is not ticked: it still needs the maintainer's real CV, five adverts and the full `make` gates.
+- Rejected alternatives: a second ADR; claiming the 13C exit gate on documentation alone.
+- Human validation: docs tests failed on the old README/ADR/features text; after the change, `test_production_wiring_matrix.py` and `test_phase0_baseline.py` pass (14 tests).
+
+### 081 — Requirement extraction classifies package lines (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: live extraction defect (13C exit gate: no salary, benefit or logistics line is scored)
+- Prompt intent: a "Package and practicalities" block (salary, share options, commission, remote/travel, right to work) was extracted as must-have requirements and lowered the fit score. Classify via the LLM, not a post-filter.
+- Suggestion: domain heuristics to demote salary/location after extraction; alternatively enrich the extraction system prompt, JSON schema descriptions, a classification restatement after the untrusted JD, and pass the schema to Ollama as `format`.
+- Outcome: changed.
+- Reason: the human rejected filters. Item type is an extraction decision; the model must structure it. Scoring already ignores unscoreable kinds. The local adapter previously sent `format: "json"`, so schema enum descriptions never reached Ollama.
+- Rejected alternatives: regex/keyword reclassification of extracted items; dropping package lines at extraction time (ADR 010 keeps them, unmapped).
+- Human validation: new extraction tests failed on the old one-sentence prompt; after the change, focused extraction tests, the Ollama schema test and the completion contract suite pass.
+
+### 080 — Phase 13C.8 output depth (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.8
+- Prompt intent: continue Phase 13C; make every tab return something worth reading.
+- Suggestion: domain `build_fit_summary` from scored mappings; optional
+  `Role.fitSummary` on GET `/roles/{id}` only; interview templates quote
+  `claim.context`; stop truncating requirement evidence at 80 characters.
+- Outcome: accepted.
+- Reason: the gap plan, cover letter and bullets already had depth. The missing
+  pieces were a prose fit reading of the mapping, full quoted CV text on each
+  requirement, and interview prompts that use the candidate's own claims. The
+  summary is arithmetic over stored requirement text, not a model paraphrase.
+  List and create still omit the paragraph so the workspace table stays a table.
+- Rejected alternatives: a new HTTP route (the wiring matrix forbids one for
+  this); putting the summary on every Role list row; letting the model write
+  the paragraph.
+- Human validation: fit-summary unit tests failed on the missing export; after
+  the change, focused backend tests pass. RequirementTable and FitBreakdown
+  component tests pass.
+
+### 079 — Phase 13C.6 score only scoreable items; flag adjudication (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.6
+- Prompt intent: continue Phase 13C after three-signal matching.
+- Suggestion: additive `ScoreComponent.adjudicated` when the mapping's
+  adjudication signal is true; persist `item_type` and `self_authored` so a SQL
+  reload cannot score a salary line or map a cover letter.
+- Outcome: accepted.
+- Reason: the filter already lived in `map_requirements` (13C.2a). Without
+  persisting the kind, a SQL reload defaulted every item to `requirement` and
+  would score it. The flag is additive so 7.4 arithmetic and 7.5's object shape
+  stay; old explanation JSON without the key reloads as false.
+- Rejected alternatives: changing the score formula when the model confirmed a
+  pair; treating "adjudication alone" as a third OR (13C.5 already made that
+  a tie-break, so the flag means the model confirmed a disagreement).
+- Human validation: the new explanation test failed on missing
+  `adjudicated`; after the change, mapping-scoring and item-type tests pass.
+  Full default pytest suite passed with 3 skipped; coverage 81.25%. ruff and
+  mypy clean.
+
+### 078 — Phase 13C.5 three-signal matching (TDD)
+
+- Date: 2026-09-21
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.5
+- Prompt intent: continue Phase 13C; implement three-signal matching.
+- Suggestion: relatedness as lexical overlap, embedding cosine, and model
+  adjudication of XOR disagreements; combination in domain; floor in
+  `config/scoring_rubric.toml`; hermetic `NullAdjudicator` falls back to OR so
+  embedding-only adjacent matches survive; mappings record signal strength;
+  persist JSONB `signals` and expose it on `Requirement`.
+- Outcome: accepted, with one combination rule changed from a naive third OR.
+- Reason: `related = lexical OR embedding OR adjudication` would never need the
+  third signal — disagreement already has a true. Adjudication is a tie-break
+  on XOR pairs. Hermetic must not veto embedding-only relatedness (the existing
+  0.9 cosine test). Lexical overlap stayed a pure domain function rather than a
+  port: it is not an I/O boundary. Embedding already had a port; only
+  adjudication is new.
+- Rejected alternatives: three RelatednessPorts wrapping lexical overlap;
+  treating competency match as a fourth relatedness OR (status still uses it);
+  letting adjudication fire on agreed pairs.
+- Human validation: `test_three_signal_matching` failed on missing modules,
+  then 10 tests there plus model-adjudication, mapping, analysis-pipeline,
+  analysis-similarity, OpenAPI and wiring-matrix tests pass. Full default
+  pytest suite passed with 3 skipped; coverage 81.24%. ruff and mypy clean.
+
 ### 001 — Run and deploy surface brought forward
 
 - Date: 2026-09-17

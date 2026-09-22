@@ -230,6 +230,7 @@ def test_cover_letter_builds_when_two_must_haves_met() -> None:
     )
     assert not isinstance(outcome, CoverLetterRefusal)
     assert "Acme" in outcome.body
+    assert "Analytics Engineer" in outcome.body
     assert "dbt" in outcome.body.lower()
     assert "sql" in outcome.body.lower()
     assert set(outcome.cited_span_ids) >= {"cv-c1", "cv-c2"}

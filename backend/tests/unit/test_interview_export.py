@@ -57,6 +57,10 @@ def test_interview_pack_sections_from_mapping() -> None:
     assert any(item.requirement_id == "dbt" for item in pack.lead_with)
     assert any(item.requirement_id == "cuda" for item in pack.thin_areas)
     assert any(q.requirement_id == "culture" for q in pack.ask_them)
+    dbt_lead = next(item for item in pack.lead_with if item.requirement_id == "dbt")
+    assert "Owned dbt models in production." in dbt_lead.note
+    dbt_probe = next(item for item in pack.probes if item.requirement_id == "dbt")
+    assert "Owned dbt models in production." in dbt_probe.question
 
 
 def test_markdown_export_matches_gap_plan_content() -> None:

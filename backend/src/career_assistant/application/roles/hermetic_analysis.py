@@ -8,6 +8,10 @@ from pathlib import Path
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
+from career_assistant.application.analysis.relatedness import (
+    NullAdjudicator,
+    map_role_requirements,
+)
 from career_assistant.application.analysis.similarity import (
     InMemoryEmbeddingCache,
     requirement_claim_similarities,
@@ -20,15 +24,19 @@ from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
 )
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.application.scoring.rubric_loader import (
+    load_mapping_config,
+    load_scoring_rubric,
+)
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
-from career_assistant.domain.mapping import RequirementMapping, map_requirements
+from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation, score_fit
 
 _ROOT = Path(__file__).resolve().parents[5]
 _RUBRIC = load_scoring_rubric(_ROOT / "config" / "scoring_rubric.toml")
+_MAPPING = load_mapping_config(_ROOT / "config" / "scoring_rubric.toml")
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,10 +84,12 @@ def analyse_hermetic(
         provider_id=embedding_provider_id,
         model_tag=embedding_model_tag,
     )
-    mappings = map_requirements(
+    mappings = map_role_requirements(
         req_result.requirements,
         claim_result.claims,
         similarities=similarities,
+        adjudicator=NullAdjudicator(),
+        similarity_floor=_MAPPING.similarity_floor,
     )
     explanation = score_fit(
         req_result.requirements, mappings, claim_result.claims, _RUBRIC
@@ -101,6 +111,7 @@ def band_label(band: str) -> str:
         "strong": "Strong match",
         "partial": "Partial match",
         "limited": "Limited match",
+        "unscored": "Not scored yet",
     }.get(band, "Not scored yet")
 
 

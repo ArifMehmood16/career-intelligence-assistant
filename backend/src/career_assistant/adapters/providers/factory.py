@@ -99,9 +99,16 @@ def build_completion_port(
             kind="completion",
             provider_id=selected,
             fallback="hermetic",
+            model_tag=model_tag or "",
         )
         return wrapped
-    log_event(_log, "provider.constructed", kind="completion", provider_id=selected)
+    log_event(
+        _log,
+        "provider.constructed",
+        kind="completion",
+        provider_id=selected,
+        model_tag=model_tag or "",
+    )
     return primary
 
 

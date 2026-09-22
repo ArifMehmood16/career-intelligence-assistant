@@ -111,6 +111,68 @@ def draft_cv_bullet_template(claim: Claim) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class FitSummary:
+    text: str
+    strongest_requirement_id: str | None
+    weakest_requirement_id: str | None
+
+
+def build_fit_summary(
+    requirements: tuple[Requirement, ...] | list[Requirement],
+    mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
+    claims: tuple[Claim, ...] | list[Claim],
+    rubric: ScoringRubric,
+) -> FitSummary:
+    """Name the strongest match and biggest gap from the scored mapping. Pure."""
+    by_id = {req.id: req for req in requirements if req.is_scoreable}
+    scoreable = tuple(
+        mapping for mapping in mappings if mapping.requirement_id in by_id
+    )
+    explanation = score_fit(tuple(by_id.values()), scoreable, claims, rubric)
+    met = [
+        component
+        for component in explanation.components
+        if component.status is MappingStatus.MET
+    ]
+    met.sort(
+        key=lambda component: (
+            -component.contribution,
+            0 if component.must_have else 1,
+            component.requirement_id,
+        )
+    )
+    strongest = met[0].requirement_id if met else None
+    plan = build_gap_plan(tuple(by_id.values()), scoreable, claims, rubric)
+    weakest = plan.items[0].requirement_id if plan.items else None
+    return FitSummary(
+        text=_fit_summary_text(by_id, strongest, weakest),
+        strongest_requirement_id=strongest,
+        weakest_requirement_id=weakest,
+    )
+
+
+def _fit_summary_text(
+    by_id: dict[str, Requirement],
+    strongest: str | None,
+    weakest: str | None,
+) -> str:
+    strong_text = by_id[strongest].text if strongest is not None else None
+    weak_text = by_id[weakest].text if weakest is not None else None
+    if strong_text and weak_text:
+        return (
+            f"The strongest match is “{strong_text}”. The biggest gap is “{weak_text}”."
+        )
+    if strong_text:
+        return (
+            f"The strongest match is “{strong_text}”. "
+            "There are no remaining scored gaps."
+        )
+    if weak_text:
+        return f"No scored requirement is met yet. The biggest gap is “{weak_text}”."
+    return "No scored requirements are available for this role."
+
+
+@dataclass(frozen=True, slots=True)
 class CoverLetterRefusal:
     code: str
     message: str
@@ -226,9 +288,9 @@ def build_interview_pack(
     mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
     claims: tuple[Claim, ...] | list[Claim],
 ) -> InterviewPack:
-    """Section membership from the mapping; phrasing is template-only here."""
-    del claims  # claims available for future evidence notes; spans come from mappings
+    """Section membership from the mapping; phrasing quotes the candidate's claims."""
     by_req = {r.id: r for r in requirements}
+    by_claim = {claim.id: claim for claim in claims}
     probes: list[InterviewProbe] = []
     lead_with: list[InterviewLead] = []
     thin_areas: list[InterviewThinArea] = []
@@ -238,18 +300,27 @@ def build_interview_pack(
         req = by_req.get(mapping.requirement_id)
         if req is None:
             continue
+        evidence = _primary_claim_context(mapping, by_claim)
         if mapping.status is MappingStatus.MET:
             probes.append(
                 InterviewProbe(
                     requirement_id=req.id,
-                    question=f"Walk me through your experience with {req.text}.",
+                    question=(
+                        f"Walk me through “{evidence}” as evidence of {req.text}."
+                        if evidence
+                        else f"Walk me through your experience with {req.text}."
+                    ),
                     status=mapping.status,
                 )
             )
             lead_with.append(
                 InterviewLead(
                     requirement_id=req.id,
-                    note=f"Lead with evidence for {req.text}.",
+                    note=(
+                        f"Lead with: “{evidence}”"
+                        if evidence
+                        else f"Lead with evidence for {req.text}."
+                    ),
                     span_ids=mapping.justifying_span_ids,
                 )
             )
@@ -257,7 +328,11 @@ def build_interview_pack(
             probes.append(
                 InterviewProbe(
                     requirement_id=req.id,
-                    question=f"Tell me about {req.text} in more depth.",
+                    question=(
+                        f"Tell me more about {req.text} beyond “{evidence}”."
+                        if evidence
+                        else f"Tell me about {req.text} in more depth."
+                    ),
                     status=mapping.status,
                 )
             )
@@ -334,3 +409,16 @@ def export_markdown(artefact: str, payload: object) -> str:
     if artefact == "cover-letter" and isinstance(payload, CoverLetterDraft):
         return payload.body if payload.body.endswith("\n") else payload.body + "\n"
     raise ValueError(f"unsupported artefact export: {artefact!r}")
+
+
+def _primary_claim_context(
+    mapping: RequirementMapping, by_claim: dict[str, Claim]
+) -> str | None:
+    for claim_id in mapping.justifying_claim_ids:
+        claim = by_claim.get(claim_id)
+        if claim is None:
+            continue
+        text = claim.context.strip()
+        if text:
+            return text
+    return None

@@ -3,11 +3,10 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13B operational logging is complete. The 2026-09-21
-output audit ran a real CV and a real job advert through the shipped pipeline and
-found the product produces nothing useful: the deterministic extractors are the only
-extractors on the default path and they are not capable of the job. Phase 13C
-replaces them. Do not start Phase 14 until 13C is complete.
+**Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
+The phase exit gate still requires the maintainer's real CV and five real job
+adverts, plus `make lint`, `make typecheck`, `make test` and
+`make test-integration`. Do not start Phase 14 until that gate is observed.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -324,7 +323,7 @@ recency, including the dated-experience fixture.
       `missing`, with the justifying span ids and a reason code
       (`no_related_claim`, `adjacent_claim_only`, `evidence_too_old`,
       `evidence_thin`). Pure function, no I/O.
-- [ ] **7.2** *Superseded by 13C.5.* Mapping computes `(requirement_id, claim_id)`
+- [x] **7.2** *Superseded by 13C.5.* Mapping computes `(requirement_id, claim_id)`
       cosine similarities and treats `similarity >= similarity_floor` as related, with
       status still decided by domain policy — but the floor is a guessed 0.55 over
       64-dimension hermetic hash vectors, which is a lexical signal wearing a vector
@@ -761,14 +760,14 @@ hits.
       excluded from claims, mappings and the fit score — 4.3, 5.7 and 6.5 stand — and
       becomes available to letter drafting, interview preparation and Ask. A
       regression proves an uploaded letter is citable and changes no score.
-- [ ] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
+- [x] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
       three signals: lexical overlap, embedding cosine, and model adjudication for the
       pairs the first two disagree on. Each signal is computed in an adapter behind a
       port. The combination, the status and the reason code stay pure domain code, and
       every mapping records which signals fired and at what strength so the breakdown
       can show it. The similarity floor moves to configuration and is set by the
       Phase 14 calibration run rather than guessed. Replaces 7.2.
-- [ ] **13C.6 Score only what is scoreable.** The rubric consumes only items typed
+- [x] **13C.6 Score only what is scoreable.** The rubric consumes only items typed
       `requirement` or `responsibility`. Recency uses the parsed role dates from
       13C.3. A requirement met through model adjudication alone says so in the
       explanation. The rubric arithmetic, the 7.4 property tests and the 7.5
@@ -779,7 +778,7 @@ hits.
       bullet for a requirement it does not support. Refuse it with the existing 409
       `insufficient_cited_claims`. Confirm the cover-letter and interview-pack paths
       do not have the same hole.
-- [ ] **13C.8 Output depth.** Every tab returns something worth reading: a prose fit
+- [x] **13C.8 Output depth.** Every tab returns something worth reading: a prose fit
       summary naming the strongest and weakest requirements, per-requirement evidence
       showing the actual quoted CV text, a gap plan with concrete actions and score
       deltas, tailored bullets, a cover letter that references this role and company,
@@ -791,7 +790,7 @@ hits.
       section boundary, and read role dates from the role line. Those are the three
       bugs the audit found. Add the real CV and a real advert as fixtures so the
       failure cannot return unnoticed.
-- [ ] **13C.10 Reconcile documentation with the new direction.** Update the README
+- [x] **13C.10 Reconcile documentation with the new direction.** Update the README
       architecture claims, `docs/features.md`, `docs/production-wiring.md`, the threat
       model where extraction changed, and ADR 003. Write a new ADR recording why
       deterministic extraction was tried, exactly what it produced on a real document,

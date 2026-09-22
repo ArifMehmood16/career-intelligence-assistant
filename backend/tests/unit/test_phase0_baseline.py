@@ -179,6 +179,7 @@ def test_scoring_rubric_is_configuration_matching_features() -> None:
     assert rubric["recency"]["over_5y"] == 0.7
     assert rubric["bands"]["strong_match_min"] == 75
     assert rubric["bands"]["partial_match_min"] == 50
+    assert rubric["mapping"]["similarity_floor"] == 0.55
     features = FEATURES.read_text(encoding="utf-8")
     assert "must-have = 3" in features
     assert "configuration" in features.lower()

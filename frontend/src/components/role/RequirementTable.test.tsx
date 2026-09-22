@@ -85,4 +85,36 @@ describe("RequirementTable states", () => {
     await user.click(screen.getAllByText("Production dbt experience")[0]!);
     expect(onSelect).toHaveBeenCalledWith(requirement);
   });
+
+  it("shows the quoted CV evidence in full, not a truncated snippet", () => {
+    const quote =
+      "Owned dbt models in production for the warehouse across finance and growth reporting pipelines.";
+    render(
+      <RequirementTable
+        state="ready"
+        requirements={[
+          {
+            ...requirement,
+            status: "met",
+            evidence: {
+              spanId: "span-1",
+              documentId: "cv-1",
+              page: 1,
+              paragraph: quote,
+              highlight: quote,
+            },
+          },
+        ]}
+        collapsedGroups={[]}
+        onToggleGroup={vi.fn()}
+        onSelect={vi.fn()}
+        onRetry={vi.fn()}
+        layout="table"
+      />,
+    );
+    expect(screen.getAllByText(quote).length).toBeGreaterThan(0);
+    expect(
+      screen.queryByText(`${quote.slice(0, 80)}…`),
+    ).not.toBeInTheDocument();
+  });
 });

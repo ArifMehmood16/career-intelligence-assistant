@@ -82,11 +82,18 @@ alone.
   document does not contain. Quoting an instruction that *is* in the document is
   possible; classification and scoring, not verification, have to deal with that.
 - `make test` is unchanged: the test app factory still builds a hermetic app.
-- Persistence of `item_type` and `self_authored` is still required before a SQL
-  reload can preserve those flags. Until that lands, in-memory analysis is the
-  path that holds the new types.
-- Three-signal matching (lexical, embedding, model adjudication) and output-depth
-  work remain PLAN 13C.5 and 13C.8. This ADR does not pre-empt them.
+- Persistence of `item_type` and `self_authored` landed in 13C.6 so a SQL
+  reload preserves those flags.
+- Three-signal matching (13C.5) combines lexical overlap, embedding cosine and
+  model adjudication of XOR disagreements in domain code. Hermetic analysis
+  skips the adjudicator and keeps the OR of the first two.
+- Output depth (13C.8) is shipped: a prose fit summary on GET `/roles/{id}`,
+  full quoted CV evidence on each requirement, and interview prompts that
+  quote the candidate's own claims.
+- Pay and logistics are classified by the extraction prompt and JSON schema,
+  not by a post-filter. The local Ollama adapter sends that schema as
+  `format` so the enum descriptions reach the model.
+- An extract with no scoreable items is banded `unscored`, not `limited`.
 - ADR 003's "hermetic default" referred to the test fixture and, incorrectly, to
   the running product. The product default is now a local model; see the
   amendment there.

@@ -25,10 +25,21 @@ export interface Role {
   counts: { met: number; partial: number; missing: number };
   status: RoleStatus;
   updatedAt: string;
+  /** Present on GET /roles/{id} once analysis is ready; omitted from list rows. */
+  fitSummary?: string | null;
 }
 
 export type RequirementType = "must" | "desirable";
 export type RequirementStatus = "met" | "partial" | "missing";
+
+export interface RelatednessSignals {
+  lexical: boolean;
+  lexicalOverlap: number;
+  embedding: boolean;
+  embeddingSimilarity: number;
+  adjudication: boolean | null;
+  related: boolean;
+}
 
 export interface Requirement {
   id: string;
@@ -37,6 +48,7 @@ export interface Requirement {
   type: RequirementType;
   status: RequirementStatus;
   evidence: Evidence | null;
+  signals?: RelatednessSignals | null | undefined;
 }
 
 export interface BreakdownRow {

@@ -32,6 +32,7 @@ from career_assistant.api.schemas import (
     GapPlanWire,
     InterviewPackWire,
     RankedRoleWire,
+    RelatednessSignalsWire,
     RequirementWire,
     RoleCounts,
     RoleResponse,
@@ -75,7 +76,7 @@ from career_assistant.domain.generation import (
     mapping_supports_cv_bullet,
 )
 from career_assistant.domain.groundedness import GroundednessVerdict
-from career_assistant.domain.mapping import MappingStatus
+from career_assistant.domain.mapping import MappingStatus, RequirementMapping
 from career_assistant.domain.requirements import Requirement
 
 router = APIRouter(tags=["analysis"])
@@ -118,6 +119,7 @@ def _role_response(role: RoleView) -> RoleResponse:
         counts=RoleCounts(**role.counts),
         status=role.status,
         updated_at=role.updated_at.isoformat().replace("+00:00", "Z"),
+        fit_summary=None,
     )
 
 
@@ -146,6 +148,18 @@ def _evidence(
         page=evidence.page,
         paragraph=evidence.paragraph,
         highlight=evidence.highlight,
+    )
+
+
+def _signals_wire(mapping: RequirementMapping) -> RelatednessSignalsWire:
+    signals = mapping.signals
+    return RelatednessSignalsWire(
+        lexical=signals.lexical,
+        lexical_overlap=signals.lexical_overlap,
+        embedding=signals.embedding,
+        embedding_similarity=signals.embedding_similarity,
+        adjudication=signals.adjudication,
+        related=signals.related,
     )
 
 
@@ -385,6 +399,7 @@ def get_requirements(
                 type="must" if req.must_have else "desirable",
                 status=status,
                 evidence=_evidence(request, workspace_id, span_id),
+                signals=_signals_wire(mapping) if mapping is not None else None,
             )
         )
     return rows

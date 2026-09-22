@@ -140,3 +140,10 @@ def test_unscoreable_items_do_not_move_the_score() -> None:
     fat = score_fit(padded, map_requirements(padded, claims), claims, RUBRIC)
 
     assert lean.score == fat.score
+
+
+def test_persistence_models_carry_item_type_and_self_authored() -> None:
+    from career_assistant.adapters.persistence.models import ClaimRow, RequirementRow
+
+    assert "item_type" in RequirementRow.__table__.c
+    assert "self_authored" in ClaimRow.__table__.c
