@@ -10,6 +10,7 @@ classification makes the extraction incomplete. Nothing is fuzzy-matched.
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from typing import Any
 
@@ -28,6 +29,9 @@ from career_assistant.domain.candidate_spans import (
 )
 from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.requirements import ItemType, Requirement
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 REQUIREMENTS_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -164,6 +168,7 @@ class ModelRequirementExtractor:
         accepted, dropped = _accepted_classifications(items, by_id)
         kept_reqs: list[Requirement] = []
         kept_spans: list[Span] = []
+        type_counts: dict[str, int] = {}
         for issued, (start, end, text) in by_id.items():
             item = accepted.get(issued)
             if item is None:
@@ -174,12 +179,31 @@ class ModelRequirementExtractor:
             )
             kept_reqs.append(requirement)
             kept_spans.append(span)
+            type_counts[requirement.item_type.value] = (
+                type_counts.get(requirement.item_type.value, 0) + 1
+            )
 
+        complete = len(accepted) == len(by_id)
+        log_event(
+            _log,
+            "requirements.extraction",
+            document_id=document_id,
+            spans_supplied=len(by_id),
+            spans_classified=len(accepted),
+            requirements_kept=len(kept_reqs),
+            dropped=dropped,
+            complete=complete,
+            type_counts=",".join(
+                f"{kind}:{count}" for kind, count in sorted(type_counts.items())
+            )
+            or "none",
+            provider=self._completion.capabilities.provider_id,
+        )
         return RequirementExtractionResult(
             requirements=tuple(kept_reqs),
             spans=tuple(kept_spans),
             dropped_unverifiable=dropped,
-            complete=len(accepted) == len(by_id),
+            complete=complete,
         )
 
 

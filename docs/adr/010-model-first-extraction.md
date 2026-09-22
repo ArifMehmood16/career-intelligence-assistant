@@ -153,13 +153,11 @@ skills or narrative. It does not copy the claim text. Employer and title are
 kept only when they appear inside the heading span. Dates, recency and
 duration are parsed from that heading in domain code. A project claim cites
 its project heading. A bare skills list is classified and is not a claim.
-Completeness is about scoreable evidence: rejected experience or project
-assignments, employment or claim-like spans left unclassified, and role
-headings with no claims. Unclassified narrative, skills or education lines do
-not fail the job by themselves. An unparsed date becomes undated; it does not
-fail the job alone. Classification runs in bounded batches with one retry for
-ids the model skipped, so a multi-role CV is not truncated by a single
-output-token budget. The job fails with `extraction_incomplete` only when that
-scoreable-evidence gate fails, and it does not publish a replacement claim
-set. Uploaded letters stay self-authored. Generated drafts still never raise a
-score.
+Completeness is about scoreable evidence: claim attach failures and unclassified
+employment or claim-like spans. Empty role headings are counted but do not fail
+alone. A missing `roleSpanId` attaches to the nearest preceding heading of the
+matching kind. An unparsed date becomes undated. Classification runs in bounded
+batches with one retry for skipped ids. Safe logs record per-batch and aggregate
+counts only — never CV text. The job fails with `extraction_incomplete` only when
+that gate fails, and it does not publish a replacement claim set. Uploaded letters
+stay self-authored. Generated drafts still never raise a score.

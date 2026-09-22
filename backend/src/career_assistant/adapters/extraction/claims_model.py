@@ -4,14 +4,12 @@ The server splits the stored CV into stable spans. The model assigns each
 span id to a role heading, an experience claim, a project claim, a skills
 list or narrative. It does not copy the text. Dates are parsed from the
 heading span in domain code. A skills list is not a claim. Completeness
-covers scoreable evidence: rejected experience or project assignments,
-unclassified employment or claim-like spans, and role headings with no
-claims. Unclassified narrative, skills or education lines do not fail the
-job alone. An unparsed date becomes undated. Spans are classified in
-bounded batches with one retry for ids the model skipped, so a real CV is
-not truncated by a single output-token limit. The job fails with
-extraction_incomplete only when that gate fails, and it does not replace
-a previous claim set.
+covers scoreable evidence: claim attach failures and unclassified employment
+or claim-like spans. Empty role headings are counted but do not fail alone.
+A missing roleSpanId attaches to the nearest preceding heading. An unparsed
+date becomes undated. Spans are classified in bounded batches with one retry
+for skipped ids. The job fails with extraction_incomplete only when that
+gate fails, and it does not replace a previous claim set.
 """
 
 from __future__ import annotations
@@ -135,31 +133,36 @@ class ModelClaimExtractor:
         ordered = tuple(by_id)
         collected: list[object] = []
         retries = 0
+        batch_index = 0
         for start, end in assessment_batch_slices(len(ordered), self._batch_size):
             batch_ids = ordered[start:end]
-            collected.extend(
-                self._classify_batch(
-                    batch_ids,
-                    by_id=by_id,
-                    normalised_text=normalised_text,
-                    self_authored=self_authored,
-                )
+            batch_index += 1
+            items = self._classify_batch(
+                batch_ids,
+                by_id=by_id,
+                normalised_text=normalised_text,
+                self_authored=self_authored,
+                batch_index=batch_index,
+                attempt="primary",
             )
+            collected.extend(items)
         accepted, _dropped = _accepted(collected, by_id)
         missing = tuple(issued for issued in ordered if issued not in accepted)
         if missing:
             retries = 1
             for start, end in assessment_batch_slices(len(missing), self._batch_size):
                 batch_ids = missing[start:end]
-                collected.extend(
-                    self._classify_batch(
-                        batch_ids,
-                        by_id=by_id,
-                        normalised_text=normalised_text,
-                        self_authored=self_authored,
-                    )
+                batch_index += 1
+                items = self._classify_batch(
+                    batch_ids,
+                    by_id=by_id,
+                    normalised_text=normalised_text,
+                    self_authored=self_authored,
+                    batch_index=batch_index,
+                    attempt="retry",
                 )
-        result = _assemble(
+                collected.extend(items)
+        result, diagnostics = _assemble(
             collected,
             by_id=by_id,
             document_id=document_id,
@@ -169,14 +172,24 @@ class ModelClaimExtractor:
         log_event(
             _log,
             "claims.extraction",
+            document_id=document_id,
+            document_kind=document_kind.value,
             spans_supplied=result.spans_supplied,
+            spans_classified=diagnostics["spans_classified"],
+            spans_unclassified=diagnostics["spans_unclassified"],
+            scoreable_unclassified=diagnostics["scoreable_unclassified"],
+            kind_counts=diagnostics["kind_counts"],
             claims_returned=result.claims_returned,
             claims_accepted=result.claims_accepted,
+            claims_attach_failed=diagnostics["attach_failed"],
+            claims_nearest_recovered=diagnostics["nearest_recovered"],
             claims_rejected=result.claims_rejected,
             roles_detected=result.roles_detected,
             roles_without_claims=result.roles_without_claims,
+            incomplete_reasons=diagnostics["incomplete_reasons"] or "none",
             complete=result.complete,
             batch_size=self._batch_size,
+            batch_calls=batch_index,
             retry_count=retries,
             provider=self._completion.capabilities.provider_id,
         )
@@ -189,6 +202,8 @@ class ModelClaimExtractor:
         by_id: dict[str, tuple[int, int, str]],
         normalised_text: str,
         self_authored: bool,
+        batch_index: int,
+        attempt: str,
     ) -> list[object]:
         if not batch_ids:
             return []
@@ -214,14 +229,40 @@ class ModelClaimExtractor:
                 json_schema=CLAIMS_JSON_SCHEMA,
             )
         )
+        parse_ok = True
+        items: list[object] = []
         try:
             payload = json.loads(result.text)
         except (TypeError, ValueError):
-            return []
-        items = payload.get("assignments") if isinstance(payload, dict) else None
-        if not isinstance(items, list):
-            return []
-        return list(items)
+            parse_ok = False
+            payload = None
+        if parse_ok and isinstance(payload, dict):
+            raw = payload.get("assignments")
+            if isinstance(raw, list):
+                items = list(raw)
+            else:
+                parse_ok = False
+        elif parse_ok:
+            parse_ok = False
+        accepted_in_batch = 0
+        for item in items:
+            if isinstance(item, dict) and item.get("spanId") in by_id:
+                accepted_in_batch += 1
+        log_event(
+            _log,
+            "claims.batch",
+            batch_index=batch_index,
+            attempt=attempt,
+            spans_requested=len(batch_ids),
+            assignments_returned=len(items),
+            assignments_known=accepted_in_batch,
+            parse_ok=parse_ok,
+            output_tokens=result.output_tokens,
+            max_output_tokens=max_tokens,
+            provider=self._completion.capabilities.provider_id,
+            model=result.model_tag,
+        )
+        return items if parse_ok else []
 
 
 def _assemble(
@@ -231,12 +272,12 @@ def _assemble(
     document_id: str,
     as_of: date,
     self_authored: bool,
-) -> ClaimExtractionResult:
+) -> tuple[ClaimExtractionResult, dict[str, object]]:
     accepted, dropped = _accepted(items, by_id)
-    # Completeness is about scoreable evidence, not every narrative line.
-    # PLAN 13D.6d: missing roles, lost associations or rejected claim spans
-    # make extraction incomplete when they affect scoreable evidence.
-    complete = True
+    kind_counts: dict[str, int] = {}
+    for item in accepted.values():
+        kind = str(item.get("kind"))
+        kind_counts[kind] = kind_counts.get(kind, 0) + 1
     headings: dict[str, _Heading] = {}
     for issued, item in accepted.items():
         kind = str(item.get("kind"))
@@ -258,6 +299,8 @@ def _assemble(
     spans: list[Span] = []
     claimed_headings: set[str] = set()
     returned = 0
+    attach_failed = 0
+    nearest_recovered = 0
     for issued, item in accepted.items():
         kind = str(item.get("kind"))
         if kind not in _CLAIM_KINDS:
@@ -265,12 +308,25 @@ def _assemble(
         returned += 1
         role_key = item.get("roleSpanId")
         heading = headings.get(role_key) if isinstance(role_key, str) else None
-        if heading is None or not _attaches(kind, heading.kind, self_authored):
+        if heading is not None and not _attaches(kind, heading.kind, self_authored):
+            heading = None
+            role_key = None
+        if heading is None and not self_authored:
+            want = "role_heading" if kind == "experience" else "project_heading"
+            recovered = _nearest_heading(issued, headings, by_id=by_id, want_kind=want)
+            if recovered is not None:
+                role_key, heading = recovered
+                nearest_recovered += 1
+        if heading is None or (
+            not self_authored
+            and not _attaches(kind, heading.kind, self_authored)
+        ):
             if not self_authored:
                 dropped += 1
-                complete = False
+                attach_failed += 1
                 continue
             heading = None
+            role_key = None
         start, end, text = by_id[issued]
         span = Span(
             id=issued,
@@ -282,10 +338,10 @@ def _assemble(
         )
         span_ids = [issued]
         extra: list[Span] = [span]
-        if heading is not None:
-            claimed_headings.add(role_key)  # type: ignore[arg-type]
+        if heading is not None and isinstance(role_key, str):
+            claimed_headings.add(role_key)
             heading_span = Span(
-                id=role_key,  # type: ignore[arg-type]
+                id=role_key,
                 document_id=document_id,
                 page_number=1,
                 start_offset=heading.start,
@@ -325,11 +381,15 @@ def _assemble(
             if all(existing.id != piece.id for existing in spans):
                 spans.append(piece)
     roles_without = len(set(headings) - claimed_headings)
-    if not self_authored and roles_without > 0:
-        complete = False
-    if not self_authored and _missing_scoreable_spans(by_id, set(accepted)):
-        complete = False
-    return ClaimExtractionResult(
+    scoreable_unclassified = _count_missing_scoreable(by_id, set(accepted))
+    incomplete_reasons: list[str] = []
+    if not self_authored and attach_failed > 0:
+        incomplete_reasons.append("claim_attach_failed")
+    if not self_authored and scoreable_unclassified > 0:
+        incomplete_reasons.append("scoreable_unclassified")
+    # roles_without_claims is diagnostic only: empty headings do not fail alone.
+    complete = not incomplete_reasons
+    result = ClaimExtractionResult(
         claims=tuple(claims),
         spans=tuple(spans),
         dropped_unverifiable=dropped,
@@ -341,18 +401,54 @@ def _assemble(
         roles_detected=len(headings),
         roles_without_claims=roles_without,
     )
+    diagnostics: dict[str, object] = {
+        "spans_classified": len(accepted),
+        "spans_unclassified": len(by_id) - len(accepted),
+        "scoreable_unclassified": scoreable_unclassified,
+        "kind_counts": ",".join(
+            f"{kind}:{count}" for kind, count in sorted(kind_counts.items())
+        )
+        or "none",
+        "attach_failed": attach_failed,
+        "nearest_recovered": nearest_recovered,
+        "incomplete_reasons": ",".join(incomplete_reasons),
+    }
+    return result, diagnostics
+
+
+def _count_missing_scoreable(
+    by_id: dict[str, tuple[int, int, str]], classified: set[str]
+) -> int:
+    return sum(
+        1
+        for issued, (_start, _end, text) in by_id.items()
+        if issued not in classified and _looks_like_scoreable_evidence(text)
+    )
 
 
 def _missing_scoreable_spans(
     by_id: dict[str, tuple[int, int, str]], classified: set[str]
 ) -> bool:
-    """True when an employment or claim-like span was never classified."""
-    for issued, (_start, _end, text) in by_id.items():
-        if issued in classified:
+    return _count_missing_scoreable(by_id, classified) > 0
+
+
+def _nearest_heading(
+    claim_issued: str,
+    headings: dict[str, _Heading],
+    *,
+    by_id: dict[str, tuple[int, int, str]],
+    want_kind: str,
+) -> tuple[str, _Heading] | None:
+    claim_start = by_id[claim_issued][0]
+    best: tuple[str, _Heading] | None = None
+    for issued, heading in headings.items():
+        if heading.kind != want_kind:
             continue
-        if _looks_like_scoreable_evidence(text):
-            return True
-    return False
+        if heading.start > claim_start:
+            continue
+        if best is None or heading.start > best[1].start:
+            best = (issued, heading)
+    return best
 
 
 def _looks_like_scoreable_evidence(text: str) -> bool:

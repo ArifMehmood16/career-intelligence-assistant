@@ -66,7 +66,11 @@ from career_assistant.domain.jobs import (
 )
 from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.scoring import ScoringRubric, score_fit
-from career_assistant.logconfig import log_event
+from career_assistant.logconfig import (
+    bind_request_context,
+    clear_request_context,
+    log_event,
+)
 from career_assistant.settings import ProviderSettings
 
 _ROOT = Path(__file__).resolve().parents[5]
@@ -200,6 +204,15 @@ class SqlAnalysisWorker:
             return claimed
 
     def complete(self, job: AnalysisJob) -> AnalysisJob:
+        bind_request_context(
+            correlation_id=job.id, workspace_id=job.workspace_id
+        )
+        try:
+            return self._run_job(job)
+        finally:
+            clear_request_context()
+
+    def _run_job(self, job: AnalysisJob) -> AnalysisJob:
         stage = JobStage.PARSING
         log_event(
             _log,
@@ -227,6 +240,17 @@ class SqlAnalysisWorker:
                 cv_id = cv.id
                 cv_text = cv.normalised_text
                 analysis_version = role.analysis_version
+            log_event(
+                _log,
+                "worker.documents",
+                job_id=job.id,
+                role_id=job.role_id,
+                jd_id=jd_id,
+                cv_id=cv_id,
+                jd_chars=len(jd_text),
+                cv_chars=len(cv_text),
+                analysis_version=analysis_version,
+            )
 
             stage = JobStage.EXTRACTING_REQUIREMENTS
             log_event(
@@ -243,6 +267,16 @@ class SqlAnalysisWorker:
                 document_id=jd_id,
                 document_kind=DocumentKind.JOB_DESCRIPTION,
                 normalised_text=jd_text,
+            )
+            log_event(
+                _log,
+                "worker.requirements",
+                job_id=job.id,
+                role_id=job.role_id,
+                complete=req_result.complete,
+                requirements=len(req_result.requirements),
+                spans=len(req_result.spans),
+                dropped=req_result.dropped_unverifiable,
             )
             if not req_result.complete:
                 running = (
@@ -276,6 +310,9 @@ class SqlAnalysisWorker:
                     role_id=job.role_id,
                     stage=JobStage.EXTRACTING_REQUIREMENTS.value,
                     code="extraction_incomplete",
+                    requirements=len(req_result.requirements),
+                    spans=len(req_result.spans),
+                    dropped=req_result.dropped_unverifiable,
                 )
                 return failed
             stage = JobStage.EXTRACTING_CLAIMS
@@ -290,6 +327,19 @@ class SqlAnalysisWorker:
                 document_id=cv_id,
                 document_kind=DocumentKind.CV,
                 normalised_text=cv_text,
+            )
+            log_event(
+                _log,
+                "worker.claims",
+                job_id=job.id,
+                role_id=job.role_id,
+                complete=claim_result.complete,
+                spans_supplied=claim_result.spans_supplied,
+                claims_returned=claim_result.claims_returned,
+                claims_accepted=claim_result.claims_accepted,
+                claims_rejected=claim_result.claims_rejected,
+                roles_detected=claim_result.roles_detected,
+                roles_without_claims=claim_result.roles_without_claims,
             )
             if not claim_result.complete:
                 running = (
@@ -323,6 +373,12 @@ class SqlAnalysisWorker:
                     role_id=job.role_id,
                     stage=JobStage.EXTRACTING_CLAIMS.value,
                     code="extraction_incomplete",
+                    spans_supplied=claim_result.spans_supplied,
+                    claims_returned=claim_result.claims_returned,
+                    claims_accepted=claim_result.claims_accepted,
+                    claims_rejected=claim_result.claims_rejected,
+                    roles_detected=claim_result.roles_detected,
+                    roles_without_claims=claim_result.roles_without_claims,
                 )
                 return failed
             stage = JobStage.MAPPING
@@ -350,6 +406,15 @@ class SqlAnalysisWorker:
                 adjudicator=adjudicator,
                 similarity_floor=_MAPPING.similarity_floor,
             )
+            log_event(
+                _log,
+                "worker.mapping",
+                job_id=job.id,
+                role_id=job.role_id,
+                mappings=len(mappings),
+                requirements=len(req_result.requirements),
+                claims=len(claim_result.claims),
+            )
             stage = JobStage.SCORING
             log_event(
                 _log,
@@ -363,6 +428,15 @@ class SqlAnalysisWorker:
                 mappings,
                 claim_result.claims,
                 self._rubric,
+            )
+            log_event(
+                _log,
+                "worker.scoring",
+                job_id=job.id,
+                role_id=job.role_id,
+                band=explanation.band,
+                numerator=explanation.numerator,
+                denominator=explanation.denominator,
             )
 
             running = (
@@ -398,6 +472,9 @@ class SqlAnalysisWorker:
                     role_id=job.role_id,
                     stage=stage.value,
                     code="assessment_incomplete",
+                    band=explanation.band,
+                    numerator=explanation.numerator,
+                    denominator=explanation.denominator,
                 )
                 return failed
             terminal = mark_succeeded(staged, at=self._clock())
@@ -428,6 +505,9 @@ class SqlAnalysisWorker:
                 claim_count=len(claim_result.claims),
                 mapping_count=len(mappings),
                 dropped_unverifiable=req_result.dropped_unverifiable,
+                band=explanation.band,
+                numerator=explanation.numerator,
+                denominator=explanation.denominator,
             )
             return terminal
         except JobCancelled:

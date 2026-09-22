@@ -486,6 +486,77 @@ def test_only_the_first_role_fails_completeness() -> None:
     assert result.spans_supplied > result.claims_accepted + 1
 
 
+def test_empty_role_headings_alone_do_not_fail_when_scoreable_claims_attach() -> None:
+    """Extra role_heading labels are tracked; they do not fail a complete claim set."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "Contoso Ltd — Intern, January 2019 – June 2019.\n"
+    )
+    ids = _ids(text)
+    northwind = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    contoso = ids["Contoso Ltd — Intern, January 2019 – June 2019."]
+    payload = {
+        "assignments": [
+            _assign(
+                northwind,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=northwind,
+            ),
+            _assign(
+                contoso,
+                "role_heading",
+                employer="Contoso Ltd",
+                title="Intern",
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.roles_detected == 2
+    assert result.roles_without_claims == 1
+    assert result.claims_accepted == 1
+
+
+def test_claim_with_missing_role_span_attaches_to_nearest_heading() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            # No roleSpanId — server recovers the preceding employment heading.
+            _assign(ids["Owned dbt models in production."], "experience"),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 1
+    assert result.claims[0].employer == "Northwind Analytics Ltd"
+
+
 def test_an_unparsed_role_date_stays_undated_without_failing_completeness() -> None:
     """PLAN 13D.6d — lost dates become undated; they do not fail the job alone."""
     text = normalise_text(

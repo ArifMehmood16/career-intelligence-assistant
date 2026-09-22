@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 111 — Claim attach recovery and analysis diagnostics
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective + observability
+- Prompt intent: analysis still failed; user asked for logging on every backend function.
+- Suggestion: add a log statement to every function in every backend file.
+- Outcome: rejected then corrected
+- Reason: logging every function would drown signal and risk document text in logs (threat model). Instrumented the analysis path with stage counts, per-batch claim classification, `incomplete_reasons`, and workspace-bound context. Live failure showed `roles_without_claims=7` and attach drops; empty role headings no longer fail completeness alone, and a missing `roleSpanId` attaches to the nearest preceding heading.
+- Human validation: `pytest` on claim extraction and analysis pipeline passed (29) with `--no-cov`.
+
 ### 110 — Claim extraction batches so a real CV finishes
 
 - Date: 2026-09-22
