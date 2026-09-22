@@ -369,4 +369,3 @@ def test_no_scoreable_requirements_is_unscored_not_a_limited_match() -> None:
     assert explanation.score == 0
     assert explanation.band == "unscored"
     assert explanation.components == ()
-
