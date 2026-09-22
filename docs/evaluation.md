@@ -285,20 +285,40 @@ same three disagreements, the same unsupported `met` and the same order error as
 v2. Stating the conflict rule more plainly changed nothing, and the printed
 reason said why: *"The evidence shows the candidate operated Kubernetes in
 production for three years, which meets the requirement."* The model was not
-ignoring the conflict. It never saw it.
+ignoring the conflict. It never saw it — `dev-contradiction` puts the denial in
+a cover letter, and self-authored claims were excluded from retrieval because
+they cannot support a match.
 
-`dev-contradiction` puts the denial in a cover letter, and self-authored claims
-were excluded from retrieval entirely, because they cannot support a match. They
-were therefore invisible, and a letter saying the work was not done read as
-agreement. That is the same class of failure as the paraphrase gate: evidence
-kept out of the prompt, read afterwards as a model error.
+### Showing the cover letter was tried and reverted
 
-`evidence-assessment-v4` shows up to two self-authored claims as context marked
-`source=self-authored-cannot-support`. Their spans stay out of the allowlist, so
-a match cited only to the letter is still rejected as incomplete.
+`evidence-assessment-v4` showed up to two self-authored claims as context marked
+`source=self-authored-cannot-support`, with their spans kept out of the
+allowlist. Measured on the same labels with `qwen2.5:7b`, disagreements went
+from 3 to 6 and the contradiction case was still not `partial`:
 
-The other two disagreements are label questions, not defects, and are left for
-the reviewer rather than resolved here:
+| Case | v3 | v4 | Reason printed on v4 |
+|---|---|---|---|
+| `dev-letter-dup` / `req-k8s` | met | missing | *(empty)* |
+| `dev-contradiction` / `req-k8s-conflict` | met | missing | *(empty)* |
+| `dev-overlap` / `req-java-years` | partial | missing | totals six years, not stated as continuous |
+| `dev-injection` / `req-inject` | missing | met | matched the only evidence present |
+
+The two empty reasons are the finding. An empty justification means the
+assessment was rejected in validation and recorded as incomplete, and both cases
+are ones where the letter repeats or denies a CV line: the model was shown the
+letter, cited it, and lost the whole assessment because that span is not
+citable. Showing evidence that may not be cited converts a wrong answer into no
+answer. `dev-letter-dup` was correct on v3 and broke on v4, so the change cost
+more than the case it was written for.
+
+v4 is reverted. `dev-contradiction` stays a recorded gate failure: a denial that
+lives only in a cover letter is not visible to the assessment, and closing that
+needs a contradiction check the server performs itself, not a larger prompt.
+
+### The two remaining disagreements are label questions
+
+Neither is changed to match the model. Both are recorded so the decision is made
+once, by a person, and written down.
 
 - `role-strong` / `req-sql`. The requirement is "Write SQL for a cloud
   warehouse"; the evidence is "Wrote SQL reports for the warehouse team". The
@@ -310,11 +330,18 @@ the reviewer rather than resolved here:
   definition of `partial` — and then answered `missing`. The label says
   `partial`.
 
-Neither label is changed to match the model. Both are recorded so the decision
-is made once, by a person, and written down.
+### Run-to-run variation
 
-**Not yet measured:** no run has been recorded against `evidence-assessment-v4`.
+`dev-overlap` and `dev-injection` changed between v3 and v4 without any code
+touching them, so single runs do not separate a small difference from model
+variation. The two dropped assessments have a structural explanation and the
+label questions reproduce across every run; the rest of a 3-versus-6 gap does
+not, on one run each. Configurations are compared here on one observed run
+apiece and that is stated rather than averaged away.
 
+**Current position:** `evidence-assessment-v3` with `qwen2.5:7b` is the measured
+configuration — 3 disagreements of 24, held-out split clean, every predeclared
+gate met except unsupported `met`, which is the contradiction case above.
 
 ## Known measurement limits
 

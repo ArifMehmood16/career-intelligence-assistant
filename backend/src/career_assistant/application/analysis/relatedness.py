@@ -31,9 +31,6 @@ from career_assistant.domain.requirements import Requirement
 # How many claims one requirement may put in front of the assessor before
 # neighbours are added. Small enough to keep the prompt and the call bounded.
 _CANDIDATE_LIMIT = 5
-# Self-authored claims are context only. A couple is enough for a denial to be
-# visible without crowding out the evidence that can actually support a match.
-_CONTEXT_LIMIT = 2
 
 
 @runtime_checkable
@@ -160,7 +157,6 @@ def _map_with_required_assessment(
             requirement,
             claim_list,
             indexes,
-            _context_indexes(requirement, claim_list, similarities=similarities),
             similarities,
             similarity_floor,
         )
@@ -196,30 +192,6 @@ def _map_with_required_assessment(
             )
         )
     return tuple(mappings)
-
-
-def _context_indexes(
-    requirement: Requirement,
-    claims: list[Claim],
-    *,
-    similarities: Mapping[tuple[str, str], float],
-) -> list[int]:
-    """Self-authored claims worth showing, ranked the same way as candidates.
-
-    A cover letter cannot award a match, but a letter that denies the CV is the
-    contradiction the assessment is asked to report. Excluded from retrieval it
-    is structurally invisible, and the denial reads as agreement.
-    """
-    ranked = sorted(
-        (
-            -similarities.get((requirement.id, claim.id), 0.0),
-            -lexical_overlap(requirement.text, claim.context),
-            index,
-        )
-        for index, claim in enumerate(claims)
-        if claim.self_authored
-    )
-    return sorted(index for _, _, index in ranked[:_CONTEXT_LIMIT])
 
 
 def _no_evidence_mapping(requirement: Requirement) -> RequirementMapping:
@@ -274,7 +246,6 @@ def _assessment_item(
     requirement: Requirement,
     claims: list[Claim],
     indexes: list[int],
-    context_indexes: list[int],
     similarities: Mapping[tuple[str, str], float],
     similarity_floor: float,
 ) -> AssessmentItem:
@@ -296,15 +267,6 @@ def _assessment_item(
             adjacent=claims[index].id not in hit_ids,
         )
         for index in indexes
-    ) + tuple(
-        AssessmentEvidence(
-            claim_id=claims[index].id,
-            span_ids=claims[index].source_span_ids,
-            text=claims[index].context,
-            adjacent=True,
-            supports=False,
-        )
-        for index in context_indexes
     )
     return AssessmentItem(
         requirement_id=requirement.id,
