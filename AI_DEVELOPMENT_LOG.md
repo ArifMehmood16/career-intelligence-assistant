@@ -27,6 +27,31 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 102 — A failing job took the whole worker down
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6 (walkthrough)
+- Prompt intent: fix the crash seen during a live run.
+- Suggestion: treat the stack trace as three defects rather than one — the
+  foreign-key violation that started it, the failure handler that raised on
+  the job row, and the loop that ended on that exception.
+- Outcome: accepted
+- Reason: the reported error was the constraint violation, but the damaging
+  one was the third. `run_forever` had no guard, so the thread ended and every
+  later analysis in that process stayed queued with nothing shown anywhere in
+  the interface. A crash that is loud in the log and silent in the product is
+  worse than the error that caused it. The trigger is a real race: extraction
+  runs for minutes, and a document replaced or deleted in that window takes its
+  row with it, so the write now checks the documents and fails as
+  `documents_changed` instead of surfacing a driver constraint.
+- Human validation: three failing tests written first — the loop continuing
+  after a job raises, the failure handler not raising when the job row is
+  absent, and the named document check. Backend pytest exited 0 with coverage
+  82.11%; ruff check, ruff format --check and mypy on 134 source files passed.
+  `fail_job` also changed, and `make test-integration` has not been run against
+  it from this session.
+
 ### 101 — Showing the cover letter made it worse, and was reverted
 
 - Date: 2026-09-22
