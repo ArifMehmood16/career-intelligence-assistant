@@ -3,9 +3,13 @@
 The server splits the stored CV into stable spans. The model assigns each
 span id to a role heading, an experience claim, a project claim, a skills
 list or narrative. It does not copy the text. Dates are parsed from the
-heading span in domain code. A skills list is not a claim. A missing
-classification, an unknown span id or a claim without its role makes the
-extraction incomplete and does not replace a previous claim set.
+heading span in domain code. A skills list is not a claim. Completeness
+covers scoreable evidence: rejected experience or project assignments,
+unclassified employment or claim-like spans, and role headings with no
+claims. Unclassified narrative, skills or education lines do not fail the
+job alone. An unparsed date becomes undated. The job fails with
+extraction_incomplete only when that gate fails, and it does not replace
+a previous claim set.
 """
 
 from __future__ import annotations
@@ -42,7 +46,13 @@ _KINDS = frozenset(
 )
 _CLAIM_KINDS = frozenset({"experience", "project"})
 _HEADING_KINDS = frozenset({"role_heading", "project_heading"})
-_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
+_CLAIM_LEAD = re.compile(
+    r"^(?:[\-\*•]\s+|"
+    r"(?:Delivered|Designed|Owned|Built|Wrote|Authored|Documented|Partnered|"
+    r"Mentored|Supported|Prepared|Assisted|Shadowed|Collected|Cleaned|"
+    r"Shipped|Published|Coordinated)\b)",
+    re.IGNORECASE,
+)
 
 CLAIMS_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -127,7 +137,7 @@ class ModelClaimExtractor:
         )
         try:
             payload = json.loads(result.text)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return _incomplete(len(by_id))
         items = payload.get("assignments") if isinstance(payload, dict) else None
         if not isinstance(items, list):
@@ -161,7 +171,10 @@ def _assemble(
     self_authored: bool,
 ) -> ClaimExtractionResult:
     accepted, dropped = _accepted(items, by_id)
-    complete = len(accepted) == len(by_id)
+    # Completeness is about scoreable evidence, not every narrative line.
+    # PLAN 13D.6d: missing roles, lost associations or rejected claim spans
+    # make extraction incomplete when they affect scoreable evidence.
+    complete = True
     headings: dict[str, _Heading] = {}
     for issued, item in accepted.items():
         kind = str(item.get("kind"))
@@ -169,8 +182,6 @@ def _assemble(
             continue
         _start, _end, text = by_id[issued]
         date_range = parse_date_range(text)
-        if kind == "role_heading" and date_range is None and _YEAR.search(text):
-            complete = False
         headings[issued] = _Heading(
             kind=kind,
             employer=_label(item.get("employer"), text),
@@ -252,6 +263,10 @@ def _assemble(
             if all(existing.id != piece.id for existing in spans):
                 spans.append(piece)
     roles_without = len(set(headings) - claimed_headings)
+    if not self_authored and roles_without > 0:
+        complete = False
+    if not self_authored and _missing_scoreable_spans(by_id, set(accepted)):
+        complete = False
     return ClaimExtractionResult(
         claims=tuple(claims),
         spans=tuple(spans),
@@ -264,6 +279,26 @@ def _assemble(
         roles_detected=len(headings),
         roles_without_claims=roles_without,
     )
+
+
+def _missing_scoreable_spans(
+    by_id: dict[str, tuple[int, int, str]], classified: set[str]
+) -> bool:
+    """True when an employment or claim-like span was never classified."""
+    for issued, (_start, _end, text) in by_id.items():
+        if issued in classified:
+            continue
+        if _looks_like_scoreable_evidence(text):
+            return True
+    return False
+
+
+def _looks_like_scoreable_evidence(text: str) -> bool:
+    if parse_date_range(text) is not None:
+        return True
+    if _CLAIM_LEAD.match(text.strip()):
+        return True
+    return False
 
 
 class _Heading:

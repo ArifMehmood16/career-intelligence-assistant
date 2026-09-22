@@ -1,8 +1,10 @@
 """PLAN 13D.6d — the server owns CV spans; the model classifies their ids.
 
 Dates are parsed from the heading span in domain code. A skills list is not a
-claim. A missing classification, an unknown span id or a claim that does not
-name its role makes extraction incomplete.
+claim. Completeness covers scoreable evidence: rejected experience or project
+assignments, unclassified employment or claim-like spans, and role headings
+with no claims. Unclassified narrative, skills or education do not fail alone.
+An unparsed date becomes undated without failing the job.
 """
 
 from __future__ import annotations
@@ -424,7 +426,8 @@ def test_only_the_first_role_fails_completeness() -> None:
     assert result.spans_supplied > result.claims_accepted + 1
 
 
-def test_an_unparsed_role_date_makes_extraction_incomplete() -> None:
+def test_an_unparsed_role_date_stays_undated_without_failing_completeness() -> None:
+    """PLAN 13D.6d — lost dates become undated; they do not fail the job alone."""
     text = normalise_text(
         "Northwind Analytics Ltd — Analytics Engineer, 2023 to now.\n"
         "Owned dbt models in production.\n"
@@ -449,6 +452,52 @@ def test_an_unparsed_role_date_makes_extraction_incomplete() -> None:
 
     result, _ = _extract(payload, text=text)
 
-    assert result.complete is False
+    assert result.complete is True
     assert result.claims
     assert result.claims[0].period_start is None
+    assert result.claims[0].recency_signal == "undated"
+
+
+def test_unclassified_skills_and_education_do_not_fail_completeness() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "Skills: Python, SQL, Kubernetes\n"
+        "BSc Mathematics — Synthetic University, 2019\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=heading,
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 1
+    assert result.spans_supplied > 2
+
+
+def test_iso_role_dates_are_parsed() -> None:
+    from career_assistant.domain.recency import parse_date_range
+
+    parsed = parse_date_range(
+        "Senior Analytics Engineer — Acme — 2022-01 — Present"
+    )
+    assert parsed is not None
+    assert parsed.start == date(2022, 1, 1)
+    assert parsed.end is None

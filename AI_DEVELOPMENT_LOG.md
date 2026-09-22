@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 109 — CV completeness is scoreable evidence, not every line
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d
+- Prompt intent: live OpenAI analysis failed incomplete; user rejected blaming the CV or cover letter and required the PLAN acceptance criterion.
+- Suggestion: treat every unclassified CV span, or an unparsed year on a role heading, as `extraction_incomplete`.
+- Outcome: rejected then corrected
+- Reason: PLAN 13D.6d makes extraction incomplete when missing roles, lost associations or rejected claim spans affect scoreable evidence — not when skills, education or narrative lines are left unclassified, and not when an unparsed date becomes undated. Completeness now fails for unclassified employment or claim-like spans, claims without a valid heading, and roles with no claims. ADR 010 updated. ISO role dates such as `2022-01 — Present` parse in domain code.
+- Human validation: `pytest` on `test_model_claim_extraction.py` and `test_analysis_pipeline.py` passed (25) with `--no-cov`.
+
 ### 108 — Aviva-shaped synthetic regression fixture
 
 - Date: 2026-09-22

@@ -40,6 +40,12 @@ _RANGE = re.compile(
     rf"(?:(?P<present>Present|Current)|(?P<em>{_MONTH})\.?\s+(?P<ey>\d{{4}}))",
     re.IGNORECASE,
 )
+# Common CV export shapes: 2022-01 — Present, 2022 – 2024.
+_ISO_RANGE = re.compile(
+    r"(?P<sy>\d{4})(?:-(?P<sm>\d{2}))?\s*[\u2013\u2014\-]\s*"
+    r"(?:(?P<present>Present|Current)|(?P<ey>\d{4})(?:-(?P<em>\d{2}))?)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,12 +56,21 @@ class DateRange:
 
 def parse_date_range(text: str) -> DateRange | None:
     match = _RANGE.search(text)
-    if match is None:
+    if match is not None:
+        start = date(int(match.group("sy")), _month_number(match.group("sm")), 1)
+        if match.group("present"):
+            return DateRange(start=start, end=None)
+        end = date(int(match.group("ey")), _month_number(match.group("em")), 1)
+        return DateRange(start=start, end=end)
+    iso = _ISO_RANGE.search(text)
+    if iso is None:
         return None
-    start = date(int(match.group("sy")), _month_number(match.group("sm")), 1)
-    if match.group("present"):
+    start_month = int(iso.group("sm") or "1")
+    start = date(int(iso.group("sy")), start_month, 1)
+    if iso.group("present"):
         return DateRange(start=start, end=None)
-    end = date(int(match.group("ey")), _month_number(match.group("em")), 1)
+    end_month = int(iso.group("em") or "1")
+    end = date(int(iso.group("ey")), end_month, 1)
     return DateRange(start=start, end=end)
 
 
