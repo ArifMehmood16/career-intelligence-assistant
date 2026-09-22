@@ -7,6 +7,7 @@ import threading
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Protocol
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
@@ -75,6 +76,31 @@ _RUBRIC_VERSION = load_rubric_version(_RUBRIC_PATH)
 _MAPPING = load_mapping_config(_RUBRIC_PATH)
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
 _log = logging.getLogger(__name__)
+
+
+class DocumentReader(Protocol):
+    def get(self, workspace_id: str, document_id: str) -> object | None: ...
+
+
+def require_documents(
+    documents: DocumentReader,
+    workspace_id: str,
+    document_ids: Sequence[str],
+) -> None:
+    """Fail by name when an upload the analysis started from has gone.
+
+    Extraction runs for minutes between reading a document and writing its
+    spans, and a replaced or deleted upload takes its row with it. Writing
+    anyway raised a foreign-key violation from the driver, which says nothing
+    about what happened.
+    """
+    missing = [
+        document_id
+        for document_id in document_ids
+        if documents.get(workspace_id, document_id) is None
+    ]
+    if missing:
+        raise RuntimeError("documents_changed")
 
 
 class SqlAnalysisWorker:
@@ -261,6 +287,7 @@ class SqlAnalysisWorker:
                 mark_stage(running, JobStage.SCORING), at=self._clock()
             )
             with self._uow_factory() as uow:
+                require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
                 uow.documents.ensure_spans(job.workspace_id, jd_id, req_result.spans)
                 uow.documents.ensure_spans(job.workspace_id, cv_id, claim_result.spans)
                 uow.analysis.publish(
@@ -305,11 +332,47 @@ class SqlAnalysisWorker:
     ) -> None:
         self.startup()
         while not stop.is_set():
-            processed = self.process_next()
+            try:
+                processed = self.process_next()
+            except Exception as error:
+                # One job must not take the queue down with it.
+                log_event(
+                    _log,
+                    "worker.job_error",
+                    error_type=type(error).__name__,
+                )
+                stop.wait(timeout=idle_wait_seconds)
+                continue
             if processed is None:
                 stop.wait(timeout=idle_wait_seconds)
 
     def _fail(
+        self, job: AnalysisJob, stage: JobStage, cause: BaseException | None = None
+    ) -> AnalysisJob:
+        try:
+            return self._record_failure(job, stage, cause)
+        except Exception as handler_error:
+            # A handler that raises ends the worker thread, and every later job
+            # stays queued with nothing shown anywhere. Recording the failure is
+            # best effort; continuing is not.
+            log_event(
+                _log,
+                "worker.fail_handler_error",
+                job_id=job.id,
+                role_id=job.role_id,
+                stage=stage.value,
+                error_type=type(handler_error).__name__,
+            )
+            return mark_failed(
+                job,
+                at=self._clock(),
+                error=JobError(
+                    code=f"{stage.value}_failed",
+                    message="Analysis failed during this stage.",
+                ),
+            )
+
+    def _record_failure(
         self, job: AnalysisJob, stage: JobStage, cause: BaseException | None = None
     ) -> AnalysisJob:
         with self._uow_factory() as uow:

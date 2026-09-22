@@ -508,7 +508,11 @@ class SqlAnalysisResultRepository:
             _as_uuid(role_id),
             analysis_version=version,
         )
-        self._jobs.save(job)
+        # The role status is what the interface shows. Record it even when the
+        # job row has gone, or a role sits in `analysing` for ever with no error.
+        job_recorded = self._jobs.get(workspace_id, job.id) is not None
+        if job_recorded:
+            self._jobs.save(job)
         self._roles.set_status(workspace_id, role_id, RoleStatus.FAILED)
         self._session.flush()
         log_event(
@@ -517,6 +521,7 @@ class SqlAnalysisResultRepository:
             role_id=role_id,
             job_id=job.id,
             code=job.error.code if job.error else "unknown",
+            job_recorded=job_recorded,
         )
 
     def list_mappings(
