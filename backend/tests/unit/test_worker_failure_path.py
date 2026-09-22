@@ -15,8 +15,10 @@ from types import TracebackType
 import pytest
 
 from career_assistant.adapters.persistence.analysis_worker import (
+    JobCancelled,
     SqlAnalysisWorker,
     require_documents,
+    require_role,
 )
 from career_assistant.application.analysis.service import StartupRecovery
 from career_assistant.domain.jobs import (
@@ -136,3 +138,25 @@ def test_a_document_removed_mid_analysis_is_named_not_a_constraint_error() -> No
 
     with pytest.raises(RuntimeError, match="documents_changed"):
         require_documents(documents, "workspace-1", ("doc-jd", "doc-cv"))
+
+
+class _Roles:
+    def __init__(self, present: bool) -> None:
+        self._present = present
+
+    def get(self, workspace_id: str, role_id: str) -> object | None:
+        return object() if self._present else None
+
+
+def test_a_role_deleted_mid_analysis_is_a_cancellation_not_a_failure() -> None:
+    """Deleting a role removes its job rows and hard-deletes its job description.
+
+    The worker was already extracting. It came back minutes later to write spans
+    against a document that no longer existed, and then could not record the
+    failure because the job row had gone with the role. Nobody asked for an
+    error here: the work was cancelled.
+    """
+    require_role(_Roles(present=True), "workspace-1", "role-1")
+
+    with pytest.raises(JobCancelled):
+        require_role(_Roles(present=False), "workspace-1", "role-1")

@@ -78,8 +78,27 @@ _DEFAULT_TIMEOUT = timedelta(minutes=15)
 _log = logging.getLogger(__name__)
 
 
+class JobCancelled(Exception):
+    """The role was deleted while its analysis was still running."""
+
+
 class DocumentReader(Protocol):
     def get(self, workspace_id: str, document_id: str) -> object | None: ...
+
+
+class RoleReader(Protocol):
+    def get(self, workspace_id: str, role_id: str) -> object | None: ...
+
+
+def require_role(roles: RoleReader, workspace_id: str, role_id: str) -> None:
+    """A deleted role is a cancellation, not an analysis failure.
+
+    Hard delete removes the role, its job rows and its job description. The
+    worker may already be past extraction. Writing spans then fails a foreign
+    key, and recording that failure fails because the job row is gone too.
+    """
+    if roles.get(workspace_id, role_id) is None:
+        raise JobCancelled(role_id)
 
 
 def require_documents(
@@ -287,6 +306,7 @@ class SqlAnalysisWorker:
                 mark_stage(running, JobStage.SCORING), at=self._clock()
             )
             with self._uow_factory() as uow:
+                require_role(uow.roles, job.workspace_id, job.role_id)
                 require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
                 uow.documents.ensure_spans(job.workspace_id, jd_id, req_result.spans)
                 uow.documents.ensure_spans(job.workspace_id, cv_id, claim_result.spans)
@@ -314,6 +334,14 @@ class SqlAnalysisWorker:
                 dropped_unverifiable=req_result.dropped_unverifiable,
             )
             return terminal
+        except JobCancelled:
+            log_event(
+                _log,
+                "worker.cancelled",
+                job_id=job.id,
+                role_id=job.role_id,
+            )
+            return job
         except Exception as exc:
             return self._fail(job, stage, exc)
 
