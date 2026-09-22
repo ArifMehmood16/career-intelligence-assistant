@@ -189,6 +189,17 @@ The frontend polls this with react-query while `state` is `queued` or `running`,
 fixed interval, and stops on a terminal state. A failed job leaves the role at
 `status: "failed"` with the reason, and `POST /reanalyse` is the retry.
 
+**Incomplete analysis (13D.6a).** An extraction or assessment that does not
+validate is a failed job, not a fit score. The decision uses the existing
+failed-job state: role `status` stays `"failed"` and the job `error.code` is
+`assessment_incomplete`. No new role status and no new response field.
+`analysis_incomplete` remains the 409 for work that has not finished; it is not
+reused for a finished assessment that failed validation. `fitScore: 0` is not
+a sentinel for this failure. A complete analysis may still score 0 with band
+"Limited match". A role with no scoreable requirements stays unscored
+("Not scored yet"). A failed reanalysis must not overwrite a previously valid
+saved analysis.
+
 ---
 
 ## Role analysis output

@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 103 — An incomplete assessment is not a fit score
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6a
+- Prompt intent: start Phase 13D.6 in TDD order, beginning with the incomplete-analysis contract.
+- Suggestion: keep publishing a numeric score and only change the band when the arithmetic is zero.
+- Outcome: changed
+- Reason: a surviving partial assessment was producing a small positive score such as 4/100 while the rest of the requirements had no valid assessment. The existing failed-job state already has an error code, so incomplete analysis uses `assessment_incomplete` on that state. `analysis_incomplete` stays the 409 for work that has not finished. No new role status.
+- Human validation: failing tests written first for an unpublished partial assessment and for a job that returns no assessments. `pytest` on `test_mapping_scoring.py`, `test_analysis_pipeline.py` and `test_analysis_attribution.py` passed (32). Ruff check and format passed on the changed Python files. `make test` and `make test-integration` were not run for this commit.
+
 ### 102 — A failing job took the whole worker down
 
 - Date: 2026-09-22

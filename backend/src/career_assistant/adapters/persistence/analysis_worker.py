@@ -302,9 +302,37 @@ class SqlAnalysisWorker:
                 if job.state is JobState.RUNNING
                 else mark_running(job, at=self._clock())
             )
-            terminal = mark_succeeded(
-                mark_stage(running, JobStage.SCORING), at=self._clock()
-            )
+            staged = mark_stage(running, JobStage.SCORING)
+            if explanation.band == "incomplete":
+                failed = mark_failed(
+                    staged,
+                    at=self._clock(),
+                    error=JobError(
+                        code="assessment_incomplete",
+                        message=(
+                            "Analysis did not assess every scoreable requirement. "
+                            "This is not a fit score."
+                        ),
+                    ),
+                )
+                with self._uow_factory() as uow:
+                    require_role(uow.roles, job.workspace_id, job.role_id)
+                    uow.analysis.fail_job(
+                        workspace_id=job.workspace_id,
+                        role_id=job.role_id,
+                        job=failed,
+                    )
+                    uow.commit()
+                log_event(
+                    _log,
+                    "worker.failed",
+                    job_id=job.id,
+                    role_id=job.role_id,
+                    stage=stage.value,
+                    code="assessment_incomplete",
+                )
+                return failed
+            terminal = mark_succeeded(staged, at=self._clock())
             with self._uow_factory() as uow:
                 require_role(uow.roles, job.workspace_id, job.role_id)
                 require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))

@@ -484,9 +484,39 @@ def test_incomplete_assessment_is_not_banded_as_a_poor_fit() -> None:
         rubric,
     )
     assert poor.score == 0.0
-    assert incomplete.score == 0.0
+    assert poor.publishable is True
     assert poor.band == "limited"
+    assert incomplete.publishable is False
     assert incomplete.band == "incomplete"
+    assert incomplete.denominator == 0.0
+
+
+def test_partial_assessment_does_not_publish_a_fit_score() -> None:
+    """PLAN 13D.6a — one surviving assessment must not become 4/100.
+
+    Incomplete items are a failed analysis. They are not zeros in a published
+    denominator, and a genuine all-missing review can still score zero.
+    """
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    met = _req(id="r-met", text="Production Python", competency="python")
+    dropped = _req(id="r-dropped", text="Kubernetes operations", competency="k8s")
+    published = score_fit(
+        (met, dropped),
+        (
+            _scored(met, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(
+                dropped,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.ASSESSMENT_INCOMPLETE,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert published.publishable is False
+    assert published.band == "incomplete"
+    assert published.score == 0.0
+    assert published.denominator == 0.0
 
 
 def test_introductory_course_does_not_meet_production_leadership() -> None:

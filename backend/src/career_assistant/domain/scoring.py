@@ -47,6 +47,8 @@ class ScoreExplanation:
     components: tuple[ScoreComponent, ...]
     denominator: float
     numerator: float
+    # False for unscored and for incomplete analysis. A genuine zero is True.
+    publishable: bool = True
 
 
 def score_fit(
@@ -61,11 +63,22 @@ def score_fit(
     numerator = 0.0
     denominator = 0.0
 
-    counted = _score_once_ids(requirements, mappings)
-    incomplete = any(
+    # An incomplete assessment is a failed analysis. It must not become a
+    # quotient in which the missing items contribute zero.
+    if any(
         mapping.reason_code is MappingReason.ASSESSMENT_INCOMPLETE
         for mapping in mappings
-    )
+    ):
+        return ScoreExplanation(
+            score=0.0,
+            band="incomplete",
+            components=(),
+            denominator=0.0,
+            numerator=0.0,
+            publishable=False,
+        )
+
+    counted = _score_once_ids(requirements, mappings)
     for mapping in mappings:
         req = by_id[mapping.requirement_id]
         weight = rubric.weight_must_have if req.must_have else rubric.weight_desirable
@@ -96,16 +109,17 @@ def score_fit(
             components=tuple(components),
             denominator=denominator,
             numerator=numerator,
+            publishable=False,
         )
     score = 100.0 * numerator / denominator
     score = max(0.0, min(100.0, score))
-    band = "incomplete" if incomplete and score == 0.0 else _band(score, rubric)
     return ScoreExplanation(
         score=score,
-        band=band,
+        band=_band(score, rubric),
         components=tuple(components),
         denominator=denominator,
         numerator=numerator,
+        publishable=True,
     )
 
 

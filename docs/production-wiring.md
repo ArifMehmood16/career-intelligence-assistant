@@ -18,7 +18,7 @@ Provider resolvers:
   the prompt and schema) and one structured evidence assessment for every
   retrieved requirement, including when lexical and embedding signals agree.
   A missing or invalid assessment is `assessment_incomplete` and is not a
-  match. Hermetic analysis still uses the null adjudicator and the OR
+  match. The job fails with that code and no fit score is published. Hermetic analysis still uses the null adjudicator and the OR
   fallback so `make test` stays offline. Cover letters extract as
   self-authored claims and are not
   mapped yet. [ADR 011](adr/011-evidence-assessment-contract.md) records the

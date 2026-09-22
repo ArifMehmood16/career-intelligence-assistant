@@ -142,8 +142,9 @@ the configuration file rather than hard-coding these literals.
 - An introductory course does not meet a requirement that asks for years of
   leadership, even when the model marks it met. It contributes no spans and
   no score.
-- A zero score whose assessments did not complete is banded `incomplete`. A
-  zero score from assessed gaps stays `limited`.
+- An assessment that does not complete is a failed analysis
+  (`assessment_incomplete`), not a fit score. A zero score from assessed gaps
+  stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above
   the configured floor, and model adjudication of the pairs those two disagree
   on. The combination, the status and the reason code stay in domain code.

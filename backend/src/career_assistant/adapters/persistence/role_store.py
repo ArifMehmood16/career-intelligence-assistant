@@ -526,12 +526,14 @@ class SqlRoleStore:
             )
             for c in payload.get("components", [])
         )
+        band = str(score_row.band)
         explanation = ScoreExplanation(
             score=float(score_row.score),
-            band=str(score_row.band),
+            band=band,
             components=components,
             denominator=float(payload.get("denominator", 0.0)),
             numerator=float(payload.get("numerator", 0.0)),
+            publishable=band not in {"incomplete", "unscored"},
         )
         return AnalysisBundle(
             requirements=requirements,
