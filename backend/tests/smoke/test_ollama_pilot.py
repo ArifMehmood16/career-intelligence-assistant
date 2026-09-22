@@ -32,6 +32,7 @@ from career_assistant.application.providers.accounting import (
     AccountingEmbedding,
     CallAccountant,
 )
+from career_assistant.domain.assessment import PROMPT_VERSION
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.requirements import Requirement
 from career_assistant.evaluation.baseline import load_pilot, measured_policy_baseline
@@ -40,8 +41,11 @@ pytestmark = pytest.mark.smoke
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
-_COMPLETION_MODEL = "llama3.2"
-_EMBEDDING_MODEL = "nomic-embed-text"
+# One variable at a time: change the completion model without touching the
+# prompt or the labels, so a weak-model result can be told apart from a weak
+# prompt. SMOKE_COMPLETION_MODEL / SMOKE_EMBEDDING_MODEL override the defaults.
+_COMPLETION_MODEL = os.environ.get("SMOKE_COMPLETION_MODEL", "llama3.2")
+_EMBEDDING_MODEL = os.environ.get("SMOKE_EMBEDDING_MODEL", "nomic-embed-text")
 
 
 def _percentile(values: tuple[float, ...], fraction: float) -> float:
@@ -119,6 +123,9 @@ def test_local_ollama_measures_the_labelled_pilot() -> None:
     assert {record.model_tag for record in completions} == {_COMPLETION_MODEL}
     assert {record.model_tag for record in embeddings} == {_EMBEDDING_MODEL}
     lines = [
+        f"completion_model={_COMPLETION_MODEL}",
+        f"embedding_model={_EMBEDDING_MODEL}",
+        f"prompt_version={PROMPT_VERSION}",
         f"roles={len(report.role_latency_seconds)}",
         f"disagreements={len(report.disagreements)}",
         f"unsupported_met={len(report.unsupported_met)}",

@@ -28,8 +28,13 @@ so 7 of 24 scoreable requirements were decided with no assessor call and 2
 labelled supporting passages were never shown. The floor now ranks evidence
 instead of gating it, an empty candidate set is recorded rather than handed to
 the lexical path, and every mapping carries what the assessor saw. Both counts
-are zero on the pilot. The live measurement has not been repeated since, so the
-13D.6 numbers in `docs/evaluation.md` are still the last observed ones.
+are zero on the pilot. The repeated live run is recorded in
+`docs/evaluation.md`: retrieval misses zero, but 15 of 24 requirements
+disagreed in both directions, no labelled `met` came back as `met`, and the
+ranking inverted. On the agreed rule the assessment was revised rather than
+given more calls: `evidence-assessment-v2` states a criterion for each level,
+and the completion model is an environment variable so the same labels can be
+run against a stronger local model. No run has been recorded against v2.
 13D's closure includes the outstanding 13C verification; do not claim either
 gate has passed or start the full Phase 14 comparison before then.
 

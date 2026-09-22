@@ -191,6 +191,51 @@ still shows 7 disagreements, 5 unsupported `met` and 0 order disagreements.
 change. The 9 disagreements, 1 unsupported `met` and 1 order disagreement
 recorded above are still the last observed live numbers.
 
+## Local Ollama, retrieval fixed (Phase 13D.6)
+
+Measured on 2026-09-22, same pilot, same labels, `llama3.2` and
+`nomic-embed-text` on `http://127.0.0.1:11434`, no API key, every call
+`left_machine` false. Prompt version `evidence-assessment-v1`.
+
+| Quantity | Hermetic | Live, gated retrieval | Live, ranked retrieval |
+|---|---|---|---|
+| Roles | 20 | 20 | 20 |
+| Completion calls | 0 | 14 | 19 |
+| Assessment disagreements | 7 | 9 | 15 |
+| Labelled non-`met` returned as `met` | 5 | 1 | 0 |
+| Pairwise order disagreements | 0 | 1 | 2 |
+| Retrieval misses | not measured | not measured | 0 |
+| Per-role latency p50 / p95 | — | 1.72s / 3.93s | 1.90s / 2.36s |
+
+Retrieval is no longer the explanation: every labelled supporting passage
+reached the assessor and every scoreable requirement was assessed. The
+remaining errors are the model's, and they run in both directions at once.
+
+Seven labelled `met` requirements came back `missing` — `role-strong`
+`req-dbt` and `req-sql`, `role-partial` `req-dbt-partial`, `dev-duplicate`
+`req-sql-a` and `req-sql-b`, `dev-injection` `req-dbt-inj` and
+`heldout-paraphrase` `req-ci`. Two more were under-credited: `dev-paraphrase`
+`req-dba` and `role-partial` `req-reliability`. Not one labelled `met` came
+back as `met`. Six labelled `missing` requirements came back `partial` with a
+cited span, including `heldout-poor` `req-fpga` and `role-poor` `req-ros`,
+which share no subject matter with the evidence at all, plus the negation,
+duration and aspiration cases.
+
+The ranking follows from that: `role-strong` and `role-partial` both scored
+zero and `role-poor` scored 25, so the two order constraints in `dev-ordering`
+both failed.
+
+**This run does not replace the hermetic baseline.** Unsupported `met` reached
+zero only because the model returned `met` for nothing at all, which is not the
+same as judging correctly. On the agreed rule, the assessment is revised rather
+than given more calls: `evidence-assessment-v2` states a criterion for each of
+the three levels, names an aspiration or a denial as `missing`, and says
+`partial` is not the answer to being unsure. The completion model is now an
+environment variable, so the same labels can be run against a stronger local
+model without changing the prompt.
+
+**Not yet measured:** no run has been recorded against `evidence-assessment-v2`.
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove

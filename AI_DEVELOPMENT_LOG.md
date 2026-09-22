@@ -27,6 +27,31 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 099 — Define the assessment levels after the model hedged
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: re-run the live pilot after the retrieval fix and act on the
+  numbers.
+- Suggestion: with retrieval measured at zero misses, revise the prompt rather
+  than the retrieval, and make the completion model configurable so a weak
+  model can be told apart from a weak prompt.
+- Outcome: accepted
+- Reason: the observed run disagreed on 15 of 24 requirements in both
+  directions. No labelled `met` came back as `met`, and six labelled `missing`
+  requirements came back `partial` with a cited span, including two that share
+  no subject matter with the evidence. The prompt named met, partial and
+  missing and defined none of them. Unsupported `met` of zero was not taken as
+  progress, because the model returned `met` for nothing at all.
+- Human validation: observed live output recorded in `docs/evaluation.md`:
+  roles 20, disagreements 15, unsupported_met 0, order_disagreements 2,
+  retrieval_misses 0, completion calls 19, p50 1.90s, p95 2.36s. Failing test
+  written first for the level definitions and the version bump. Backend pytest
+  exited 0 with coverage 82.10%; ruff check, ruff format --check and mypy on
+  134 source files passed. No run has been recorded against the new prompt
+  version.
+
 ### 098 — Rank retrieved evidence instead of gating it
 
 - Date: 2026-09-22
