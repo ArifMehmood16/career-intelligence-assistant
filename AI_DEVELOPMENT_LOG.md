@@ -27,6 +27,44 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 083 — Refocus the remaining plan on evidence assessment and ranking quality
+
+- Date: 2026-09-22
+- Tool / model: Codex
+- Plan task: repository review and PLAN.md update following the product/LLM discussion
+- Prompt intent: review current development and update the delivery plan around
+  accurate role ranking, CV/cover-letter evidence, retrieval and focused LLM prompts.
+- Suggestion: add Phase 13D with a labelled baseline, explicit policy decisions,
+  structured assessment experiment and a measured adoption gate; extend Phase 14
+  with retrieval/assessment/ranking metrics and independent generation evaluation.
+- Outcome: documentation updated; implementation and policy adoption are pending.
+- Reason: the merged three-signal matcher calls the model only on lexical/vector
+  disagreements and receives a boolean. Synthetic diagnostics still return `met`
+  for an introductory Python course against five years of production leadership,
+  both when signals agree and when a disagreement receives no model decision.
+  The token groundedness check also accepts unsupported leadership wording.
+  Ask remains lexical; SQL reload loses structured claim details; cover-letter
+  extraction support alone does not establish production use in assessment/drafting.
+- Changed from earlier advice: recognised the now-merged Phase 13C adjudicator and
+  configurable similarity floor rather than planning them as absent. Kept proposed
+  cover-letter scoring and model assessment subject to an explicit contract/ADR
+  decision before implementation; preserved existing completed implementation history.
+- Rejected alternatives: require a non-zero score or an LLM win; treat fixture tests
+  as measured model accuracy; add multiple models/frameworks before a bounded pilot;
+  commit a private CV as a fixture; claim tokens or valid citations prove meaning.
+- Agent verification: from `backend`, `.venv/bin/pytest
+  tests/unit/test_mapping_scoring.py tests/unit/test_three_signal_matching.py
+  tests/unit/test_model_adjudication.py tests/unit/test_open_question_prompt.py
+  tests/unit/test_cover_letter_narrative.py
+  tests/unit/test_model_requirement_extraction.py
+  tests/unit/test_model_claim_extraction.py tests/unit/test_ranking.py --no-cov
+  -o addopts='' -q` reported **59 passed**. Read-only synthetic diagnostics reported
+  `met` with zero adjudicator calls for agreement, `met` with one empty adjudication
+  for disagreement, and groundedness `pass` for unsupported leadership wording.
+  Similarities were injected test values; no live provider accuracy was measured.
+- Human validation: pending review of the plan and the proposed assessment/source
+  policy. No application code changed; no hosted request or private-document run.
+
 ### 082 — Phase 13C.10 documentation reconciliation (TDD)
 
 - Date: 2026-09-22

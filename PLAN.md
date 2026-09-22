@@ -4,9 +4,30 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-The phase exit gate still requires the maintainer's real CV and five real job
-adverts, plus `make lint`, `make typecheck`, `make test` and
-`make test-integration`. Do not start Phase 14 until that gate is observed.
+Its live exit gate has not been observed. The 2026-09-22 repository review found
+that relatedness is still being mistaken for sufficient evidence. Next: Phase
+13D's labelled baseline and bounded structured-assessment experiment. Its closure
+includes the outstanding 13C verification; do not claim either gate has passed or
+start the full Phase 14 comparison before then.
+
+## Product objective and quality priority
+
+Rank job roles for one candidate using their CV, uploaded cover letters and the
+actual job requirements. Explain the evidence, uncertainty and gaps behind each
+rank. Keep Fit, Gaps, Prepare and Letter as consumers of that same analysis.
+
+The immediate priority is accuracy of evidence assessment and role ordering.
+More model calls, more prose, a higher score and passing fixture tests are not
+substitutes for measured quality. Preserve the modular monolith, configurable
+local/hosted providers and PostgreSQL system of record. Make continues to use
+local PostgreSQL; Compose/deployment uses container PostgreSQL.
+
+**Planning status:** Phase 13D records the proposed direction from the product
+discussion, not a shipped feature or approval to send personal data to hosted
+models. Before implementing changed scoring/cover-letter semantics, record the
+decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
+13D.2. Earlier checked tasks remain implementation history; they are not proof
+of ranking accuracy, nor should superseded unchecked 5.3/7.2 be restarted.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -760,6 +781,10 @@ hits.
       excluded from claims, mappings and the fit score — 4.3, 5.7 and 6.5 stand — and
       becomes available to letter drafting, interview preparation and Ask. A
       regression proves an uploaded letter is citable and changes no score.
+      *Review correction: the extractor supports letters, but the SQL analysis
+      worker still extracts only the CV. Production narrative use and the proposed
+      evidence policy are addressed in 13D.2/13D.7; this checkbox does not prove
+      uploaded-letter extraction is wired into drafting and preparation.*
 - [x] **13C.5 Three-signal matching.** A requirement and a claim are related by any of
       three signals: lexical overlap, embedding cosine, and model adjudication for the
       pairs the first two disagree on. Each signal is computed in an adapter behind a
@@ -788,8 +813,9 @@ hits.
       hermetic fixture, so they must be honest: accept a bullet glyph with no
       following space, stop treating a wrapped line beginning with a section word as a
       section boundary, and read role dates from the role line. Those are the three
-      bugs the audit found. Add the real CV and a real advert as fixtures so the
-      failure cannot return unnoticed.
+      bugs the audit found. Add synthetic fixtures reproducing the observed CV and
+      advert shapes so the failure cannot return unnoticed; keep the maintainer's
+      private documents out of the repository.
 - [x] **13C.10 Reconcile documentation with the new direction.** Update the README
       architecture claims, `docs/features.md`, `docs/production-wiring.md`, the threat
       model where extraction changed, and ADR 003. Write a new ADR recording why
@@ -797,46 +823,230 @@ hits.
       and why model-first extraction with server-verified quotes replaced it. That ADR
       is the most useful page in this repository for a reviewer.
 
-**Exit gate:** on the maintainer's real CV and five real job adverts, every extracted
-item carries a type and a verified quote; no salary, benefit or logistics line is
-scored; claims come from every role with correct dates; the fit score is non-zero,
-explainable and traceable to quoted text; all four tabs return substantive content;
-and the whole path runs on a local Ollama model with no API key. `make lint`,
-`make typecheck`, `make test` and `make test-integration` pass. Only then begin
-Phase 14.
+**Outstanding exit verification (carried into 13D.10):** on representative CVs and
+at least five job adverts, every extracted item carries a type and a verified
+quote; no salary or benefit is scored as a skill; logistical constraints are
+identified separately; claims preserve the correct employment/date association;
+scores and ranks agree with the labelled evidence within predeclared tolerances.
+A genuinely poor match may score zero; no scoreable requirements means unscored.
+Fit, Gaps, Prepare and Letter must reflect that result, including honest refusals.
+The workflow runs on local Ollama with no API key and the four Make quality
+targets pass. Use synthetic/public-safe fixtures in the repository; any optional
+maintainer-document smoke run stays local and private. This review does not close
+the gate.
+
+## Phase 13D — Evidence assessment and ranking quality
+
+### Repository review evidence — 2026-09-22
+
+Reviewed at `e0d74e2`, with a clean working tree before this documentation change.
+Existing SQL persistence, queued analysis, provider selection, extraction prompts
+and three-signal matching are present; do not rebuild Phase 13A or 13C.
+
+- `application/analysis/relatedness.py` asks the LLM only when lexical and vector
+  signals disagree. `adapters/relatedness/model.py` returns pair ids and a boolean,
+  without supporting spans, missing conditions or an assessment explanation.
+  Agreement bypasses the model; missing/malformed decisions fall back to lexical
+  OR embedding relatedness. `domain/mapping.py` then largely uses identical
+  competency labels and recency to decide `met`.
+- Synthetic diagnostic: "Five years leading production Python systems" versus
+  "Completed an introductory Python course" returned `met` both with agreeing
+  retrieval signals (zero adjudicator calls) and with a disagreement whose
+  adjudicator returned no decision. Similarity values were injected test inputs,
+  not measurements from a live embedding model.
+- `domain/groundedness.py` returned `pass` for "Led production Python systems"
+  citing only that introductory-course sentence. It checks selected tokens, not
+  whether the source supports the asserted responsibility or experience.
+- `domain/prompts.py` uses token overlap for Ask and includes uploaded letters only
+  when the question contains "cover letter" or "cover-letter". Requirement/claim
+  vectors are persisted, but neither document-level semantic Ask retrieval nor
+  PostgreSQL full-text/vector search over source spans is wired in.
+- The model extracts employer, title, scope, technologies and outcome into `Claim`,
+  but `ClaimRow`, `analysis_repos.py` and `role_store.py` do not round-trip these
+  fields. Reload sets extraction confidence to `0.85`; requirement seniority is
+  also lost. Durable analysis must preserve the information assessments depend on.
+- Provider adapters do not enforce the same structured-output mechanism: Ollama
+  receives a schema, OpenAI sends a schema response format, and Anthropic appends
+  schema instructions to text. All advertise structured-output support; receiving
+  JSON is not proof of complete schema validation or correct evidence assessment.
+- Focused extraction, mapping, adjudication, retrieval-prompt, cover-letter and
+  ranking tests: **59 passed**. These validate implemented contracts, not live
+  model accuracy. No hosted call, private-document run or full quality gate was
+  performed during this review.
+
+### Execution order and acceptance criteria
+
+The first deliverable is a measured comparison on a small labelled set. Production
+adoption of new assessment behaviour follows the experiment's evidence. Avoid an
+agent framework, automatic multi-model voting or additional screens.
+
+- [ ] **13D.1 Establish a quality baseline before changing matching.** Bring forward
+      the small labelled dataset and harness foundation from 14.1/14.2. Include
+      strong/partial/poor role matches, paraphrases without shared keywords, matching
+      keywords with insufficient scope or duration, negation, overlapping employment
+      dates, duplicated requirements, CV/letter duplication and contradictions,
+      aspirations, injection attempts and no-scoreable-item cases. Label supporting
+      passages, expected assessments and pairwise role ordering independently of the
+      current output. Separate development and held-out cases. Record the current
+      policy's errors and predeclare acceptance tolerances, latency and call budgets.
+      Do not require the model approach to win or a score to be positive.
+- [ ] **13D.2 Resolve the product contract before changing it.** Record an ADR and
+      reconcile AGENTS, features and ADRs 004/009/010 with the proposed boundary:
+      **the model assesses evidence against explicit criteria; the server validates
+      the assessment; the domain calculates the score**. A valid citation proves
+      source provenance, not truth or support for an interpretation. Proposed source
+      policy: concrete experience in an uploaded CV or uploaded letter can be
+      considered, with source attribution, deduplication and contradiction handling;
+      aspirations and generated application drafts cannot increase fit. Both CVs and
+      uploaded letters are self-reports. Confirm this policy in the decision record
+      before replacing the current blanket letter exclusion. Preserve any explicit
+      human choice to keep letters narrative-only and evaluate that variant honestly.
+- [ ] **13D.3 Define a structured assessment contract and focused prompts.** Reuse
+      the completion port and existing extraction prompts. Add a versioned assessment
+      prompt receiving one atomic requirement, its conditions, retrieved evidence
+      and source metadata. Require `requirementId`, an assessment enum, supporting
+      span ids, unmet/unknown conditions, contradiction flags and a concise evidence
+      justification; do not request hidden reasoning or a model-emitted fit score.
+      Distinguish no supporting evidence from incomplete processing/provider failure.
+      Validate types, allowed ids, completeness and duplicate/conflicting outputs
+      server-side for every provider. Version prompts/schemas; use one selected
+      completion model across stages initially, with independent embedding selection.
+      Test native-schema and prompted-JSON paths, refusals, truncation and malformed
+      output; capability descriptions must reflect the adapter's actual guarantees.
+      Check that every adapter preserves trusted system instructions separately
+      from document content where its protocol supports that separation. Schemas
+      and valid quotes alone are not a prompt-injection defence.
+- [ ] **13D.4 Retrieve candidate evidence with lexical and semantic signals.** Add
+      a bounded, workspace/role-scoped retrieval port over source spans with enough
+      adjacent context to preserve negation, dates and responsibilities. Use
+      PostgreSQL full-text ranking and pgvector similarity, with explicit model and
+      dimension compatibility, deterministic result fusion and deduplication. Exact
+      vector search is sufficient at this scale; an approximate index requires
+      measured need. Reuse source spans and the existing vector cache where suitable;
+      document any migration for span-owned embeddings. Measure evidence recall at
+      the selected limit and lexical-only, vector-only and combined variants. Reuse
+      retrieval for open questions without requiring the literal phrase "cover
+      letter" to find relevant uploaded-letter text. Structured fit questions still
+      read the saved analysis. Retrieval proposes evidence; it cannot award `met`.
+- [ ] **13D.5 Run a bounded assessment experiment.** Compare the current XOR
+      adjudicator with structured requirement-level assessment using the same labelled
+      inputs and retrieved evidence. Assess candidate evidence even when lexical and
+      semantic signals agree; agreement is not sufficient support. Consider multiple
+      passages together, skill depth, duration, ownership, seniority, negation and
+      conflicting sources. Preserve uncertainty when evidence is insufficient. A
+      failed/missing model result must never silently turn into a successful match.
+      Use bounded batches and model-aware context/output budgets, not an unbounded
+      requirement-by-claim prompt with a fixed 512-token response. Run scripted tests
+      offline and an explicitly enabled local-model quality run. Adopt the new path
+      only if it meets 13D.1's quality/resource gate; otherwise record the failure and
+      revise the experiment before expanding it. A second review model is optional
+      only after a separate measured benefit.
+- [ ] **13D.6 Preserve the complete analysis in PostgreSQL.** Before production
+      adoption, round-trip employment/source associations, verified dates, scope,
+      technologies, outcomes, actual extraction confidence and requirement conditions.
+      Persist validated assessments, retrieved span ids, retrieval scores/method,
+      document hashes/versions, provider/model, prompt/schema/rubric versions,
+      generation settings, egress and safe failure status under an analysis version.
+      Save validated application data, not raw vendor payloads or hidden reasoning.
+      Verify SQL reload and app restart reproduce the saved ranking without another
+      model call. Fresh model reruns are measured for variation, not called perfectly
+      deterministic. Keep all reads/deletes workspace-scoped.
+- [ ] **13D.7 Apply the agreed cover-letter policy through the production path.**
+      Wire uploaded-letter extraction and retrieval into assessment/Ask/preparation
+      and drafting as allowed by 13D.2; extractor-only unit tests are insufficient.
+      Distinguish source kind and factual support rather than using `self_authored`
+      as a synonym for ineligible. Do not double-count repeated CV/letter experience
+      or treat a repeated statement as independent corroboration. Keep generated
+      drafts outside the candidate-evidence pool and retain source lineage. Upload,
+      replace or delete must invalidate/recompute dependent assessments, scores,
+      drafts and citations transactionally. Prove these behaviours via SQL-backed
+      HTTP tests, including contradictory and role-specific letters.
+- [ ] **13D.8 Integrate validated assessments into scoring and ranking.** Preserve
+      transparent rubric arithmetic and configurable must/desirable weighting;
+      prevent competency equality, recency alone or retrieval similarity from
+      satisfying an unmet condition. Define how unknown/conflicting evidence affects
+      coverage and scoring; show incomplete analysis separately from poor fit.
+      Deduplicate requirements and avoid counting concurrent employment twice toward
+      duration. Record rubric assumptions and justify any change through labels.
+      Ranking, Fit and Gaps must consume the same saved analysis, with stable ties,
+      named differentiators and traceable contributions. A fit score is a rubric
+      result, not a hiring probability. Add the course-versus-leadership regression
+      at domain, production API and SQL round-trip boundaries.
+- [ ] **13D.9 Align generated outputs with assessed evidence.** Keep Fit, Gaps,
+      Prepare and Letter. Use focused prompts and typed output only where it improves
+      their measured usefulness; simple deterministic summaries need no extra call.
+      Supply verified evidence and the saved assessment, not only a template to
+      paraphrase. Associate each factual sentence/paragraph with its own supporting
+      spans and check semantic support, not just token presence or blanket citations.
+      Add unsupported leadership, changed ownership, negation and aspiration probes.
+      A correction attempt receives the validation failure; if still invalid, use a
+      validated fallback or refuse explicitly. Do not describe a token-check `PASS`
+      as proof that all claims are grounded. Preserve selected-version export parity.
+- [ ] **13D.10 Close the production quality gate and reconcile documentation.**
+      Run `make lint`, `make typecheck`, `make test`, `make test-integration` and
+      the labelled local-model pilot against the actual production path. Complete
+      the carried 13C walkthrough with expected poor/unscored outcomes permitted.
+      Record observed error rates, ranking agreement, latency, model configuration
+      and unresolved cases. Update README, production-wiring, API contract, evaluation,
+      threat model and journal to distinguish implemented, measured and deferred
+      behaviour. Tests/ADRs asserting the old policy change only with the recorded
+      replacement contract, never simply to make tests pass.
+
+**Exit gate:** the pilot meets its predeclared quality and resource criteria;
+unsupported leadership cannot become `met`; missing/malformed assessments cannot
+silently boost fit; cover-letter behaviour matches the recorded policy; generated
+drafts cannot improve the candidate's score; and SQL restart/deletion tests preserve
+the evidence contract. The real workflow and Make gates have observed outcomes.
+If the proposed assessment does not improve the agreed quality measures, report
+that outcome and revise it rather than adding more calls or declaring completion.
 
 ## Phase 14 — Evaluation
 
-Measured on real documents, not on fixtures shaped to pass.
+Expand the labelled pilot from 13D.1/13D.5 into a reproducible quality report.
+Measure extraction, retrieval, assessment, ranking and generation separately.
+Committed fixtures must be synthetic or public-safe; optional private local smoke
+data never goes into Git, logs, public reports or hosted-provider comparisons.
 
-- [ ] **14.1** Labelled dataset: the maintainer's real CV plus five real job adverts
-      of different shapes — bulleted, prose, numbered, agency-reformatted — with
-      hand-labelled expected item types, must/desirable, and the expected mapping
-      outcome for every requirement.
-- [ ] **14.2** Harness reporting item-type classification accuracy, requirement recall
-      and precision, claim recall per role, quote-verification drop rate, mapping
-      accuracy, citation validity rate, insufficient-evidence correctness,
-      **groundedness violation rate** and score stability.
-- [ ] **14.3** Record thresholds and observed numbers with the date and provider
-      configuration in `docs/evaluation.md`. `TBD` until a run has been observed.
-- [ ] **14.4** `make test-evaluation` runs hermetically against the fixture
-      extractors, so the harness itself is testable without a model.
-- [ ] **14.5** Provider comparison: the same dataset on the deterministic fixture
-      path, Ollama, OpenAI and Anthropic, with quality, latency and cost side by side.
-      Report the rows where the local model is competitive, and the rows where the
-      deterministic path is not.
-- [ ] **14.6** Generation comparison: groundedness violation rate and template
-      fallback rate per provider. A provider that drafts beautifully and fails the
-      validator is reported as exactly that.
-- [ ] **14.7** Calibrate the 13C.5 similarity floor per embedding provider from this
-      dataset and publish the ablation: mapping accuracy with the vector signal off,
-      and on at the calibrated floor.
-- [ ] **14.8** Regression proving an uploaded cover letter can be retrieved, cited and
-      used for drafting, and cannot improve a fit mapping or score.
+- [ ] **14.1** Expand and version the pilot labels across job families, seniorities
+      and advert formats (bulleted, prose, numbered, agency-reformatted). Include
+      CV/letter combinations, missing/conflicting evidence and expected role order,
+      with tie/ambiguity labels. Freeze a held-out set before tuning prompts, weights
+      or retrieval thresholds. State reviewer disagreement and dataset limitations.
+- [ ] **14.2** Report item classification, requirement/claim precision and recall,
+      quote-verification failures, retrieval recall@k, assessment confusion matrix
+      (especially unsupported `met`), citation support, abstention/coverage and
+      pairwise role-ranking agreement or nDCG with justified labels. Distinguish
+      deterministic replay of saved assessments from fresh-run model variability.
+- [ ] **14.3** Record thresholds before held-out runs and observed results with
+      dataset, prompt/schema/rubric versions, provider/model, settings and date in
+      `docs/evaluation.md`. Include failures and skips; keep `TBD` until observed.
+- [ ] **14.4** `make test-evaluation` tests the harness offline using scripted
+      responses/fixtures. Add a separate explicit live-model evaluation entrypoint;
+      fixture success is never reported as a live model's accuracy.
+- [ ] **14.5** Compare configured Ollama, OpenAI and Anthropic completion paths and
+      the current policy baseline on the same eligible dataset. Change one variable
+      at a time; keep embeddings/retrieved evidence fixed when comparing assessors.
+      Hosted runs require explicit enablement and public-safe data. Report quality,
+      calls, tokens, p50/p95 latency, fallback rate and cost using a recorded pricing
+      basis when available; unavailable providers are skipped, never simulated as
+      successful. No provider or LLM workflow is required to win.
+- [ ] **14.6** Measure generated artefact usefulness and unsupported-claim rate using
+      independently labelled probes, including semantic errors with valid tokens and
+      citations. Separately report schema validity, citation resolution, evidence
+      support, refusal correctness and template fallback. Do not use the same token
+      validator as the sole ground-truth judge of its own success.
+- [ ] **14.7** Calibrate retrieval floors/fusion and assessment policy on development
+      data only. Publish lexical-only, semantic-only and combined retrieval ablations,
+      plus current boolean adjudication versus structured assessment. Include impact
+      on role ordering and runtime, and held-out results without retuning.
+- [ ] **14.8** Evaluate the approved cover-letter policy: additional concrete
+      evidence, duplicates, contradictions and aspirations, with visible sources.
+      Generated drafts and duplicate uploads cannot inflate the score. If the
+      narrative-only policy is retained, report that limitation explicitly.
 
-**Exit gate:** numbers recorded from an observed run, not estimated, including at
-least one row where the deterministic path is visibly worse than the model path. That
-comparison is the point of the page.
+**Exit gate:** reproducible observed results against the predeclared criteria,
+including failures, uncertainty, model variability and remaining limitations.
+Neither a positive fit score nor superiority of an LLM is an acceptance condition.
 
 ## Phase 15 — Observability and security pass
 
@@ -893,6 +1103,9 @@ Operation events and the redaction test were delivered by Phase 13B (13B.3, 13B.
       `docs/features.md`: upload CV, add a role, wait for analysis, read the mapping,
       open a gap, draft a bullet, upload a supporting cover letter, open a citation,
       generate a letter, ask a question, restart the API and verify history persists.
+      Extend with several roles and expected ranking, a letter duplicate that cannot
+      inflate fit, an insufficient-evidence outcome, and replay of saved assessments
+      after restart under the 13D contract.
 - [ ] **16.6** A second end-to-end run with a hosted provider selected, asserting the
       confirmation is required and the provenance is recorded. Skipped without a key,
       and skipping is reported rather than silent.
