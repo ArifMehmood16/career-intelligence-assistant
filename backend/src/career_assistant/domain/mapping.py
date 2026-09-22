@@ -34,6 +34,10 @@ class RequirementMapping:
     justifying_span_ids: tuple[str, ...]
     justifying_claim_ids: tuple[str, ...]
     signals: RelatednessSignals = field(default_factory=RelatednessSignals)
+    # Unknown or conflicting evidence is not full coverage. Scoring reads these;
+    # a citation still does not prove the requirement is met.
+    unknown_conditions: tuple[str, ...] = ()
+    contradiction: bool = False
 
 
 def map_requirements(

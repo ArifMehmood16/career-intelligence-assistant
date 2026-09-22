@@ -27,6 +27,25 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 091 — Score duplicate requirements once and cap uncertain coverage
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (coverage and deduplication)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: count identical requirement text once, cap a met assessment at
+  partial when conditions are unknown or the evidence contradicts, and band a
+  zero score from a failed assessment as incomplete rather than limited.
+- Outcome: accepted
+- Reason: the rubric weights stay as configured. A role that also has a met
+  requirement keeps its numeric band; only an all-zero incomplete analysis
+  changes band. Duplicate lines remain in the explanation with zero weight.
+- Human validation: the three new scoring tests failed because
+  `RequirementMapping` had no `unknown_conditions`. After the scoring rules,
+  mapping, structured-assessment, item-type, cover-letter, fit and gap tests
+  passed (39). mypy was clean on the three changed modules. No live model call.
+
 ### 090 — Record who assessed a saved analysis
 
 - Date: 2026-09-22

@@ -132,6 +132,12 @@ the configuration file rather than hard-coding these literals.
   word "must". Only `requirement` and `responsibility` items enter the mapping
   and the score.
 - A requirement with no justifying span is `missing`. Never "probably met".
+- The same requirement text counts once. Case and repeated spaces do not make
+  a second copy. The extra line stays visible and adds no weight.
+- Unknown conditions, or a contradiction, cap that requirement at partial
+  coverage. They do not score as fully met.
+- A zero score whose assessments did not complete is banded `incomplete`. A
+  zero score from assessed gaps stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above
   the configured floor, and model adjudication of the pairs those two disagree
   on. The combination, the status and the reason code stay in domain code.

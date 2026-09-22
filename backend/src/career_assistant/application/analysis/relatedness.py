@@ -318,6 +318,8 @@ def _mapping_from_assessment(
         reason_code=reason,
         justifying_span_ids=assessment.supporting_span_ids,
         justifying_claim_ids=claim_ids,
+        unknown_conditions=assessment.unknown_conditions,
+        contradiction=assessment.contradiction,
         signals=RelatednessSignals(
             lexical=signals.lexical,
             lexical_overlap=signals.lexical_overlap,

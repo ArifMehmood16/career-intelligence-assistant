@@ -9,6 +9,7 @@ from career_assistant.domain.claims import Claim
 from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
+    RequirementMapping,
     map_requirement,
     map_requirements,
 )
@@ -369,3 +370,123 @@ def test_no_scoreable_requirements_is_unscored_not_a_limited_match() -> None:
     assert explanation.score == 0
     assert explanation.band == "unscored"
     assert explanation.components == ()
+
+
+def _scored(
+    requirement: Requirement,
+    *,
+    status: MappingStatus,
+    reason: MappingReason,
+    unknown_conditions: tuple[str, ...] = (),
+    contradiction: bool = False,
+) -> RequirementMapping:
+    return RequirementMapping(
+        requirement_id=requirement.id,
+        status=status,
+        reason_code=reason,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+        unknown_conditions=unknown_conditions,
+        contradiction=contradiction,
+    )
+
+
+def test_duplicate_requirement_text_scores_once() -> None:
+    """PLAN 13D.5 — the same requirement stated twice does not inflate the fit."""
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    sql_a = _req(id="a", text="Write production SQL", competency="sql")
+    sql_b = _req(id="b", text="write   production sql", competency="sql")
+    python = _req(id="c", text="Production Python", competency="python")
+    scored = score_fit(
+        (sql_a, sql_b, python),
+        (
+            _scored(sql_a, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(sql_b, status=MappingStatus.MET, reason=MappingReason.MATCHED),
+            _scored(
+                python,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.NO_RELATED_CLAIM,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert scored.score == 50.0
+    assert scored.denominator == 6.0
+
+
+def test_unknown_or_conflicting_evidence_is_not_full_coverage() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    requirement = _req(id="r1", text="Lead a platform team", competency="leadership")
+    full = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement, status=MappingStatus.MET, reason=MappingReason.MATCHED
+            ),
+        ),
+        (),
+        rubric,
+    )
+    unknown = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MET,
+                reason=MappingReason.MATCHED,
+                unknown_conditions=("team size",),
+            ),
+        ),
+        (),
+        rubric,
+    )
+    conflict = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MET,
+                reason=MappingReason.MATCHED,
+                contradiction=True,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert full.score == 100.0
+    assert unknown.score == 50.0
+    assert conflict.score == 50.0
+
+
+def test_incomplete_assessment_is_not_banded_as_a_poor_fit() -> None:
+    rubric = load_scoring_rubric(RUBRIC_PATH)
+    requirement = _req(id="r1", text="Five years leading Python", competency="python")
+    poor = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.NO_RELATED_CLAIM,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    incomplete = score_fit(
+        (requirement,),
+        (
+            _scored(
+                requirement,
+                status=MappingStatus.MISSING,
+                reason=MappingReason.ASSESSMENT_INCOMPLETE,
+            ),
+        ),
+        (),
+        rubric,
+    )
+    assert poor.score == 0.0
+    assert incomplete.score == 0.0
+    assert poor.band == "limited"
+    assert incomplete.band == "incomplete"

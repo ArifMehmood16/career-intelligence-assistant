@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from career_assistant.domain.claims import Claim
@@ -60,10 +61,17 @@ def score_fit(
     numerator = 0.0
     denominator = 0.0
 
+    counted = _score_once_ids(requirements, mappings)
+    incomplete = any(
+        mapping.reason_code is MappingReason.ASSESSMENT_INCOMPLETE
+        for mapping in mappings
+    )
     for mapping in mappings:
         req = by_id[mapping.requirement_id]
         weight = rubric.weight_must_have if req.must_have else rubric.weight_desirable
-        status_factor = _status_factor(mapping.status, rubric)
+        if mapping.requirement_id not in counted:
+            weight = 0.0
+        status_factor = _coverage_factor(mapping, rubric)
         recency_factor = _recency_factor(mapping, claims_by_id, rubric)
         contribution = weight * status_factor * recency_factor
         numerator += contribution
@@ -91,9 +99,10 @@ def score_fit(
         )
     score = 100.0 * numerator / denominator
     score = max(0.0, min(100.0, score))
+    band = "incomplete" if incomplete and score == 0.0 else _band(score, rubric)
     return ScoreExplanation(
         score=score,
-        band=_band(score, rubric),
+        band=band,
         components=tuple(components),
         denominator=denominator,
         numerator=numerator,
@@ -157,6 +166,53 @@ def counterfactual_delta(
         ]
     hypothetical = score_fit(requirements, adjusted, claims_list, rubric)
     return hypothetical.score - baseline.score
+
+
+_SPACE = re.compile(r"\s+")
+
+
+def _score_once_ids(
+    requirements: tuple[Requirement, ...] | list[Requirement],
+    mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
+) -> set[str]:
+    """Identical requirement text counts once. The strongest mapping is kept."""
+    by_id = {requirement.id: requirement for requirement in requirements}
+    groups: dict[tuple[str, bool, str], list[RequirementMapping]] = {}
+    order: list[tuple[str, bool, str]] = []
+    for mapping in mappings:
+        requirement = by_id[mapping.requirement_id]
+        key = (
+            _SPACE.sub(" ", requirement.text.casefold()).strip(),
+            requirement.must_have,
+            requirement.item_type.value,
+        )
+        if key not in groups:
+            order.append(key)
+        groups.setdefault(key, []).append(mapping)
+    kept: set[str] = set()
+    for key in order:
+        group = groups[key]
+        best = min(
+            group,
+            key=lambda item: (_status_rank(item.status), item.requirement_id),
+        )
+        kept.add(best.requirement_id)
+    return kept
+
+
+def _status_rank(status: MappingStatus) -> int:
+    if status is MappingStatus.MET:
+        return 0
+    if status is MappingStatus.PARTIAL:
+        return 1
+    return 2
+
+
+def _coverage_factor(mapping: RequirementMapping, rubric: ScoringRubric) -> float:
+    factor = _status_factor(mapping.status, rubric)
+    if mapping.unknown_conditions or mapping.contradiction:
+        return min(factor, rubric.status_partial)
+    return factor
 
 
 def _status_factor(status: MappingStatus, rubric: ScoringRubric) -> float:
