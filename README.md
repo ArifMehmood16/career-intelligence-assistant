@@ -89,21 +89,19 @@ Full detail, including the rules that keep each one honest, in
 
 ### Screenshots
 
-![Workspace with CV and ranked roles](docs/images/workspace-overview.png)
+These are captures from the running web app (Workspace), not design mocks.
 
-*Workspace — upload a CV, add roles, and see ranking from stored fit scores.*
+![Empty Workspace before a CV](docs/images/workspace-empty.png)
 
-![Requirements table with Met, Partial and Missing](docs/images/fit-requirements.png)
+*Empty Workspace — CV upload, roles, ranking and compare.*
 
-*Fit — each scoreable requirement shows status and the CV evidence that justifies it.*
+![Workspace after uploading a CV](docs/images/workspace-with-cv.png)
 
-![Gap plan ordered by score impact](docs/images/gap-plan.png)
+*After a CV upload — replace/delete the CV, then add a job description to analyse.*
 
-*Gaps — close the highest-impact gaps first; actions stay tied to stored evidence.*
-
-![Cover letter with numbered citations and glossary](docs/images/cover-letter-glossary.png)
-
-*Letter — numbered citations in the draft; the Citations panel shows the full passage.*
+Fit, Gaps, Prepare and Letter screens appear on a role once analysis finishes.
+Numbered cover-letter citations (`[1]`, `[2]` plus the Citations glossary) show on
+the **Letter** tab after you generate a draft for a ready role.
 
 ## What it answers
 
