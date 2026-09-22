@@ -125,3 +125,72 @@ def test_a_mapping_records_the_evidence_put_in_front_of_the_assessor() -> None:
     for claim in claims:
         shown = all(span_id in request.user for span_id in claim.source_span_ids)
         assert (claim.id in retrieved) is shown, claim.id
+
+
+def test_a_paraphrase_below_the_floor_still_reaches_the_assessor() -> None:
+    """A gate on lexical overlap or the floor decides `missing` before the model."""
+    completion = _ScriptedCompletion(_missing_payload())
+    paraphrase = _claim(
+        "claim-paraphrase",
+        "Looked after the company's Postgres estate.",
+        "span-paraphrase",
+    )
+    other = _claim("claim-other", "Ran the weekly design review.", "span-other")
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (paraphrase, other),
+        similarities={
+            (_REQUIREMENT_ID, "claim-paraphrase"): 0.42,
+            (_REQUIREMENT_ID, "claim-other"): 0.03,
+        },
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    assert completion.calls == 1, "the requirement was never assessed"
+    request = completion.last_request
+    assert request is not None
+    assert "span-paraphrase" in request.user
+    assert "claim-paraphrase" in mappings[0].retrieved_claim_ids
+
+
+def test_the_candidate_set_stays_bounded() -> None:
+    """Retrieval proposes a shortlist. It does not hand over the whole CV."""
+    completion = _ScriptedCompletion(_missing_payload())
+    contexts = (
+        "Administered relational databases for three years.",
+        "Tuned query plans on the reporting replica.",
+        "Owned the nightly backup rota.",
+        "Migrated a legacy schema without downtime.",
+        "Set up connection pooling for the platform.",
+        "Wrote the runbook for failover drills.",
+        "Chaired the weekly design review.",
+        "Mentored two graduate engineers.",
+        "Presented at an internal brown bag.",
+        "Organised the team offsite.",
+        "Kept the meeting notes for the guild.",
+        "Judged the summer hackathon.",
+    )
+    claims = tuple(
+        _claim(f"claim-{index:02d}", text, f"span-{index:02d}")
+        for index, text in enumerate(contexts)
+    )
+    scores = (0.90, 0.80, 0.70, 0.65, 0.60)
+    similarities = {
+        (_REQUIREMENT_ID, claim.id): (scores[index] if index < len(scores) else 0.05)
+        for index, claim in enumerate(claims)
+    }
+    mappings = map_role_requirements(
+        (_requirement(),),
+        claims,
+        similarities=similarities,
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    retrieved = mappings[0].retrieved_claim_ids
+    assert len(retrieved) < len(claims)
+    assert "claim-11" not in retrieved
+    request = completion.last_request
+    assert request is not None
+    assert "span-11" not in request.user

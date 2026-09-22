@@ -28,6 +28,10 @@ from career_assistant.domain.relatedness import (
 )
 from career_assistant.domain.requirements import Requirement
 
+# How many claims one requirement may put in front of the assessor before
+# neighbours are added. Small enough to keep the prompt and the call bounded.
+_CANDIDATE_LIMIT = 5
+
 
 @runtime_checkable
 class SupportAssessor(Protocol):
@@ -204,16 +208,24 @@ def _retrieved_indexes(
     similarities: Mapping[tuple[str, str], float],
     similarity_floor: float,
 ) -> list[int]:
-    hits: list[int] = []
-    for index, claim in enumerate(claims):
-        if claim.self_authored:
-            continue
-        similarity = similarities.get((requirement.id, claim.id), 0.0)
-        lexical = lexical_overlap(requirement.text, claim.context) >= 1
-        if lexical or similarity >= similarity_floor:
-            hits.append(index)
+    """Shortlist the best few claims. The floor ranks evidence, it does not gate it.
+
+    A paraphrase shares no keywords and can sit under the floor, so a gate
+    decides `missing` before the assessor sees anything. Ranking instead keeps
+    the call bounded and makes `missing` mean the evidence was read and
+    rejected. Neighbours come along to preserve negation and dates.
+    """
+    ranked = sorted(
+        (
+            -similarities.get((requirement.id, claim.id), 0.0),
+            -lexical_overlap(requirement.text, claim.context),
+            index,
+        )
+        for index, claim in enumerate(claims)
+        if not claim.self_authored
+    )
     chosen: set[int] = set()
-    for index in hits:
+    for _, _, index in ranked[:_CANDIDATE_LIMIT]:
         for neighbor in (index - 1, index, index + 1):
             if 0 <= neighbor < len(claims) and not claims[neighbor].self_authored:
                 chosen.add(neighbor)
