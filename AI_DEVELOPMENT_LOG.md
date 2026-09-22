@@ -27,6 +27,30 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 101 — Showing the cover letter made it worse, and was reverted
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: close the last gate failure, the contradiction case.
+- Suggestion: show up to two self-authored claims to the assessor as context
+  that cannot be cited, so a letter denying the CV is visible.
+- Outcome: rejected after measurement
+- Reason: on the same labels with `qwen2.5:7b`, disagreements went from 3 to 6
+  and the contradiction case still was not `partial`. Two of the new failures
+  printed an empty reason, which means the assessment was rejected in
+  validation: the model was shown the letter, cited it, and lost the whole
+  assessment because that span is not citable. `dev-letter-dup` was correct
+  before the change and broke on it. Showing evidence that may not be cited
+  turns a wrong answer into no answer. Reverted; a denial that lives only in a
+  cover letter needs a contradiction check the server performs itself.
+- Human validation: observed live output for v3 and v4 recorded in
+  `docs/evaluation.md`, including the empty justifications. After the revert,
+  backend pytest exited 0 with coverage 82.11%; ruff check, ruff format --check
+  and mypy on 134 source files passed. `dev-overlap` and `dev-injection` also
+  changed between the two runs with no code touching them, so the comparison is
+  reported as one run per configuration rather than averaged.
+
 ### 100 — The completion model is part of the assessment contract
 
 - Date: 2026-09-22

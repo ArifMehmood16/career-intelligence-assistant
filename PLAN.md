@@ -34,7 +34,16 @@ disagreed in both directions, no labelled `met` came back as `met`, and the
 ranking inverted. On the agreed rule the assessment was revised rather than
 given more calls: `evidence-assessment-v2` states a criterion for each level,
 and the completion model is an environment variable so the same labels can be
-run against a stronger local model. No run has been recorded against v2.
+run against a stronger local model. Measured on both: `llama3.2` disagreed on 12
+of 24 and credited the injection case, `qwen2.5:7b` on 3 with the held-out split
+clean, so the local default is now `qwen2.5:7b` and the model is part of the
+assessment contract. Two further prompt revisions were measured and one was
+reverted: `evidence-assessment-v3` changed nothing, and v4, which showed cover
+letters to the assessor as uncitable context, took disagreements to 6 and was
+reverted. The measured configuration is v3 with `qwen2.5:7b`, meeting every
+predeclared gate except unsupported `met`, which is the one contradiction case
+whose denial lives only in a cover letter. The two remaining disagreements are
+label questions recorded in `docs/evaluation.md` for the reviewer to settle.
 13D's closure includes the outstanding 13C verification; do not claim either
 gate has passed or start the full Phase 14 comparison before then.
 
