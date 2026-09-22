@@ -251,7 +251,7 @@ class ModelClaimExtractor:
         items: list[object] = []
         try:
             payload = json.loads(result.text)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             parse_ok = False
             payload = None
         if parse_ok and isinstance(payload, dict):
@@ -313,9 +313,7 @@ class ModelClaimExtractor:
         return items if parse_ok else []
 
 
-def _response_truncated(
-    result: object, *, max_tokens: int, parse_ok: bool
-) -> bool:
+def _response_truncated(result: object, *, max_tokens: int, parse_ok: bool) -> bool:
     finish = getattr(result, "finish_reason", None)
     if finish == "length":
         return True
@@ -530,9 +528,7 @@ def _recover_heading(
 ) -> tuple[str | None, _Heading | None, bool]:
     """Prefer the matching heading kind; project claims may fall back to a role."""
     want = "role_heading" if claim_kind == "experience" else "project_heading"
-    recovered = _nearest_heading(
-        claim_issued, headings, by_id=by_id, want_kind=want
-    )
+    recovered = _nearest_heading(claim_issued, headings, by_id=by_id, want_kind=want)
     if recovered is None and claim_kind == "project":
         recovered = _nearest_heading(
             claim_issued, headings, by_id=by_id, want_kind="role_heading"

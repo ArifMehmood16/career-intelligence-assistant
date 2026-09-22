@@ -104,9 +104,7 @@ def analysis_ports_for_choice(
         )
     return (
         ModelRequirementExtractor(req_port),
-        ModelClaimExtractor(
-            claim_port, batch_size=settings.claim_batch_max_spans
-        ),
+        ModelClaimExtractor(claim_port, batch_size=settings.claim_batch_max_spans),
         ModelAdjudicator(
             assess_port,
             budget=AssessmentBatchBudget(
