@@ -10,10 +10,13 @@ boundary.
 from __future__ import annotations
 
 import re
+import uuid
 
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 _MARKDOWN = re.compile(r"[*_`]+")
 _LEADING_MARK = re.compile(r"^[\s>#*+\-]+")
+# Stable across process restarts so SQL can persist the same span id.
+_SPAN_NAMESPACE = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
 
 def candidate_units(text: str) -> tuple[tuple[int, int, str], ...]:
@@ -35,7 +38,10 @@ def candidate_units(text: str) -> tuple[tuple[int, int, str], ...]:
 
 
 def span_id(document_id: str, start: int, end: int) -> str:
-    return f"{document_id}:{start}:{end}"
+    """Deterministic UUID for a server-owned (document, offset) span."""
+    return str(
+        uuid.uuid5(_SPAN_NAMESPACE, f"{document_id}:{start}:{end}")
+    )
 
 
 def is_narrative_heading(text: str) -> bool:

@@ -8,6 +8,7 @@ name its role makes extraction incomplete.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 
 from career_assistant.adapters.extraction.claims_model import ModelClaimExtractor
@@ -208,7 +209,12 @@ def test_the_model_extracts_claims_from_every_role() -> None:
     assert completion.calls == 1
     assert completion.last_request is not None
     assert "UNTRUSTED_CV" in completion.last_request.user
-    assert "SPAN doc-cv:" in completion.last_request.user
+    assert "SPAN " in completion.last_request.user
+    assert re.search(
+        r"SPAN [0-9a-f-]{36}",
+        completion.last_request.user,
+        re.IGNORECASE,
+    )
 
 
 def test_an_unknown_span_id_is_rejected() -> None:

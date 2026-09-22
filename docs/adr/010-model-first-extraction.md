@@ -134,11 +134,12 @@ merged. The server does not split a single sentence further. Each span has a
 server-issued id and the exact stored text.
 
 The model classifies those ids. It does not supply the evidence text. Unknown
-ids, duplicated ids and ids from another document are rejected. Every server
-span needs exactly one accepted classification; otherwise the extraction is
-incomplete and no fit score is published. The job fails with
-`extraction_incomplete`. There is no fuzzy quote match and no fallback to the
-rules extractor for a partial model response.
+ids, duplicated ids and ids from another document are rejected. Span ids are
+deterministic UUIDs derived from the document id and offsets so PostgreSQL can
+store them. Every server span needs exactly one accepted classification;
+otherwise the extraction is incomplete and no fit score is published. The job
+fails with `extraction_incomplete`. There is no fuzzy quote match and no
+fallback to the rules extractor for a partial model response.
 
 A line that is only a section introduction, ending in a colon, is
 `non_requirement` even if the model calls it a responsibility. Benefits and
