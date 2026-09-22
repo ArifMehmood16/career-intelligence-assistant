@@ -2,7 +2,7 @@
 
 Instruction set for coding agents and the human reviewer. Phase **15B** is
 approved to proceed under [ADR 012](adr/012-durable-operational-audit.md).
-15B.1–15B.4 are done. Implement one remaining 15B.n task at a time.
+15B.1–15B.5 are done. Implement one remaining 15B.n task at a time.
 
 **Related current work:** Phase 13D.6 completeness is still open. Phase 13B already
 ships stderr operational logging. Phase 15 (15.1–15.4) is unchanged. On 2026-09-22
@@ -425,15 +425,10 @@ change scoring, mapping or extraction behaviour.
 - [x] Validation error persists `error_code`, never the body
 - [x] Hermetic `create_app()` uses `InMemoryAuditRecorder`
 
-### 15B.5 Actions at use-case boundaries
+### 15B.5 Actions at use-case boundaries — done
 
-- API tests: CV upload records `cv.upload` succeeded with `document_id` and
-  counts, not text. Role create records `role.create` accepted (202) with
-  `role_id` / `job_id`. Delete records `cv.delete`. Ask records `ask.question`
-  without the question text. Provider change records `settings.provider_changed`
-  with provider ids only.
-- Failed admit (too large, wrong type) records `failed` + contract `error_code`.
-- Keep existing `log_event` names working so 13B tests stay green.
+- [x] CV upload/delete, failed admit, role create, Ask, provider change
+- [x] Existing 13B `log_event` names still pass
 
 ### 15B.6 Events from worker and persistence
 

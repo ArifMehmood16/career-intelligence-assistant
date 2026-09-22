@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Protocol
 
 from career_assistant.application.intake.admission import AdmissionLimits
 from career_assistant.application.intake.errors import IntakeError
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentFormat, DocumentKind, Page, Span
 from career_assistant.logconfig import log_event
@@ -133,14 +135,31 @@ def upload_pasted_cv(
     filename: str,
     limits: AdmissionLimits,
 ) -> CvView:
-    parsed = parse_pasted_text(
-        text,
-        filename=filename or "pasted.txt",
-        kind=DocumentKind.CV,
-        limits=limits,
-    )
-    body = text.encode("utf-8")
-    return _store_parsed_cv(store, workspace_id=workspace_id, parsed=parsed, body=body)
+    started = time.perf_counter()
+    try:
+        parsed = parse_pasted_text(
+            text,
+            filename=filename or "pasted.txt",
+            kind=DocumentKind.CV,
+            limits=limits,
+        )
+        body = text.encode("utf-8")
+        return _store_parsed_cv(
+            store,
+            workspace_id=workspace_id,
+            parsed=parsed,
+            body=body,
+            started=started,
+        )
+    except IntakeError as exc:
+        emit_action(
+            "cv.upload",
+            outcome="failed",
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            entity_type="cv",
+            error_code=exc.code.value,
+        )
+        raise
 
 
 def upload_bytes_cv(
@@ -154,14 +173,31 @@ def upload_bytes_cv(
 ) -> CvView:
     from career_assistant.parsing.pipeline import parse_document
 
-    parsed = parse_document(
-        data,
-        filename=filename or "upload",
-        kind=DocumentKind.CV,
-        declared_media_type=declared_media_type,
-        limits=limits,
-    )
-    return _store_parsed_cv(store, workspace_id=workspace_id, parsed=parsed, body=data)
+    started = time.perf_counter()
+    try:
+        parsed = parse_document(
+            data,
+            filename=filename or "upload",
+            kind=DocumentKind.CV,
+            declared_media_type=declared_media_type,
+            limits=limits,
+        )
+        return _store_parsed_cv(
+            store,
+            workspace_id=workspace_id,
+            parsed=parsed,
+            body=data,
+            started=started,
+        )
+    except IntakeError as exc:
+        emit_action(
+            "cv.upload",
+            outcome="failed",
+            duration_ms=int((time.perf_counter() - started) * 1000),
+            entity_type="cv",
+            error_code=exc.code.value,
+        )
+        raise
 
 
 def _store_parsed_cv(
@@ -170,6 +206,7 @@ def _store_parsed_cv(
     workspace_id: str,
     parsed: object,
     body: bytes,
+    started: float,
 ) -> CvView:
     from career_assistant.domain.documents import ParsedDocument
 
@@ -198,6 +235,19 @@ def _store_parsed_cv(
         byte_length=len(body),
         media_type=document.media_type,
     )
+    emit_action(
+        "cv.upload",
+        outcome="succeeded",
+        duration_ms=int((time.perf_counter() - started) * 1000),
+        entity_type="cv",
+        entity_id=stored.view.id,
+        attributes={
+            "id_document": stored.view.id,
+            "count_pages": stored.view.page_count,
+            "count_spans": len(document.spans),
+            "count_bytes": len(body),
+        },
+    )
     return stored.view
 
 
@@ -209,6 +259,7 @@ def get_cv(store: CvStore, *, workspace_id: str) -> CvView | None:
 def delete_cv(store: CvStore, *, workspace_id: str) -> None:
     store.delete_active(workspace_id)
     log_event(_log, "cv.deleted")
+    emit_action("cv.delete", outcome="succeeded", entity_type="cv")
 
 
 def reraise_intake_as_message(error: IntakeError) -> tuple[str, str, int]:

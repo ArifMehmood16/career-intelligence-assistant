@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 117 — Phase 15B.5 use-case action rows
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.5
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: bind the recorder on each request and emit allowlisted actions from CV, role, Ask, generation and provider-choice use cases.
+- Outcome: accepted
+- Reason: one ContextVar keeps HTTP and use cases aligned without putting FastAPI types in application code. Attributes stay prefixed ids/counts so planted phrases never persist.
+- Human validation: `pytest` on audit actions, operational logging, architecture guard, generation, messages, CV and provider routes passed (45) with `--no-cov`.
+
 ### 116 — Phase 15B.4 persist HTTP envelopes
 
 - Date: 2026-09-22

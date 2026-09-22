@@ -34,6 +34,7 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentStore,
 )
 from career_assistant.application.intake.workspace_spans import retrieval_pool
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
@@ -250,6 +251,12 @@ def delete_messages(request: Request, workspace_id: WorkspaceId) -> Response:
     conversation_id = store.conversation_id_for(workspace_id)
     if conversation_id is not None:
         store.hard_delete(workspace_id, conversation_id)
+        emit_action(
+            "messages.delete",
+            outcome="succeeded",
+            entity_type="conversation",
+            entity_id=conversation_id,
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

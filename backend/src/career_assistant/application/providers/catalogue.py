@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.providers.egress import HostedEgressPolicy
 from career_assistant.settings import ProviderSettings
 
@@ -99,6 +100,15 @@ def apply_provider_choice(
             message="Anthropic does not provide embeddings.",
             status_code=409,
         )
+    emit_action(
+        "settings.provider_changed",
+        outcome="succeeded",
+        entity_type="settings",
+        attributes={
+            "provider_completion": choice.answer_provider_id,
+            "provider_embedding": choice.index_provider_id,
+        },
+    )
     return choice
 
 

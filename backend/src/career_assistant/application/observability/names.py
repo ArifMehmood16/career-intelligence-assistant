@@ -57,7 +57,15 @@ HTTP_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTI
 
 QUERY_ID_KEYS = frozenset({"roleId", "version", "role_id", "conversationId"})
 
-ATTRIBUTE_KEY_PREFIXES = ("count_", "id_", "ms_", "stage_", "provider_", "code_")
+ATTRIBUTE_KEY_PREFIXES = (
+    "count_",
+    "id_",
+    "ms_",
+    "stage_",
+    "provider_",
+    "code_",
+    "flag_",
+)
 
 UNKNOWN_ACTION = "action.unknown"
 UNKNOWN_EVENT = "event.unknown"

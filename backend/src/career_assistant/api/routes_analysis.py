@@ -52,6 +52,7 @@ from career_assistant.application.intake.resolve_span import (
     resolve_span,
 )
 from career_assistant.application.intake.workspace_spans import lookup_workspace_span
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import GeneratedDraftRecord
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
@@ -255,35 +256,34 @@ def _phrase_interview_pack(
         last = generated.provenance
         return generated.text
 
-    return (
-        InterviewPack(
-            probes=tuple(
-                InterviewProbe(
-                    requirement_id=probe.requirement_id,
-                    question=phrase(probe.question, probe.requirement_id),
-                    status=probe.status,
-                )
-                for probe in pack.probes
-            ),
-            lead_with=tuple(
-                InterviewLead(
-                    requirement_id=lead.requirement_id,
-                    note=phrase(lead.note, lead.requirement_id),
-                    span_ids=lead.span_ids,
-                )
-                for lead in pack.lead_with
-            ),
-            thin_areas=pack.thin_areas,
-            ask_them=tuple(
-                InterviewAskThem(
-                    question=phrase(ask.question, ask.requirement_id),
-                    requirement_id=ask.requirement_id,
-                )
-                for ask in pack.ask_them
-            ),
+    result = InterviewPack(
+        probes=tuple(
+            InterviewProbe(
+                requirement_id=probe.requirement_id,
+                question=phrase(probe.question, probe.requirement_id),
+                status=probe.status,
+            )
+            for probe in pack.probes
         ),
-        last,
+        lead_with=tuple(
+            InterviewLead(
+                requirement_id=lead.requirement_id,
+                note=phrase(lead.note, lead.requirement_id),
+                span_ids=lead.span_ids,
+            )
+            for lead in pack.lead_with
+        ),
+        thin_areas=pack.thin_areas,
+        ask_them=tuple(
+            InterviewAskThem(
+                question=phrase(ask.question, ask.requirement_id),
+                requirement_id=ask.requirement_id,
+            )
+            for ask in pack.ask_them
+        ),
     )
+    emit_action("generation.pack", outcome="succeeded")
+    return result, last
 
 
 def _as_cover_letter_wire(draft: object) -> CoverLetterDraftWire:
@@ -594,6 +594,7 @@ def post_bullets(
             template_text=template,
             counters=counters,
             provider_id=completion.capabilities.provider_id,
+            audit_action="generation.bullet",
         )
         last_generated = generated.provenance
         span_ids = list(claim.source_span_ids)
@@ -694,6 +695,7 @@ def post_cover_letter(
         template_text=draft.body,
         counters=GenerationCounters(),
         provider_id=completion.capabilities.provider_id,
+        audit_action="generation.letter",
     )
     now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     paragraphs = [

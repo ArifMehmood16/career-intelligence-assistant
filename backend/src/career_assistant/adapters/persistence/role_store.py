@@ -22,6 +22,7 @@ from career_assistant.adapters.persistence.models import (
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import CvStore
 from career_assistant.application.intake.errors import IntakeError
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import (
     GeneratedDraftRecord,
     NewDocument,
@@ -158,6 +159,13 @@ class SqlRoleStore:
                 job_id=job_id,
                 jd_document_id=parsed.document.id,
             )
+            emit_action(
+                "role.create",
+                outcome="accepted",
+                entity_type="role",
+                entity_id=role_id,
+                attributes={"id_role": role_id, "id_job": job_id},
+            )
             return self._role_view(uow, workspace_id, record), _job_view(queued)
 
     def delete_role(self, workspace_id: str, role_id: str) -> None:
@@ -172,6 +180,12 @@ class SqlRoleStore:
             uow.documents.hard_delete(workspace_id, jd_id)
             uow.commit()
             log_event(_log, "sql.role.deleted", role_id=role_id)
+            emit_action(
+                "role.delete",
+                outcome="succeeded",
+                entity_type="role",
+                entity_id=role_id,
+            )
 
     def reanalyse(self, workspace_id: str, role_id: str) -> tuple[RoleView, JobView]:
         if self.cv_store.get_active(workspace_id) is None:
@@ -206,6 +220,13 @@ class SqlRoleStore:
                 "sql.role.reanalysed",
                 role_id=role_id,
                 job_id=queued.id,
+            )
+            emit_action(
+                "role.reanalyse",
+                outcome="accepted",
+                entity_type="role",
+                entity_id=role_id,
+                attributes={"id_role": role_id, "id_job": queued.id},
             )
             return self._role_view(uow, workspace_id, updated), _job_view(queued)
 

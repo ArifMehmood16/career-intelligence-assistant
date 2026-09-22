@@ -12,6 +12,7 @@ from career_assistant.application.documents.supporting import (
     DownloadableDocument,
     SupportingDocumentView,
 )
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import NewDocument, StoredDocument
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.logconfig import log_event
@@ -63,6 +64,12 @@ class SqlSupportingDocumentStore:
             uow.documents.hard_delete(workspace_id, document_id)
             uow.commit()
             log_event(_log, "sql.cover_letter.delete", document_id=document_id)
+            emit_action(
+                "cover_letter.delete",
+                outcome="succeeded",
+                entity_type="cover_letter",
+                entity_id=document_id,
+            )
             return True
 
     def get_downloadable(

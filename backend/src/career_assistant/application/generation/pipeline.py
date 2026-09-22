@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.groundedness import (
@@ -49,6 +50,7 @@ def generate_draft(
     counters: GenerationCounters,
     provider_id: str,
     max_output_tokens: int = 256,
+    audit_action: str | None = None,
 ) -> GeneratedDraft:
     """Phrase through the completion port with groundedness enforced."""
     regenerations = 0
@@ -86,6 +88,16 @@ def generate_draft(
                 template_fallback=False,
                 regenerations=regenerations,
             )
+            if audit_action is not None:
+                emit_action(
+                    audit_action,
+                    outcome="succeeded",
+                    attributes={
+                        "provider_id": draft.provenance.provider_id,
+                        "flag_left_machine": draft.provenance.left_machine,
+                        "flag_template_fallback": False,
+                    },
+                )
             return draft
         counters.validator_failures += 1
         if attempt == 0:
@@ -114,4 +126,14 @@ def generate_draft(
         template_fallback=True,
         regenerations=regenerations,
     )
+    if audit_action is not None:
+        emit_action(
+            audit_action,
+            outcome="succeeded",
+            attributes={
+                "provider_id": draft.provenance.provider_id,
+                "flag_left_machine": draft.provenance.left_machine,
+                "flag_template_fallback": True,
+            },
+        )
     return draft

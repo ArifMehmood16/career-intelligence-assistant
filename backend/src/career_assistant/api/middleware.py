@@ -20,6 +20,10 @@ from career_assistant.api.deps import (
     resolve_workspace_id,
     workspace_cookie_needs_set,
 )
+from career_assistant.application.observability.emit import (
+    bind_recorder,
+    clear_recorder,
+)
 from career_assistant.application.observability.names import QUERY_ID_KEYS
 from career_assistant.application.ports.observability import HttpEnvelope
 from career_assistant.logconfig import (
@@ -147,6 +151,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             correlation_id=str(correlation_id),
             workspace_id=str(workspace_id) if workspace_id else None,
         )
+        bind_recorder(getattr(request.app.state, "audit_recorder", None))
         started = time.perf_counter()
         try:
             response = await call_next(request)
@@ -188,6 +193,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             )
             return response
         finally:
+            clear_recorder()
             clear_request_context()
 
 

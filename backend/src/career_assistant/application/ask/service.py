@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
+from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.ask import (
@@ -161,6 +162,18 @@ class AskService:
             provider=provider,
             left_machine=left,
         )
+        emit_action(
+            "ask.question",
+            outcome="succeeded",
+            entity_type="conversation",
+            entity_id=request.conversation_id,
+            attributes={
+                "id_question": question_id,
+                "count_citations": len(result.citations),
+                "provider_id": provider,
+                "flag_left_machine": left,
+            },
+        )
         return result
 
     def stream(self, request: AskRequest) -> Iterator[AskEvent]:
@@ -214,6 +227,18 @@ class AskService:
             provider=provider,
             left_machine=left,
         )
+        emit_action(
+            "ask.question",
+            outcome="succeeded",
+            entity_type="conversation",
+            entity_id=request.conversation_id,
+            attributes={
+                "id_question": question_id,
+                "count_citations": len(result.citations),
+                "provider_id": provider,
+                "flag_left_machine": left,
+            },
+        )
         yield AskEvent(type="done", kind=result.kind.value)
 
     def history(self, *, workspace_id: str, conversation_id: str) -> tuple[object, ...]:
@@ -221,6 +246,12 @@ class AskService:
 
     def delete_history(self, *, workspace_id: str, conversation_id: str) -> None:
         self._store.hard_delete(workspace_id, conversation_id)
+        emit_action(
+            "messages.delete",
+            outcome="succeeded",
+            entity_type="conversation",
+            entity_id=conversation_id,
+        )
 
     def _existing(self, request: AskRequest) -> AnswerResult | None:
         found = self._store.find_by_client_request_id(
