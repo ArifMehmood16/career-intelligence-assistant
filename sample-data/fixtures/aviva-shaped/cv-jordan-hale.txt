@@ -1,0 +1,52 @@
+SYNTHETIC FIXTURE — not a real person. DOCX-style paragraph extraction shape.
+
+Name: Jordan Hale
+Title: Analytics Engineer
+Location: Edinburgh, UK
+
+SUMMARY
+Analytics engineer with warehouse modelling experience across retail and SaaS
+datasets. Comfortable owning pipelines and partnering with analysts on metrics.
+
+EXPERIENCE
+
+Tideway Analytics Ltd — Analytics Engineer, January 2024 – Present
+Delivered labelled outcome 5-0 for production dbt marts used by finance.
+Designed incremental Snowflake models for daily sales and risk reporting.
+Partnered with analysts on metric definitions for revenue and margin.
+Wrote Python utilities that validate row counts before dbt builds promote.
+
+Harbourline Retail — Data Analyst, March 2021 – December 2023
+Built Looker dashboards for store performance and inventory turn.
+Authored SQL transformations for weekly merchandising packs.
+Documented metric definitions used company-wide by finance stakeholders.
+
+Cedar Grove Labs — Analytics Engineer, January 2019 – February 2021
+Owned a small dbt project covering customer and product marts.
+Coordinated a multi-step orchestration workflow across extract, transform and publish.
+Mentored two analysts on SQL modelling standards for shared marts.
+
+Oakridge Systems — Junior Analyst, June 2017 – December 2018
+Wrote SQL extracts for monthly board packs.
+Supported incident triage when overnight reports failed.
+Prepared lineage notes for an internal audit of reporting datasets.
+
+Brookfield Media — Intern Analyst, January 2016 – May 2017
+Assisted with spreadsheet models for campaign reporting.
+Shadowed senior analysts on stakeholder updates.
+
+Maple Street Consulting — Research Assistant, September 2014 – December 2015
+Collected labelled survey outcomes for a synthetic retail study.
+Cleaned CSV extracts used in a classroom warehouse exercise.
+
+PROJECTS
+
+Portfolio — Side Project Orchestrator, January 2020 – June 2020
+Shipped a portfolio orchestration tool that sequenced extract and publish jobs.
+Documented how transferable orchestration patterns support multi-step analytics.
+
+Portfolio — Metrics Notebook, July 2019 – December 2019
+Published a notebook that explained metric definitions for a synthetic retail set.
+
+SKILLS
+dbt, Snowflake, SQL, Python, Looker, Git, CI for analytics

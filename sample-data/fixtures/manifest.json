@@ -15,6 +15,14 @@
     "jd-injection-attempt.txt",
     "jd-recency-sensitive.txt"
   ],
+  "shaped_regressions": [
+    {
+      "id": "aviva_shaped_northbridge",
+      "dir": "aviva-shaped",
+      "labels": "labels.json",
+      "intent": "Markdown JD and DOCX-shaped CV for incomplete-analysis regression. Synthetic only."
+    }
+  ],
   "pairings": [
     {
       "id": "clean_match",

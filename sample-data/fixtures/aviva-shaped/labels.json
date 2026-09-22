@@ -1,0 +1,51 @@
+{
+  "id": "aviva_shaped_northbridge",
+  "note": "Synthetic shape regression for PLAN 13D.6f. No private documents.",
+  "job": "jd-northbridge-mutual.txt",
+  "cv": "cv-jordan-hale.txt",
+  "gates": {
+    "heading_benefit_logistics_scored": 0,
+    "labelled_employment_roles": 6,
+    "labelled_experience_claims": 17,
+    "portfolio_projects": 2,
+    "unsupported_framework_requirement": "Kubernetes Operators",
+    "multi_agent_requirement": "Multi-agent Systems",
+    "multi_agent_evidence": "transferable orchestration only"
+  },
+  "expected_role_order": [
+    "Tideway Analytics Ltd",
+    "Harbourline Retail",
+    "Cedar Grove Labs",
+    "Oakridge Systems",
+    "Brookfield Media",
+    "Maple Street Consulting"
+  ],
+  "scoreable_skill_labels": [
+    "Python Proficiency",
+    "SQL Warehousing",
+    "dbt Modelling",
+    "Orchestration",
+    "BI Tools",
+    "Stakeholder Communication",
+    "Multi-agent Systems",
+    "Kubernetes Operators"
+  ],
+  "expected_mappings": {
+    "Python Proficiency": "met",
+    "SQL Warehousing": "met",
+    "dbt Modelling": "met",
+    "Orchestration": "partial",
+    "BI Tools": "met",
+    "Stakeholder Communication": "met",
+    "Multi-agent Systems": "partial",
+    "Kubernetes Operators": "missing"
+  },
+  "non_scoreable_markers": [
+    "You will be responsible for:",
+    "Competitive salary",
+    "Pension contribution",
+    "Share options",
+    "Hybrid working",
+    "Right to work"
+  ]
+}

@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 108 — Aviva-shaped synthetic regression fixture
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6f
+- Prompt intent: continue 13D.6 with the synthetic shape fixture after incomplete-status work.
+- Suggestion: copy private smoke documents into the repo for an end-to-end score assertion.
+- Outcome: changed
+- Reason: added a public-safe Markdown JD and DOCX-shaped CV with labels. Hermetic tests lock the safe gates (no heading/benefit/logistics scoring, six roles and seventeen claims preserved, incomplete assessment unpublished) without requiring a stochastic fit score.
+- Human validation: `pytest` on `test_aviva_shaped_fixture.py` passed (5). Ruff passed on the test file.
+
 ### 107 — Incomplete analysis is not a fit score on screen
 
 - Date: 2026-09-22

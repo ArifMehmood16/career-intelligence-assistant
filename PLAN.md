@@ -68,8 +68,8 @@ local PostgreSQL; Compose/deployment uses container PostgreSQL.
 discussion, not a shipped feature or approval to send personal data to hosted
 models. Before implementing changed scoring/cover-letter semantics, record the
 decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
-13D.2. 13D.6a–13D.6e are implemented. 13D.6f–13D.6g remain open. A public
-API change stops for approval. Earlier checked
+13D.2. 13D.6a–13D.6f are implemented. 13D.6g remains open for observed
+verification. A public API change stops for approval. Earlier checked
 tasks remain implementation history; they are not proof of ranking accuracy,
 nor should superseded unchecked 5.3/7.2 be restarted.
 
@@ -1178,7 +1178,7 @@ they are.
         result; ranking and comparison exclude or separately identify
         incomplete roles; a complete genuine zero still renders as a valid
         zero with the correct explanation.
-  - [ ] **13D.6f — Add an Aviva-shaped synthetic regression fixture.**
+  - [x] **13D.6f — Add an Aviva-shaped synthetic regression fixture.**
         Synthetic, public-safe data only. Reproduce the observed document
         shapes without copying the private CV. Job-description shape: Markdown
         headings, bold-labelled requirements, asterisk bullets, seven
