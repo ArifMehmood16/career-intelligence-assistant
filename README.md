@@ -89,21 +89,30 @@ Full detail, including the rules that keep each one honest, in
 
 ### Screenshots
 
-![Workspace with CV and ranked roles](docs/images/workspace-overview.png)
+Captured from the running app by the maintainer (not mocks).
 
-*Workspace — upload a CV, add roles, and see ranking from stored fit scores.*
+![Workspace with CV, roles and ranking](docs/images/workspace.jpg)
 
-![Requirements table with Met, Partial and Missing](docs/images/fit-requirements.png)
+*Workspace — upload a CV and supporting letters, add roles, see fit ranking.*
 
-*Fit — each scoreable requirement shows status and the CV evidence that justifies it.*
+![Settings provider choice](docs/images/settings.jpg)
 
-![Gap plan ordered by score impact](docs/images/gap-plan.png)
+*Settings — choose hermetic, Ollama or hosted answer/index providers behind the egress gate.*
 
-*Gaps — close the highest-impact gaps first; actions stay tied to stored evidence.*
+![Fit tab with score breakdown and requirements](docs/images/fit.jpg)
 
-![Cover letter with numbered citations and glossary](docs/images/cover-letter-glossary.png)
+*Fit — score breakdown plus every scoreable requirement as missing, partial or met with evidence.*
 
-*Letter — numbered citations in the draft; the Citations panel shows the full passage.*
+![Gaps tab ordered by score impact](docs/images/gaps.jpg)
+
+*Gaps — ordered by how much the score would move if you closed each gap.*
+
+![Prepare tab interview pack](docs/images/prepare.jpg)
+
+*Prepare — interview probes grounded in met, partial and missing mappings.*
+
+The **Letter** tab generates a grounded cover letter. After generate, citations show
+as `[1]`, `[2]` with the full source passage in the Citations panel on the right.
 
 ## What it answers
 

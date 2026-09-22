@@ -665,9 +665,7 @@ def test_unclassified_skills_and_education_do_not_fail_completeness() -> None:
 def test_iso_role_dates_are_parsed() -> None:
     from career_assistant.domain.recency import parse_date_range
 
-    parsed = parse_date_range(
-        "Senior Analytics Engineer — Acme — 2022-01 — Present"
-    )
+    parsed = parse_date_range("Senior Analytics Engineer — Acme — 2022-01 — Present")
     assert parsed is not None
     assert parsed.start == date(2022, 1, 1)
     assert parsed.end is None
@@ -717,9 +715,7 @@ def test_missing_scoreable_span_is_retried_once() -> None:
     text = _six_role_cv()
     by_span = _assignments_covering(text)
     omit = next(
-        issued
-        for issued, item in by_span.items()
-        if item.get("kind") == "experience"
+        issued for issued, item in by_span.items() if item.get("kind") == "experience"
     )
     completion = _BatchAwareCompletion(by_span, omit_once=omit)
     result = ModelClaimExtractor(completion, as_of=AS_OF, batch_size=8).extract(

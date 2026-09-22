@@ -250,11 +250,7 @@ def draft_cover_letter(
                 "recorded in my CV."
             )
         else:
-            paragraphs.append(
-                "MET\n"
-                f"Requirement: {req.text}\n"
-                f"Evidence: {req.text}"
-            )
+            paragraphs.append(f"MET\nRequirement: {req.text}\nEvidence: {req.text}")
     for req, mapping in transferable[:_MAX_TRANSFER_PARAGRAPHS]:
         evidence = _claim_evidence(mapping, by_claim)
         if not evidence:
@@ -269,8 +265,7 @@ def draft_cover_letter(
         )
     if include_gap_line and bare_gaps:
         paragraphs.append(
-            "GAP\n"
-            "I am still building depth in: " + "; ".join(bare_gaps) + "."
+            "GAP\nI am still building depth in: " + "; ".join(bare_gaps) + "."
         )
     paragraphs.append("Thank you for your consideration.")
     return CoverLetterDraft(

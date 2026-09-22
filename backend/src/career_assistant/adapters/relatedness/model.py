@@ -256,13 +256,10 @@ class ModelAdjudicator:
             for item in batch
             for evidence in item.evidence
         }
-        truncated = (
-            result.finish_reason == "length"
-            or (
-                isinstance(result.output_tokens, int)
-                and result.output_tokens >= max(1, int(output_tokens * 0.95))
-                and not result.text.strip().endswith("}")
-            )
+        truncated = result.finish_reason == "length" or (
+            isinstance(result.output_tokens, int)
+            and result.output_tokens >= max(1, int(output_tokens * 0.95))
+            and not result.text.strip().endswith("}")
         )
         parsed, stats = parse_assessments_with_stats(
             result.text, allowed=allowed, claim_aliases=claim_aliases
@@ -299,13 +296,17 @@ class ModelAdjudicator:
                 )
             }
             return merged, left_n + right_n, combined
-        return parsed, stats["returned"], {
-            "dropped_duplicate": stats["dropped_duplicate"],
-            "dropped_unknown_only": stats["dropped_unknown_only"],
-            "dropped_empty_support": stats["dropped_empty_support"],
-            "dropped_invalid": stats["dropped_invalid"],
-            "claim_aliases_expanded": stats["claim_aliases_expanded"],
-        }
+        return (
+            parsed,
+            stats["returned"],
+            {
+                "dropped_duplicate": stats["dropped_duplicate"],
+                "dropped_unknown_only": stats["dropped_unknown_only"],
+                "dropped_empty_support": stats["dropped_empty_support"],
+                "dropped_invalid": stats["dropped_invalid"],
+                "claim_aliases_expanded": stats["claim_aliases_expanded"],
+            },
+        )
 
     def adjudicate(
         self, pairs: Sequence[AdjudicationPair]
@@ -323,7 +324,7 @@ class ModelAdjudicator:
         )
         try:
             payload = json.loads(result.text)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return {}
         decisions = payload.get("decisions") if isinstance(payload, dict) else None
         if not isinstance(decisions, list):

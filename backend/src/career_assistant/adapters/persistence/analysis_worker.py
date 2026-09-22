@@ -206,9 +206,7 @@ class SqlAnalysisWorker:
             return claimed
 
     def complete(self, job: AnalysisJob) -> AnalysisJob:
-        bind_request_context(
-            correlation_id=job.id, workspace_id=job.workspace_id
-        )
+        bind_request_context(correlation_id=job.id, workspace_id=job.workspace_id)
         try:
             return self._run_job(job)
         finally:
@@ -709,7 +707,7 @@ class SqlAnalysisWorker:
                 provider_id=provider_id,
                 model_tag=model_tag,
             )
-        except (EgressNotPermittedError, ProviderUnavailableError):
+        except EgressNotPermittedError, ProviderUnavailableError:
             return None, provider_id, model_tag
         accountant = self._call_accountant or SqlCallAccountant(self._uow_factory)
         return (

@@ -41,9 +41,7 @@ def candidate_units(text: str) -> tuple[tuple[int, int, str], ...]:
 
 def span_id(document_id: str, start: int, end: int) -> str:
     """Deterministic UUID for a server-owned (document, offset) span."""
-    return str(
-        uuid.uuid5(_SPAN_NAMESPACE, f"{document_id}:{start}:{end}")
-    )
+    return str(uuid.uuid5(_SPAN_NAMESPACE, f"{document_id}:{start}:{end}"))
 
 
 def spans_for_document(document_id: str, normalised_text: str) -> tuple[Span, ...]:

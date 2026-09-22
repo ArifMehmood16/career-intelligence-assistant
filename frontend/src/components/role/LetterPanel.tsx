@@ -187,7 +187,9 @@ export function LetterPanel({
           >
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold">Version {draft.version}</h3>
+                <h3 className="text-sm font-semibold">
+                  Version {draft.version}
+                </h3>
                 <p className="font-mono text-[11px] text-muted-foreground">
                   {draft.provenance.model ?? "template"} ·{" "}
                   {draft.provenance.provider} ·{" "}
@@ -209,7 +211,9 @@ export function LetterPanel({
                 </Button>
                 {exportError ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">{exportError}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {exportError}
+                    </p>
                     <Button
                       type="button"
                       variant="outline"
