@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from career_assistant.application.analysis.relatedness import NullAdjudicator
+from career_assistant.domain.assessment import EvidenceAssessment
 from career_assistant.evaluation.baseline import (
     current_policy_baseline,
     load_pilot,
@@ -129,3 +130,43 @@ def test_every_labelled_supporting_passage_reaches_the_assessor() -> None:
     report = measured_policy_baseline(pilot, adjudicator=_SilentAssessor())
     assert report.calls_model is True
     assert report.retrieval_misses == ()
+
+
+class _RefusingAssessor:
+    """Answers `missing` everywhere with a fixed reason, so the reason is checked."""
+
+    reason = "No cited passage mentions this work."
+
+    @property
+    def decides_support(self) -> bool:
+        return True
+
+    def assessment_source(self) -> tuple[str, str, bool]:
+        return ("scripted", "refusing-v1", False)
+
+    def adjudicate(self, pairs: object) -> dict[tuple[str, str], bool]:
+        return {}
+
+    def assess(self, items: object) -> dict[str, EvidenceAssessment]:
+        return {
+            item.requirement_id: EvidenceAssessment(
+                requirement_id=item.requirement_id,
+                status="missing",
+                supporting_span_ids=(),
+                unmet_conditions=(),
+                unknown_conditions=(),
+                contradiction=False,
+                justification=self.reason,
+            )
+            for item in items  # type: ignore[attr-defined]
+        }
+
+
+def test_a_disagreement_carries_the_reason_the_model_gave() -> None:
+    """A run that only counts disagreements cannot say why the next fix is."""
+    pilot = load_pilot(DATASET)
+    report = measured_policy_baseline(pilot, adjudicator=_RefusingAssessor())
+    assert report.disagreements
+    assert {item.justification for item in report.disagreements} == {
+        _RefusingAssessor.reason
+    }

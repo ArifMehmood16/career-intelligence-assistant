@@ -349,6 +349,7 @@ def _mapping_from_assessment(
         justifying_span_ids=assessment.supporting_span_ids,
         justifying_claim_ids=claim_ids,
         retrieved_claim_ids=retrieved_claim_ids,
+        assessment_justification=assessment.justification,
         unknown_conditions=assessment.unknown_conditions,
         contradiction=assessment.contradiction,
         signals=RelatednessSignals(

@@ -138,7 +138,8 @@ def test_local_ollama_measures_the_labelled_pilot() -> None:
     ]
     lines.extend(
         f"{item.role_id} {item.requirement_id} "
-        f"expected={item.expected} observed={item.observed}"
+        f"expected={item.expected} observed={item.observed} "
+        f"why={item.justification}"
         for item in report.disagreements
     )
     lines.extend(

@@ -43,6 +43,10 @@ class RequirementMapping:
     # What the assessor was actually shown. A `missing` result means nothing
     # until this says whether the supporting claim was ever in the prompt.
     retrieved_claim_ids: tuple[str, ...] = ()
+    # The model's own sentence for its assessment. Diagnostic only: a domain
+    # rule can override the status afterwards, and then this no longer
+    # describes the result.
+    assessment_justification: str = ""
 
 
 def map_requirements(

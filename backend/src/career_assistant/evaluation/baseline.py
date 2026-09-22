@@ -152,6 +152,9 @@ class AssessmentDisagreement:
     requirement_id: str
     expected: str
     observed: str
+    # The model's own sentence. Counting disagreements says how many; this says
+    # what the next fix is.
+    justification: str = ""
 
     @property
     def unsupported_met(self) -> bool:
@@ -284,6 +287,10 @@ def measured_policy_baseline(
             observed = {
                 mapping.requirement_id: mapping.status.value for mapping in mappings
             }
+            reasons = {
+                mapping.requirement_id: mapping.assessment_justification
+                for mapping in mappings
+            }
             if decides_support:
                 retrieval_misses.extend(
                     _retrieval_misses(role, claims, mappings),
@@ -300,6 +307,7 @@ def measured_policy_baseline(
                             requirement_id=requirement.id,
                             expected=expected,
                             observed=actual,
+                            justification=reasons.get(requirement.id, ""),
                         )
                     )
             scores[role.id] = score_fit(requirements, mappings, claims, rubric).score
