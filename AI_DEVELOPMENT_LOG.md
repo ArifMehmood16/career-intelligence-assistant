@@ -27,6 +27,19 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 084 — CI runs only when a pull request is opened into main
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: none (workflow trigger change requested directly)
+- Prompt intent: run the GitHub workflow only when a pull request is created into
+  main, and not on every code push or on main.
+- Suggestion: drop the `push` trigger and limit `pull_request` to `opened` against
+  `main`.
+- Outcome: accepted
+- Reason: the developer asked for CI only at PR creation into main.
+- Human validation: TBD
+
 ### 083 — Refocus the remaining plan on evidence assessment and ranking quality
 
 - Date: 2026-09-22
