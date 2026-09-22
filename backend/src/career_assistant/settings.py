@@ -85,7 +85,7 @@ class ProviderSettings(BaseSettings):
     allow_hosted_providers: bool = False
 
     ollama_base_url: str = "http://localhost:11434"
-    ollama_completion_model: str = "llama3.2"
+    ollama_completion_model: str = "qwen2.5:7b"
     ollama_embedding_model: str = "nomic-embed-text"
 
     openai_api_key: SecretStr | None = None

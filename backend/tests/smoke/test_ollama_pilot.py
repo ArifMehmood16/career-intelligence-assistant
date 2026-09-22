@@ -44,7 +44,7 @@ DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
 # One variable at a time: change the completion model without touching the
 # prompt or the labels, so a weak-model result can be told apart from a weak
 # prompt. SMOKE_COMPLETION_MODEL / SMOKE_EMBEDDING_MODEL override the defaults.
-_COMPLETION_MODEL = os.environ.get("SMOKE_COMPLETION_MODEL", "llama3.2")
+_COMPLETION_MODEL = os.environ.get("SMOKE_COMPLETION_MODEL", "qwen2.5:7b")
 _EMBEDDING_MODEL = os.environ.get("SMOKE_EMBEDDING_MODEL", "nomic-embed-text")
 
 

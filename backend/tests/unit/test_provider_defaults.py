@@ -54,3 +54,19 @@ def test_no_dead_extraction_strategy_switch_remains() -> None:
         or "extraction_strategy" in path.read_text(encoding="utf-8")
     ]
     assert not offenders, f"dead extraction-strategy switch referenced in {offenders}"
+
+
+def test_the_default_local_completion_model_is_the_one_that_was_measured() -> None:
+    """PLAN 13D.6 — the model is part of the assessment contract.
+
+    On the labelled pilot `llama3.2` disagreed on 12 of 24 requirements and
+    credited the injection case as met, while `qwen2.5:7b` disagreed on 3 and
+    kept the held-out split clean. Shipping the smaller one would ship a worse
+    product than the hermetic rules it replaced.
+    """
+    settings = ProviderSettings(_env_file=None)
+
+    assert settings.ollama_completion_model == "qwen2.5:7b"
+    assert "OLLAMA_COMPLETION_MODEL=qwen2.5:7b" in APP_ENV_EXAMPLE.read_text(
+        encoding="utf-8"
+    )
