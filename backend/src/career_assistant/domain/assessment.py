@@ -15,6 +15,30 @@ _MAX_JUSTIFICATION = 400
 
 
 @dataclass(frozen=True, slots=True)
+class AssessmentBatchBudget:
+    """How many requirements one assessment response may cover.
+
+    The numbers are configuration. The adapter must not invent a batch size.
+    """
+
+    max_requirements: int
+    output_tokens_per_requirement: int
+    max_output_tokens: int
+
+    def requirements_per_call(self) -> int:
+        per_requirement = max(1, self.output_tokens_per_requirement)
+        by_tokens = max(1, self.max_output_tokens // per_requirement)
+        return max(1, min(self.max_requirements, by_tokens))
+
+
+def assessment_batch_slices(count: int, per_call: int) -> tuple[tuple[int, int], ...]:
+    if count <= 0:
+        return ()
+    size = max(1, per_call)
+    return tuple((start, min(start + size, count)) for start in range(0, count, size))
+
+
+@dataclass(frozen=True, slots=True)
 class EvidenceAssessment:
     requirement_id: str
     status: str

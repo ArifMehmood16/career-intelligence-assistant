@@ -102,6 +102,10 @@ class ProviderSettings(BaseSettings):
     track_token_usage: bool = True
 
     llm_max_output_tokens: int = Field(default=2000, ge=1)
+    # One assessment response covers at most this many requirements, and only
+    # as many as max output tokens divided by the per-requirement reserve.
+    assessment_batch_max_requirements: int = Field(default=4, ge=1)
+    assessment_output_tokens_per_requirement: int = Field(default=256, ge=1)
 
     def secret_values(self) -> tuple[str, ...]:
         """Configured secrets for redaction tests — never expose via routes."""

@@ -8,6 +8,8 @@ does not become a match.
 from __future__ import annotations
 
 import json
+import logging
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -19,8 +21,18 @@ from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.assessment import (
     PROMPT_VERSION,
+    AssessmentBatchBudget,
     EvidenceAssessment,
+    assessment_batch_slices,
     parse_assessments,
+)
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
+_DEFAULT_BUDGET = AssessmentBatchBudget(
+    max_requirements=4,
+    output_tokens_per_requirement=256,
+    max_output_tokens=2000,
 )
 
 ADJUDICATION_JSON_SCHEMA: dict[str, Any] = {
@@ -113,8 +125,14 @@ _ASSESS_SYSTEM = (
 
 
 class ModelAdjudicator:
-    def __init__(self, completion: CompletionPort) -> None:
+    def __init__(
+        self,
+        completion: CompletionPort,
+        *,
+        budget: AssessmentBatchBudget = _DEFAULT_BUDGET,
+    ) -> None:
         self._completion = completion
+        self._budget = budget
 
     @property
     def decides_support(self) -> bool:
@@ -132,19 +150,63 @@ class ModelAdjudicator:
     ) -> Mapping[str, EvidenceAssessment]:
         if not items:
             return {}
+        started = time.perf_counter()
+        pending = list(items)
+        accepted: dict[str, EvidenceAssessment] = {}
+        returned = 0
+        per_call = self._budget.requirements_per_call()
+        retries = 0
+        for attempt in (0, 1):
+            if not pending:
+                break
+            size = per_call if attempt == 0 else max(1, per_call // 2)
+            still_missing: list[AssessmentItem] = []
+            for start, end in assessment_batch_slices(len(pending), size):
+                batch = pending[start:end]
+                parsed, raw_count = self._complete_batch(batch)
+                returned += raw_count
+                for item in batch:
+                    found = parsed.get(item.requirement_id)
+                    if found is None:
+                        still_missing.append(item)
+                    else:
+                        accepted[item.requirement_id] = found
+            pending = still_missing
+            if attempt == 0 and pending:
+                retries = 1
+        log_event(
+            _log,
+            "assessment.completed",
+            requested=len(items),
+            returned=returned,
+            accepted=len(accepted),
+            rejected=len(items) - len(accepted),
+            retry_count=retries,
+            provider=self._completion.capabilities.provider_id,
+            model=self.assessment_source()[1],
+            latency_ms=round((time.perf_counter() - started) * 1000),
+        )
+        return accepted
+
+    def _complete_batch(
+        self, batch: Sequence[AssessmentItem]
+    ) -> tuple[Mapping[str, EvidenceAssessment], int]:
         structured = self._completion.capabilities.supports_structured_output
         system = _ASSESS_SYSTEM
         schema: dict[str, Any] | None = ASSESSMENT_JSON_SCHEMA
         if not structured:
             system = f"{system}\nJSON schema:\n{json.dumps(ASSESSMENT_JSON_SCHEMA)}"
             schema = None
+        output_tokens = min(
+            self._budget.max_output_tokens,
+            max(1, len(batch)) * max(1, self._budget.output_tokens_per_requirement),
+            self._completion.capabilities.max_output_tokens,
+        )
         result = self._completion.complete(
             CompletionRequest(
                 system=system,
-                user=_assessment_message(items),
-                max_output_tokens=min(
-                    2048, self._completion.capabilities.max_output_tokens
-                ),
+                user=_assessment_message(batch),
+                max_output_tokens=output_tokens,
                 json_schema=schema,
             )
         )
@@ -152,9 +214,11 @@ class ModelAdjudicator:
             item.requirement_id: frozenset(
                 span_id for evidence in item.evidence for span_id in evidence.span_ids
             )
-            for item in items
+            for item in batch
         }
-        return parse_assessments(result.text, allowed=allowed)
+        return parse_assessments(result.text, allowed=allowed), _returned_count(
+            result.text
+        )
 
     def adjudicate(
         self, pairs: Sequence[AdjudicationPair]
@@ -189,6 +253,19 @@ class ModelAdjudicator:
                 continue
             accepted[key] = related
         return accepted
+
+
+def _returned_count(text: str) -> int:
+    try:
+        payload = json.loads(text)
+    except TypeError, ValueError:
+        return 0
+    if not isinstance(payload, dict):
+        return 0
+    items = payload.get("assessments")
+    if not isinstance(items, list):
+        return 0
+    return len(items)
 
 
 def _assessment_message(items: Sequence[AssessmentItem]) -> str:

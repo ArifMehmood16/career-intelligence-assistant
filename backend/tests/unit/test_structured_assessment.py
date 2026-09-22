@@ -11,12 +11,20 @@ import json
 
 from career_assistant.adapters.relatedness.model import ModelAdjudicator
 from career_assistant.application.analysis.relatedness import map_role_requirements
+from career_assistant.application.ports.adjudication import (
+    AssessmentEvidence,
+    AssessmentItem,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
     CompletionResult,
 )
-from career_assistant.domain.assessment import parse_assessments
+from career_assistant.domain.assessment import (
+    AssessmentBatchBudget,
+    assessment_batch_slices,
+    parse_assessments,
+)
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.mapping import MappingReason, MappingStatus
 from career_assistant.domain.requirements import Requirement
@@ -130,7 +138,7 @@ def test_agreement_without_an_assessment_is_not_a_match() -> None:
         adjudicator=ModelAdjudicator(completion),
         similarity_floor=0.55,
     )
-    assert completion.calls == 1
+    assert completion.calls == 2
     assert mappings[0].status is MappingStatus.MISSING
     assert mappings[0].reason_code is MappingReason.ASSESSMENT_INCOMPLETE
     assert mappings[0].justifying_span_ids == ()
@@ -216,6 +224,106 @@ def test_unknown_span_refusal_and_truncation_do_not_match() -> None:
     assert duplicated == {}
     assert parse_assessments('{"assessments": [', allowed=allowed) == {}
     assert parse_assessments("I must refuse.", allowed=allowed) == {}
+
+
+def _item(requirement_id: str) -> AssessmentItem:
+    return AssessmentItem(
+        requirement_id=requirement_id,
+        requirement_text=f"Need {requirement_id}",
+        conditions=(),
+        evidence=(
+            AssessmentEvidence(
+                claim_id=f"claim-{requirement_id}",
+                span_ids=(f"span-{requirement_id}",),
+                text=f"Evidence for {requirement_id}",
+                adjacent=False,
+            ),
+        ),
+    )
+
+
+def _valid(requirement_id: str) -> dict[str, object]:
+    return {
+        "requirementId": requirement_id,
+        "assessment": "missing",
+        "supportingSpanIds": [],
+        "unmetConditions": [],
+        "unknownConditions": [],
+        "contradiction": False,
+        "justification": "Nothing shown meets this requirement.",
+    }
+
+
+def test_assessment_batches_follow_the_output_budget() -> None:
+    """PLAN 13D.6b — ten requirements are not one unbounded response."""
+    budget = AssessmentBatchBudget(
+        max_requirements=8,
+        output_tokens_per_requirement=256,
+        max_output_tokens=1024,
+    )
+    assert budget.requirements_per_call() == 4
+    assert assessment_batch_slices(10, budget.requirements_per_call()) == (
+        (0, 4),
+        (4, 8),
+        (8, 10),
+    )
+
+
+class _QueueCompletion(_ScriptedCompletion):
+    def __init__(self, payloads: list[dict[str, object]]) -> None:
+        super().__init__(payloads[0], structured=True)
+        self._payloads = payloads
+        self.users: list[str] = []
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.users.append(request.user)
+        index = min(self.calls, len(self._payloads) - 1)
+        self._payload = self._payloads[index]
+        return super().complete(request)
+
+
+def test_a_partial_batch_is_retried_once_without_repeating_accepted_items(
+    caplog,
+) -> None:
+    """PLAN 13D.6b — retry only the missing requirement, then stop."""
+    caplog.set_level("INFO")
+    first, second = _item("req-a"), _item("req-b")
+    completion = _QueueCompletion(
+        [
+            {"assessments": [_valid("req-a")]},
+            {"assessments": [_valid("req-b")]},
+        ]
+    )
+    budget = AssessmentBatchBudget(
+        max_requirements=2,
+        output_tokens_per_requirement=256,
+        max_output_tokens=1024,
+    )
+    accepted = ModelAdjudicator(completion, budget=budget).assess((first, second))
+    assert set(accepted) == {"req-a", "req-b"}
+    assert completion.calls == 2
+    assert "req-a" not in completion.users[1]
+    assert "req-b" in completion.users[1]
+    assert "assessment.completed" in caplog.text
+    assert "Need req-a" not in caplog.text
+    assert "retry_count=1" in caplog.text
+
+
+def test_ten_requirements_with_one_assessment_stay_incomplete() -> None:
+    """PLAN 13D.6b — one returned item does not complete a ten-item request."""
+    items = tuple(_item(f"req-{index}") for index in range(10))
+    completion = _ScriptedCompletion(
+        {"assessments": [_valid("req-0")]},
+        structured=True,
+    )
+    budget = AssessmentBatchBudget(
+        max_requirements=4,
+        output_tokens_per_requirement=256,
+        max_output_tokens=1024,
+    )
+    accepted = ModelAdjudicator(completion, budget=budget).assess(items)
+    assert set(accepted) <= {"req-0"}
+    assert len(accepted) < 10
 
 
 def test_the_assessment_prompt_states_what_each_level_means() -> None:

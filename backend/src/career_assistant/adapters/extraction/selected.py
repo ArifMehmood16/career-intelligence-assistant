@@ -16,6 +16,7 @@ from career_assistant.application.ports.extraction import (
     RequirementExtractionPort,
 )
 from career_assistant.application.providers.catalogue import ProviderChoice
+from career_assistant.domain.assessment import AssessmentBatchBudget
 from career_assistant.settings import ProviderSettings
 
 
@@ -64,5 +65,14 @@ def analysis_ports_for_choice(
     return (
         ModelRequirementExtractor(completion),
         ModelClaimExtractor(completion),
-        ModelAdjudicator(completion),
+        ModelAdjudicator(
+            completion,
+            budget=AssessmentBatchBudget(
+                max_requirements=settings.assessment_batch_max_requirements,
+                output_tokens_per_requirement=(
+                    settings.assessment_output_tokens_per_requirement
+                ),
+                max_output_tokens=settings.llm_max_output_tokens,
+            ),
+        ),
     )

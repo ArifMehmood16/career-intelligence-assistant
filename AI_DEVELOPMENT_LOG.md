@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 104 — Assessment calls are batched and retried once
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6b
+- Prompt intent: continue 13D.6 in TDD order after the unpublished-score contract.
+- Suggestion: send every requirement in one assessment response and accept whatever comes back.
+- Outcome: changed
+- Reason: the reproduced call sent ten requirements and got one assessment back. The batch size now comes from an explicit output-token budget. A missing item is retried once, already accepted items are not sent again, and the log records counts rather than requirement or evidence text.
+- Human validation: the new batch, retry and ten-item tests failed on import of `AssessmentBatchBudget`, then passed with the rest of `test_structured_assessment.py` (8). Ruff check and format passed on the changed files.
+
 ### 103 — An incomplete assessment is not a fit score
 
 - Date: 2026-09-22
