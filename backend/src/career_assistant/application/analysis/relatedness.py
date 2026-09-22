@@ -75,6 +75,9 @@ def disagreement_pairs(
 class NullAdjudicator:
     """Hermetic default: no model call. Domain falls back to OR on disagreement."""
 
+    def assessment_source(self) -> tuple[str, str, bool]:
+        return ("hermetic", "rules-v1", False)
+
     def adjudicate(
         self, pairs: Sequence[AdjudicationPair]
     ) -> Mapping[tuple[str, str], bool]:

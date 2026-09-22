@@ -110,6 +110,13 @@ class ModelAdjudicator:
     def decides_support(self) -> bool:
         return True
 
+    def assessment_source(self) -> tuple[str, str, bool]:
+        capabilities = self._completion.capabilities
+        model = getattr(self._completion, "model_tag", None)
+        if not isinstance(model, str) or not model:
+            model = getattr(self._completion, "_model_tag", capabilities.provider_id)
+        return (capabilities.provider_id, str(model), capabilities.leaves_machine)
+
     def assess(
         self, items: Sequence[AssessmentItem]
     ) -> Mapping[str, EvidenceAssessment]:

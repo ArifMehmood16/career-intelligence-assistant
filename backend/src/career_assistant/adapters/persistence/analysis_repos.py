@@ -21,6 +21,11 @@ from career_assistant.adapters.persistence.models import (
     ScoreExplanationRow,
 )
 from career_assistant.application.ports.persistence import RoleRecord
+from career_assistant.domain.attribution import (
+    RUBRIC_VERSION,
+    AnalysisAttribution,
+    analysis_failure_status,
+)
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.jobs import (
     AnalysisJob,
@@ -367,6 +372,7 @@ class SqlAnalysisResultRepository:
         mappings: tuple[RequirementMapping, ...],
         explanation: ScoreExplanation,
         job: AnalysisJob,
+        attribution: AnalysisAttribution | None = None,
     ) -> None:
         wid = _as_uuid(workspace_id)
         rid = _as_uuid(role_id)
@@ -448,6 +454,14 @@ class SqlAnalysisResultRepository:
                     )
                 )
 
+        stored = attribution or AnalysisAttribution(
+            provider="hermetic",
+            model="rules-v1",
+            prompt_version="",
+            rubric_version=RUBRIC_VERSION,
+            left_machine=False,
+            failure_status=analysis_failure_status(mappings),
+        )
         self._session.add(
             ScoreExplanationRow(
                 id=uuid.uuid4(),
@@ -458,6 +472,12 @@ class SqlAnalysisResultRepository:
                 band=explanation.band,
                 explanation=_explanation_payload(explanation),
                 invalidated=False,
+                assessment_provider=stored.provider,
+                assessment_model=stored.model,
+                prompt_version=stored.prompt_version,
+                rubric_version=stored.rubric_version,
+                left_machine=stored.left_machine,
+                failure_status=stored.failure_status,
             )
         )
         self._jobs.save(job)

@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
 
+from career_assistant.domain.attribution import AnalysisAttribution
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
@@ -242,6 +243,7 @@ class AnalysisResultRepository(Protocol):
         mappings: tuple[RequirementMapping, ...],
         explanation: ScoreExplanation,
         job: AnalysisJob,
+        attribution: AnalysisAttribution | None = None,
     ) -> None: ...
 
     def fail_job(

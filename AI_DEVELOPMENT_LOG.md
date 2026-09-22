@@ -27,6 +27,26 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 090 — Record who assessed a saved analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (attribution slice)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: store the assessment provider, model, prompt version, rubric
+  version and whether content left the machine on the saved score, and record
+  `assessment_incomplete` as a failure status rather than as a low fit.
+- Outcome: accepted
+- Reason: the score row stays the arithmetic. Attribution is a separate record.
+  A missing stored attribution on a direct publish still fills the hermetic
+  defaults and derives the failure status from the mappings.
+- Human validation: `tests/unit/test_analysis_attribution.py` failed on import
+  of `analysis_failure_status`. After the domain function, migration and
+  worker wiring, that test, the claim-detail reload test and the SQL role-store
+  analysis test passed (3). mypy was clean on the nine changed modules. No live
+  model call.
+
 ### 089 — Persist claim detail and requirement seniority
 
 - Date: 2026-09-22

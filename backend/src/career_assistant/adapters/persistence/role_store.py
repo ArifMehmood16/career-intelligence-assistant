@@ -39,6 +39,7 @@ from career_assistant.application.roles.store import (
     RoleOperationRejected,
     RoleView,
 )
+from career_assistant.domain.attribution import AnalysisAttribution
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, ParsedDocument, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
@@ -539,6 +540,14 @@ class SqlRoleStore:
             explanation=explanation,
             jd_document_id=record.job_description_document_id,
             cv_document_id=cv.id if cv is not None else "",
+            attribution=AnalysisAttribution(
+                provider=score_row.assessment_provider,
+                model=score_row.assessment_model,
+                prompt_version=score_row.prompt_version,
+                rubric_version=score_row.rubric_version,
+                left_machine=bool(score_row.left_machine),
+                failure_status=score_row.failure_status or None,
+            ),
         )
 
 

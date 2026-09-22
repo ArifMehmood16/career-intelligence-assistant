@@ -11,6 +11,8 @@ from tests.integration.conftest import make_document
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.domain.assessment import PROMPT_VERSION
+from career_assistant.domain.attribution import RUBRIC_VERSION, AnalysisAttribution
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
@@ -290,6 +292,14 @@ def test_reload_keeps_claim_detail_requirement_conditions_and_assessment(
             mappings=(mapping,),
             explanation=explanation,
             job=terminal,
+            attribution=AnalysisAttribution(
+                provider="ollama",
+                model="llama3.1",
+                prompt_version=PROMPT_VERSION,
+                rubric_version=RUBRIC_VERSION,
+                left_machine=False,
+                failure_status="assessment_incomplete",
+            ),
         )
         uow.commit()
 
@@ -316,6 +326,13 @@ def test_reload_keeps_claim_detail_requirement_conditions_and_assessment(
     assert bundle.mappings[0].status is MappingStatus.MISSING
     assert bundle.mappings[0].reason_code is MappingReason.ASSESSMENT_INCOMPLETE
     assert bundle.explanation.score == 0.0
+    assert bundle.attribution is not None
+    assert bundle.attribution.provider == "ollama"
+    assert bundle.attribution.model == "llama3.1"
+    assert bundle.attribution.prompt_version == PROMPT_VERSION
+    assert bundle.attribution.rubric_version == RUBRIC_VERSION
+    assert bundle.attribution.left_machine is False
+    assert bundle.attribution.failure_status == "assessment_incomplete"
 
 
 def test_failed_job_discards_partials_and_leaves_role_failed(

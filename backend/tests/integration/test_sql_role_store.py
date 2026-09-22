@@ -92,6 +92,13 @@ def test_sql_role_store_create_list_get_and_analysis(
     assert bundle.requirements
     assert bundle.mappings
     assert bundle.explanation.score > 0
+    assert bundle.attribution is not None
+    assert bundle.attribution.provider == "hermetic"
+    assert bundle.attribution.model == "rules-v1"
+    assert bundle.attribution.prompt_version == ""
+    assert bundle.attribution.rubric_version == "scoring-rubric-v1"
+    assert bundle.attribution.left_machine is False
+    assert bundle.attribution.failure_status is None
 
 
 def test_sql_role_store_delete_and_reanalyse(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -43,7 +43,13 @@ from career_assistant.application.providers.accounting import (
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.scoring.rubric_loader import (
     load_mapping_config,
+    load_rubric_version,
     load_scoring_rubric,
+)
+from career_assistant.domain.assessment import PROMPT_VERSION
+from career_assistant.domain.attribution import (
+    AnalysisAttribution,
+    analysis_failure_status,
 )
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
@@ -57,13 +63,16 @@ from career_assistant.domain.jobs import (
     mark_succeeded,
     recover_stale_running,
 )
+from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.scoring import ScoringRubric, score_fit
 from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
 
 _ROOT = Path(__file__).resolve().parents[5]
-_DEFAULT_RUBRIC = load_scoring_rubric(_ROOT / "config" / "scoring_rubric.toml")
-_MAPPING = load_mapping_config(_ROOT / "config" / "scoring_rubric.toml")
+_RUBRIC_PATH = _ROOT / "config" / "scoring_rubric.toml"
+_DEFAULT_RUBRIC = load_scoring_rubric(_RUBRIC_PATH)
+_RUBRIC_VERSION = load_rubric_version(_RUBRIC_PATH)
+_MAPPING = load_mapping_config(_RUBRIC_PATH)
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
 _log = logging.getLogger(__name__)
 
@@ -264,6 +273,7 @@ class SqlAnalysisWorker:
                     mappings=mappings,
                     explanation=explanation,
                     job=terminal,
+                    attribution=_attribution(adjudicator, mappings),
                 )
                 uow.commit()
             log_event(
@@ -388,3 +398,25 @@ class SqlAnalysisWorker:
             provider_id,
             model_tag,
         )
+
+
+def _attribution(
+    adjudicator: AdjudicationPort,
+    mappings: Sequence[RequirementMapping],
+) -> AnalysisAttribution:
+    source = getattr(adjudicator, "assessment_source", None)
+    if callable(source):
+        provider, model, left_machine = source()
+    else:
+        provider, model, left_machine = "hermetic", "rules-v1", False
+    prompt_version = (
+        PROMPT_VERSION if getattr(adjudicator, "decides_support", False) else ""
+    )
+    return AnalysisAttribution(
+        provider=str(provider),
+        model=str(model),
+        prompt_version=prompt_version,
+        rubric_version=_RUBRIC_VERSION,
+        left_machine=bool(left_machine),
+        failure_status=analysis_failure_status(mappings),
+    )

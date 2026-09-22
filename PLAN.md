@@ -5,13 +5,15 @@ its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
 Its live exit gate has not been observed. 13D.1–13D.4 are implemented. 13D.5
-has started: claim employer, title, scope, technologies, outcome, dates and
-extraction confidence, plus requirement seniority, round-trip through
-PostgreSQL, and a saved non-match stays missing after reload. Still open on
-13D.5: assessment provenance, incomplete-versus-poor-fit coverage, requirement
-deduplication, concurrent employment counted once, stable ties, and Fit, Gaps,
-Prepare and Letter reading that saved result with no further model call on
-restart. Hermetic analysis still uses the OR fallback. 13D's closure includes
+has started: claim detail and requirement seniority round-trip through
+PostgreSQL; a saved non-match stays missing after reload; the saved result
+records provider, model, prompt version, rubric version, whether content left
+the machine, and a failure status that marks an incomplete assessment apart
+from a poor fit. Still open on 13D.5: how unknown and conflicting evidence
+affect coverage, requirement deduplication, concurrent employment counted once,
+stable ties, and Fit, Gaps, Prepare and Letter reading that saved result with
+no further model call on restart. The course-versus-leadership regression is
+proven at the SQL boundary only. Hermetic analysis still uses the OR fallback. 13D's closure includes
 the outstanding 13C verification; do not claim either gate has passed or start
 the full Phase 14 comparison before then.
 

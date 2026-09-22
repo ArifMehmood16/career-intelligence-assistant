@@ -28,6 +28,7 @@ from career_assistant.application.scoring.rubric_loader import (
     load_mapping_config,
     load_scoring_rubric,
 )
+from career_assistant.domain.attribution import AnalysisAttribution
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.mapping import RequirementMapping
@@ -49,6 +50,7 @@ class AnalysisBundle:
     cv_document_id: str
     jd_spans: tuple[Span, ...] = ()
     cv_claim_spans: tuple[Span, ...] = ()
+    attribution: AnalysisAttribution | None = None
 
 
 def analyse_hermetic(

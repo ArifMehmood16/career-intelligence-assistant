@@ -20,6 +20,11 @@ def load_mapping_config(path: Path | str) -> MappingConfig:
     return MappingConfig(similarity_floor=float(mapping["similarity_floor"]))
 
 
+def load_rubric_version(path: Path | str) -> str:
+    data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    return str(data["version"])
+
+
 def load_scoring_rubric(path: Path | str) -> ScoringRubric:
     data = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     weights = data["weights"]

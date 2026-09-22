@@ -385,6 +385,25 @@ class ScoreExplanationRow(Base):
     band: Mapped[str] = mapped_column(String(32), nullable=False)
     explanation: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    assessment_provider: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="hermetic", server_default="hermetic"
+    )
+    assessment_model: Mapped[str] = mapped_column(
+        String(128), nullable=False, default="rules-v1", server_default="rules-v1"
+    )
+    prompt_version: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="", server_default=""
+    )
+    rubric_version: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="scoring-rubric-v1",
+        server_default="scoring-rubric-v1",
+    )
+    left_machine: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    failure_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class AnalysisJobRow(Base):
