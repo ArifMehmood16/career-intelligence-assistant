@@ -5,9 +5,11 @@ its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
 Its live exit gate has not been observed. Phase 13D.1's labelled check set and
-the hermetic disagreement record are in. Next: 13D.2, the evidence-contract ADR.
-13D's closure includes the outstanding 13C verification; do not claim either gate
-has passed or start the full Phase 14 comparison before then.
+the hermetic disagreement record are in. ADR 011 records the evidence contract
+(13D.2); the running matcher does not implement it yet. Next: 13D.3, the
+structured assessment step. 13D's closure includes the outstanding 13C
+verification; do not claim either gate has passed or start the full Phase 14
+comparison before then.
 
 ## Product objective and quality priority
 
@@ -881,7 +883,7 @@ Do not rebuild Phase 13A or 13C.
       Record what the current code gets wrong. This is the before-and-after
       measurement for the rest of the phase; a poor match may score zero and a role
       with no scoreable requirements stays unscored.
-- [ ] **13D.2 Record the evidence contract in one ADR.** State the boundary: the
+- [x] **13D.2 Record the evidence contract in one ADR.** State the boundary: the
       model assesses evidence against the stated criteria, the server validates the
       assessment, and the domain calculates the score. A citation proves where text
       came from, not that it supports the claim. Decide the letter policy in the

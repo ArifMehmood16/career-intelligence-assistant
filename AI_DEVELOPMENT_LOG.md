@@ -27,6 +27,27 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 086 — Record the evidence-assessment contract
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.2
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: add ADR 011 stating that the model assesses, the server validates
+  and the domain calculates the score; concrete uploaded-letter experience can
+  count, aspirations and generated drafts cannot; reconcile AGENTS, features and
+  ADRs 004, 009 and 010.
+- Outcome: accepted
+- Reason: PLAN 13D.2 already stated the letter policy. The record says the
+  running matcher still excludes self-authored claims, so the ADR is not a claim
+  that the code already does this.
+- Human validation: `tests/unit/test_evidence_contract.py` failed because ADR 011
+  was absent and the older documents still forbade letter evidence. After the
+  ADR and the reconciliations, that file, `test_phase0_baseline.py` and
+  `test_production_wiring_matrix.py` passed (17 tests). No application code
+  changed.
+
 ### 085 — Record the hermetic matcher against the labelled pilot
 
 - Date: 2026-09-22

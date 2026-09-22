@@ -20,9 +20,13 @@ frameworks or services.
 **The model extracts. The domain decides.**
 
 - A language model may extract requirements from a job description and claims from a
-  CV. It may phrase an answer.
-- A language model may **not** produce the fit score, decide whether a requirement is
-  met, or assert any fact about the candidate that is not backed by a stored span.
+  CV. It may assess retrieved evidence against the requirement's stated criteria. It
+  may phrase an answer.
+- A language model may **not** produce the fit score. The server validates every
+  assessment; a missing or invalid assessment is incomplete, never a match. Domain
+  code calculates the score. A citation proves where text came from and does not
+  prove that the text supports the requirement. See
+  [ADR 011](docs/adr/011-evidence-assessment-contract.md).
 - Every requirement-to-evidence mapping carries the span identifiers that justify it.
   A mapping with no spans is `missing`, never a guess.
 - If a change would let model output reach the user without passing the span check,
@@ -111,9 +115,11 @@ removed.
 - PostgreSQL 16 + pgvector is the production system of record for original uploads,
   parsed documents, roles, mappings, generated artefacts and chat history. Fakes are
   test-only; do not add a SQLite, filesystem or process-memory persistence fallback.
-- Uploaded cover letters are supporting documents, not candidate evidence. They may
-  be retrieved and cited for direct questions, but must never produce claims or affect
-  fit mappings and scores.
+- Concrete experience in an uploaded CV or an uploaded cover letter can support a
+  mapping, with its source shown and duplicates removed. An aspiration does not
+  count, and a generated draft never raises the score
+  ([ADR 011](docs/adr/011-evidence-assessment-contract.md)). The running analysis
+  still excludes self-authored claims until that contract is implemented.
 - Scoring lives in `domain/`, is pure, and is unit tested without a database or a
   model.
 - Frontend stays feature-oriented. No global state unless genuinely shared.

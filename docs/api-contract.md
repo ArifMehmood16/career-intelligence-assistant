@@ -124,10 +124,11 @@ SupportingDocument {
 }
 ```
 
-Uploaded cover letters are supporting documents: open questions may retrieve and cite
-their spans, but requirement extraction, candidate claims, mappings and scores must
-ignore them. This prevents self-authored or generated prose from becoming evidence of
-experience. The document download route is workspace-scoped and uses a safe
+Uploaded cover letters may be retrieved and cited. [ADR 011](adr/011-evidence-assessment-contract.md)
+is the evidence contract: concrete experience in an uploaded letter can support a
+mapping, with its source shown and duplicates removed; an aspiration does not count;
+a generated draft must never raise the score. The running analysis still ignores
+self-authored claims. The document download route is workspace-scoped and uses a safe
 `Content-Disposition`; it never exposes a database path or storage implementation.
 
 ---

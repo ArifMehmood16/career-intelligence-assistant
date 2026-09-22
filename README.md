@@ -29,8 +29,11 @@ This build inverts it. The model does **extraction and phrasing**, never judgeme
    requirements and responsibilities are scored.
 2. **Extract evidence** from the CV into structured claims — role, competency,
    verbatim quote, duration and recency derived in domain code from parsed dates,
-   source span. Cover letters extract into the same shape flagged self-authored
-   and never enter the mapping.
+   source span. Cover letters extract into the same shape flagged self-authored.
+   [ADR 011](docs/adr/011-evidence-assessment-contract.md) says concrete experience
+   in an uploaded letter can count, with its source shown and duplicates removed;
+   an aspiration does not, and a generated draft must never raise the score. The
+   running matcher still excludes those claims.
 3. **Map** each requirement to `met` / `partial` / `missing` with the CV spans that
    justify it, or none. Relatedness is lexical overlap, embedding cosine, or
    model adjudication of disagreements; the domain combines the signals.
@@ -279,8 +282,10 @@ each route uses is listed in [docs/production-wiring.md](docs/production-wiring.
 
 PostgreSQL stores the bounded original bytes for CVs, job descriptions and supporting
 cover letters alongside parsed text and spans. Uploaded cover letters may be queried
-and cited, but they never count as evidence for fit scoring: self-authored application
-prose cannot prove experience. Generated cover letters and final cited chat answers
+and cited. [ADR 011](docs/adr/011-evidence-assessment-contract.md) is the evidence
+contract: concrete experience can count once duplicates are removed, an aspiration
+does not, and a generated draft must never raise the score. The running analysis
+still excludes self-authored claims. Generated cover letters and final cited chat answers
 are also persisted with provenance. Partial streamed tokens are not stored as answers.
 Production role analysis is an in-process worker over queued PostgreSQL jobs: HTTP
 returns `analysing` before extraction finishes, and a process restart recovers queued

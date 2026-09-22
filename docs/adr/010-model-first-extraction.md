@@ -90,6 +90,11 @@ alone.
 - Output depth (13C.8) is shipped: a prose fit summary on GET `/roles/{id}`,
   full quoted CV evidence on each requirement, and interview prompts that
   quote the candidate's own claims.
+- [ADR 011](011-evidence-assessment-contract.md) supersedes consequence 4 for
+  scoring: concrete experience in an uploaded letter can count, with its source
+  shown and duplicates removed. An aspiration does not count, and a generated
+  draft never raises the score. The extractor still flags uploaded letters
+  `self_authored`; the running matcher still ignores them until 13D.5.
 - Pay and logistics are classified by the extraction prompt and JSON schema,
   not by a post-filter. The local Ollama adapter sends that schema as
   `format` so the enum descriptions reach the model.

@@ -17,7 +17,11 @@ Provider resolvers:
   choice uses the quote-verified model extractors (item types classified in
   the prompt and schema) and a model adjudicator for lexical/embedding
   disagreements. Cover letters extract as self-authored claims and are not
-  mapped. Salary, benefit and logistics items are stored and never mapped.
+  mapped yet. [ADR 011](adr/011-evidence-assessment-contract.md) records the
+  contract those claims will follow: concrete experience can count, with its
+  source shown and duplicates removed; an aspiration does not, and a generated
+  draft must never raise the score. Salary, benefit and logistics items are
+  stored and never mapped.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
