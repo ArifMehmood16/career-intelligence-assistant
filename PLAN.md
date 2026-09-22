@@ -4,11 +4,10 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. The 2026-09-22 repository review found
-that relatedness is still being mistaken for sufficient evidence. Next: Phase
-13D's labelled baseline and bounded structured-assessment experiment. Its closure
-includes the outstanding 13C verification; do not claim either gate has passed or
-start the full Phase 14 comparison before then.
+Its live exit gate has not been observed. Phase 13D.1's labelled check set and
+the hermetic disagreement record are in. Next: 13D.2, the evidence-contract ADR.
+13D's closure includes the outstanding 13C verification; do not claim either gate
+has passed or start the full Phase 14 comparison before then.
 
 ## Product objective and quality priority
 
@@ -873,7 +872,7 @@ Do not rebuild Phase 13A or 13C.
 
 ### Tasks
 
-- [ ] **13D.1 Build a small check set.** Assemble roughly fifteen labelled cases in
+- [x] **13D.1 Build a small check set.** Assemble roughly fifteen labelled cases in
       the repository as synthetic, public-safe fixtures: strong, partial and poor
       matches, a paraphrase with no shared keywords, matching keywords with too
       little scope or duration, a negation, a contradiction between CV and letter,

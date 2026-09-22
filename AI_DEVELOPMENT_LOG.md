@@ -27,6 +27,25 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 085 — Record the hermetic matcher against the labelled pilot
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.1
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: the labelled pilot already existed; add a comparison that runs
+  today's NullAdjudicator path and records disagreements without writing them
+  back into the labels.
+- Outcome: accepted
+- Reason: 13D.1 asked for the before-measurement. The cases and loader were
+  already merged; the missing piece was what the current code gets wrong.
+- Human validation: the new test failed on import of `current_policy_baseline`.
+  After the runner, `tests/evaluation/test_quality_baseline.py` passed (3 tests).
+  The observed hermetic result was 11 assessment disagreements, 9 unsupported
+  `met` results and 1 order reversal. ruff and mypy were clean on the changed
+  module. No live model call.
+
 ### 084 — CI runs only when a pull request is opened into main
 
 - Date: 2026-09-22

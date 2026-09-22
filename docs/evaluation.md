@@ -97,6 +97,31 @@ difference, and that is exactly why the column is present.
   these numbers through extraction quality, which is the point of measuring it here
   rather than at the score.
 
+## Current-policy baseline (Phase 13D.1)
+
+Measured on 2026-09-22 against `sample-data/evaluation/dataset.json` pilot
+`evidence-assessment-v1`. The runner is `current_policy_baseline`: configured
+rubric and similarity floor, empty embedding similarities, and `NullAdjudicator`.
+No model was called. Labels were not changed. This is the hermetic path, not a
+live Ollama accuracy figure.
+
+| Quantity | Observed |
+|---|---|
+| Groups / roles / scoreable requirements | 17 / 20 / 24 |
+| Assessment disagreements | 11 |
+| Labelled non-`met` returned as `met` | 9 |
+| Pairwise order disagreements | 1 |
+
+The nine unsupported `met` results are keyword overlap without the labelled
+scope, duration, negation, contradiction or aspiration: `dev-insufficient-scope`
+(`req-python-leadership`), `dev-insufficient-duration`, `dev-negation`,
+`dev-overlap`, `dev-contradiction`, `dev-aspiration`, `heldout-sql-leadership`,
+`heldout-insufficient-scope` and `heldout-negation`. Two paraphrases with no
+shared keywords were labelled `met` and returned `missing`: `dev-paraphrase` and
+`heldout-paraphrase`. The order miss is `heldout-ordering`: `heldout-spreadsheets`
+scored 0 and `heldout-sql-leadership` scored 100, reversing the labelled order,
+because that leadership requirement was one of the unsupported `met` results.
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove

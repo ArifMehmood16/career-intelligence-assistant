@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from career_assistant.evaluation.baseline import load_pilot
+from career_assistant.evaluation.baseline import current_policy_baseline, load_pilot
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
@@ -59,3 +59,23 @@ def test_labels_cite_passages_and_do_not_store_matcher_output() -> None:
     heldout = pilot.role("heldout-insufficient-scope")
     assert heldout.split == "held_out"
     assert heldout.expected_assessments["req-sql-leadership"] == "missing"
+
+
+def test_current_policy_records_course_versus_leadership_as_unsupported_met() -> None:
+    """The labelled pilot stays independent of the matcher.
+
+    This records what the hermetic path gets wrong today: lexical overlap on
+    "Python" marks an introductory course as meeting production leadership.
+    No embedding and no adjudicator — NullAdjudicator, similarity 0.
+    """
+    pilot = load_pilot(DATASET)
+    report = current_policy_baseline(pilot)
+    course = report.disagreement("dev-insufficient-scope", "req-python-leadership")
+    assert course.expected == "missing"
+    assert course.observed == "met"
+    assert course.unsupported_met is True
+    assert report.calls_model is False
+    # Observed 2026-09-22 on the hermetic path. Update with the policy, not by hand.
+    assert len(report.disagreements) == 11
+    assert len(report.unsupported_met) == 9
+    assert len(report.order_disagreements) == 1
