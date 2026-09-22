@@ -3,11 +3,10 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13B operational logging is complete. The 2026-09-21
-output audit ran a real CV and a real job advert through the shipped pipeline and
-found the product produces nothing useful: the deterministic extractors are the only
-extractors on the default path and they are not capable of the job. Phase 13C
-replaces them. Do not start Phase 14 until 13C is complete.
+**Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
+The phase exit gate still requires the maintainer's real CV and five real job
+adverts, plus `make lint`, `make typecheck`, `make test` and
+`make test-integration`. Do not start Phase 14 until that gate is observed.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -791,7 +790,7 @@ hits.
       section boundary, and read role dates from the role line. Those are the three
       bugs the audit found. Add the real CV and a real advert as fixtures so the
       failure cannot return unnoticed.
-- [ ] **13C.10 Reconcile documentation with the new direction.** Update the README
+- [x] **13C.10 Reconcile documentation with the new direction.** Update the README
       architecture claims, `docs/features.md`, `docs/production-wiring.md`, the threat
       model where extraction changed, and ADR 003. Write a new ADR recording why
       deterministic extraction was tried, exactly what it produced on a real document,

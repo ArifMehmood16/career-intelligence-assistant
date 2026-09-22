@@ -27,6 +27,18 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 082 — Phase 13C.10 documentation reconciliation (TDD)
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6, agent session
+- Plan task: 13C.10
+- Prompt intent: continue 13C.10 on the same branch and PR after 13C.5 and 13C.8 landed.
+- Suggestion: extend the wiring-matrix docs tests so README cannot call hermetic the product default or leave 13C.8 open; update README, ADR 010, features.md, the threat model and production-wiring; tick PLAN 13C.10.
+- Outcome: accepted.
+- Reason: ADR 010 already existed from the first 13C.10 pass and is the audit page PLAN asked for. What remained was stale claims written before three-signal matching, output depth and live extraction fixes. The 13C exit gate is not ticked: it still needs the maintainer's real CV, five adverts and the full `make` gates.
+- Rejected alternatives: a second ADR; claiming the 13C exit gate on documentation alone.
+- Human validation: docs tests failed on the old README/ADR/features text; after the change, `test_production_wiring_matrix.py` and `test_phase0_baseline.py` pass (14 tests).
+
 ### 081 — Requirement extraction classifies package lines (TDD)
 
 - Date: 2026-09-21

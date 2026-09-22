@@ -23,7 +23,13 @@ STALE_README_CLAIMS = (
     "serving the Lovable screens against fixture data",
     "has not been built yet",
     "not a process restart",
+    "Default runs are hermetic: lexical embeddings and a rule-based extractor",
+    "`hermetic` (default)",
+    "waits on the rest of 13C (output depth)",
 )
+
+ADR_010 = ROOT / "docs" / "adr" / "010-model-first-extraction.md"
+FEATURES = ROOT / "docs" / "features.md"
 
 
 def _live_api_routes() -> list[str]:
@@ -57,11 +63,34 @@ def _matrix_rows(text: str) -> list[list[str]]:
     return rows
 
 
-def test_readme_status_matches_observed_phase_13a_behaviour() -> None:
+def test_readme_status_matches_observed_phase_13c_behaviour() -> None:
     text = README.read_text(encoding="utf-8")
     for claim in STALE_README_CLAIMS:
         assert claim not in text, f"README still claims {claim!r}"
     assert "docs/production-wiring.md" in text
+    assert "docs/adr/010-model-first-extraction.md" in text
+    assert "`hermetic` (test fixture)" in text
+    assert "`ollama` (product default)" in text
+
+
+def test_adr_010_records_the_audit_and_closed_13c_work() -> None:
+    assert ADR_010.is_file(), "ADR 010 is required by PLAN 13C.10"
+    text = ADR_010.read_text(encoding="utf-8")
+    assert "verbatim" in text.lower()
+    assert "item_type" in text
+    assert "Output-depth work remains PLAN 13C.8" not in text
+    assert "13C.5" in text
+    assert "13C.8" in text
+
+
+def test_features_and_threat_model_state_the_scoring_boundary() -> None:
+    features = FEATURES.read_text(encoding="utf-8")
+    threat = THREAT_MODEL.read_text(encoding="utf-8").lower()
+    assert "unscored" in features
+    assert "benefit" in features
+    assert "logistics" in features
+    assert "item_type" in threat or "benefit" in threat
+    assert "salary" in threat or "logistics" in threat
 
 
 def test_production_wiring_matrix_covers_every_live_api_route() -> None:

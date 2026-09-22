@@ -14,9 +14,10 @@ Provider resolvers:
   Phase 2 completion factory, egress-checked at construction and call time
 - `analysis_ports_for_choice` — hermetic stays on rules extractors and a
   null adjudicator so `make test` is offline; any other workspace answer
-  choice uses the quote-verified model extractors and a model adjudicator
-  for lexical/embedding disagreements. Cover letters extract as
-  self-authored claims and are not mapped.
+  choice uses the quote-verified model extractors (item types classified in
+  the prompt and schema) and a model adjudicator for lexical/embedding
+  disagreements. Cover letters extract as self-authored claims and are not
+  mapped. Salary, benefit and logistics items are stored and never mapped.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve

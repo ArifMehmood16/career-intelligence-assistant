@@ -111,6 +111,7 @@ recency:  evidence within 2y = 1.0   2–5y = 0.85   over 5y = 0.7
 score = 100 × Σ(weight × status × recency) ÷ Σ(weight)
 
 bands:  75+ strong match      50–74 partial match      under 50 limited match
+        no scoreable items → unscored (not a limited match)
 ```
 
 These weights are the **initial** rubric. They live in

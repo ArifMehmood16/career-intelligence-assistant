@@ -6,11 +6,11 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status:** Phase 13C is in progress: a running instance defaults to a local
-> Ollama model; the model extracts with server-verified quotes; hermetic stays
-> the offline test fixture. Evaluation (Phase 14) waits on the rest of 13C
-> (output depth). This is a **personal tool for local
-> use**, not a multi-user hosted product.
+> **Status:** Phase 13C extraction is the running path: a local Ollama model
+> extracts with server-verified quotes; hermetic stays the offline test fixture.
+> Evaluation (Phase 14) is next and is not started until the 13C exit gate is
+> observed. This is a **personal tool for local use**, not a multi-user hosted
+> product. See [ADR 010](docs/adr/010-model-first-extraction.md).
 > The live route-to-adapter map is [docs/production-wiring.md](docs/production-wiring.md).
 > [PLAN.md](PLAN.md) is the execution order, [AGENTS.md](AGENTS.md) is the working
 > protocol for coding agents, [docs/features.md](docs/features.md) is what it does.
@@ -155,8 +155,9 @@ open-ended questions fall through to retrieval.
 | Local run | Make with local PostgreSQL, or Compose with container PostgreSQL | Same migrations and repositories in both topologies |
 | Tests | pytest, Vitest, Playwright | Unit, API, component, end-to-end |
 
-Default runs are hermetic: lexical embeddings and a rule-based extractor, so a
-reviewer can clone, run and test with no key and no model download.
+Default *tests* are hermetic: lexical embeddings and a rule-based extractor, so a
+reviewer can clone, run and test with no key and no model download. The running
+product defaults to a local Ollama model.
 
 ## Model providers
 
@@ -165,8 +166,8 @@ active is a runtime setting a user can change, not a rebuild.
 
 | Provider | Completion | Embeddings | Content leaves the machine | Needs |
 |---|---|---|---|---|
-| `hermetic` (default) | Rule-based extraction | Lexical hashing | No | Nothing |
-| `ollama` | Local chat model | Local embedding model | No | Ollama running |
+| `hermetic` (test fixture) | Rule-based extraction | Lexical hashing | No | Nothing; `make test` only |
+| `ollama` (product default) | Local chat model | Local embedding model | No | Ollama running |
 | `openai` | Chat API | Embeddings API | **Yes** | `OPENAI_API_KEY` |
 | `anthropic` | Messages API | — | **Yes** | `ANTHROPIC_API_KEY` |
 
@@ -307,7 +308,7 @@ providers stay behind the egress gate.
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract between backend and frontend. |
 | [docs/production-wiring.md](docs/production-wiring.md) | Each route's use case, provider resolver and SQL adapter. |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable design becomes the shipped frontend. |
-| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. |
+| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first. |
 | [docs/frontend-brief.md](docs/frontend-brief.md) | The Lovable prompt sequence that produced the design. |
 | [docs/evaluation.md](docs/evaluation.md) | Dataset, metrics and thresholds for extraction, mapping and generation quality. |
 | [docs/threat-model.md](docs/threat-model.md) | Trust boundaries, controls and residual risk. |
