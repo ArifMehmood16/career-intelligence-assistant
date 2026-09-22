@@ -48,10 +48,12 @@ from career_assistant.application.documents.supporting import (
     InMemorySupportingDocumentStore,
     SupportingDocumentStore,
 )
+from career_assistant.application.observability.memory import InMemoryAuditRecorder
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
 )
+from career_assistant.application.ports.observability import AuditRecorder
 from career_assistant.application.providers.accounting import CallAccountant
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.providers.choice_store import (
@@ -191,6 +193,7 @@ def create_app(
     conversation_store: ConversationStore | None = None,
     provider_choice_store: ProviderChoiceStore | None = None,
     analysis_worker: SqlAnalysisWorker | None = None,
+    audit_recorder: AuditRecorder | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -221,6 +224,9 @@ def create_app(
     app.state.providers = providers or ProviderSettings(
         completion_provider="hermetic",
         embedding_provider="hermetic",
+    )
+    app.state.audit_recorder = (
+        audit_recorder if audit_recorder is not None else InMemoryAuditRecorder()
     )
     resolved_cv = cv_store if cv_store is not None else InMemoryCvStore()
     app.state.cv_store = resolved_cv

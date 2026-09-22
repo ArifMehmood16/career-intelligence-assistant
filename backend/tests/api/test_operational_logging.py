@@ -6,6 +6,7 @@ import logging
 
 from fastapi.testclient import TestClient
 
+from career_assistant.application.observability.memory import InMemoryAuditRecorder
 from career_assistant.logconfig import configure_logging, format_fields
 from career_assistant.main import create_app
 
@@ -149,3 +150,48 @@ def test_log_failure_includes_module_and_function_site(
     assert "_emit_failure" in caplog.text
     assert "input=spans_supplied=3" in caplog.text
     assert _PLANTED_CV not in caplog.text
+
+
+def test_health_request_records_http_envelope_without_secrets() -> None:
+    configure_logging(force=True)
+    client = TestClient(create_app())
+
+    response = client.get(
+        "/api/health",
+        headers={
+            "X-Correlation-Id": "corr-log-test-1",
+            "Authorization": f"Bearer {_PLANTED_KEY}",
+        },
+    )
+
+    assert response.status_code == 200
+    recorder = client.app.state.audit_recorder
+    assert isinstance(recorder, InMemoryAuditRecorder)
+    envelope = recorder.http[-1]
+    assert envelope.method == "GET"
+    assert envelope.path == "/api/health"
+    assert envelope.status == 200
+    assert envelope.correlation_id == "corr-log-test-1"
+    dumped = repr(envelope)
+    assert _PLANTED_KEY not in dumped
+    assert "Authorization" not in dumped
+    assert not hasattr(envelope, "body")
+
+
+def test_validation_error_records_error_code_not_request_body() -> None:
+    configure_logging(force=True)
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/roles",
+        json={"title": _PLANTED_JD, "description": _PLANTED_JD},
+    )
+
+    assert response.status_code in {409, 422}
+    recorder = client.app.state.audit_recorder
+    assert isinstance(recorder, InMemoryAuditRecorder)
+    envelope = recorder.http[-1]
+    assert envelope.error_code is not None
+    assert envelope.status in {409, 422}
+    assert _PLANTED_JD not in repr(envelope)
+    assert _PLANTED_JD not in (envelope.error_code or "")

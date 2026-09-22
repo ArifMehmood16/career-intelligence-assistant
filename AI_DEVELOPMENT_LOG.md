@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 116 — Phase 15B.4 persist HTTP envelopes
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.4
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: middleware records method/path/status/duration on the in-memory recorder; exception handlers stamp `error_code` on request state.
+- Outcome: accepted
+- Reason: envelopes answer which call failed without storing headers or bodies. Recording is fail-open so an audit write cannot fail the request.
+- Human validation: `pytest tests/api/test_operational_logging.py --no-cov` passed (9).
+
 ### 115 — Phase 15B.3 in-memory audit recorder
 
 - Date: 2026-09-22

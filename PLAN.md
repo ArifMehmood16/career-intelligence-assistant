@@ -1379,7 +1379,7 @@ delete removes audit rows with the workspace.
       metadata-only disclosure recorded. No application code.
 - [x] **15B.2** Optional rotating `LOG_FILE` beside stderr; redaction holds at DEBUG.
 - [x] **15B.3** `AuditRecorder` port and in-memory adapter; planted phrases never stored.
-- [ ] **15B.4** HTTP envelope persisted (method, path, status, duration) — never the body.
+- [x] **15B.4** HTTP envelope persisted (method, path, status, duration) — never the body.
 - [ ] **15B.5** Action rows at use-case boundaries.
 - [ ] **15B.6** Event rows from worker and persistence.
 - [ ] **15B.7** SQL adapter, Alembic migration, cascade hard delete.

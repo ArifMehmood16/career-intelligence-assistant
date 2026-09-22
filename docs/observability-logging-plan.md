@@ -2,7 +2,7 @@
 
 Instruction set for coding agents and the human reviewer. Phase **15B** is
 approved to proceed under [ADR 012](adr/012-durable-operational-audit.md).
-15B.1–15B.3 are done. Implement one remaining 15B.n task at a time.
+15B.1–15B.4 are done. Implement one remaining 15B.n task at a time.
 
 **Related current work:** Phase 13D.6 completeness is still open. Phase 13B already
 ships stderr operational logging. Phase 15 (15.1–15.4) is unchanged. On 2026-09-22
@@ -419,15 +419,11 @@ change scoring, mapping or extraction behaviour.
 - [x] Unknown action names become `action.unknown`
 - [x] Architecture guard still clean
 
-### 15B.4 HTTP envelope → recorder + stderr
+### 15B.4 HTTP envelope → recorder + stderr — done
 
-- Extend `test_operational_logging.py`: health request records one envelope
-  with method, path, status, correlation id; planted header values that look
-  like secrets do not appear.
-- Validation error still logs `code=` not the body, **and** persists
-  `error_code` on the envelope.
-- Wire middleware to `app.state.audit_recorder`. Hermetic `create_app()` uses
-  in-memory.
+- [x] Health records method/path/status/correlation id
+- [x] Validation error persists `error_code`, never the body
+- [x] Hermetic `create_app()` uses `InMemoryAuditRecorder`
 
 ### 15B.5 Actions at use-case boundaries
 
