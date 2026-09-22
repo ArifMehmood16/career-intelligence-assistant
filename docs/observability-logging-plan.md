@@ -2,7 +2,7 @@
 
 Instruction set for coding agents and the human reviewer. Phase **15B** is
 approved to proceed under [ADR 012](adr/012-durable-operational-audit.md).
-15B.1 and 15B.2 are done. Implement one remaining 15B.n task at a time.
+15B.1–15B.3 are done. Implement one remaining 15B.n task at a time.
 
 **Related current work:** Phase 13D.6 completeness is still open. Phase 13B already
 ships stderr operational logging. Phase 15 (15.1–15.4) is unchanged. On 2026-09-22
@@ -413,14 +413,11 @@ change scoring, mapping or extraction behaviour.
 - [x] Planted phrase and key absent from the file at DEBUG
 - [x] README `make run-api` notes optional `LOG_FILE`
 
-### 15B.3 Recorder port and in-memory adapter
+### 15B.3 Recorder port and in-memory adapter — done
 
-- Failing unit test: recording an action with a planted phrase in `attributes`
-  raises or redacts **before** store; the in-memory list never contains the
-  phrase.
-- Implement dataclasses, allowlists, `InMemoryAuditRecorder`, redaction at the
-  boundary.
-- Architecture guard still forbids FastAPI/SQLAlchemy in `application/`.
+- [x] `AuditRecorder` + `InMemoryAuditRecorder`; planted phrases never stored
+- [x] Unknown action names become `action.unknown`
+- [x] Architecture guard still clean
 
 ### 15B.4 HTTP envelope → recorder + stderr
 

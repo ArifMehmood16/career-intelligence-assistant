@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 115 — Phase 15B.3 in-memory audit recorder
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.6
+- Plan task: 15B.3
+- Prompt intent: continue 15B with regular commits.
+- Suggestion: `AuditRecorder` port, allowlisted names, sanitize attributes before an in-memory store.
+- Outcome: accepted
+- Reason: durable rows must drop free-text keys before they exist in memory so a later SQL adapter cannot persist a planted phrase.
+- Human validation: `pytest tests/unit/test_audit_recorder.py tests/unit/test_architecture_guard.py --no-cov` passed (5).
+
 ### 114 — Phase 15B.2 rotating log file
 
 - Date: 2026-09-22
