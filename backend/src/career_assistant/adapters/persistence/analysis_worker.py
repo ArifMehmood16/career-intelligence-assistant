@@ -291,6 +291,40 @@ class SqlAnalysisWorker:
                 document_kind=DocumentKind.CV,
                 normalised_text=cv_text,
             )
+            if not claim_result.complete:
+                running = (
+                    job
+                    if job.state is JobState.RUNNING
+                    else mark_running(job, at=self._clock())
+                )
+                failed = mark_failed(
+                    mark_stage(running, JobStage.EXTRACTING_CLAIMS),
+                    at=self._clock(),
+                    error=JobError(
+                        code="extraction_incomplete",
+                        message=(
+                            "Claim extraction did not classify every part of "
+                            "the CV. This is not a fit score."
+                        ),
+                    ),
+                )
+                with self._uow_factory() as uow:
+                    require_role(uow.roles, job.workspace_id, job.role_id)
+                    uow.analysis.fail_job(
+                        workspace_id=job.workspace_id,
+                        role_id=job.role_id,
+                        job=failed,
+                    )
+                    uow.commit()
+                log_event(
+                    _log,
+                    "worker.failed",
+                    job_id=job.id,
+                    role_id=job.role_id,
+                    stage=JobStage.EXTRACTING_CLAIMS.value,
+                    code="extraction_incomplete",
+                )
+                return failed
             stage = JobStage.MAPPING
             log_event(
                 _log,

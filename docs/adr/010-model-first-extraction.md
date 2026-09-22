@@ -142,5 +142,18 @@ rules extractor for a partial model response.
 
 A line that is only a section introduction, ending in a colon, is
 `non_requirement` even if the model calls it a responsibility. Benefits and
-logistics stay unscoreable kinds. CV claim extraction is the same principle
-and is 13D.6d, not this amendment.
+logistics stay unscoreable kinds.
+
+## Amendment — 2026-09-22 (13D.6d)
+
+CV claim extraction uses the same server-owned spans. The model assigns each
+span id a kind: employment heading, project heading, experience, project,
+skills or narrative. It does not copy the claim text. Employer and title are
+kept only when they appear inside the heading span. Dates, recency and
+duration are parsed from that heading in domain code. A project claim cites
+its project heading. A bare skills list is classified and is not a claim.
+Every span needs exactly one accepted assignment. A missing role, an unknown
+span id or a heading whose date cannot be parsed makes the extraction
+incomplete. The job fails with `extraction_incomplete` and does not publish a
+replacement claim set. Uploaded letters stay self-authored. Generated drafts
+still never raise a score.

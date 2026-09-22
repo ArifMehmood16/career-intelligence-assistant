@@ -68,8 +68,10 @@ local PostgreSQL; Compose/deployment uses container PostgreSQL.
 discussion, not a shipped feature or approval to send personal data to hosted
 models. Before implementing changed scoring/cover-letter semantics, record the
 decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
-13D.2. 13D.6a–13D.6g are planned and unchecked. Implement them only after this
-ordering is reviewed. A public API change stops for approval. Earlier checked
+13D.2. 13D.6b, 13D.6c and 13D.6d are implemented. 13D.6a stays open until a
+failed analysis is shown as incomplete and a failed reanalysis keeps the
+previous result. 13D.6e–13D.6g remain open. A public API change stops for
+approval. Earlier checked
 tasks remain implementation history; they are not proof of ranking accuracy,
 nor should superseded unchecked 5.3/7.2 be restarted.
 
@@ -1071,7 +1073,7 @@ they are.
         assessment. Record the decision in `docs/api-contract.md` before
         changing code. Stop for approval if the decision needs a public
         response-shape change.
-  - [ ] **13D.6b — Require complete structured assessments.** The reproduced
+  - [x] **13D.6b — Require complete structured assessments.** The reproduced
         call received ten requirements and returned one assessment, and the
         pipeline continued as if it had assessed the candidate. Do not send
         every requirement in one unbounded assessment response. Partition
@@ -1096,7 +1098,7 @@ they are.
         until resolved. Hermetic tests stay offline and deterministic.
         Provider contract tests cover both native-schema and prompted-JSON
         adapters.
-  - [ ] **13D.6c — Replace model-rewritten quotes with server-owned span
+  - [x] **13D.6c — Replace model-rewritten quotes with server-owned span
         selection.** Eleven proposed job-description items were discarded
         because exact quote reproduction failed, which removed the substantive
         skills and retained generic headings. Amend ADR 010, and ADR 011 if
@@ -1124,7 +1126,7 @@ they are.
         model response must not silently become a complete extraction.
         Existing prompt-injection and cross-document span protections continue
         to pass.
-  - [ ] **13D.6d — Make CV claim extraction complete and measurable.** Apply
+  - [x] **13D.6d — Make CV claim extraction complete and measurable.** Apply
         the same server-owned span principle to CV extraction. The reproduction
         retained ten claims and silently dropped two, and the score gave no
         indication that evidence extraction was incomplete. Preserve employer,

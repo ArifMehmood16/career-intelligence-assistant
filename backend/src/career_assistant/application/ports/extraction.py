@@ -26,6 +26,13 @@ class ClaimExtractionResult:
     claims: tuple[Claim, ...]
     spans: tuple[Span, ...]
     dropped_unverifiable: int = 0
+    complete: bool = True
+    spans_supplied: int = 0
+    claims_returned: int = 0
+    claims_accepted: int = 0
+    claims_rejected: int = 0
+    roles_detected: int = 0
+    roles_without_claims: int = 0
 
 
 class RequirementExtractionPort(Protocol):

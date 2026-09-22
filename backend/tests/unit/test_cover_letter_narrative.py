@@ -89,21 +89,18 @@ def test_rules_extract_cover_letter_bullets_as_self_authored() -> None:
 
 
 def test_model_extracts_a_cover_letter_as_self_authored() -> None:
-    payload = {
-        "roles": [
+    from career_assistant.domain.candidate_spans import candidate_units, span_id
+
+    assignments = []
+    for start, end, unit in candidate_units(LETTER):
+        assignments.append(
             {
-                "employer": "",
-                "title": "",
-                "date_range_quote": "",
-                "claims": [
-                    {
-                        "quote": "I have production dbt experience on Snowflake.",
-                        "competency": "dbt",
-                    }
-                ],
+                "spanId": span_id("doc-cl", start, end),
+                "kind": "experience",
+                "competency": "dbt" if "dbt" in unit else "",
             }
-        ]
-    }
+        )
+    payload = {"assignments": assignments}
     result = ModelClaimExtractor(_ScriptedCompletion(payload), as_of=AS_OF).extract(
         document_id="doc-cl",
         document_kind=DocumentKind.COVER_LETTER,

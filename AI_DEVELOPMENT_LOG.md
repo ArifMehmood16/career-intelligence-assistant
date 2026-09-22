@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 106 — The server owns CV claim spans
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6d
+- Prompt intent: continue 13D.6 and tick a subtask only when its acceptance is met.
+- Suggestion: keep verbatim CV quotes and fall back to the rules extractor when verification fails.
+- Outcome: changed
+- Reason: quote copying silently dropped claims and a rules fallback could publish a partial CV as complete. The server now segments the CV and the model assigns span ids. Dates are parsed from the heading. A skills list is not a claim. A project claim cites the project heading. Incomplete extraction fails the job with `extraction_incomplete` and does not replace a previous claim set. 13D.6b and 13D.6c are ticked. 13D.6a stays open because the screen still does not say the analysis is incomplete and a failed reanalysis is not yet shown as the previous valid result.
+- Human validation: `pytest` on the claim extraction, cover-letter, analysis pipeline and worker failure tests passed (39). Ruff and mypy passed on the changed Python files.
+
 ### 105 — The server owns extraction spans
 
 - Date: 2026-09-22

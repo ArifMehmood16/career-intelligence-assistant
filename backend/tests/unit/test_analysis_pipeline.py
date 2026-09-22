@@ -247,6 +247,37 @@ class _PartialRequirements(_OkRequirements):
         )
 
 
+class _PartialClaims:
+    def extract(
+        self,
+        *,
+        document_id: str,
+        document_kind: DocumentKind,
+        normalised_text: str,
+    ) -> ClaimExtractionResult:
+        assert document_kind is DocumentKind.CV
+        return ClaimExtractionResult(claims=(), spans=(), complete=False)
+
+
+def test_incomplete_claim_extraction_does_not_replace_a_valid_claim_set() -> None:
+    """PLAN 13D.6d — a failed CV extraction leaves the previous claims in place."""
+    publisher = _MemPublisher()
+    publisher.published.append({"role_id": "role-1", "claims": ("previous",)})
+    service, pub = _service(claims=_PartialClaims(), publisher=publisher)
+    service.create_role(
+        workspace_id="ws-1",
+        role_id="role-1",
+        title="AE",
+        job_id="job-1",
+    )
+    done = service.process_next()
+    assert done is not None
+    assert done.state is JobState.FAILED
+    assert done.error is not None
+    assert done.error.code == "extraction_incomplete"
+    assert pub.published == [{"role_id": "role-1", "claims": ("previous",)}]
+
+
 def test_incomplete_extraction_fails_the_job_and_publishes_no_score() -> None:
     """PLAN 13D.6c — a partial extraction is not a fit score."""
     service, pub = _service(requirements=_PartialRequirements())

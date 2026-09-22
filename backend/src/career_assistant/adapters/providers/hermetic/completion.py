@@ -15,6 +15,7 @@ from career_assistant.application.ports.types import (
     CompletionRequest,
     CompletionResult,
 )
+from career_assistant.domain.recency import parse_date_range
 
 _REFUSAL_MARKERS = ("refuse to answer", "i cannot assist", "[refuse]")
 _MAX_INPUT_CHARS = 20_000
@@ -88,6 +89,8 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
     """Deterministic stand-in for structured extraction."""
     requirements = _extract_requirement_lines(user)
     properties = schema.get("properties")
+    if isinstance(properties, dict) and "assignments" in properties:
+        return {"assignments": _cv_assignments(user)}
     if isinstance(properties, dict) and "classifications" in properties:
         return {
             "classifications": [
@@ -140,6 +143,32 @@ def _structured_from_schema(schema: dict[str, Any], user: str) -> dict[str, Any]
 
 
 _SPAN_ID = re.compile(r"^SPAN (\S+)$", re.MULTILINE)
+_SPAN_BLOCK = re.compile(
+    r"^SPAN (\S+)\nUNTRUSTED_SPAN_BEGIN\n(.*?)\nUNTRUSTED_SPAN_END",
+    re.MULTILINE,
+)
+
+
+def _cv_assignments(user: str) -> list[dict[str, str]]:
+    """Classify server spans without copying them into evidence text."""
+    blocks = _SPAN_BLOCK.findall(user)
+    last_role: str | None = None
+    assignments: list[dict[str, str]] = []
+    for issued, text in blocks:
+        if parse_date_range(text) is not None:
+            last_role = issued
+            assignments.append({"spanId": issued, "kind": "role_heading"})
+        elif last_role is not None and not text.rstrip().endswith(":"):
+            assignments.append(
+                {
+                    "spanId": issued,
+                    "kind": "experience",
+                    "roleSpanId": last_role,
+                }
+            )
+        else:
+            assignments.append({"spanId": issued, "kind": "narrative"})
+    return assignments
 _BULLET = re.compile(r"^\s*[-*•]\s+(.+)$")
 
 

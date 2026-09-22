@@ -1,11 +1,8 @@
-"""PLAN 13C.3 — structured CV extraction with verified quotes.
+"""PLAN 13D.6d — the server owns CV spans; the model classifies their ids.
 
-The delivered model claim extractor kept only texts the rules extractor had
-already found, so a CV whose experience was not a tidy bullet list lost every
-role after the regex stopped. The model now returns roles (employer, title,
-date range) and claims beneath them. Each claim carries a verbatim quote; the
-server locates it in the stored text. Dates are parsed in domain code — the
-model never supplies recency or duration.
+Dates are parsed from the heading span in domain code. A skills list is not a
+claim. A missing classification, an unknown span id or a claim that does not
+name its role makes extraction incomplete.
 """
 
 from __future__ import annotations
@@ -20,6 +17,7 @@ from career_assistant.application.ports.types import (
     CompletionRequest,
     CompletionResult,
 )
+from career_assistant.domain.candidate_spans import candidate_units, span_id
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.normalisation import normalise_text
 
@@ -65,86 +63,97 @@ class _ScriptedCompletion:
         )
 
 
-def _role(
-    *,
-    employer: str,
-    title: str,
-    date_range_quote: str,
-    claims: list[dict[str, object]],
-) -> dict[str, object]:
-    return {
-        "employer": employer,
-        "title": title,
-        "date_range_quote": date_range_quote,
-        "claims": claims,
-    }
+def _ids(text: str, document_id: str = "doc-cv") -> dict[str, str]:
+    found: dict[str, str] = {}
+    for start, end, unit in candidate_units(text):
+        found[unit] = span_id(document_id, start, end)
+    return found
 
 
-def _claim(
-    quote: str,
+def _assign(
+    issued: str,
+    kind: str,
     *,
+    role: str = "",
+    employer: str = "",
+    title: str = "",
     competency: str = "",
     scope: str = "",
     technologies: list[str] | None = None,
     outcome: str = "",
 ) -> dict[str, object]:
-    return {
-        "quote": quote,
-        "competency": competency,
-        "scope": scope,
-        "technologies": technologies or [],
-        "outcome": outcome,
-    }
+    item: dict[str, object] = {"spanId": issued, "kind": kind}
+    if role:
+        item["roleSpanId"] = role
+    if employer:
+        item["employer"] = employer
+    if title:
+        item["title"] = title
+    if competency:
+        item["competency"] = competency
+    if scope:
+        item["scope"] = scope
+    if technologies:
+        item["technologies"] = technologies
+    if outcome:
+        item["outcome"] = outcome
+    return item
 
 
-_FULL_PAYLOAD = {
-    "roles": [
-        _role(
-            employer="Northwind Analytics Ltd",
-            title="Analytics Engineer",
-            date_range_quote="January 2023 – Present",
-            claims=[
-                _claim(
-                    (
-                        "Owned dbt models that cover the core order and "
-                        "inventory marts in production."
-                    ),
-                    competency="dbt",
-                    scope="production marts",
-                    technologies=["dbt"],
-                    outcome="core order and inventory marts in production",
-                ),
-                _claim(
-                    (
-                        "Designed incremental models in Snowflake for daily "
-                        "sales reporting."
-                    ),
-                    competency="sql",
-                    technologies=["Snowflake"],
-                ),
-            ],
-        ),
-        _role(
-            employer="Blue Harbour Retail",
-            title="Data Analyst",
-            date_range_quote="March 2020 – December 2022",
-            claims=[
-                _claim(
-                    (
-                        "Built Looker dashboards for store performance and "
-                        "inventory turn."
-                    ),
-                    competency="bi",
-                    technologies=["Looker"],
-                ),
-                _claim(
-                    "Invented a CUDA kernel for warehouse optimisation.",
-                    competency="cuda",
-                ),
-            ],
-        ),
+def _full_payload(text: str = PROSE_CV) -> dict[str, object]:
+    ids = _ids(text)
+    northwind = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
     ]
-}
+    blue = ids["Blue Harbour Retail — Data Analyst, March 2020 – December 2022."]
+    dbt = (
+        "Owned dbt models that cover the core order and "
+        "inventory marts in production."
+    )
+    snowflake = "Designed incremental models in Snowflake for daily sales reporting."
+    looker = "Built Looker dashboards for store performance and inventory turn."
+    return {
+        "assignments": [
+            _assign(ids["Alex Rivera."], "narrative"),
+            _assign(ids["Analytics Engineer."], "narrative"),
+            _assign(
+                northwind,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids[dbt],
+                "experience",
+                role=northwind,
+                competency="dbt",
+                scope="production marts",
+                technologies=["dbt"],
+                outcome="core order and inventory marts in production",
+            ),
+            _assign(
+                ids[snowflake],
+                "experience",
+                role=northwind,
+                competency="sql",
+                technologies=["Snowflake"],
+            ),
+            _assign(
+                blue,
+                "role_heading",
+                employer="Blue Harbour Retail",
+                title="Data Analyst",
+            ),
+            _assign(
+                ids[looker],
+                "experience",
+                role=blue,
+                competency="bi",
+                technologies=["Looker"],
+            ),
+            _assign("other-doc:0:12", "experience", competency="cuda"),
+        ]
+    }
 
 
 def _extract(payload: dict[str, object], text: str = PROSE_CV):
@@ -155,6 +164,21 @@ def _extract(payload: dict[str, object], text: str = PROSE_CV):
         normalised_text=text,
     )
     return result, completion
+
+
+def _six_role_cv() -> str:
+    lines = ["Alex Rivera"]
+    for index in range(6):
+        year = 2014 + index
+        end = "Present" if index == 5 else f"December {year}"
+        lines.append(f"Employer {index} — Title {index}, January {year} – {end}")
+        bullets = 3 if index < 5 else 2
+        for bullet in range(bullets):
+            lines.append(
+                f"Delivered labelled outcome {index}-{bullet} for production systems."
+            )
+    lines.append("Skills: Python, SQL, Kubernetes")
+    return normalise_text("\n".join(lines))
 
 
 def test_the_regex_finds_nothing_in_this_prose_cv() -> None:
@@ -168,7 +192,7 @@ def test_the_regex_finds_nothing_in_this_prose_cv() -> None:
 
 
 def test_the_model_extracts_claims_from_every_role() -> None:
-    result, completion = _extract(_FULL_PAYLOAD)
+    result, completion = _extract(_full_payload())
 
     contexts = [c.context for c in result.claims]
     assert any("dbt models" in t for t in contexts)
@@ -177,20 +201,31 @@ def test_the_model_extracts_claims_from_every_role() -> None:
         "Northwind Analytics Ltd",
         "Blue Harbour Retail",
     }
+    assert result.complete is True
+    assert result.roles_detected == 2
+    assert result.roles_without_claims == 0
+    assert result.spans_supplied == 7
+    assert result.claims_accepted == 3
     assert completion.calls == 1
     assert completion.last_request is not None
     assert "UNTRUSTED_CV" in completion.last_request.user
+    assert "SPAN doc-cv:" in completion.last_request.user
 
 
-def test_an_unverifiable_quote_is_dropped_and_counted() -> None:
-    result, _ = _extract(_FULL_PAYLOAD)
+def test_an_unknown_span_id_is_rejected() -> None:
+    result, _ = _extract(_full_payload())
 
-    assert all("CUDA kernel" not in c.context for c in result.claims)
+    assert all("CUDA" not in c.context for c in result.claims)
+    assert all(
+        all(not span_id.startswith("other-doc:") for span_id in c.source_span_ids)
+        for c in result.claims
+    )
     assert result.dropped_unverifiable == 1
+    assert result.complete is True
 
 
-def test_every_span_round_trips_to_its_quote() -> None:
-    result, _ = _extract(_FULL_PAYLOAD)
+def test_every_span_round_trips_to_stored_text() -> None:
+    result, _ = _extract(_full_payload())
 
     by_id = {span.id: span for span in result.spans}
     assert result.claims
@@ -202,40 +237,10 @@ def test_every_span_round_trips_to_its_quote() -> None:
 
 
 def test_recency_and_duration_come_from_parsed_role_dates_not_the_model() -> None:
-    payload = {
-        "roles": [
-            _role(
-                employer="Northwind Analytics Ltd",
-                title="Analytics Engineer",
-                date_range_quote="January 2023 – Present",
-                claims=[
-                    _claim(
-                        (
-                            "Owned dbt models that cover the core order and "
-                            "inventory marts in production."
-                        ),
-                        competency="dbt",
-                    )
-                ],
-            ),
-            _role(
-                employer="Blue Harbour Retail",
-                title="Data Analyst",
-                date_range_quote="March 2020 – December 2022",
-                claims=[
-                    _claim(
-                        (
-                            "Built Looker dashboards for store performance and "
-                            "inventory turn."
-                        ),
-                        competency="bi",
-                    )
-                ],
-            ),
-        ]
-    }
-    # If a model tries to assert recency, the field is not even read.
-    payload["roles"][1]["recency_signal"] = "recent"  # type: ignore[index]
+    payload = _full_payload()
+    assignments = payload["assignments"]
+    assert isinstance(assignments, list)
+    assignments[4]["recency_signal"] = "recent"
 
     result, _ = _extract(payload)
 
@@ -251,34 +256,197 @@ def test_recency_and_duration_come_from_parsed_role_dates_not_the_model() -> Non
 
 
 def test_claim_structure_carries_scope_technologies_and_outcome() -> None:
-    result, _ = _extract(_FULL_PAYLOAD)
+    result, _ = _extract(_full_payload())
 
     dbt = next(c for c in result.claims if "dbt models" in c.context)
     assert dbt.competency == "dbt"
     assert dbt.scope == "production marts"
     assert "dbt" in dbt.technologies
     assert "inventory marts" in dbt.outcome
+    assert dbt.title == "Analytics Engineer"
 
 
-def test_falls_back_to_the_rules_result_when_nothing_verifies() -> None:
+def test_a_response_that_classifies_nothing_is_incomplete() -> None:
     bulleted = normalise_text(
-        "Experience\n"
-        "Acme — Engineer\n"
-        "January 2023 – Present\n"
-        "- Owned dbt models in production\n"
+        "Acme — Engineer, January 2023 – Present\n- Owned dbt models in production\n"
     )
-    payload = {
-        "roles": [
-            _role(
-                employer="Invented Corp",
-                title="CTO",
-                date_range_quote="January 1999 – Present",
-                claims=[_claim("invented entirely")],
-            )
-        ]
-    }
+    payload = {"assignments": [_assign("other-doc:0:8", "experience")]}
 
     result, _ = _extract(payload, text=bulleted)
 
-    assert any("dbt models" in c.context for c in result.claims)
-    assert result.dropped_unverifiable == 1
+    assert result.claims == ()
+    assert result.complete is False
+    assert result.dropped_unverifiable >= 1
+
+
+def test_six_roles_and_seventeen_bullets_keep_their_associations() -> None:
+    text = _six_role_cv()
+    ids = _ids(text)
+    assignments: list[dict[str, object]] = [
+        _assign(ids["Alex Rivera"], "narrative"),
+        _assign(ids["Skills: Python, SQL, Kubernetes"], "skills"),
+    ]
+    for index in range(6):
+        year = 2014 + index
+        end = "Present" if index == 5 else f"December {year}"
+        heading = f"Employer {index} — Title {index}, January {year} – {end}"
+        heading_id = ids[heading]
+        assignments.append(
+            _assign(
+                heading_id,
+                "role_heading",
+                employer=f"Employer {index}",
+                title=f"Title {index}",
+            )
+        )
+        bullets = 3 if index < 5 else 2
+        for bullet in range(bullets):
+            line = (
+                f"Delivered labelled outcome {index}-{bullet} "
+                "for production systems."
+            )
+            assignments.append(_assign(ids[line], "experience", role=heading_id))
+
+    result, _ = _extract({"assignments": assignments}, text=text)
+
+    assert result.complete is True
+    assert result.roles_detected == 6
+    assert result.claims_accepted == 17
+    assert result.roles_without_claims == 0
+    assert all("Kubernetes" not in claim.context for claim in result.claims)
+    for claim in result.claims:
+        marker = claim.context.split("outcome ", 1)[1].split("-", 1)[0]
+        assert claim.employer == f"Employer {marker}"
+        assert claim.title == f"Title {marker}"
+        assert claim.period_start == date(2014 + int(marker), 1, 1)
+
+
+def test_a_project_claim_stays_on_the_project_not_the_nearest_job() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "Portfolio — Side Project, January 2019 – June 2019.\n"
+        "Shipped a portfolio orchestration tool used by the team.\n"
+    )
+    ids = _ids(text)
+    job = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    project = ids["Portfolio — Side Project, January 2019 – June 2019."]
+    payload = {
+        "assignments": [
+            _assign(
+                job,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=job,
+            ),
+            _assign(
+                project,
+                "project_heading",
+                employer="Portfolio",
+                title="Side Project",
+            ),
+            _assign(
+                ids["Shipped a portfolio orchestration tool used by the team."],
+                "project",
+                role=project,
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    shipped = next(c for c in result.claims if "orchestration" in c.context)
+    assert shipped.employer == "Portfolio"
+    assert shipped.title == "Side Project"
+    assert shipped.employer != "Northwind Analytics Ltd"
+    assert result.complete is True
+
+
+def test_formatting_does_not_drop_a_server_owned_span() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "* **Owned dbt models in production.**\n"
+    )
+    ids = _ids(text)
+    heading = "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    bullet = next(unit for unit in ids if "Owned dbt" in unit)
+    payload = {
+        "assignments": [
+            _assign(
+                ids[heading],
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(ids[bullet], "experience", role=ids[heading], competency="dbt"),
+        ]
+    }
+
+    result, completion = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims
+    assert "Owned dbt" in result.claims[0].context
+    assert completion.last_request is not None
+    assert "*" not in json.dumps(payload)
+    assert "SPAN " in completion.last_request.user
+
+
+def test_only_the_first_role_fails_completeness() -> None:
+    text = _six_role_cv()
+    ids = _ids(text)
+    heading = ids["Employer 0 — Title 0, January 2014 – December 2014"]
+    assignments = [
+        _assign(
+            heading,
+            "role_heading",
+            employer="Employer 0",
+            title="Title 0",
+        )
+    ]
+    for bullet in range(3):
+        line = f"Delivered labelled outcome 0-{bullet} for production systems."
+        assignments.append(_assign(ids[line], "experience", role=heading))
+
+    result, _ = _extract({"assignments": assignments}, text=text)
+
+    assert result.complete is False
+    assert result.claims_accepted == 3
+    assert result.spans_supplied > result.claims_accepted + 1
+
+
+def test_an_unparsed_role_date_makes_extraction_incomplete() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, 2023 to now.\n"
+        "Owned dbt models in production.\n"
+    )
+    ids = _ids(text)
+    heading = ids["Northwind Analytics Ltd — Analytics Engineer, 2023 to now."]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=heading,
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is False
+    assert result.claims
+    assert result.claims[0].period_start is None
