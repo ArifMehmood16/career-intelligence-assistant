@@ -33,7 +33,7 @@ describe("getJob", () => {
         stage: null,
         startedAt: "2026-09-18T12:00:00Z",
         finishedAt: "2026-09-18T12:01:00Z",
-        error: "Provider timed out.",
+        error: "assessment_incomplete: Analysis did not assess every scoreable requirement.",
       });
     });
 
@@ -44,7 +44,10 @@ describe("getJob", () => {
       stage: null,
       startedAt: "2026-09-18T12:00:00Z",
       finishedAt: "2026-09-18T12:01:00Z",
-      error: { code: "analysis_failed", message: "Provider timed out." },
+      error: {
+        code: "assessment_incomplete",
+        message: "Analysis did not assess every scoreable requirement.",
+      },
     });
   });
 
@@ -53,18 +56,24 @@ describe("getJob", () => {
       Response.json({
         id: "job-2",
         kind: "role_analysis",
-        state: "running",
-        stage: "mapping",
+        state: "failed",
+        stage: "scoring",
         startedAt: "2026-09-18T12:00:00Z",
-        finishedAt: null,
-        error: null,
+        finishedAt: "2026-09-18T12:01:00Z",
+        error: {
+          code: "extraction_incomplete",
+          message: "Claim extraction did not classify every part of the CV.",
+        },
       }),
     );
 
     await expect(getJob("job-2")).resolves.toMatchObject({
-      state: "running",
-      stage: "mapping",
-      error: null,
+      state: "failed",
+      stage: "scoring",
+      error: {
+        code: "extraction_incomplete",
+        message: "Claim extraction did not classify every part of the CV.",
+      },
     });
   });
 });

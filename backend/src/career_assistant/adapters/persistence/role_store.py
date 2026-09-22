@@ -35,6 +35,7 @@ from career_assistant.application.roles.hermetic_analysis import (
     count_statuses,
 )
 from career_assistant.application.roles.store import (
+    JobErrorView,
     JobView,
     RoleOperationRejected,
     RoleView,
@@ -616,7 +617,7 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
 def _job_view(job: AnalysisJob) -> JobView:
     error = None
     if job.error is not None:
-        error = f"{job.error.code}: {job.error.message}"
+        error = JobErrorView(code=job.error.code, message=job.error.message)
     return JobView(
         id=job.id,
         kind=job.kind.value,

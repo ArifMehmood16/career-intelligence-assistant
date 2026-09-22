@@ -10,6 +10,7 @@ from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.schemas import (
     AnalysisJobResponse,
+    JobErrorBody,
     ReanalyseResponse,
     RoleCounts,
     RoleCreatedResponse,
@@ -77,6 +78,9 @@ def _fit_summary_for(
 
 
 def _job_response(job: JobView) -> AnalysisJobResponse:
+    error = None
+    if job.error is not None:
+        error = JobErrorBody(code=job.error.code, message=job.error.message)
     return AnalysisJobResponse(
         id=job.id,
         kind=job.kind,
@@ -92,7 +96,7 @@ def _job_response(job: JobView) -> AnalysisJobResponse:
             if job.finished_at is None
             else job.finished_at.isoformat().replace("+00:00", "Z")
         ),
-        error=job.error,
+        error=error,
     )
 
 

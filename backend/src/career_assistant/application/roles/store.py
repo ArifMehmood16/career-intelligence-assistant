@@ -55,6 +55,12 @@ class RoleView:
 
 
 @dataclass(frozen=True, slots=True)
+class JobErrorView:
+    code: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
 class JobView:
     id: str
     kind: str
@@ -62,7 +68,7 @@ class JobView:
     stage: str | None
     started_at: datetime | None
     finished_at: datetime | None
-    error: str | None
+    error: JobErrorView | None
 
 
 @dataclass

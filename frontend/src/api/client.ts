@@ -452,7 +452,7 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
     raw.error == null
       ? null
       : typeof raw.error === "string"
-        ? { code: "analysis_failed", message: raw.error }
+        ? parseLegacyJobError(raw.error)
         : raw.error;
   return {
     id: raw.id,
@@ -463,6 +463,14 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
     finishedAt: raw.finishedAt,
     error,
   };
+}
+
+function parseLegacyJobError(raw: string): { code: string; message: string } {
+  const match = /^([a-z0-9_]+):\s*(.+)$/s.exec(raw);
+  if (match) {
+    return { code: match[1]!, message: match[2]! };
+  }
+  return { code: "analysis_failed", message: raw };
 }
 
 export function reanalyseRole(roleId: string): Promise<{ jobId: string }> {
