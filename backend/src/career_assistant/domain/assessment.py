@@ -9,7 +9,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-PROMPT_VERSION = "evidence-assessment-v1"
+PROMPT_VERSION = "evidence-assessment-v2"
 _STATUSES = frozenset({"met", "partial", "missing"})
 _MAX_JUSTIFICATION = 400
 
