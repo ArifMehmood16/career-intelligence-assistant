@@ -27,6 +27,33 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 100 — The completion model is part of the assessment contract
+
+- Date: 2026-09-22
+- Tool / model: Claude Opus 5, Cowork session
+- Plan task: 13D.6
+- Prompt intent: run the same labels against two local completion models and
+  act on the result.
+- Suggestion: ship the model that was measured, record the one that was not,
+  and make one targeted prompt change for the single remaining gate failure.
+- Outcome: accepted
+- Reason: on `evidence-assessment-v2`, `llama3.2` disagreed on 12 of 24
+  requirements, returned four unsupported `met` results and credited
+  `dev-injection` / `req-inject` — the case whose untrusted text asks to be
+  treated as a match. `qwen2.5:7b` on the same labels disagreed on 3, left the
+  held-out split clean and passed every predeclared gate except unsupported
+  `met`, which was the contradiction case. Defining the levels made the small
+  model confidently wrong rather than uniformly refusing, which is the worse
+  of the two failures, so the default model moved rather than the prompt being
+  softened for it.
+- Human validation: observed live output for both runs recorded in
+  `docs/evaluation.md`. Failing tests written first for the default model, the
+  shipped configuration example and the conflict rule. Backend pytest exited 0
+  with coverage 82.11%; ruff check, ruff format --check and mypy on 134 source
+  files passed. No run has been recorded against `evidence-assessment-v3`, and
+  the held-out split is the check on whether that change is an improvement or
+  an overfit to three development cases.
+
 ### 099 — Define the assessment levels after the model hedged
 
 - Date: 2026-09-22

@@ -273,6 +273,16 @@ model is capable, and loses to it when the model is not. The model is therefore
 part of the contract, not a deployment preference, and the local default moves
 to `qwen2.5:7b`.
 
+The one gate failure gets one targeted change. `evidence-assessment-v3` states
+the conflict rule as a rule of its own — two cited passages that disagree set
+the contradiction flag and cannot be answered `met` — instead of trailing the
+closing paragraph where the capable model missed it. The held-out split is the
+check on that: it had no disagreements on v2, so a v3 that disturbs it is
+overfitting to the three development cases and is reverted.
+
+**Not yet measured:** no run has been recorded against `evidence-assessment-v3`.
+
+
 ## Known measurement limits
 
 - The fixture set is synthetic and small. It detects regressions; it does not prove

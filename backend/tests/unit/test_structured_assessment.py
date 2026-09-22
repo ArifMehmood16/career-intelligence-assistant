@@ -137,7 +137,7 @@ def test_agreement_without_an_assessment_is_not_a_match() -> None:
     request = completion.last_request
     assert request is not None
     assert request.json_schema is not None
-    assert "evidence-assessment-v2" in request.system
+    assert "evidence-assessment-v3" in request.system
     assert "UNTRUSTED_REQUIREMENT" in request.user
     assert "span-negation" in request.user
 
@@ -236,7 +236,11 @@ def test_the_assessment_prompt_states_what_each_level_means() -> None:
 
     request = completion.last_request
     assert request is not None
-    assert "evidence-assessment-v2" in request.system
+    assert "evidence-assessment-v3" in request.system
     for level in ("met:", "partial:", "missing:"):
         assert level in request.system, level
     assert "unsure" in request.system
+    # The one gate failure on the capable model: two cited passages disagreed
+    # and it answered met without setting the flag, so the rule is stated as a
+    # rule rather than trailing the paragraph.
+    assert "disagree" in request.system
