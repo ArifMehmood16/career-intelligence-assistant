@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -16,6 +17,15 @@ from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.documents.cv import (
     admission_limits_from,
     upload_pasted_cv,
+)
+from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.domain.generation import (
+    CoverLetterDraft,
+    CoverLetterRefusal,
+    build_fit_summary,
+    build_gap_plan,
+    build_interview_pack,
+    draft_cover_letter,
 )
 from career_assistant.domain.mapping import MappingStatus
 from career_assistant.main import create_app
@@ -100,6 +110,73 @@ def test_sql_role_store_create_list_get_and_analysis(
     assert bundle.attribution.rubric_version == "scoring-rubric-v1"
     assert bundle.attribution.left_machine is False
     assert bundle.attribution.failure_status is None
+
+
+def test_restart_reads_saved_fit_gaps_prepare_and_letter(
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """PLAN 13D.5 — a new store reads the saved analysis and does not map again."""
+    uow_factory = _uow_factory_for(session_factory)
+    cv_store = SqlCvStore(uow_factory)
+    role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
+    workspace_id = str(uuid.uuid4())
+    upload_pasted_cv(
+        cv_store,
+        workspace_id=workspace_id,
+        text=_CV,
+        filename="cv.txt",
+        limits=admission_limits_from(LimitSettings()),
+    )
+    role, _job = role_store.create_role(
+        workspace_id=workspace_id,
+        title="Analytics Engineer",
+        company="Acme",
+        description=_JD,
+    )
+    worker.drain()
+    first = role_store.ranked(workspace_id)
+    saved = role_store.require_analysis(workspace_id, role.id)
+
+    def _must_not_map(*_args: object, **_kwargs: object) -> tuple[object, ...]:
+        raise AssertionError("a restart must not map requirements again")
+
+    monkeypatch.setattr(
+        "career_assistant.application.analysis.relatedness.map_role_requirements",
+        _must_not_map,
+    )
+    monkeypatch.setattr(
+        "career_assistant.adapters.persistence.analysis_worker.map_role_requirements",
+        _must_not_map,
+    )
+    restarted = SqlRoleStore(
+        cv_store=SqlCvStore(uow_factory),
+        uow_factory=uow_factory,
+    )
+    second = restarted.ranked(workspace_id)
+    assert [
+        (view.id, view.fit_score, rank) for view, rank, _tied, _because in first
+    ] == [(view.id, view.fit_score, rank) for view, rank, _tied, _because in second]
+    bundle = restarted.require_analysis(workspace_id, role.id)
+    assert bundle.explanation.score == saved.explanation.score
+    rubric = load_scoring_rubric(
+        Path(__file__).resolve().parents[3] / "config" / "scoring_rubric.toml"
+    )
+    fit = build_fit_summary(bundle.requirements, bundle.mappings, bundle.claims, rubric)
+    gaps = build_gap_plan(bundle.requirements, bundle.mappings, bundle.claims, rubric)
+    pack = build_interview_pack(bundle.requirements, bundle.mappings, bundle.claims)
+    letter = draft_cover_letter(
+        role_title="Analytics Engineer",
+        company="Acme",
+        requirements=bundle.requirements,
+        mappings=bundle.mappings,
+        claims=bundle.claims,
+    )
+    assert fit.text
+    assert gaps.current_score == bundle.explanation.score
+    assert pack.probes
+    assert isinstance(letter, CoverLetterDraft | CoverLetterRefusal)
 
 
 def test_sql_worker_does_not_score_a_course_as_leadership(

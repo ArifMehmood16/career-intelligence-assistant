@@ -72,6 +72,18 @@ def test_course_does_not_meet_production_leadership() -> None:
     assert all(row["evidence"] is None for row in rows)
 
 
+def test_fit_gaps_and_ranking_do_not_call_the_model() -> None:
+    """PLAN 13D.5 — reading the saved analysis does not complete again."""
+    client, role_id = _ready_client()
+    accountant = getattr(client.app.state, "call_accountant", None)
+    before = () if accountant is None else accountant.records
+    assert client.get(f"/api/roles/{role_id}").status_code == 200
+    assert client.get(f"/api/roles/{role_id}/gap-plan").status_code == 200
+    assert client.get("/api/ranking").status_code == 200
+    after = () if accountant is None else accountant.records
+    assert after == before
+
+
 def test_requirements_and_gap_plan_for_ready_role() -> None:
     client, role_id = _ready_client()
 

@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 095 — A restart reads the saved analysis
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (Fit, Gaps, Prepare and Letter read the saved result)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: lock a new SQL store to the saved ranking, fit, gaps, interview
+  pack and letter, and lock the role, gap-plan and ranking reads so they do
+  not add a completion call.
+- Outcome: accepted
+- Reason: the behaviour was already in the store and the read routes. These
+  tests are regression locks. The first API assertion treated call records as
+  a method; the corrected check compares the record tuple before and after
+  the three reads. Interview-pack and cover-letter phrasing routes still call
+  the completion model and are outside this lock. 13D.6 and both exit gates
+  stay open.
+- Human validation: the SQL restart test passed on the first run. The API
+  test then failed with `TypeError: 'tuple' object is not callable`, and
+  passed after the assertion used the `records` property. Ruff was clean on
+  both test files. No production code changed. No live model call.
+
 ### 094 — A course does not meet years of leadership
 
 - Date: 2026-09-22

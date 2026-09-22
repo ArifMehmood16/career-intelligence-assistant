@@ -4,21 +4,22 @@ Operational source of truth. Execute phases in order. A phase is complete only w
 its tests, documentation and exit gate are satisfied.
 
 **Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. 13D.1–13D.4 are implemented. 13D.5
-has started: claim detail and requirement seniority round-trip through
-PostgreSQL; a saved non-match stays missing after reload; the saved result
-records provider, model, prompt version, rubric version, whether content left
-the machine, and a failure status that marks an incomplete assessment apart
-from a poor fit. Duplicate requirement text scores once. Unknown conditions
-and contradictions cap coverage at partial, and a zero score from an incomplete
-assessment is banded `incomplete` rather than `limited`. Overlapping jobs in
-the same skill count as one stretch of time. Tied roles stay in title order
-and name the requirements that are not shared. Still open on 13D.5: Fit, Gaps,
-Prepare and Letter reading that saved result with no further model call on
-restart. A course does not meet years of leadership at the domain, API and
-SQL boundaries. Hermetic analysis still uses the OR fallback for other
-cases. 13D's closure includes the outstanding 13C verification; do not claim
-either gate has passed or start the full Phase 14 comparison before then.
+Its live exit gate has not been observed. 13D.1–13D.5 are implemented. A saved
+analysis round-trips claim detail and requirement seniority; a saved non-match
+stays missing after reload; the saved result records provider, model, prompt
+version, rubric version, whether content left the machine, and a failure status
+that marks an incomplete assessment apart from a poor fit. Duplicate requirement
+text scores once. Unknown conditions and contradictions cap coverage at partial,
+and a zero score from an incomplete assessment is banded `incomplete` rather
+than `limited`. Overlapping jobs in the same skill count as one stretch of time.
+Tied roles stay in title order and name the requirements that are not shared.
+A course does not meet years of leadership at the domain, API and SQL
+boundaries. A restarted store reads that saved ranking, and Fit, Gaps, Prepare
+and Letter are built from the stored bundle without mapping again. Role, gap-plan
+and ranking reads do not call the completion model. Hermetic analysis still uses
+the OR fallback for other cases. 13D.6 is open. 13D's closure includes the
+outstanding 13C verification; do not claim either gate has passed or start the
+full Phase 14 comparison before then.
 
 ## Product objective and quality priority
 
@@ -928,7 +929,7 @@ Do not rebuild Phase 13A or 13C.
       paragraphs for a comparison or an explanation — with no padding and no answer
       cut off mid-sentence. Citation validation and the insufficient-evidence result
       stay exactly as they are; streamed and non-streamed answers must still agree.
-- [ ] **13D.5 Save one analysis result and make every feature read it.** Round-trip
+- [x] **13D.5 Save one analysis result and make every feature read it.** Round-trip
       employer, title, scope, technologies, outcome, dates, real extraction
       confidence and requirement conditions. Persist the validated assessments,
       cited span ids, provider, model, prompt and rubric versions and a safe failure
