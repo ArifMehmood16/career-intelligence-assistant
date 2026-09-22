@@ -100,3 +100,32 @@ def test_measured_hermetic_path_matches_the_recorded_policy() -> None:
         for item in current.disagreements
     }
     assert len(measured.order_disagreements) == len(current.order_disagreements)
+
+
+class _SilentAssessor:
+    """Decides support and answers nothing, so only retrieval is measured."""
+
+    @property
+    def decides_support(self) -> bool:
+        return True
+
+    def assessment_source(self) -> tuple[str, str, bool]:
+        return ("scripted", "silent-v1", False)
+
+    def adjudicate(self, pairs: object) -> dict[tuple[str, str], bool]:
+        return {}
+
+    def assess(self, items: object) -> dict[str, object]:
+        return {}
+
+
+def test_every_labelled_supporting_passage_reaches_the_assessor() -> None:
+    """A missing result is only informative once the evidence was shown.
+
+    Six requirements came back missing in the live pilot. Retrieval has to be
+    measured separately, or a gated candidate set reads as a model error.
+    """
+    pilot = load_pilot(DATASET)
+    report = measured_policy_baseline(pilot, adjudicator=_SilentAssessor())
+    assert report.calls_model is True
+    assert report.retrieval_misses == ()

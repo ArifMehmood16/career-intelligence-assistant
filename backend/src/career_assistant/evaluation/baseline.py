@@ -27,6 +27,7 @@ from career_assistant.application.scoring.rubric_loader import (
     load_scoring_rubric,
 )
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.requirements import ItemType, Requirement
 from career_assistant.domain.scoring import score_fit
 
@@ -167,6 +168,15 @@ class OrderDisagreement:
 
 
 @dataclass(frozen=True, slots=True)
+class RetrievalMiss:
+    """A labelled supporting passage that never reached the assessor."""
+
+    role_id: str
+    requirement_id: str
+    span_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CurrentPolicyReport:
     """Labelled pilot compared with one mapping run.
 
@@ -179,6 +189,9 @@ class CurrentPolicyReport:
     order_disagreements: tuple[OrderDisagreement, ...]
     calls_model: bool
     role_latency_seconds: tuple[float, ...] = ()
+    # Only recorded on the assessor path. The hermetic matcher has no separate
+    # retrieval step, so an empty tuple there means not measured, not perfect.
+    retrieval_misses: tuple[RetrievalMiss, ...] = ()
 
     def disagreement(self, role_id: str, requirement_id: str) -> AssessmentDisagreement:
         for item in self.disagreements:
@@ -245,7 +258,9 @@ def measured_policy_baseline(
     floor = load_mapping_config(config_path).similarity_floor
     disagreements: list[AssessmentDisagreement] = []
     order_disagreements: list[OrderDisagreement] = []
+    retrieval_misses: list[RetrievalMiss] = []
     latencies: list[float] = []
+    decides_support = bool(getattr(adjudicator, "decides_support", False))
     for group in dataset.groups:
         claims = tuple(_domain_claim(claim) for claim in group.claims)
         scores: dict[str, float] = {}
@@ -269,6 +284,10 @@ def measured_policy_baseline(
             observed = {
                 mapping.requirement_id: mapping.status.value for mapping in mappings
             }
+            if decides_support:
+                retrieval_misses.extend(
+                    _retrieval_misses(role, claims, mappings),
+                )
             for requirement in role.requirements:
                 if not requirement.is_scoreable:
                     continue
@@ -289,9 +308,42 @@ def measured_policy_baseline(
     return CurrentPolicyReport(
         disagreements=tuple(disagreements),
         order_disagreements=tuple(order_disagreements),
-        calls_model=bool(getattr(adjudicator, "decides_support", False)),
+        calls_model=decides_support,
         role_latency_seconds=tuple(latencies),
+        retrieval_misses=tuple(retrieval_misses),
     )
+
+
+def _retrieval_misses(
+    role: PilotRole,
+    claims: Sequence[Claim],
+    mappings: Sequence[RequirementMapping],
+) -> tuple[RetrievalMiss, ...]:
+    """Labelled supporting passages the assessor was never shown.
+
+    Separating this from the assessment disagreements is the whole point: a
+    requirement the model called missing without the evidence in front of it
+    is a retrieval failure, and no prompt change can fix it.
+    """
+    spans_by_claim = {claim.id: frozenset(claim.source_span_ids) for claim in claims}
+    misses: list[RetrievalMiss] = []
+    for mapping in mappings:
+        labelled = frozenset(role.supporting_passages.get(mapping.requirement_id, ()))
+        if not labelled:
+            continue
+        shown: set[str] = set()
+        for claim_id in mapping.retrieved_claim_ids:
+            shown |= spans_by_claim.get(claim_id, frozenset())
+        unseen = tuple(sorted(labelled - shown))
+        if unseen:
+            misses.append(
+                RetrievalMiss(
+                    role_id=role.id,
+                    requirement_id=mapping.requirement_id,
+                    span_ids=unseen,
+                )
+            )
+    return tuple(misses)
 
 
 def _year_date(year: int | None) -> date | None:
