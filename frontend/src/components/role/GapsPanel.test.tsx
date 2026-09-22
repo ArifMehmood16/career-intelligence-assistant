@@ -130,6 +130,8 @@ describe("GapsPanel", () => {
     }
     expect(first).toHaveTextContent("dbt in production");
     expect(first).toHaveTextContent(/\+12/);
+    expect(first).toHaveTextContent(/61 → 73/);
+    expect(first).toHaveTextContent(/if met/i);
     expect(first).toHaveTextContent(/adjacent claim does not match/i);
     expect(first).toHaveTextContent(/evidence it/i);
 
@@ -148,5 +150,37 @@ describe("GapsPanel", () => {
     ).toBeNull();
     expect(second).toHaveTextContent(/nothing in the cv addresses it/i);
     expect(second).toHaveTextContent(/learn it/i);
+  });
+
+  it("rounds the counterfactual lift and says what the points mean", () => {
+    render(
+      <GapsPanel
+        state="ready"
+        currentScore={90}
+        items={[
+          gap({
+            type: "must",
+            status: "missing",
+            reason: "no_related_claim",
+            adjacentEvidence: null,
+            scoreDelta: 6.666666666666671,
+            action: "learn_it",
+            canDraftBullet: false,
+          }),
+        ]}
+        onRetry={vi.fn()}
+        onSelectEvidence={vi.fn()}
+        onDraftBullet={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/6\.666666666666671/)).not.toBeInTheDocument();
+    expect(screen.getByText(/\+6\.7/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/if this must-have were met/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/90 → 96\.7/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/same arithmetic as the fit tab/i),
+    ).toBeInTheDocument();
   });
 });
