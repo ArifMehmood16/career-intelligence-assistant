@@ -123,3 +123,29 @@ def test_validation_error_logs_code_not_request_body(
     assert "http.error" in caplog.text
     assert "code=" in caplog.text
     assert _PLANTED_JD not in caplog.text
+
+
+def test_log_failure_includes_module_and_function_site(
+    caplog: logging.LogCaptureFixture,
+) -> None:
+    from career_assistant.logconfig import log_failure
+
+    configure_logging(force=True)
+    caplog.set_level(logging.ERROR, logger="career_assistant")
+    log = logging.getLogger("career_assistant.test_site")
+
+    def _emit_failure() -> None:
+        log_failure(
+            log,
+            "test.failed",
+            code="unit",
+            input="spans_supplied=3,stage=extracting_claims",
+        )
+
+    _emit_failure()
+
+    assert "test.failed" in caplog.text
+    assert "site=" in caplog.text
+    assert "_emit_failure" in caplog.text
+    assert "input=spans_supplied=3" in caplog.text
+    assert _PLANTED_CV not in caplog.text

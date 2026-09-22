@@ -71,6 +71,7 @@ from career_assistant.logconfig import (
     bind_request_context,
     clear_request_context,
     log_event,
+    log_failure,
 )
 from career_assistant.settings import ProviderSettings
 
@@ -322,13 +323,18 @@ class SqlAnalysisWorker:
                         job=failed,
                     )
                     uow.commit()
-                log_event(
+                log_failure(
                     _log,
                     "worker.failed",
                     job_id=job.id,
                     role_id=job.role_id,
                     stage=JobStage.EXTRACTING_REQUIREMENTS.value,
                     code="extraction_incomplete",
+                    input=(
+                        f"jd_id={jd_id},requirements={len(req_result.requirements)},"
+                        f"spans={len(req_result.spans)},"
+                        f"dropped={req_result.dropped_unverifiable}"
+                    ),
                     requirements=len(req_result.requirements),
                     spans=len(req_result.spans),
                     dropped=req_result.dropped_unverifiable,
@@ -390,13 +396,22 @@ class SqlAnalysisWorker:
                         job=failed,
                     )
                     uow.commit()
-                log_event(
+                log_failure(
                     _log,
                     "worker.failed",
                     job_id=job.id,
                     role_id=job.role_id,
                     stage=JobStage.EXTRACTING_CLAIMS.value,
                     code="extraction_incomplete",
+                    input=(
+                        f"cv_id={cv_id},"
+                        f"spans_supplied={claim_result.spans_supplied},"
+                        f"claims_returned={claim_result.claims_returned},"
+                        f"claims_accepted={claim_result.claims_accepted},"
+                        f"claims_rejected={claim_result.claims_rejected},"
+                        f"roles_detected={claim_result.roles_detected},"
+                        f"roles_without_claims={claim_result.roles_without_claims}"
+                    ),
                     spans_supplied=claim_result.spans_supplied,
                     claims_returned=claim_result.claims_returned,
                     claims_accepted=claim_result.claims_accepted,
@@ -489,13 +504,20 @@ class SqlAnalysisWorker:
                         job=failed,
                     )
                     uow.commit()
-                log_event(
+                log_failure(
                     _log,
                     "worker.failed",
                     job_id=job.id,
                     role_id=job.role_id,
                     stage=stage.value,
                     code="assessment_incomplete",
+                    input=(
+                        f"band={explanation.band},"
+                        f"numerator={explanation.numerator},"
+                        f"denominator={explanation.denominator},"
+                        f"mappings={len(mappings)},"
+                        f"requirements={len(req_result.requirements)}"
+                    ),
                     band=explanation.band,
                     numerator=explanation.numerator,
                     denominator=explanation.denominator,
@@ -624,7 +646,7 @@ class SqlAnalysisWorker:
                 job=failed,
             )
             uow.commit()
-        log_event(
+        log_failure(
             _log,
             "worker.failed",
             job_id=job.id,
@@ -632,6 +654,10 @@ class SqlAnalysisWorker:
             stage=stage.value,
             code=failed.error.code if failed.error else "unknown",
             error_type=type(cause).__name__ if cause is not None else "unknown",
+            input=(
+                f"stage={stage.value},"
+                f"error_type={type(cause).__name__ if cause else 'unknown'}"
+            ),
         )
         return failed
 

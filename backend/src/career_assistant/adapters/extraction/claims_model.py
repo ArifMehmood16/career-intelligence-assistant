@@ -35,7 +35,7 @@ from career_assistant.domain.recency import (
     derive_recency_signal,
     parse_date_range,
 )
-from career_assistant.logconfig import log_event
+from career_assistant.logconfig import log_event, log_failure
 
 _log = logging.getLogger(__name__)
 
@@ -195,6 +195,22 @@ class ModelClaimExtractor:
             retry_count=retries,
             provider=self._completion.capabilities.provider_id,
         )
+        if not result.complete:
+            log_failure(
+                _log,
+                "claims.incomplete",
+                document_id=document_id,
+                document_kind=document_kind.value,
+                incomplete_reasons=diagnostics["incomplete_reasons"] or "none",
+                input=(
+                    f"spans_supplied={result.spans_supplied},"
+                    f"spans_classified={diagnostics['spans_classified']},"
+                    f"scoreable_unclassified={diagnostics['scoreable_unclassified']},"
+                    f"claims_accepted={result.claims_accepted},"
+                    f"attach_failed={diagnostics['attach_failed']},"
+                    f"roles_without_claims={result.roles_without_claims}"
+                ),
+            )
         return result
 
     def _classify_batch(
