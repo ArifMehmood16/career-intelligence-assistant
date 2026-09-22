@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.recency import covered_years, stated_years
 from career_assistant.domain.relatedness import RelatednessSignals, pair_relatedness
 from career_assistant.domain.requirements import Requirement
 
@@ -137,13 +138,52 @@ def map_requirement(
             signals=best_signals,
         )
 
-    return RequirementMapping(
+    matched = RequirementMapping(
         requirement_id=requirement.id,
         status=MappingStatus.MET,
         reason_code=MappingReason.MATCHED,
         justifying_span_ids=best.source_span_ids,
         justifying_claim_ids=(best.id,),
         signals=best_signals,
+    )
+    return limit_concurrent_years(
+        requirement, tuple(claim for claim, _signals in pool), matched
+    )
+
+
+def limit_concurrent_years(
+    requirement: Requirement,
+    claims: tuple[Claim, ...] | list[Claim],
+    mapping: RequirementMapping,
+) -> RequirementMapping:
+    """Do not treat overlapping jobs as separate years of coverage."""
+    if mapping.status is not MappingStatus.MET:
+        return mapping
+    needed = stated_years(requirement.text)
+    if needed is None:
+        return mapping
+    dated = tuple(
+        claim
+        for claim in claims
+        if claim.period_start is not None and claim.competency == requirement.competency
+    )
+    covered = covered_years(dated)
+    # Calendar spans land a fraction under a whole year. A month of slack
+    # keeps back-to-back jobs that add up, and still rejects a real gap.
+    if covered is None or covered >= needed - (1 / 12):
+        return mapping
+    span_ids = tuple(
+        dict.fromkeys(span_id for claim in dated for span_id in claim.source_span_ids)
+    )
+    return RequirementMapping(
+        requirement_id=mapping.requirement_id,
+        status=MappingStatus.PARTIAL,
+        reason_code=MappingReason.EVIDENCE_THIN,
+        justifying_span_ids=span_ids or mapping.justifying_span_ids,
+        justifying_claim_ids=tuple(claim.id for claim in dated),
+        signals=mapping.signals,
+        unknown_conditions=mapping.unknown_conditions,
+        contradiction=mapping.contradiction,
     )
 
 

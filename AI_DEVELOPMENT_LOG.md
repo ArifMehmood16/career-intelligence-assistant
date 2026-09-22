@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 092 — Do not count overlapping jobs as separate years
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (concurrent employment)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: merge overlapping employment periods for the same skill, and
+  keep a years requirement at partial when the merged stretch is shorter than
+  the requirement states. Back-to-back jobs still add up. A single dated claim
+  is left to the existing matcher.
+- Outcome: accepted
+- Reason: the year count is domain arithmetic. The model may still say met;
+  the mapping is capped afterwards. A month of slack stops a calendar-year
+  boundary from looking like a shortfall.
+- Human validation: the overlap test failed with status `met`. After the merge,
+  that test and the back-to-back test passed. Re-running the hermetic baseline
+  observed 10 assessment disagreements and 8 unsupported `met` results;
+  `dev-overlap` left the list. The course-versus-leadership pin is unchanged.
+  Mapping, baseline and structured-assessment tests passed (26). mypy was clean
+  on the four changed modules. No live model call.
+
 ### 091 — Score duplicate requirements once and cap uncertain coverage
 
 - Date: 2026-09-22

@@ -76,6 +76,7 @@ def test_current_policy_records_course_versus_leadership_as_unsupported_met() ->
     assert course.unsupported_met is True
     assert report.calls_model is False
     # Observed 2026-09-22 on the hermetic path. Update with the policy, not by hand.
-    assert len(report.disagreements) == 11
-    assert len(report.unsupported_met) == 9
+    # dev-overlap left this list when concurrent periods stopped counting twice.
+    assert len(report.disagreements) == 10
+    assert len(report.unsupported_met) == 8
     assert len(report.order_disagreements) == 1

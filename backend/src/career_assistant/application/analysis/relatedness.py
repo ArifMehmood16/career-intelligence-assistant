@@ -17,6 +17,7 @@ from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
     RequirementMapping,
+    limit_concurrent_years,
     map_requirements,
 )
 from career_assistant.domain.relatedness import (
@@ -312,7 +313,7 @@ def _mapping_from_assessment(
             for span_id in claim.source_span_ids
         )
     )
-    return RequirementMapping(
+    mapped = RequirementMapping(
         requirement_id=requirement.id,
         status=status,
         reason_code=reason,
@@ -329,3 +330,4 @@ def _mapping_from_assessment(
             related=status is not MappingStatus.MISSING,
         ),
     )
+    return limit_concurrent_years(requirement, claims, mapped)

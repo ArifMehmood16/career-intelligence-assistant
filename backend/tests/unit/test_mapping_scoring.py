@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
@@ -490,3 +491,80 @@ def test_incomplete_assessment_is_not_banded_as_a_poor_fit() -> None:
     assert incomplete.score == 0.0
     assert poor.band == "limited"
     assert incomplete.band == "incomplete"
+
+
+def test_overlapping_employment_is_not_counted_as_separate_years() -> None:
+    """PLAN 13D.5 — two concurrent Java jobs are not six years."""
+    requirement = _req(
+        id="req-java-years",
+        text="Six years of Java backend development",
+        competency="java",
+    )
+    northwind = _claim(
+        id="claim-java-a",
+        competency="java",
+        context="Java backend developer at Northwind from 2019 to 2022.",
+    )
+    contoso = _claim(
+        id="claim-java-b",
+        competency="java",
+        context="Java backend developer at Contoso from 2021 to 2024.",
+    )
+    # _claim has no dates; replace with the employment periods.
+    northwind = Claim(
+        id=northwind.id,
+        competency=northwind.competency,
+        context=northwind.context,
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=northwind.source_span_ids,
+        extraction_confidence=0.9,
+        period_start=date(2019, 1, 1),
+        period_end=date(2022, 1, 1),
+    )
+    contoso = Claim(
+        id=contoso.id,
+        competency=contoso.competency,
+        context=contoso.context,
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=contoso.source_span_ids,
+        extraction_confidence=0.9,
+        period_start=date(2021, 1, 1),
+        period_end=date(2024, 1, 1),
+    )
+    result = map_requirement(requirement, (northwind, contoso))
+    assert result.status is MappingStatus.PARTIAL
+    assert set(result.justifying_claim_ids) == {"claim-java-a", "claim-java-b"}
+
+
+def test_back_to_back_employment_still_adds_up() -> None:
+    requirement = _req(
+        id="req-java-years",
+        text="Six years of Java backend development",
+        competency="java",
+    )
+    first = Claim(
+        id="early",
+        competency="java",
+        context="Java backend developer from 2018 to 2021.",
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=("early-span",),
+        extraction_confidence=0.9,
+        period_start=date(2018, 1, 1),
+        period_end=date(2021, 1, 1),
+    )
+    second = Claim(
+        id="later",
+        competency="java",
+        context="Java backend developer from 2021 to 2024.",
+        duration_signal="3y",
+        recency_signal="recent",
+        source_span_ids=("later-span",),
+        extraction_confidence=0.9,
+        period_start=date(2021, 1, 1),
+        period_end=date(2024, 1, 1),
+    )
+    result = map_requirement(requirement, (first, second))
+    assert result.status is MappingStatus.MET

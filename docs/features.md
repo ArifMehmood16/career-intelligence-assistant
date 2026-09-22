@@ -136,6 +136,9 @@ the configuration file rather than hard-coding these literals.
   a second copy. The extra line stays visible and adds no weight.
 - Unknown conditions, or a contradiction, cap that requirement at partial
   coverage. They do not score as fully met.
+- Overlapping jobs in the same skill are one stretch of time. Two concurrent
+  posts do not add up to the years a requirement asks for. Jobs that follow
+  one another still do.
 - A zero score whose assessments did not complete is banded `incomplete`. A
   zero score from assessed gaps stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above

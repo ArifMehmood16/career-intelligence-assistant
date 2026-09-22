@@ -108,15 +108,17 @@ live Ollama accuracy figure.
 | Quantity | Observed |
 |---|---|
 | Groups / roles / scoreable requirements | 17 / 20 / 24 |
-| Assessment disagreements | 11 |
-| Labelled non-`met` returned as `met` | 9 |
+| Assessment disagreements | 10 |
+| Labelled non-`met` returned as `met` | 8 |
 | Pairwise order disagreements | 1 |
 
-The nine unsupported `met` results are keyword overlap without the labelled
+The eight unsupported `met` results are keyword overlap without the labelled
 scope, duration, negation, contradiction or aspiration: `dev-insufficient-scope`
 (`req-python-leadership`), `dev-insufficient-duration`, `dev-negation`,
-`dev-overlap`, `dev-contradiction`, `dev-aspiration`, `heldout-sql-leadership`,
-`heldout-insufficient-scope` and `heldout-negation`. Two paraphrases with no
+`dev-contradiction`, `dev-aspiration`, `heldout-sql-leadership`,
+`heldout-insufficient-scope` and `heldout-negation`. `dev-overlap` is no longer
+in that list: two concurrent Java posts are merged, so six labelled years stay
+`partial`. Two paraphrases with no
 shared keywords were labelled `met` and returned `missing`: `dev-paraphrase` and
 `heldout-paraphrase`. The order miss is `heldout-ordering`: `heldout-spreadsheets`
 scored 0 and `heldout-sql-leadership` scored 100, reversing the labelled order,

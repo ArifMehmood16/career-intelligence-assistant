@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from career_assistant.application.analysis.relatedness import (
@@ -253,6 +254,12 @@ def current_policy_baseline(
     )
 
 
+def _year_date(year: int | None) -> date | None:
+    if year is None:
+        return None
+    return date(year, 1, 1)
+
+
 def _rubric_path() -> Path:
     for parent in Path(__file__).resolve().parents:
         candidate = parent / "config" / "scoring_rubric.toml"
@@ -285,6 +292,8 @@ def _domain_claim(item: PilotClaim) -> Claim:
         source_span_ids=item.source_span_ids,
         extraction_confidence=item.extraction_confidence,
         self_authored=item.self_authored,
+        period_start=_year_date(item.period_start),
+        period_end=_year_date(item.period_end),
     )
 
 
