@@ -89,19 +89,30 @@ Full detail, including the rules that keep each one honest, in
 
 ### Screenshots
 
-These are captures from the running web app (Workspace), not design mocks.
+Captured from the running app by the maintainer (not mocks).
 
-![Empty Workspace before a CV](docs/images/workspace-empty.png)
+![Workspace with CV, roles and ranking](docs/images/workspace.jpg)
 
-*Empty Workspace — CV upload, roles, ranking and compare.*
+*Workspace — upload a CV and supporting letters, add roles, see fit ranking.*
 
-![Workspace after uploading a CV](docs/images/workspace-with-cv.png)
+![Settings provider choice](docs/images/settings.jpg)
 
-*After a CV upload — replace/delete the CV, then add a job description to analyse.*
+*Settings — choose hermetic, Ollama or hosted answer/index providers behind the egress gate.*
 
-Fit, Gaps, Prepare and Letter screens appear on a role once analysis finishes.
-Numbered cover-letter citations (`[1]`, `[2]` plus the Citations glossary) show on
-the **Letter** tab after you generate a draft for a ready role.
+![Fit tab with score breakdown and requirements](docs/images/fit.jpg)
+
+*Fit — score breakdown plus every scoreable requirement as missing, partial or met with evidence.*
+
+![Gaps tab ordered by score impact](docs/images/gaps.jpg)
+
+*Gaps — ordered by how much the score would move if you closed each gap.*
+
+![Prepare tab interview pack](docs/images/prepare.jpg)
+
+*Prepare — interview probes grounded in met, partial and missing mappings.*
+
+The **Letter** tab generates a grounded cover letter. After generate, citations show
+as `[1]`, `[2]` with the full source passage in the Citations panel on the right.
 
 ## What it answers
 
