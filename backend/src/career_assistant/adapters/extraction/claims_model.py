@@ -372,18 +372,22 @@ def _assemble(
         returned += 1
         role_key = item.get("roleSpanId")
         heading = headings.get(role_key) if isinstance(role_key, str) else None
-        if heading is not None and not _attaches(kind, heading.kind, self_authored):
+        if heading is not None and not _attaches(
+            kind, heading.kind, self_authored, allow_project_on_role=True
+        ):
             heading = None
             role_key = None
         if heading is None and not self_authored:
-            want = "role_heading" if kind == "experience" else "project_heading"
-            recovered = _nearest_heading(issued, headings, by_id=by_id, want_kind=want)
-            if recovered is not None:
-                role_key, heading = recovered
+            role_key, heading, recovered = _recover_heading(
+                issued, kind, headings, by_id=by_id
+            )
+            if recovered:
                 nearest_recovered += 1
         if heading is None or (
             not self_authored
-            and not _attaches(kind, heading.kind, self_authored)
+            and not _attaches(
+                kind, heading.kind, self_authored, allow_project_on_role=True
+            )
         ):
             if not self_authored:
                 dropped += 1
@@ -447,7 +451,9 @@ def _assemble(
     roles_without = len(set(headings) - claimed_headings)
     scoreable_unclassified = _count_missing_scoreable(by_id, set(accepted))
     incomplete_reasons: list[str] = []
-    if not self_authored and attach_failed > 0:
+    # Orphan claim drops are tracked; they fail the job only when nothing usable
+    # remains. Scoreable unclassified spans still fail completeness.
+    if not self_authored and attach_failed > 0 and len(claims) == 0:
         incomplete_reasons.append("claim_attach_failed")
     if not self_authored and scoreable_unclassified > 0:
         incomplete_reasons.append("scoreable_unclassified")
@@ -515,6 +521,27 @@ def _nearest_heading(
     return best
 
 
+def _recover_heading(
+    claim_issued: str,
+    claim_kind: str,
+    headings: dict[str, _Heading],
+    *,
+    by_id: dict[str, tuple[int, int, str]],
+) -> tuple[str | None, _Heading | None, bool]:
+    """Prefer the matching heading kind; project claims may fall back to a role."""
+    want = "role_heading" if claim_kind == "experience" else "project_heading"
+    recovered = _nearest_heading(
+        claim_issued, headings, by_id=by_id, want_kind=want
+    )
+    if recovered is None and claim_kind == "project":
+        recovered = _nearest_heading(
+            claim_issued, headings, by_id=by_id, want_kind="role_heading"
+        )
+    if recovered is None:
+        return None, None, False
+    return recovered[0], recovered[1], True
+
+
 def _looks_like_scoreable_evidence(text: str) -> bool:
     if parse_date_range(text) is not None:
         return True
@@ -544,12 +571,20 @@ class _Heading:
         self.end = end
 
 
-def _attaches(claim_kind: str, heading_kind: str, self_authored: bool) -> bool:
+def _attaches(
+    claim_kind: str,
+    heading_kind: str,
+    self_authored: bool,
+    *,
+    allow_project_on_role: bool = False,
+) -> bool:
     if self_authored:
         return True
     if claim_kind == "experience":
         return heading_kind == "role_heading"
-    return heading_kind == "project_heading"
+    if heading_kind == "project_heading":
+        return True
+    return allow_project_on_role and heading_kind == "role_heading"
 
 
 def _accepted(

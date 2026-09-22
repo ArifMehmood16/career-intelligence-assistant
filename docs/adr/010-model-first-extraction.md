@@ -142,8 +142,11 @@ fails with `extraction_incomplete`. There is no fuzzy quote match and no
 fallback to the rules extractor for a partial model response.
 
 A line that is only a section introduction, ending in a colon, is
-`non_requirement` even if the model calls it a responsibility. Benefits and
-logistics stay unscoreable kinds.
+`non_requirement` even if the model calls it a responsibility. Body copy under
+About or Why-company headings, and employer-pitch openers such as "This is an
+opportunity…", are forced to `non_requirement` the same way. Benefits and
+logistics stay unscoreable kinds. The requirements API lists only scoreable
+items so headings and package lines cannot appear as Missing gaps.
 
 ## Amendment — 2026-09-22 (13D.6d)
 
@@ -153,11 +156,14 @@ skills or narrative. It does not copy the claim text. Employer and title are
 kept only when they appear inside the heading span. Dates, recency and
 duration are parsed from that heading in domain code. A project claim cites
 its project heading. A bare skills list is classified and is not a claim.
-Completeness is about scoreable evidence: claim attach failures and unclassified
-employment or claim-like spans. Empty role headings are counted but do not fail
-alone. A missing `roleSpanId` attaches to the nearest preceding heading of the
-matching kind. An unparsed date becomes undated. Classification runs in bounded
-batches with one retry for skipped ids. Safe logs record per-batch and aggregate
-counts only — never CV text. The job fails with `extraction_incomplete` only when
-that gate fails, and it does not publish a replacement claim set. Uploaded letters
-stay self-authored. Generated drafts still never raise a score.
+Completeness is about scoreable evidence: unclassified employment or claim-like
+spans. Empty role headings are counted but do not fail alone. A missing
+`roleSpanId` attaches to the nearest preceding heading of the matching kind;
+orphan project claims may fall back to the nearest employment heading when no
+project heading precedes them. Claims that still cannot attach are dropped and
+counted; they fail the job only when no claims remain. An unparsed date becomes
+undated. Classification runs in bounded batches with one retry for skipped ids.
+Safe logs record per-batch and aggregate counts only — never CV text. The job
+fails with `extraction_incomplete` only when that gate fails, and it does not
+publish a replacement claim set. Uploaded letters stay self-authored. Generated
+drafts still never raise a score.

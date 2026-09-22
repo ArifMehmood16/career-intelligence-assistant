@@ -13,6 +13,7 @@ from career_assistant.application.ports.adjudication import (
 )
 from career_assistant.domain.assessment import EvidenceAssessment
 from career_assistant.domain.claims import Claim
+from career_assistant.domain.evidence_support import is_evidential_support
 from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
@@ -232,12 +233,16 @@ def _retrieved_indexes(
             index,
         )
         for index, claim in enumerate(claims)
-        if not claim.self_authored
+        if not claim.self_authored and is_evidential_support(claim.context)
     )
     chosen: set[int] = set()
     for _, _, index in ranked[:_CANDIDATE_LIMIT]:
         for neighbor in (index - 1, index, index + 1):
-            if 0 <= neighbor < len(claims) and not claims[neighbor].self_authored:
+            if (
+                0 <= neighbor < len(claims)
+                and not claims[neighbor].self_authored
+                and is_evidential_support(claims[neighbor].context)
+            ):
                 chosen.add(neighbor)
     return sorted(chosen)
 
@@ -262,11 +267,14 @@ def _assessment_item(
     evidence = tuple(
         AssessmentEvidence(
             claim_id=claims[index].id,
-            span_ids=claims[index].source_span_ids,
+            # Only the claim body is citable. Role headings travel with the claim
+            # for provenance but must not become the evidence shown as Met.
+            span_ids=(claims[index].source_span_ids[0],),
             text=claims[index].context,
             adjacent=claims[index].id not in hit_ids,
         )
         for index in indexes
+        if claims[index].source_span_ids
     )
     return AssessmentItem(
         requirement_id=requirement.id,
@@ -334,19 +342,35 @@ def _mapping_from_assessment(
         reason = MappingReason.EVIDENCE_THIN
     else:
         reason = MappingReason.NO_RELATED_CLAIM
-    claim_ids = tuple(
-        claim.id
-        for claim in claims
-        if any(
-            span_id in assessment.supporting_span_ids
-            for span_id in claim.source_span_ids
+    evidential = _evidential_support(claims, assessment.supporting_span_ids)
+    if status is not MappingStatus.MISSING and not evidential:
+        # The model answered, but the cited text cannot justify support.
+        return RequirementMapping(
+            requirement_id=requirement.id,
+            status=MappingStatus.MISSING,
+            reason_code=MappingReason.NO_RELATED_CLAIM,
+            justifying_span_ids=(),
+            justifying_claim_ids=(),
+            retrieved_claim_ids=retrieved_claim_ids,
+            assessment_justification=assessment.justification,
+            unknown_conditions=assessment.unknown_conditions,
+            contradiction=assessment.contradiction,
+            signals=RelatednessSignals(
+                lexical=signals.lexical,
+                lexical_overlap=signals.lexical_overlap,
+                embedding=signals.embedding,
+                embedding_similarity=signals.embedding_similarity,
+                adjudication=True,
+                related=False,
+            ),
         )
-    )
+    claim_ids = tuple(claim.id for claim, _body in evidential)
+    body_spans = tuple(body for _claim, body in evidential)
     mapped = RequirementMapping(
         requirement_id=requirement.id,
         status=status,
         reason_code=reason,
-        justifying_span_ids=assessment.supporting_span_ids,
+        justifying_span_ids=body_spans or assessment.supporting_span_ids,
         justifying_claim_ids=claim_ids,
         retrieved_claim_ids=retrieved_claim_ids,
         assessment_justification=assessment.justification,
@@ -364,3 +388,21 @@ def _mapping_from_assessment(
     return course_does_not_meet_depth(
         requirement, claims, limit_concurrent_years(requirement, claims, mapped)
     )
+
+
+def _evidential_support(
+    claims: list[Claim],
+    supporting_span_ids: tuple[str, ...],
+) -> tuple[tuple[Claim, str], ...]:
+    """Map cited ids onto claim bodies that can justify met or partial."""
+    cited = set(supporting_span_ids)
+    found: list[tuple[Claim, str]] = []
+    for claim in claims:
+        if not claim.source_span_ids:
+            continue
+        if not cited.intersection(claim.source_span_ids):
+            continue
+        if not is_evidential_support(claim.context):
+            continue
+        found.append((claim, claim.source_span_ids[0]))
+    return tuple(found)

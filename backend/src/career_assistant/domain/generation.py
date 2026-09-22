@@ -185,6 +185,10 @@ class CoverLetterDraft:
     met_requirement_ids: tuple[str, ...]
 
 
+_MAX_MET_PARAGRAPHS = 4
+_MAX_TRANSFER_PARAGRAPHS = 2
+
+
 def draft_cover_letter(
     *,
     role_title: str,
@@ -195,16 +199,27 @@ def draft_cover_letter(
     tone: str = "plain",
     include_gap_line: bool = False,
 ) -> CoverLetterDraft | CoverLetterRefusal:
-    """Template cover letter from met must-haves; refuses below two."""
+    """Template cover letter from met must-haves; refuses below two.
+
+    The body is both the hermetic fallback and the brief the model rephrases.
+    It prioritises the strongest met must-haves, then transferable partial
+    evidence for gaps, without inventing experience.
+    """
     by_req = {r.id: r for r in requirements}
     by_claim = {c.id: c for c in claims}
     met: list[tuple[Requirement, RequirementMapping]] = []
+    transferable: list[tuple[Requirement, RequirementMapping]] = []
+    bare_gaps: list[str] = []
     for mapping in mappings:
         req = by_req.get(mapping.requirement_id)
         if req is None or not req.must_have:
             continue
         if mapping.status is MappingStatus.MET:
             met.append((req, mapping))
+        elif mapping.justifying_claim_ids:
+            transferable.append((req, mapping))
+        else:
+            bare_gaps.append(req.text)
     if len(met) < 2:
         return CoverLetterRefusal(
             code="insufficient_matched_requirements",
@@ -221,31 +236,60 @@ def draft_cover_letter(
     paragraphs = [opening]
     cited: list[str] = []
     met_ids: list[str] = []
-    for req, mapping in met:
+    for req, mapping in met[:_MAX_MET_PARAGRAPHS]:
         met_ids.append(req.id)
-        claim_bits: list[str] = []
-        for claim_id in mapping.justifying_claim_ids:
-            claim = by_claim.get(claim_id)
-            if claim is not None:
-                claim_bits.append(claim.context.rstrip("."))
+        evidence = _claim_evidence(mapping, by_claim)
         cited.extend(mapping.justifying_span_ids)
-        evidence = "; ".join(claim_bits) if claim_bits else req.text
-        paragraphs.append(f"Regarding {req.text}: {evidence}.")
-    missing = [
-        by_req[m.requirement_id].text
-        for m in mappings
-        if m.status is not MappingStatus.MET
-        and by_req.get(m.requirement_id) is not None
-        and by_req[m.requirement_id].must_have
-    ]
-    if include_gap_line and missing:
-        paragraphs.append("I am still building depth in: " + "; ".join(missing) + ".")
+        if evidence:
+            paragraphs.append(
+                "MET\n"
+                f"Requirement: {req.text}\n"
+                f"Evidence: {evidence}\n"
+                f"In that work I took ownership of the need around {req.text}, "
+                f"acted through {evidence}, and delivered a concrete result "
+                "recorded in my CV."
+            )
+        else:
+            paragraphs.append(
+                "MET\n"
+                f"Requirement: {req.text}\n"
+                f"Evidence: {req.text}"
+            )
+    for req, mapping in transferable[:_MAX_TRANSFER_PARAGRAPHS]:
+        evidence = _claim_evidence(mapping, by_claim)
+        if not evidence:
+            continue
+        cited.extend(mapping.justifying_span_ids)
+        paragraphs.append(
+            "TRANSFER\n"
+            f"Requirement: {req.text}\n"
+            f"Nearby evidence: {evidence}\n"
+            f"I have not yet covered {req.text} end to end, but {evidence} "
+            "is directly transferable to that requirement."
+        )
+    if include_gap_line and bare_gaps:
+        paragraphs.append(
+            "GAP\n"
+            "I am still building depth in: " + "; ".join(bare_gaps) + "."
+        )
     paragraphs.append("Thank you for your consideration.")
     return CoverLetterDraft(
         body="\n\n".join(paragraphs),
         cited_span_ids=tuple(dict.fromkeys(cited)),
         met_requirement_ids=tuple(met_ids),
     )
+
+
+def _claim_evidence(
+    mapping: RequirementMapping,
+    by_claim: dict[str, Claim],
+) -> str:
+    bits: list[str] = []
+    for claim_id in mapping.justifying_claim_ids:
+        claim = by_claim.get(claim_id)
+        if claim is not None:
+            bits.append(claim.context.rstrip("."))
+    return "; ".join(bits)
 
 
 @dataclass(frozen=True, slots=True)

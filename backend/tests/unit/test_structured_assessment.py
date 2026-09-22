@@ -145,7 +145,8 @@ def test_agreement_without_an_assessment_is_not_a_match() -> None:
     request = completion.last_request
     assert request is not None
     assert request.json_schema is not None
-    assert "evidence-assessment-v3" in request.system
+    assert "evidence-assessment-v5" in request.system
+    assert "location" in request.system.lower()
     assert "UNTRUSTED_REQUIREMENT" in request.user
     assert "span-negation" in request.user
 
@@ -259,6 +260,109 @@ def test_missing_with_forged_spans_becomes_empty_missing() -> None:
     )
     assert accepted["req-python-leadership"].status == "missing"
     assert accepted["req-python-leadership"].supporting_span_ids == ()
+
+
+def test_location_and_title_claims_never_reach_the_assessor() -> None:
+    """Location lines and title headlines are not evidence; nothing to assess."""
+    requirement = Requirement(
+        id="req-python",
+        text="Python Proficiency: Ability to write clean production Python.",
+        competency="python",
+        seniority_signal=None,
+        must_have=True,
+        source_span_id="span-jd",
+        extraction_confidence=1.0,
+        is_vague=False,
+    )
+    claims = (
+        Claim(
+            id="claim-location",
+            competency="general",
+            context="Redditch, UK",
+            duration_signal="undated",
+            recency_signal="undated",
+            source_span_ids=("span-location",),
+            extraction_confidence=0.8,
+        ),
+        Claim(
+            id="claim-headline",
+            competency="python",
+            context=(
+                "APPLIED AI ENGINEER · PYTHON, LLM APPLICATIONS & EVALUATION · "
+                "AWS · PRODUCTION SYSTEMS SINCE 2018"
+            ),
+            duration_signal="undated",
+            recency_signal="undated",
+            source_span_ids=("span-headline",),
+            extraction_confidence=0.8,
+        ),
+        Claim(
+            id="claim-role",
+            competency="python",
+            context="Senior Software Engineer — Confiz Pvt Ltd Mar 2021 – Sep 2022",
+            duration_signal="1y",
+            recency_signal="mid",
+            source_span_ids=("span-role",),
+            extraction_confidence=0.8,
+        ),
+    )
+    completion = _ScriptedCompletion(
+        {
+            "assessments": [
+                {
+                    "requirementId": "req-python",
+                    "assessment": "met",
+                    "supportingSpanIds": ["span-location"],
+                    "unmetConditions": [],
+                    "unknownConditions": [],
+                    "contradiction": False,
+                    "justification": "Must not be used.",
+                }
+            ]
+        },
+        structured=True,
+    )
+    mappings = map_role_requirements(
+        (requirement,),
+        claims,
+        similarities={(requirement.id, claim.id): 0.99 for claim in claims},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+    assert mappings[0].status is MappingStatus.MISSING
+    assert mappings[0].reason_code is MappingReason.NO_RELATED_CLAIM
+    assert completion.calls == 0
+
+
+def test_met_uses_claim_body_not_attached_heading() -> None:
+    """Only the work bullet is citable; the role heading is provenance only."""
+    requirement = _requirement()
+    claims = (
+        Claim(
+            id="claim-work",
+            competency="python",
+            context="Led production Python systems for five years across two teams.",
+            duration_signal="5y",
+            recency_signal="recent",
+            source_span_ids=("span-work", "span-heading"),
+            extraction_confidence=1.0,
+        ),
+    )
+    completion = _ScriptedCompletion(_met_payload("span-work"), structured=True)
+    mappings = map_role_requirements(
+        (requirement,),
+        claims,
+        similarities={(requirement.id, "claim-work"): 0.9},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+    assert mappings[0].status is MappingStatus.MET
+    assert mappings[0].justifying_span_ids == ("span-work",)
+    assert completion.calls == 1
+    request = completion.last_request
+    assert request is not None
+    assert "span-work" in request.user
+    assert "span-heading" not in request.user
 
 
 def _item(requirement_id: str) -> AssessmentItem:
@@ -379,7 +483,8 @@ def test_the_assessment_prompt_states_what_each_level_means() -> None:
 
     request = completion.last_request
     assert request is not None
-    assert "evidence-assessment-v3" in request.system
+    assert "evidence-assessment-v5" in request.system
+    assert "location" in request.system.lower()
     for level in ("met:", "partial:", "missing:"):
         assert level in request.system, level
     assert "unsure" in request.system

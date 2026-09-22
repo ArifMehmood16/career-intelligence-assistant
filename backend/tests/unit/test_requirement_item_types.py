@@ -7,8 +7,9 @@ mapping then reported that the candidate *meets* "£70,000 - £80,000 depending 
 experience".
 
 An extracted item now carries what kind of thing it is. Requirements and
-responsibilities are scored; benefits, logistics and explicit non-requirements
-are kept and shown but never mapped and never scored.
+responsibilities are scored and listed as gaps; benefits, logistics and
+explicit non-requirements are kept for audit but are never mapped, never
+scored, and not returned as Missing rows on the requirements endpoint.
 """
 
 from __future__ import annotations

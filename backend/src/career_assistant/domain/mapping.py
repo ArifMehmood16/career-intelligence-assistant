@@ -57,9 +57,9 @@ def map_requirements(
     adjudications: Mapping[tuple[str, str], bool] | None = None,
     similarity_floor: float = 0.55,
 ) -> tuple[RequirementMapping, ...]:
-    # Benefits, logistics and explicit non-requirements are kept and shown, but
-    # a candidate is never mapped or scored against them. Self-authored cover
-    # letter claims are narrative: citable, never evidence for a mapping.
+    # Benefits, logistics and explicit non-requirements are kept for audit.
+    # Only requirements and responsibilities are mapped and scored.
+    # Self-authored cover letter claims are narrative: citable, never evidence.
     evidence = tuple(claim for claim in claims if not claim.self_authored)
     return tuple(
         map_requirement(

@@ -55,6 +55,16 @@ their original text; the amendment is this page.
 The running matcher still excludes self-authored claims. Implementing this
 contract is 13D.3 through 13D.5, not this record.
 
+## Amendment — 2026-09-22 (false Met citations)
+
+Validated span ids are necessary but not sufficient. Location lines, contact
+details, profile headlines and bare employer-title-date headings are not
+evidential support: they are excluded from the assessor shortlist, and a `met`
+or `partial` whose remaining cited claim bodies fail that check is recorded as
+`missing`. Only the claim body span is offered as citable; attached role
+headings stay provenance. Prompt version `evidence-assessment-v5` states that
+rule to the model. The domain still calculates the score.
+
 ## Consequences
 
 - Keyword overlap and embedding agreement retrieve evidence. They do not decide

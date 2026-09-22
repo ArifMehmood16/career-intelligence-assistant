@@ -27,6 +27,72 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 123 — README how-to and feature screenshots; PR package
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: commit + PR docs
+- Prompt intent: commit changes, create/update PR, document how to use features with screenshots in README.
+- Suggestion: How to use section; docs/images screenshots; push onto existing PR 34.
+- Outcome: accepted
+- Reason: reviewers need a walkthrough and visuals for letter citations, fit evidence and gaps alongside the assessment accuracy fixes.
+- Human validation: README updated; images under docs/images/; commit and PR update pending in the same turn.
+
+### 122 — Numbered cover-letter citation glossary
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: Letter UI polish
+- Prompt intent: replace hash span ids with numbered citations and a right-hand glossary of full passage text.
+- Suggestion: `[n]` markers in the letter; sticky Citations panel; resolve passages via `getSpan` / `useQueries`.
+- Outcome: accepted
+- Reason: hashes are not readable; numbers plus the source passage keep provenance without exposing raw ids in the draft view.
+- Human validation: `vitest` LetterPanel + letterCitations passed (7); `tsc --noEmit` clean.
+
+### 121 — Cover letter STAR phrasing and transferability
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: grounded generation polish (cover letter prompt)
+- Prompt intent: natural paragraph cover letters using STAR, covering important criteria and transferring CV evidence to gaps.
+- Suggestion: versioned `cover-letter-v2` system prompt; brief labels MET/TRANSFER/GAP; limit met paragraphs; raise output tokens to 1200; strip labels in hermetic fallback.
+- Outcome: accepted
+- Reason: ADR 007 still binds facts to cited spans; the model only rephrases. Transfer paragraphs use partial/adjacent claims, never invented skills.
+- Human validation: `pytest tests/unit/test_cover_letter_prompt.py tests/unit/test_generation_pipeline.py tests/api/test_grounded_generation_http.py --no-cov` passed (15); ruff clean.
+
+### 120 — Reject non-evidential Met citations
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6g corrective (assessment false Mets)
+- Prompt intent: Met rows cited location lines, profile headlines and role titles instead of work evidence; user asked for an LLM pass on match quality.
+- Suggestion: keep the existing assessor; exclude non-evidential claims from retrieval; cite claim bodies only; demote met/partial without evidential bodies; bump prompt to `evidence-assessment-v5`.
+- Outcome: accepted
+- Reason: an LLM assessment already ran; the failure was accepting titles and locations as support. Domain validation decides what may justify Met; the model still assesses real work bullets.
+- Human validation: `pytest tests/unit/test_structured_assessment.py tests/unit/test_evidence_support.py --no-cov` passed (14); ruff clean on changed modules.
+
+### 119 — JD headings and About/Why pitch not scored as gaps
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6g corrective (requirement list noise)
+- Prompt intent: Missing rows included section headings and About/Why marketing copy that are not requirements.
+- Suggestion: force About/Why body and employer-pitch lines to `non_requirement`; list only scoreable items on `/requirements`.
+- Outcome: accepted
+- Reason: colon headings were already unscoreable but still rendered as Missing when unmapped; OpenAI also labelled About/Why paragraphs as responsibilities. Domain overrides decide; GenAI skill bullets stay scoreable.
+- Human validation: `pytest tests/unit/test_model_requirement_extraction.py --no-cov` passed (18); ruff clean on changed modules.
+
+### 118 — Soft claim-attach gate and project→role recovery
+
+- Date: 2026-09-22
+- Tool / model: Cursor Composer
+- Plan task: 13D.6d corrective
+- Prompt intent: OpenAI run failed with `claim_attach_failed` despite 34 accepted claims and zero scoreable unclassified spans.
+- Suggestion: recover orphan project claims onto the nearest role heading; treat attach drops as incomplete only when no claims remain.
+- Outcome: accepted
+- Reason: five unattachable lines were failing a usable extraction. Scoreable unclassified spans still fail completeness; orphan drops stay diagnostic when claims remain.
+- Human validation: `pytest tests/unit/test_model_claim_extraction.py --no-cov` passed (21); ruff clean on `claims_model.py`.
+
 ### 117 — Phase 15B.5 use-case action rows
 
 - Date: 2026-09-22

@@ -129,7 +129,7 @@ describe("LetterPanel", () => {
     expect(onOpenGaps).toHaveBeenCalled();
   });
 
-  it("renders paragraphs, citation chips, versions, and export", async () => {
+  it("renders paragraphs, numbered citations, glossary, versions, and export", async () => {
     const user = userEvent.setup();
     const onCitation = vi.fn();
     const onSelectVersion = vi.fn();
@@ -145,6 +145,13 @@ describe("LetterPanel", () => {
         versions={[draft, v2]}
         refusal={null}
         supportingDocuments={[]}
+        citations={[
+          {
+            number: 1,
+            spanId: "span-1",
+            text: "Owned dbt models in production for the warehouse.",
+          },
+        ]}
         onToneChange={vi.fn()}
         onIncludeGapLineChange={vi.fn()}
         onGenerate={vi.fn()}
@@ -156,12 +163,21 @@ describe("LetterPanel", () => {
     );
 
     expect(screen.getByText(/led production dbt models/i)).toBeInTheDocument();
+    expect(screen.queryByText(/span-1/i)).toBeNull();
 
     const body = screen.getByRole("region", { name: /generated letter/i });
     await user.click(
-      within(body).getAllByRole("button", { name: /span-1/i })[0]!,
+      within(body).getAllByRole("button", { name: /citation 1/i })[0]!,
     );
     expect(onCitation).toHaveBeenCalledWith("span-1");
+
+    const glossary = screen.getByRole("complementary", {
+      name: /citation glossary/i,
+    });
+    expect(
+      within(glossary).getByText(/owned dbt models in production/i),
+    ).toBeInTheDocument();
+    expect(within(glossary).getByText("[1]")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /version 1/i }));
     expect(onSelectVersion).toHaveBeenCalledWith(draft);

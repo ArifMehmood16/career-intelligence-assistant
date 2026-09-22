@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   ApiError,
   createBulletDraft,
@@ -23,7 +28,12 @@ import { EvidencePanel } from "@/components/EvidencePanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { FitBreakdown, type AsyncState } from "@/components/role/FitBreakdown";
 import { GapsPanel } from "@/components/role/GapsPanel";
-import { LetterPanel, type LetterTone } from "@/components/role/LetterPanel";
+import {
+  LetterPanel,
+  type LetterCitation,
+  type LetterTone,
+} from "@/components/role/LetterPanel";
+import { numberLetterCitations } from "@/components/role/letterCitations";
 import { PreparePanel } from "@/components/role/PreparePanel";
 import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
@@ -243,6 +253,47 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     enabled: panelOpen && Boolean(spanId),
     retry: false,
   });
+
+  const activeLetterDraft: CoverLetterDraft | null =
+    selectedLetter ??
+    generatedLettersQuery.data?.[
+      (generatedLettersQuery.data?.length ?? 0) - 1
+    ] ??
+    null;
+
+  const letterCitationRefs = useMemo(
+    () =>
+      activeLetterDraft
+        ? numberLetterCitations(activeLetterDraft.paragraphs)
+        : [],
+    [activeLetterDraft],
+  );
+
+  const letterSpanQueries = useQueries({
+    queries: letterCitationRefs.map((item) => ({
+      queryKey: ["span", item.spanId],
+      queryFn: () => getSpan(item.spanId),
+      enabled: fetchLetter && Boolean(item.spanId),
+      retry: false,
+    })),
+  });
+
+  const letterCitations: LetterCitation[] = letterCitationRefs.map(
+    (item, index) => {
+      const query = letterSpanQueries[index];
+      const passage =
+        query?.data?.highlight?.trim() ||
+        query?.data?.paragraph?.trim() ||
+        null;
+      return {
+        number: item.number,
+        spanId: item.spanId,
+        text: passage,
+        loading: query?.isPending ?? false,
+        error: query?.isError ?? false,
+      };
+    },
+  );
 
   const requirements = useMemo(
     () => requirementsQuery.data ?? [],
@@ -501,16 +552,11 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               tone={letterTone}
               includeGapLine={includeGapLine}
               generating={letterMutation.isPending}
-              draft={
-                selectedLetter ??
-                generatedLettersQuery.data?.[
-                  (generatedLettersQuery.data?.length ?? 0) - 1
-                ] ??
-                null
-              }
+              draft={activeLetterDraft}
               versions={generatedLettersQuery.data ?? []}
               refusal={letterRefusal}
               supportingDocuments={supportingLettersQuery.data ?? []}
+              citations={letterCitations}
               generatedState={
                 generatedLettersQuery.isPending
                   ? "loading"

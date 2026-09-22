@@ -57,13 +57,53 @@ absent it says so rather than filling the gap.
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |
-| **Cover letter** | A draft anchored paragraph by paragraph to matched requirements. Refuses to write one when too little is matched, and says why |
+| **Cover letter** | A paragraph draft grounded in matched evidence, with numbered citations and a glossary of source passages. Refuses when too little is matched, and says why |
 | **Ranking and compare** | Roles ordered by fit with the deciding requirements named, and two roles side by side |
 | **Ask** | Questions answered from the stored mapping, with citation chips that open the source text |
 | **Provider choice** | Local or hosted models, chosen in the UI, behind an egress gate, with every answer recording what produced it |
 
 Full detail, including the rules that keep each one honest, in
 [docs/features.md](docs/features.md).
+
+## How to use it
+
+1. **Start the stack** with `make run-docker` or `make setup` then `make run`
+   (see [Quick start](#quick-start)). Open the web app (Docker: `http://localhost:3000`,
+   Make: the Vite port printed by `make run-web`, commonly `http://127.0.0.1:3001`).
+2. **Upload a CV** on Workspace (PDF, DOCX or paste). Optionally upload supporting
+   cover letters — they help Ask, and are not used as fit evidence today.
+3. **Add a role** with a job description. Analysis runs as a job; wait until the role
+   is `ready` (or an incomplete analysis is explained, not shown as a fake low score).
+4. **Open the role** and work the tabs:
+   - **Fit** — summary, score breakdown, and every scoreable requirement as met /
+     partial / missing with cited evidence.
+   - **Gaps** — ordered by score impact; draft a CV bullet only when a cited claim
+     already supports it.
+   - **Prepare** — interview probes, lead-with evidence, thin areas.
+   - **Letter** — generate a grounded cover letter; citations appear as `[1]`, `[2]`
+     with the full source passage in the right-hand glossary.
+5. **Ask** questions about gaps, fit or open retrieval; citation chips open the
+   source span.
+6. **Settings** — choose local (Ollama) or hosted providers only when egress is
+   enabled and you acknowledge that document text may leave the machine.
+
+### Screenshots
+
+![Workspace with CV and ranked roles](docs/images/workspace-overview.png)
+
+*Workspace — upload a CV, add roles, and see ranking from stored fit scores.*
+
+![Requirements table with Met, Partial and Missing](docs/images/fit-requirements.png)
+
+*Fit — each scoreable requirement shows status and the CV evidence that justifies it.*
+
+![Gap plan ordered by score impact](docs/images/gap-plan.png)
+
+*Gaps — close the highest-impact gaps first; actions stay tied to stored evidence.*
+
+![Cover letter with numbered citations and glossary](docs/images/cover-letter-glossary.png)
+
+*Letter — numbered citations in the draft; the Citations panel shows the full passage.*
 
 ## What it answers
 

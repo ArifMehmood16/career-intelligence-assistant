@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from typing import Any
 
@@ -32,6 +33,38 @@ from career_assistant.domain.requirements import ItemType, Requirement
 from career_assistant.logconfig import log_event
 
 _log = logging.getLogger(__name__)
+
+_PLAIN_MARKUP = re.compile(r"[*_`>#]+")
+_EMPLOYER_PITCH = re.compile(
+    r"^(?:"
+    r"this is an opportunity\b|"
+    r"you(?:'ll| will) join (?:a|an|our|the)\b|"
+    r"we are (?:hiring|looking|seeking)\b"
+    r")",
+    re.IGNORECASE,
+)
+_ABOUT_HEADING = re.compile(
+    r"\b(?:a bit about|about (?:the|our)|overview|the role)\b",
+    re.IGNORECASE,
+)
+_WHY_HEADING = re.compile(r"^why\b", re.IGNORECASE)
+_SKILLS_HEADING = re.compile(
+    r"\b(?:skills?|experience we|looking for|you.?ll bring|"
+    r"must[- ]haves?|requirements?)\b",
+    re.IGNORECASE,
+)
+_DUTIES_HEADING = re.compile(
+    r"\b(?:responsib|what you.?ll do|duties|accountabilit)\b",
+    re.IGNORECASE,
+)
+_BENEFIT_HEADING = re.compile(
+    r"\b(?:benefits?|package|perks?|what we offer|reward)\b",
+    re.IGNORECASE,
+)
+_LOGISTICS_HEADING = re.compile(
+    r"\b(?:logistics?|location|practicalit|working arrangement)\b",
+    re.IGNORECASE,
+)
 
 REQUIREMENTS_JSON_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -89,6 +122,7 @@ _SYSTEM = (
     "logistics: location, remote/hybrid/office, travel, hotels, hours, "
     "employment type, visa or right to work. "
     "non_requirement: a section introduction or what the role explicitly is not. "
+    "About-the-job and Why-company body copy is non_requirement, not a duty. "
     "Examples: '£70,000 - £80,000 depending on experience' is benefit; "
     "'Share options, awarded on performance' is benefit; "
     "'Delivery commission once you lead client accounts' is benefit; "
@@ -107,7 +141,8 @@ _CLASSIFY_AFTER_JD = (
     "Location, remote, travel, hotels and right to work are logistics. "
     "Skills, tools and experience are requirement. "
     "Duties are responsibility. What the role is not, and a heading that "
-    "only introduces the next lines, is non_requirement."
+    "only introduces the next lines, is non_requirement. "
+    "Paragraphs under About or Why-company headings are non_requirement."
 )
 
 
@@ -169,14 +204,19 @@ class ModelRequirementExtractor:
         kept_reqs: list[Requirement] = []
         kept_spans: list[Span] = []
         type_counts: dict[str, int] = {}
+        section: str | None = None
         for issued, (start, end, text) in by_id.items():
             item = accepted.get(issued)
             if item is None:
                 dropped += 1
                 continue
+            if is_narrative_heading(text):
+                section = _heading_section(text)
             requirement, span = _from_server_span(
                 item, document_id, issued, start, end, text
             )
+            if section in {"about", "why"} and not is_narrative_heading(text):
+                requirement = _force_non_requirement(requirement)
             kept_reqs.append(requirement)
             kept_spans.append(span)
             type_counts[requirement.item_type.value] = (
@@ -265,11 +305,7 @@ def _from_server_span(
         end_offset=end,
         text=text,
     )
-    kind = (
-        ItemType.NON_REQUIREMENT
-        if is_narrative_heading(text)
-        else _item_type(item.get("item_type"))
-    )
+    kind = _resolved_item_type(text, item.get("item_type"))
     seniority = _seniority_signal(span.text)
     competency = str(item.get("competency", "")).strip().lower()
     requirement = Requirement(
@@ -289,6 +325,50 @@ def _from_server_span(
         item_type=kind,
     )
     return requirement, span
+
+
+def _resolved_item_type(text: str, raw: object) -> ItemType:
+    if is_narrative_heading(text) or _is_employer_pitch(text):
+        return ItemType.NON_REQUIREMENT
+    return _item_type(raw)
+
+
+def _is_employer_pitch(text: str) -> bool:
+    plain = _PLAIN_MARKUP.sub("", text).strip()
+    return _EMPLOYER_PITCH.match(plain) is not None
+
+
+def _heading_section(text: str) -> str | None:
+    plain = _PLAIN_MARKUP.sub("", text).strip().rstrip(":").strip()
+    if _SKILLS_HEADING.search(plain):
+        return "skills"
+    if _DUTIES_HEADING.search(plain):
+        return "duties"
+    if _BENEFIT_HEADING.search(plain):
+        return "benefits"
+    if _LOGISTICS_HEADING.search(plain):
+        return "logistics"
+    if _WHY_HEADING.match(plain):
+        return "why"
+    if _ABOUT_HEADING.search(plain):
+        return "about"
+    return "other"
+
+
+def _force_non_requirement(requirement: Requirement) -> Requirement:
+    if requirement.item_type is ItemType.NON_REQUIREMENT:
+        return requirement
+    return Requirement(
+        id=requirement.id,
+        text=requirement.text,
+        competency=requirement.competency,
+        seniority_signal=requirement.seniority_signal,
+        must_have=False,
+        source_span_id=requirement.source_span_id,
+        extraction_confidence=requirement.extraction_confidence,
+        is_vague=requirement.is_vague,
+        item_type=ItemType.NON_REQUIREMENT,
+    )
 
 
 def _item_type(raw: object) -> ItemType:

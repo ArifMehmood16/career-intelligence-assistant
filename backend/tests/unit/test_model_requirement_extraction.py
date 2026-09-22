@@ -453,3 +453,62 @@ def test_a_package_block_is_extracted_structured_and_not_scored() -> None:
     assert mapped_text == {
         "You will need strong experience with APIs, JSON and webhooks."
     }
+
+
+AVIVA_LIKE_ADVERT = normalise_text(
+    "A bit about the job:\n"
+    "You will contribute directly to the delivery velocity of our Applied AI "
+    "Engineering team, building well-tested, high-quality code for multi-agent "
+    "systems, context engineering and AI evaluation under the close guidance of "
+    "lead engineers.\n"
+    "You will be responsible for:\n"
+    "Own production releases for agent workflows.\n"
+    "Skills and experience we're looking for:\n"
+    "You'll bring experience in many of these areas:\n"
+    "GenAI Frameworks: Exposure to frameworks like AWS Strands, OpenAI Agents "
+    "SDK, Google ADK, DSPy or similar libraries (LangChain/LangGraph, LlamaIndex).\n"
+    "Why Aviva:\n"
+    "This is an opportunity to help build AI in a highly trusted environment, "
+    "where customer outcomes, governance and responsible innovation matter.\n"
+    "You'll join a business with proven AI capability, significant digital reach, "
+    "modern technology foundations and the ambition to scale AI across the "
+    "organisation.\n"
+)
+
+
+def test_about_why_headings_and_pitch_are_not_scoreable_when_model_mislabels() -> None:
+    """Headings and About/Why body copy are not gaps — even if the model says so."""
+    # Model wrongly calls every line a responsibility/requirement.
+    payload = _classify(
+        AVIVA_LIKE_ADVERT,
+        {
+            "A bit about the job:": "responsibility",
+            "contribute directly": "responsibility",
+            "You will be responsible for:": "responsibility",
+            "Own production releases": "responsibility",
+            "Skills and experience": "responsibility",
+            "You'll bring experience": "responsibility",
+            "GenAI Frameworks": "requirement",
+            "Why Aviva:": "responsibility",
+            "This is an opportunity": "responsibility",
+            "You'll join a business": "responsibility",
+        },
+    )
+
+    result, _ = _extract(payload, text=AVIVA_LIKE_ADVERT)
+
+    scoreable = [req for req in result.requirements if req.is_scoreable]
+    scoreable_text = " ".join(req.text for req in scoreable)
+    assert "Own production releases" in scoreable_text
+    assert "GenAI Frameworks" in scoreable_text
+    for marker in (
+        "A bit about the job:",
+        "You will be responsible for:",
+        "Skills and experience we're looking for:",
+        "You'll bring experience in many of these areas:",
+        "Why Aviva:",
+        "contribute directly to the delivery velocity",
+        "This is an opportunity",
+        "You'll join a business",
+    ):
+        assert all(marker not in req.text for req in scoreable), marker

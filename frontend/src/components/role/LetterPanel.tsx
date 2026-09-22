@@ -2,17 +2,31 @@
  * Phase 13.5 — cover letter draft controls, versions, refusal, supporting docs.
  * Presentational: data and callbacks come from the container.
  */
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AsyncState } from "@/components/role/FitBreakdown";
+import {
+  citationNumberBySpanId,
+  numberLetterCitations,
+} from "@/components/role/letterCitations";
 import type { CoverLetterDraft, SupportingDocument } from "@/types";
 
 export type LetterTone = "plain" | "warm";
 
 export interface LetterRefusal {
   message: string;
+}
+
+export interface LetterCitation {
+  number: number;
+  spanId: string;
+  /** Resolved passage text; null while loading. */
+  text: string | null;
+  loading?: boolean;
+  error?: boolean;
 }
 
 export interface LetterPanelProps {
@@ -23,6 +37,8 @@ export interface LetterPanelProps {
   versions: CoverLetterDraft[];
   refusal: LetterRefusal | null;
   supportingDocuments: SupportingDocument[];
+  /** Numbered glossary entries for the active draft. */
+  citations?: LetterCitation[];
   generatedState?: AsyncState;
   supportingState?: AsyncState;
   onRetryGenerated?: () => void;
@@ -45,6 +61,7 @@ export function LetterPanel({
   versions,
   refusal,
   supportingDocuments,
+  citations = [],
   generatedState = "ready",
   supportingState = "ready",
   onRetryGenerated,
@@ -58,6 +75,36 @@ export function LetterPanel({
   onCitation,
   onOpenGaps,
 }: LetterPanelProps) {
+  const [activeNumber, setActiveNumber] = useState<number | null>(null);
+
+  const numberBySpan = useMemo(() => {
+    if (citations.length > 0) {
+      return new Map(citations.map((item) => [item.spanId, item.number]));
+    }
+    if (!draft) return new Map<string, number>();
+    return citationNumberBySpanId(numberLetterCitations(draft.paragraphs));
+  }, [citations, draft]);
+
+  const glossary = useMemo((): LetterCitation[] => {
+    if (citations.length > 0) return citations;
+    if (!draft) return [];
+    return numberLetterCitations(draft.paragraphs).map((item) => ({
+      number: item.number,
+      spanId: item.spanId,
+      text: null,
+    }));
+  }, [citations, draft]);
+
+  useEffect(() => {
+    setActiveNumber(null);
+  }, [draft?.id]);
+
+  const selectCitation = (spanId: string) => {
+    const number = numberBySpan.get(spanId) ?? null;
+    setActiveNumber(number);
+    onCitation(spanId);
+  };
+
   return (
     <div className="space-y-6">
       <section
@@ -133,74 +180,157 @@ export function LetterPanel({
       </section>
 
       {draft ? (
-        <section
-          aria-label="Generated letter"
-          className="rounded-md border border-border bg-surface p-5"
-        >
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold">Version {draft.version}</h3>
-              <p className="font-mono text-[11px] text-muted-foreground">
-                {draft.provenance.model ?? "template"} ·{" "}
-                {draft.provenance.provider} ·{" "}
-                {draft.provenance.leftMachine
-                  ? "left this machine"
-                  : "stayed local"}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  onExport(draft);
-                }}
-              >
-                Export Markdown
-              </Button>
-              {exportError ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{exportError}</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onExport(draft);
-                    }}
-                  >
-                    Retry export
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {draft.paragraphs.map((paragraph, index) => (
-              <div key={`${draft.id}-p-${index}`} className="space-y-2">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {paragraph.text}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:items-start">
+          <section
+            aria-label="Generated letter"
+            className="rounded-md border border-border bg-surface p-5"
+          >
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold">Version {draft.version}</h3>
+                <p className="font-mono text-[11px] text-muted-foreground">
+                  {draft.provenance.model ?? "template"} ·{" "}
+                  {draft.provenance.provider} ·{" "}
+                  {draft.provenance.leftMachine
+                    ? "left this machine"
+                    : "stayed local"}
                 </p>
-                {paragraph.spanIds.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {paragraph.spanIds.map((spanId) => (
-                      <button
-                        key={`${index}-${spanId}`}
-                        type="button"
-                        onClick={() => onCitation(spanId)}
-                        className="rounded-md border border-border bg-background px-2 py-1 font-mono text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {spanId}
-                      </button>
-                    ))}
+              </div>
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onExport(draft);
+                  }}
+                >
+                  Export Markdown
+                </Button>
+                {exportError ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">{exportError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onExport(draft);
+                      }}
+                    >
+                      Retry export
+                    </Button>
                   </div>
                 ) : null}
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+
+            <div className="space-y-4">
+              {draft.paragraphs.map((paragraph, index) => {
+                const numbers = [
+                  ...new Set(
+                    paragraph.spanIds
+                      .map((spanId) => numberBySpan.get(spanId))
+                      .filter((value): value is number => value != null),
+                  ),
+                ];
+                return (
+                  <div key={`${draft.id}-p-${index}`} className="space-y-2">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                      {paragraph.text}
+                      {numbers.length > 0 ? (
+                        <span className="ml-1 inline-flex flex-wrap gap-1 align-super">
+                          {numbers.map((number) => (
+                            <button
+                              key={`${index}-${number}`}
+                              type="button"
+                              aria-label={`Citation ${number}`}
+                              aria-pressed={activeNumber === number}
+                              onClick={() => {
+                                const match = glossary.find(
+                                  (item) => item.number === number,
+                                );
+                                if (match) selectCitation(match.spanId);
+                                else {
+                                  const spanId = paragraph.spanIds.find(
+                                    (id) => numberBySpan.get(id) === number,
+                                  );
+                                  if (spanId) selectCitation(spanId);
+                                }
+                              }}
+                              className={
+                                activeNumber === number
+                                  ? "rounded-sm border border-foreground bg-foreground px-1.5 py-0.5 text-[11px] font-medium text-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  : "rounded-sm border border-border bg-background px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground outline-none hover:border-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                              }
+                            >
+                              [{number}]
+                            </button>
+                          ))}
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <aside
+            aria-label="Citation glossary"
+            className="rounded-md border border-border bg-surface p-5 lg:sticky lg:top-4"
+          >
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold">Citations</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Source passages
+              </p>
+            </div>
+            {glossary.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No cited passages for this version.
+              </p>
+            ) : (
+              <ol className="space-y-3">
+                {glossary.map((citation) => {
+                  const selected = activeNumber === citation.number;
+                  return (
+                    <li key={citation.spanId}>
+                      <button
+                        type="button"
+                        aria-label={`Citation ${citation.number} details`}
+                        aria-pressed={selected}
+                        onClick={() => selectCitation(citation.spanId)}
+                        className={
+                          selected
+                            ? "w-full rounded-md border border-foreground bg-background px-3 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            : "w-full rounded-md border border-border bg-background px-3 py-3 text-left outline-none hover:border-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                        }
+                      >
+                        <span className="mb-1 block text-xs font-semibold text-foreground">
+                          [{citation.number}]
+                        </span>
+                        {citation.loading ? (
+                          <span className="block text-sm text-muted-foreground">
+                            Loading passage…
+                          </span>
+                        ) : citation.error ? (
+                          <span className="block text-sm text-muted-foreground">
+                            This citation could not be resolved.
+                          </span>
+                        ) : (
+                          <span className="block whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                            {citation.text?.trim() || "Passage unavailable."}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </aside>
+        </div>
       ) : null}
 
       {generatedState === "loading" ? (

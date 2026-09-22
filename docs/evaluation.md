@@ -339,9 +339,12 @@ label questions reproduce across every run; the rest of a 3-versus-6 gap does
 not, on one run each. Configurations are compared here on one observed run
 apiece and that is stated rather than averaged away.
 
-**Current position:** `evidence-assessment-v3` with `qwen2.5:7b` is the measured
-configuration — 3 disagreements of 24, held-out split clean, every predeclared
-gate met except unsupported `met`, which is the contradiction case above.
+**Current position:** `evidence-assessment-v3` with `qwen2.5:7b` is the last
+measured configuration — 3 disagreements of 24, held-out split clean, every
+predeclared gate met except unsupported `met`, which is the contradiction case
+above. On 2026-09-22 the assessor prompt moved to `evidence-assessment-v5` with
+domain exclusion of location/headline/title-only citations; that change is not
+yet remeasured on the pilot set.
 
 ## Known measurement limits
 

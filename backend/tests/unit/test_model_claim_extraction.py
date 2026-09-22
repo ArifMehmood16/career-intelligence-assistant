@@ -557,6 +557,45 @@ def test_claim_with_missing_role_span_attaches_to_nearest_heading() -> None:
     assert result.claims[0].employer == "Northwind Analytics Ltd"
 
 
+def test_orphan_project_claims_fall_back_to_role_without_failing() -> None:
+    """A few unattachable claims must not fail a CV that otherwise extracted."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "Side work delivered without a project heading line.\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=heading,
+            ),
+            # Project kind with no project_heading — recover onto the role.
+            _assign(
+                ids["Side work delivered without a project heading line."],
+                "project",
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 2
+    assert {c.employer for c in result.claims} == {"Northwind Analytics Ltd"}
+
+
 def test_an_unparsed_role_date_stays_undated_without_failing_completeness() -> None:
     """PLAN 13D.6d — lost dates become undated; they do not fail the job alone."""
     text = normalise_text(
