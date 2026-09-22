@@ -27,6 +27,28 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 094 — A course does not meet years of leadership
+
+- Date: 2026-09-22
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.5 (course-versus-leadership regression)
+- Prompt intent: continue the remaining PLAN.md tasks in TDD order and commit
+  each one.
+- Suggestion: keep an introductory course from meeting a years-of-leadership
+  requirement in domain mapping, on the API, and in the SQL worker. Apply the
+  same cap when a validated model assessment says met.
+- Outcome: accepted
+- Reason: the prompted-JSON test was changed to use a production claim, so it
+  still proves that a valid met is accepted. The course case is a separate
+  test. The hermetic baseline was re-measured rather than edited by hand.
+- Human validation: the domain test failed with status met, the model-path
+  test failed with status met, and the API test failed with fit score 85.
+  After the rule, those tests, the structured-assessment file, the mapping
+  score file, the baseline, and the SQL worker test passed (30). The
+  re-measured hermetic baseline is 7 disagreements, 5 unsupported met results,
+  and 0 order reversals. mypy was clean on the mapping and relatedness
+  modules. No live model call.
+
 ### 093 — Name the requirements that distinguish a tie
 
 - Date: 2026-09-22

@@ -17,6 +17,7 @@ from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
     RequirementMapping,
+    course_does_not_meet_depth,
     limit_concurrent_years,
     map_requirements,
 )
@@ -330,4 +331,6 @@ def _mapping_from_assessment(
             related=status is not MappingStatus.MISSING,
         ),
     )
-    return limit_concurrent_years(requirement, claims, mapped)
+    return course_does_not_meet_depth(
+        requirement, claims, limit_concurrent_years(requirement, claims, mapped)
+    )

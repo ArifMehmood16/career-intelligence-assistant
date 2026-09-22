@@ -493,6 +493,49 @@ def test_incomplete_assessment_is_not_banded_as_a_poor_fit() -> None:
     assert incomplete.band == "incomplete"
 
 
+def test_introductory_course_does_not_meet_production_leadership() -> None:
+    """PLAN 13D.5 — a Python course is not five years of production leadership."""
+    requirement = _req(
+        id="req-python-leadership",
+        text="Five years leading production Python systems",
+        competency="python",
+    )
+    requirement = Requirement(
+        id=requirement.id,
+        text=requirement.text,
+        competency=requirement.competency,
+        seniority_signal="five_years_leadership",
+        must_have=True,
+        source_span_id=requirement.source_span_id,
+        extraction_confidence=0.9,
+        is_vague=False,
+    )
+    course = _claim(
+        id="claim-course",
+        competency="python",
+        context="Completed an introductory Python course.",
+    )
+    course = Claim(
+        id=course.id,
+        competency=course.competency,
+        context=course.context,
+        duration_signal="course",
+        recency_signal="recent",
+        source_span_ids=course.source_span_ids,
+        extraction_confidence=0.9,
+    )
+    result = map_requirement(requirement, (course,))
+    assert result.status is MappingStatus.MISSING
+    assert result.justifying_span_ids == ()
+    scored = score_fit(
+        (requirement,),
+        (result,),
+        (course,),
+        load_scoring_rubric(RUBRIC_PATH),
+    )
+    assert scored.score == 0.0
+
+
 def test_overlapping_employment_is_not_counted_as_separate_years() -> None:
     """PLAN 13D.5 — two concurrent Java jobs are not six years."""
     requirement = _req(

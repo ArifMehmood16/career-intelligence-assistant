@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from dataclasses import dataclass, field
+import re
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 from career_assistant.domain.claims import Claim
@@ -146,9 +147,10 @@ def map_requirement(
         justifying_claim_ids=(best.id,),
         signals=best_signals,
     )
-    return limit_concurrent_years(
+    limited = limit_concurrent_years(
         requirement, tuple(claim for claim, _signals in pool), matched
     )
+    return course_does_not_meet_depth(requirement, claims, limited)
 
 
 def limit_concurrent_years(
@@ -185,6 +187,50 @@ def limit_concurrent_years(
         unknown_conditions=mapping.unknown_conditions,
         contradiction=mapping.contradiction,
     )
+
+
+_COURSE_TEXT = re.compile(
+    r"\b(?:introductory|intro)\b.{0,40}\bcourse\b|\bcompleted\b.{0,40}\bcourse\b",
+    re.IGNORECASE,
+)
+
+
+def course_does_not_meet_depth(
+    requirement: Requirement,
+    claims: Sequence[Claim],
+    mapping: RequirementMapping,
+) -> RequirementMapping:
+    """An introductory course is not evidence for years of leadership."""
+    if mapping.status is MappingStatus.MISSING:
+        return mapping
+    signal = (requirement.seniority_signal or "").casefold()
+    asks_for_depth = stated_years(requirement.text) is not None or "lead" in signal
+    if not asks_for_depth:
+        return mapping
+    cited_ids = set(mapping.justifying_claim_ids)
+    cited = tuple(claim for claim in claims if claim.id in cited_ids)
+    if not cited:
+        cited = tuple(
+            claim for claim in claims if claim.competency == requirement.competency
+        )
+    if not cited or not all(_is_course(claim) for claim in cited):
+        return mapping
+    return RequirementMapping(
+        requirement_id=mapping.requirement_id,
+        status=MappingStatus.MISSING,
+        reason_code=MappingReason.NO_RELATED_CLAIM,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
+        signals=replace(mapping.signals, related=False),
+        unknown_conditions=mapping.unknown_conditions,
+        contradiction=mapping.contradiction,
+    )
+
+
+def _is_course(claim: Claim) -> bool:
+    if claim.duration_signal == "course":
+        return True
+    return _COURSE_TEXT.search(claim.context) is not None
 
 
 def _best_claim(

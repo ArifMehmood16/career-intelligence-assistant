@@ -61,22 +61,20 @@ def test_labels_cite_passages_and_do_not_store_matcher_output() -> None:
     assert heldout.expected_assessments["req-sql-leadership"] == "missing"
 
 
-def test_current_policy_records_course_versus_leadership_as_unsupported_met() -> None:
-    """The labelled pilot stays independent of the matcher.
+def test_current_policy_does_not_score_a_course_as_leadership() -> None:
+    """A course no longer comes back as meeting years of leadership.
 
-    This records what the hermetic path gets wrong today: lexical overlap on
-    "Python" marks an introductory course as meeting production leadership.
-    No embedding and no adjudicator — NullAdjudicator, similarity 0.
+    Observed 2026-09-22 on the hermetic path after that rule. The remaining
+    disagreements are still recorded here and updated with the policy.
     """
     pilot = load_pilot(DATASET)
     report = current_policy_baseline(pilot)
-    course = report.disagreement("dev-insufficient-scope", "req-python-leadership")
-    assert course.expected == "missing"
-    assert course.observed == "met"
-    assert course.unsupported_met is True
+    disagreed = {
+        (item.role_id, item.requirement_id) for item in report.disagreements
+    }
+    assert ("dev-insufficient-scope", "req-python-leadership") not in disagreed
+    assert ("heldout-insufficient-scope", "req-sql-leadership") not in disagreed
     assert report.calls_model is False
-    # Observed 2026-09-22 on the hermetic path. Update with the policy, not by hand.
-    # dev-overlap left this list when concurrent periods stopped counting twice.
-    assert len(report.disagreements) == 10
-    assert len(report.unsupported_met) == 8
-    assert len(report.order_disagreements) == 1
+    assert len(report.disagreements) == 7
+    assert len(report.unsupported_met) == 5
+    assert len(report.order_disagreements) == 0

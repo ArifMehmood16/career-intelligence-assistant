@@ -139,6 +139,9 @@ the configuration file rather than hard-coding these literals.
 - Overlapping jobs in the same skill are one stretch of time. Two concurrent
   posts do not add up to the years a requirement asks for. Jobs that follow
   one another still do.
+- An introductory course does not meet a requirement that asks for years of
+  leadership, even when the model marks it met. It contributes no spans and
+  no score.
 - A zero score whose assessments did not complete is banded `incomplete`. A
   zero score from assessed gaps stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above

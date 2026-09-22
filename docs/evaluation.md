@@ -108,21 +108,20 @@ live Ollama accuracy figure.
 | Quantity | Observed |
 |---|---|
 | Groups / roles / scoreable requirements | 17 / 20 / 24 |
-| Assessment disagreements | 10 |
-| Labelled non-`met` returned as `met` | 8 |
-| Pairwise order disagreements | 1 |
+| Assessment disagreements | 7 |
+| Labelled non-`met` returned as `met` | 5 |
+| Pairwise order disagreements | 0 |
 
-The eight unsupported `met` results are keyword overlap without the labelled
-scope, duration, negation, contradiction or aspiration: `dev-insufficient-scope`
-(`req-python-leadership`), `dev-insufficient-duration`, `dev-negation`,
-`dev-contradiction`, `dev-aspiration`, `heldout-sql-leadership`,
-`heldout-insufficient-scope` and `heldout-negation`. `dev-overlap` is no longer
-in that list: two concurrent Java posts are merged, so six labelled years stay
-`partial`. Two paraphrases with no
-shared keywords were labelled `met` and returned `missing`: `dev-paraphrase` and
-`heldout-paraphrase`. The order miss is `heldout-ordering`: `heldout-spreadsheets`
-scored 0 and `heldout-sql-leadership` scored 100, reversing the labelled order,
-because that leadership requirement was one of the unsupported `met` results.
+The five unsupported `met` results are keyword overlap without the labelled
+duration, negation, contradiction or aspiration: `dev-insufficient-duration`,
+`dev-negation`, `dev-contradiction`, `dev-aspiration` and `heldout-negation`.
+An introductory course no longer meets a years-of-leadership requirement, so
+`dev-insufficient-scope`, `heldout-insufficient-scope` and
+`heldout-sql-leadership` left that list. `dev-overlap` stays `partial` because
+concurrent jobs are one stretch of time. Two paraphrases with no shared
+keywords were labelled `met` and returned `missing`: `dev-paraphrase` and
+`heldout-paraphrase`. The labelled `heldout-ordering` pair no longer reverses,
+because the leadership role is not scored as a match.
 
 ## Known measurement limits
 

@@ -17,6 +17,7 @@ from career_assistant.application.documents.cv import (
     admission_limits_from,
     upload_pasted_cv,
 )
+from career_assistant.domain.mapping import MappingStatus
 from career_assistant.main import create_app
 from career_assistant.settings import LimitSettings
 
@@ -99,6 +100,40 @@ def test_sql_role_store_create_list_get_and_analysis(
     assert bundle.attribution.rubric_version == "scoring-rubric-v1"
     assert bundle.attribution.left_machine is False
     assert bundle.attribution.failure_status is None
+
+
+def test_sql_worker_does_not_score_a_course_as_leadership(
+    session_factory: sessionmaker[Session],
+) -> None:
+    """PLAN 13D.5 — a saved SQL analysis does not treat a course as leadership."""
+    uow_factory = _uow_factory_for(session_factory)
+    cv_store = SqlCvStore(uow_factory)
+    role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
+    worker = SqlAnalysisWorker(uow_factory)
+    workspace_id = str(uuid.uuid4())
+    upload_pasted_cv(
+        cv_store,
+        workspace_id=workspace_id,
+        text="Experience\n- Completed an introductory Python course.\n",
+        filename="cv.txt",
+        limits=admission_limits_from(LimitSettings()),
+    )
+    role, _job = role_store.create_role(
+        workspace_id=workspace_id,
+        title="Platform Engineer",
+        company="Northwind",
+        description=(
+            "Requirements\n- Five years leading production Python systems\n"
+        ),
+    )
+    worker.drain()
+    ready = role_store.get_role(workspace_id, role.id)
+    assert ready is not None
+    assert ready.fit_score == 0
+    bundle = role_store.require_analysis(workspace_id, role.id)
+    assert bundle.mappings
+    assert all(mapping.status is MappingStatus.MISSING for mapping in bundle.mappings)
+    assert all(mapping.justifying_span_ids == () for mapping in bundle.mappings)
 
 
 def test_sql_role_store_delete_and_reanalyse(

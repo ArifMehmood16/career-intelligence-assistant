@@ -142,11 +142,35 @@ def test_agreement_without_an_assessment_is_not_a_match() -> None:
     assert "span-negation" in request.user
 
 
-def test_prompted_json_path_validates_the_same_payload() -> None:
-    completion = _ScriptedCompletion(_met_payload("span-course"), structured=False)
+def test_model_met_for_a_course_does_not_meet_leadership() -> None:
+    """PLAN 13D.5 — a validated met on a course still does not score as leadership."""
+    completion = _ScriptedCompletion(_met_payload("span-course"), structured=True)
     mappings = map_role_requirements(
         (_requirement(),),
         _claims(),
+        similarities={("req-python-leadership", "claim-course"): 0.9},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+    assert completion.calls == 1
+    assert mappings[0].status is MappingStatus.MISSING
+    assert mappings[0].justifying_span_ids == ()
+
+
+def test_prompted_json_path_validates_the_same_payload() -> None:
+    production = Claim(
+        id="claim-course",
+        competency="python",
+        context="Led production Python systems for five years.",
+        duration_signal="5y",
+        recency_signal="recent",
+        source_span_ids=("span-course",),
+        extraction_confidence=1.0,
+    )
+    completion = _ScriptedCompletion(_met_payload("span-course"), structured=False)
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (production,),
         similarities={("req-python-leadership", "claim-course"): 0.9},
         adjudicator=ModelAdjudicator(completion),
         similarity_floor=0.55,
