@@ -73,7 +73,6 @@ class SqlDraftRepository:
             groundedness=draft.groundedness.value,
             used_template_fallback=draft.used_template_fallback,
             regeneration_count=draft.regeneration_count,
-            invalidated=False,
         )
         self._session.add(row)
         self._session.flush()

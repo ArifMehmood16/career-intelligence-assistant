@@ -513,9 +513,6 @@ class AnswerRow(Base):
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     model_tag: Mapped[str] = mapped_column(String(128), nullable=False)
     left_machine: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    prompt_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    completion_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -582,7 +579,6 @@ class GeneratedDraftRow(Base):
         Boolean, nullable=False, default=False
     )
     regeneration_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    invalidated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

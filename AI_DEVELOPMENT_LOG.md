@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 124 — Schema cleanup: dead answer usage columns and draft soft-flag
+
+- Date: 2026-09-24
+- Tool / model: Cursor Composer
+- Plan task: maintainer request (schema cleanup; not a PLAN checkbox)
+- Prompt intent: remove unused tables/columns that stay empty or unused for the life of the app.
+- Suggestion: drop never-written `answers.prompt_tokens|completion_tokens|latency_ms`; hard-delete generated drafts on CV replace and drop `generated_drafts.invalidated` (written but never filtered). Keep claim-detail columns and `provider_call_accounting` (in use / intentional). No orphan tables found.
+- Outcome: accepted
+- Reason: usage accounting already lives on `provider_call_accounting`; soft-invalidating drafts without a read filter left CV-derived draft text readable after CV replace — hard delete matches the privacy hard-delete contract better than finishing the soft-flag.
+- Human validation: red then green integration tests for column absence and CV-replace draft deletion; `alembic upgrade head` on local `career_assistant`; persistence/draft/ask/analysis integration suite 25 passed.
+
 ### 123 — README how-to and feature screenshots; PR package
 
 - Date: 2026-09-22
