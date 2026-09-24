@@ -62,7 +62,7 @@ _WORK = re.compile(
     r"partnered|partnering|authored|authoring|coordinated|coordinating|"
     r"assisted|assisting|shadowed|shadowing|collected|collecting|"
     r"cleaned|cleaning|prepared|preparing|documented|documenting|"
-    r"published|publishing|"
+    r"published|publishing|completed|completing|"
     r"split|splitting|chose|choosing|compared|comparing|traced|tracing|"
     r"optimi[sz]ed|optimi[sz]ing|generated|generating|introduced|introducing|"
     r"rebuilt|rebuilding|redirected|redirecting|automated|automating|"
@@ -79,6 +79,16 @@ _WORK = re.compile(
 # ("Lead Software Engineer"), and a title never justifies a match.
 _LEADING_DUTY = re.compile(r"^(?:[-*]\s*)?(?:[Oo]wns?|[Ll]eads?)\s+[a-z]")
 _OUTCOME = re.compile(r"\b\d+(?:\.\d+)?\s*%")
+# A role held at an employer for stated years evidences tenure, which is what a
+# years-of-experience requirement asks for. Searched in three linear steps
+# rather than one pattern, so untrusted CV text cannot make it backtrack.
+_ROLE_NOUN = re.compile(
+    r"\b(?:developer|engineer|analyst|scientist|architect|consultant|manager|"
+    r"administrator|designer|specialist|technician|intern)\b",
+    re.IGNORECASE,
+)
+_EMPLOYER_LINK = re.compile(r"\b(?:at|for|with)\b", re.IGNORECASE)
+_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
 _DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")
 
@@ -99,8 +109,17 @@ def is_evidential_support(text: str) -> bool:
     if _ROLE_HEADING.search(plain) and _EMPLOYER_SEP.search(plain):
         if not _WORK.search(plain):
             return False
-    if _LEADING_DUTY.match(plain):
+    if _LEADING_DUTY.match(plain) or _states_tenure(plain):
         return True
     if not _WORK.search(plain) and not _OUTCOME.search(plain):
         return False
     return True
+
+
+def _states_tenure(plain: str) -> bool:
+    """A role, then an employer link, then a year: "developer at X from 2019"."""
+    role = _ROLE_NOUN.search(plain)
+    if role is None:
+        return False
+    link = _EMPLOYER_LINK.search(plain, role.end())
+    return link is not None and _YEAR.search(plain, link.end()) is not None

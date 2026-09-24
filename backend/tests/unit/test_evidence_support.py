@@ -78,3 +78,27 @@ def test_lead_and_own_as_a_duty_still_count() -> None:
     assert is_evidential_support("Lead a team of five engineers")
     assert is_evidential_support("Own the payments service end to end")
     assert is_evidential_support("- Owns delivery of the pricing API")
+
+
+def test_a_completed_course_is_a_qualification_the_assessor_must_see() -> None:
+    # ADR 010 (weak CV evidence): a responsibility, a qualification or an
+    # outcome counts. The course-versus-leadership case (PLAN 13D.5) is decided
+    # by the assessor and the domain, so the course line must reach them.
+    assert is_evidential_support("Completed an introductory Python course.")
+    assert not is_evidential_support(
+        "Aspiring to lead platform engineering after a short course."
+    )
+
+
+def test_a_dated_role_statement_is_evidence_of_tenure() -> None:
+    # A years-of-experience requirement is evidenced by the role and its dates;
+    # the labelled overlap case (PLAN 13D.5) depends on these lines.
+    assert is_evidential_support(
+        "Java backend developer at Northwind from 2019 to 2022."
+    )
+    assert is_evidential_support("Senior data engineer with Contoso since 2021.")
+    # A heading still names the role without showing the work (entry 120).
+    assert not is_evidential_support(
+        "Platform Engineer — Northwind Energy Ltd Jan 2024 – Present"
+    )
+    assert not is_evidential_support("Java backend developer at Northwind.")
