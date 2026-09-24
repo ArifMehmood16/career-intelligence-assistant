@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 125 — GitHub Actions is work evidence, not a contact line
+
+- Date: 2026-09-24
+- Tool / model: Cursor Composer
+- Plan task: make test failure (unrelated to schema cleanup)
+- Prompt intent: fix evaluation failures after `make test`.
+- Suggestion: `_CONTACT` matched bare `\bgithub\b`, so the held-out paraphrase claim "GitHub Actions workflows..." was dropped before the assessor; empty `assessment_justification` on `_no_evidence_mapping` then failed the reason-carrying disagreement test.
+- Outcome: accepted
+- Reason: contact detection should target handles/URLs (`github.com`, `GitHub:`), not product names in work bullets.
+- Human validation: unit evidence_support + evaluation quality baseline focused tests green.
+
 ### 124 — Schema cleanup: dead answer usage columns and draft soft-flag
 
 - Date: 2026-09-24

@@ -29,3 +29,13 @@ def test_work_bullets_and_qualifications_are_evidential() -> None:
         "systems, including an AWS platform live to 10 UK institutions."
     )
     assert is_evidential_support("AWS Certified Cloud Practitioner June 2022")
+    # Product names that contain "GitHub" are work evidence, not a profile URL.
+    assert is_evidential_support(
+        "Set up GitHub Actions workflows that test and release the billing service."
+    )
+
+
+def test_contact_handles_and_urls_are_not_evidential() -> None:
+    assert not is_evidential_support("GitHub: mehmooa7")
+    assert not is_evidential_support("linkedin.com/in/someone")
+    assert not is_evidential_support("email me at a@example.com")

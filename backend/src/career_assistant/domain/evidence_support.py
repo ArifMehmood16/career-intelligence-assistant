@@ -18,7 +18,14 @@ _LOCATION = re.compile(
     re.IGNORECASE,
 )
 _CONTACT = re.compile(
-    r"(?:@|\b(?:tel|phone|email|linkedin|github)\b|https?://)",
+    r"(?:"
+    r"@|"
+    r"\b(?:tel|phone|email)\b|"
+    # Profile handles/URLs only — not product names like "GitHub Actions".
+    r"\b(?:linkedin|github)\s*[:/]|"
+    r"(?:linkedin|github)\.com\b|"
+    r"https?://"
+    r")",
     re.IGNORECASE,
 )
 _PROFILE_HEADLINE = re.compile(
