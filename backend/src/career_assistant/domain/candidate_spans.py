@@ -17,6 +17,7 @@ from career_assistant.domain.documents import Span
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 _MARKDOWN = re.compile(r"[*_`]+")
 _LEADING_MARK = re.compile(r"^[\s>#*+\-]+")
+_ATX_HEADING = re.compile(r"^#{1,6}\s+\S")
 # Stable across process restarts so SQL can persist the same span id.
 _SPAN_NAMESPACE = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 
@@ -66,6 +67,14 @@ def is_narrative_heading(text: str) -> bool:
     if not plain.endswith(":"):
         return False
     return not re.search(r"[.!?]", plain[:-1])
+
+
+def is_section_heading(text: str) -> bool:
+    """A colon label or a Markdown heading that only introduces the next lines."""
+    if is_narrative_heading(text):
+        return True
+    plain = _MARKDOWN.sub("", text).strip()
+    return _ATX_HEADING.match(plain) is not None
 
 
 def _sentences(line: str, line_start: int) -> tuple[tuple[int, int, str], ...]:

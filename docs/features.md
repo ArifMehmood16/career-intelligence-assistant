@@ -127,10 +127,12 @@ the configuration file rather than hard-coding these literals.
 
 **Rules**
 
-- Pay, equity, location, travel and right-to-work are extracted as `benefit` or
-  `logistics` by the model, from the quote's meaning — not from a heading or the
-  word "must". Only `requirement` and `responsibility` items enter the mapping
-  and the score.
+- Pay, equity, location, travel and right-to-work are `benefit` or `logistics`.
+  The model classifies a line that is not under a section heading. Body copy
+  under a Benefits or Logistics heading — a trailing colon or a Markdown
+  heading — is forced to that kind even when the model calls it a requirement.
+  The word "must" does not make a package line a skill. Only `requirement` and
+  `responsibility` items enter the mapping and the score.
 - A requirement with no justifying span is `missing`. Never "probably met".
 - The same requirement text counts once. Case and repeated spaces do not make
   a second copy. The extra line stays visible and adds no weight.
