@@ -53,6 +53,39 @@ PACKAGE_ADVERT = normalise_text(
 )
 
 
+class _SequencedCompletion:
+    """Returns each payload in order; the last one repeats if called again."""
+
+    def __init__(self, payloads: tuple[dict[str, object], ...]) -> None:
+        self._payloads = payloads
+        self.calls = 0
+        self.requests: list[CompletionRequest] = []
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return CapabilityDescriptor(
+            provider_id="scripted",
+            supports_completion=True,
+            supports_embedding=False,
+            supports_structured_output=True,
+            context_window_tokens=8192,
+            max_output_tokens=1024,
+            embedding_dimensions=None,
+            leaves_machine=False,
+        )
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.calls += 1
+        self.requests.append(request)
+        payload = self._payloads[min(self.calls - 1, len(self._payloads) - 1)]
+        return CompletionResult(
+            text=json.dumps(payload),
+            provider_id="scripted",
+            model_tag="scripted-v1",
+            left_machine=False,
+        )
+
+
 class _ScriptedCompletion:
     """Returns a fixed structured payload; records what it was asked."""
 
@@ -512,3 +545,142 @@ def test_about_why_headings_and_pitch_are_not_scoreable_when_model_mislabels() -
         "You'll join a business",
     ):
         assert all(marker not in req.text for req in scoreable), marker
+
+
+_PACKAGE_KINDS = {
+    "APIs, JSON": "requirement",
+    "£70,000": "benefit",
+    "Share options": "benefit",
+    "Delivery commission": "benefit",
+    "Remote (UK)": "logistics",
+    "right to work": "logistics",
+    "Package and practicalities": "non_requirement",
+}
+
+
+def _package_items() -> list[dict[str, object]]:
+    payload = _classify(PACKAGE_ADVERT, _PACKAGE_KINDS)
+    items = payload["classifications"]
+    assert isinstance(items, list)
+    return items
+
+
+def _with_field(items: list[dict[str, object]], issued: str, **fields: object):
+    rewritten: list[dict[str, object]] = []
+    for item in items:
+        if item["spanId"] != issued:
+            rewritten.append(item)
+            continue
+        clone = dict(item)
+        for key, value in fields.items():
+            if value is _DROP:
+                clone.pop(key, None)
+            else:
+                clone[key] = value
+        rewritten.append(clone)
+    return rewritten
+
+
+class _Drop:
+    pass
+
+
+_DROP = _Drop()
+
+
+def test_an_invalid_item_type_is_not_a_scoreable_requirement() -> None:
+    """A missing or unknown kind must not turn pay or remote work into a requirement."""
+    salary = _id_for(PACKAGE_ADVERT, "£70,000")
+    remote = _id_for(PACKAGE_ADVERT, "Remote (UK)")
+    spoils: tuple[tuple[object, object], ...] = (
+        (_DROP, "logistics"),
+        (None, "logistics"),
+        (1, "logistics"),
+        ("perk", _DROP),
+    )
+    for salary_type, remote_type in spoils:
+        items = _with_field(_package_items(), salary, item_type=salary_type)
+        items = _with_field(items, remote, item_type=remote_type)
+        result, completion = _extract({"classifications": items}, text=PACKAGE_ADVERT)
+        mapped = {
+            requirement.text
+            for requirement in result.requirements
+            if requirement.id
+            in {
+                row.requirement_id
+                for row in map_requirements(result.requirements, [])
+            }
+        }
+        assert result.complete is False
+        assert completion.calls == 2
+        assert not any("£70,000" in text or "Remote (UK)" in text for text in mapped)
+        assert all(
+            "£70,000" not in requirement.text and "Remote (UK)" not in requirement.text
+            or not requirement.is_scoreable
+            for requirement in result.requirements
+        )
+
+
+def test_a_missing_or_non_boolean_must_have_is_not_accepted() -> None:
+    text = normalise_text(
+        "You will need strong experience with APIs, JSON and webhooks.\n"
+    )
+    issued = _id_for(text, "APIs, JSON")
+    for must_have in (_DROP, None, "true", 1):
+        item: dict[str, object] = {
+            "spanId": issued,
+            "item_type": "requirement",
+            "competency": "api",
+        }
+        if must_have is not _DROP:
+            item["must_have"] = must_have
+        result, _ = _extract({"classifications": [item]}, text=text)
+        assert result.complete is False
+        assert result.requirements == ()
+        assert not any(requirement.must_have for requirement in result.requirements)
+
+
+def test_one_retry_accepts_a_later_valid_classification() -> None:
+    salary = _id_for(PACKAGE_ADVERT, "£70,000")
+    remote = _id_for(PACKAGE_ADVERT, "Remote (UK)")
+    skill = _id_for(PACKAGE_ADVERT, "APIs, JSON")
+    first = _with_field(_package_items(), salary, item_type="perk")
+    first = _with_field(first, remote, item_type=_DROP)
+    second = {
+        "classifications": [
+            _item(salary, "benefit", must_have=False),
+            _item(remote, "logistics", must_have=False),
+        ]
+    }
+    completion = _SequencedCompletion(
+        ({"classifications": first}, second),
+    )
+    result = ModelRequirementExtractor(completion).extract(
+        document_id="doc-jd",
+        document_kind=DocumentKind.JOB_DESCRIPTION,
+        normalised_text=PACKAGE_ADVERT,
+    )
+    assert completion.calls == 2
+    retry = completion.requests[1].user
+    assert f"SPAN {salary}" in retry
+    assert f"SPAN {remote}" in retry
+    assert f"SPAN {skill}" not in retry
+    assert result.complete is True
+    by_text = {requirement.text: requirement for requirement in result.requirements}
+    assert by_text["£70,000 - £80,000 depending on experience"].item_type is (
+        ItemType.BENEFIT
+    )
+    remote_req = next(
+        requirement
+        for requirement in result.requirements
+        if "Remote (UK)" in requirement.text
+    )
+    assert remote_req.item_type is ItemType.LOGISTICS
+    mapped = {
+        requirement.text
+        for requirement in result.requirements
+        if requirement.is_scoreable
+    }
+    assert mapped == {
+        "You will need strong experience with APIs, JSON and webhooks."
+    }
