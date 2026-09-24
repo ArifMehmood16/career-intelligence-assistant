@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
-from career_assistant.domain.claims import Claim
+from career_assistant.domain.claims import LISTED_DURATION, Claim
 from career_assistant.domain.recency import covered_years, stated_years
 from career_assistant.domain.relatedness import RelatednessSignals, pair_relatedness
 from career_assistant.domain.requirements import Requirement
@@ -83,6 +83,12 @@ def map_requirement(
     similarity_floor: float = 0.55,
 ) -> RequirementMapping:
     """Map one requirement to met/partial/missing with a reason and span ids."""
+    decided = named_tool_mapping(requirement, claims)
+    if decided is not None:
+        return decided
+    claims = tuple(
+        claim for claim in claims if claim.duration_signal != LISTED_DURATION
+    )
     sims = similarities or {}
     adjs = adjudications or {}
     considered: list[tuple[Claim, RelatednessSignals]] = []
@@ -190,6 +196,120 @@ def limit_concurrent_years(
         reason_code=MappingReason.EVIDENCE_THIN,
         justifying_span_ids=span_ids or mapping.justifying_span_ids,
         justifying_claim_ids=tuple(claim.id for claim in dated),
+    )
+
+
+# A named tool is the requirement's own words. This check keeps CI/CD and AWS;
+# retrieval drops tokens of length 2, so it cannot be reused here.
+_TOOL_TOKEN = re.compile(r"[a-z0-9]+(?:/[a-z0-9]+)*")
+_TOOL_STOP = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "for",
+        "with",
+        "on",
+        "in",
+        "of",
+        "to",
+        "by",
+        "at",
+    }
+)
+# Years, leadership and outcome wording are not a bare tool name. A skills
+# line cannot meet them, and neither can a token match.
+_ASKS_FOR_MORE = re.compile(
+    r"\b(?:lead\w*|design\w*|build\w*|contribut\w*|improv\w*|operat\w*|"
+    r"own\w*|solv\w*|communicat\w*|collaborat\w*|mindset|background|"
+    r"reliab\w*|startup|ambiguit\w*|devices?|real[- ]time)\b",
+    re.IGNORECASE,
+)
+
+
+def named_tool_mapping(
+    requirement: Requirement,
+    claims: Sequence[Claim],
+) -> RequirementMapping | None:
+    """Met when the requirement only names a tool the CV actually lists.
+
+    Returns None when this rule does not decide. A work bullet that contains
+    the same words is the citation. A listed span cannot meet years,
+    leadership or an outcome.
+    """
+    if _asks_for_more(requirement):
+        if any(claim.duration_signal != LISTED_DURATION for claim in claims):
+            return None
+        return _tool_missing(requirement)
+    match = _tool_citation(requirement, claims)
+    if match is None:
+        return None
+    return _tool_met(requirement, match)
+
+
+def _asks_for_more(requirement: Requirement) -> bool:
+    signal = (requirement.seniority_signal or "").casefold()
+    if stated_years(requirement.text) is not None or "lead" in signal:
+        return True
+    return _ASKS_FOR_MORE.search(requirement.text) is not None
+
+
+def _tool_citation(requirement: Requirement, claims: Sequence[Claim]) -> Claim | None:
+    needed = _tool_tokens(requirement.text)
+    if not needed:
+        return None
+    matches = [
+        claim
+        for claim in claims
+        if not claim.self_authored and needed <= _tool_tokens(claim.context)
+    ]
+    work = [claim for claim in matches if claim.duration_signal != LISTED_DURATION]
+    # Old work stays on the existing recency path. A fresh bullet is the citation.
+    fresh = [claim for claim in work if claim.recency_signal != "old"]
+    if fresh:
+        return max(fresh, key=lambda claim: len(claim.context))
+    if work:
+        return None
+    if not matches:
+        return None
+    return max(matches, key=lambda claim: len(claim.context))
+
+
+def _tool_met(requirement: Requirement, claim: Claim) -> RequirementMapping:
+    return RequirementMapping(
+        requirement_id=requirement.id,
+        status=MappingStatus.MET,
+        reason_code=MappingReason.MATCHED,
+        justifying_span_ids=claim.source_span_ids,
+        justifying_claim_ids=(claim.id,),
+        signals=RelatednessSignals(
+            lexical=True,
+            lexical_overlap=1,
+            embedding=False,
+            embedding_similarity=0.0,
+            adjudication=None,
+            related=True,
+        ),
+    )
+
+
+def _tool_tokens(text: str) -> set[str]:
+    return {
+        token
+        for token in _TOOL_TOKEN.findall(text.casefold())
+        if token not in _TOOL_STOP and len(token) > 1
+    }
+
+
+def _tool_missing(requirement: Requirement) -> RequirementMapping:
+    return RequirementMapping(
+        requirement_id=requirement.id,
+        status=MappingStatus.MISSING,
+        reason_code=MappingReason.NO_RELATED_CLAIM,
+        justifying_span_ids=(),
+        justifying_claim_ids=(),
     )
 
 
