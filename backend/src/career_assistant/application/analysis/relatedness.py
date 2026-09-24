@@ -229,7 +229,7 @@ def _retrieved_indexes(
 
     The 0.55 mapping floor still does not decide missing: a paraphrase can sit
     under it and must reach the assessor. When the best claim has no lexical
-    overlap and its similarity is below the abstain floor, nothing is shown.
+    overlap and a measured similarity below the abstain floor, nothing is shown.
     Neighbours are added only after that check, to preserve negation and dates.
     """
     ranked = sorted(
@@ -241,11 +241,9 @@ def _retrieved_indexes(
         for index, claim in enumerate(claims)
         if not claim.self_authored and is_evidential_support(claim.context)
     )
-    if not ranked:
-        return []
-    best_similarity = -ranked[0][0]
-    best_overlap = -ranked[0][1]
-    if best_overlap < 1 and best_similarity < _RETRIEVAL_ABSTAIN_FLOOR:
+    if not ranked or _every_signal_is_weak(
+        requirement, claims[ranked[0][2]], similarities, best_overlap=-ranked[0][1]
+    ):
         return []
     chosen: set[int] = set()
     for _, _, index in ranked[:_CANDIDATE_LIMIT]:
@@ -257,6 +255,26 @@ def _retrieved_indexes(
             ):
                 chosen.add(neighbor)
     return sorted(chosen)
+
+
+def _every_signal_is_weak(
+    requirement: Requirement,
+    best: Claim,
+    similarities: Mapping[tuple[str, str], float],
+    *,
+    best_overlap: int,
+) -> bool:
+    """No shared keyword and a measured similarity under the abstain floor.
+
+    An absent similarity is not a weak one. With no embeddings (the hermetic
+    path, or a closed hosted gate) abstaining would hide every paraphrase.
+    """
+    similarity = similarities.get((requirement.id, best.id))
+    return (
+        best_overlap < 1
+        and similarity is not None
+        and similarity < _RETRIEVAL_ABSTAIN_FLOOR
+    )
 
 
 def _assessment_item(
