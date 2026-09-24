@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 132 — Plan and docs record the extraction correctives
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6g still open
+- Prompt intent: update the plan and the docs so they describe the extraction correctives, and add new text only where the existing pages did not.
+- Suggestion: tick 13D.6g because the unit tests and the documentation now match the code.
+- Outcome: rejected
+- Reason: PLAN 13D.6c, 13D.6d and 13D.6f now record the correctives under the boxes that were already ticked. 13D.6g stays unchecked. ADR 011, the threat model, features, production wiring, evaluation and the backlog name the same behaviour and leave precision, recall, mapping accuracy and `evidence-assessment-v5` unmeasured. The engineering journal stays a phase-checkpoint log, so no 13D close entry was added.
+- Human validation: documents read against ADR 010 and the branch diff. No labelled check-set run was performed.
+
 ### 131 — Adversarial package labels, unmeasured metrics left open
 
 - Date: 2026-09-24

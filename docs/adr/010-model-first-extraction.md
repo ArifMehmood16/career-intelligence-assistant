@@ -179,8 +179,9 @@ an unrecognised kind as `requirement` so a real requirement would not be
 dropped — is withdrawn.
 
 Spans that still have no accepted classification are sent once more, and only
-those span ids are listed. A later valid assignment wins. Duplicate ids inside
-a single response stay rejected. If any span is still unclassified, the
+those span ids are listed. A single valid label on that retry is kept. An id
+repeated inside one response is not accepted, and the later label does not win.
+If any span is still unclassified, the
 extraction is incomplete and the job fails with `extraction_incomplete`. No
 fit score is published. A heading or employer-pitch override still corrects a
 valid label to `non_requirement`; it does not fill in a missing kind. Safe

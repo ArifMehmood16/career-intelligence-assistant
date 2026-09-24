@@ -25,7 +25,9 @@ Provider resolvers:
   contract those claims will follow: concrete experience can count, with its
   source shown and duplicates removed; an aspiration does not, and a generated
   draft must never raise the score. Salary, benefit and logistics items are
-  stored and never mapped.
+  stored and never mapped. Body under a Benefits or Logistics heading is forced
+  to that kind. A CV span that does not show a responsibility, qualification or
+  outcome is not stored as a claim.
 - `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve

@@ -134,7 +134,13 @@ the configuration file rather than hard-coding these literals.
   under a Benefits or Logistics heading — a trailing colon or a Markdown
   heading — is forced to that kind even when the model calls it a requirement.
   The word "must" does not make a package line a skill. Only `requirement` and
-  `responsibility` items enter the mapping and the score.
+  `responsibility` items enter the mapping and the score. A missing or
+  non-boolean classification is rejected and retried once; it is never stored
+  as a requirement. Job-description spans are classified in bounded batches.
+- A CV line is a claim only when it shows a responsibility, a qualification or
+  an outcome. A reference line, a hobby line or other non-work text is dropped
+  and is not attached to a role. A span id repeated in one response is
+  rejected; the later label does not win.
 - A requirement with no justifying span is `missing`. Never "probably met".
 - The same requirement text counts once. Case and repeated spaces do not make
   a second copy. The extra line stays visible and adds no weight.

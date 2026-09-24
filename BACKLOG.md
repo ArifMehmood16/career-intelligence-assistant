@@ -5,9 +5,9 @@ Every open item for this repository, in one list, in the order to work it.
 still open and what comes next. Items point at their `PLAN.md` id rather than
 restating acceptance criteria.
 
-Last reviewed 2026-09-24 against `main` at `e560a1d` and the open branch
-`fix/phase-13d-invalid-requirement-classification` at `8f805a1`, which this
-documentation branch sits on.
+Last reviewed 2026-09-24 on `fix/phase-13d-evidence-gates`. Pull request #37
+is merged. The extraction correctives on this branch are implemented and
+unmeasured; they do not close 13D.6g.
 
 **How to use it.** Work top to bottom. Take the first open item in [Now](#now--close-phase-13d)
 unless the human names another. When a `PLAN.md` box is ticked, tick the matching line
@@ -34,7 +34,10 @@ Blocks Phase 14. `PLAN.md` 13D.6g holds the full command list and the exit gate.
 - [ ] **Remeasure the labelled pilot on the current assessor.** The last measured
       configuration is `evidence-assessment-v3` with `qwen2.5:7b`. The code now runs
       `evidence-assessment-v5` plus the evidence-support and classification changes
-      in log entries 119, 120, 125, 126 and 128, none of which has been measured.
+      in log entries 119, 120, 125, 126, 128, 129, 130 and 131, none of which has
+      been measured. That includes weak CV lines, the 0.35 retrieval abstain,
+      batched requirement classification, rejected duplicate CV labels, and the
+      adversarial package fixture.
       With Ollama running, from `backend/`:
       `RUN_LLM_SMOKE=1 .venv/bin/pytest tests/smoke/test_ollama_pilot.py -m smoke --no-cov -s`
       (`SMOKE_COMPLETION_MODEL` defaults to `qwen2.5:7b`). Record the printed result

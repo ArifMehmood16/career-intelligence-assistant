@@ -13,7 +13,10 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > running assessor prompt `evidence-assessment-v5` has not been remeasured.
 > The last measured prompt is `evidence-assessment-v3` (3 disagreements of 24,
 > including one unsupported `met`). No accuracy claim is made beyond the dated
-> rows in [docs/evaluation.md](docs/evaluation.md). Durable operational audit
+> rows in [docs/evaluation.md](docs/evaluation.md). Correctives for invalid
+> classifications, Benefits and Logistics sections, weak CV lines, requirement
+> batches and duplicate CV labels are in the running path and are unmeasured.
+> Durable operational audit
 > (Phase 15B) is part-built. Evaluation (Phase 14), the security pass (15) and
 > verified containers (16) are not started. This is a **personal tool for local
 > use**, not a multi-user hosted product. [BACKLOG.md](BACKLOG.md) lists every

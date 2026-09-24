@@ -65,6 +65,17 @@ or `partial` whose remaining cited claim bodies fail that check is recorded as
 headings stay provenance. Prompt version `evidence-assessment-v5` states that
 rule to the model. The domain still calculates the score.
 
+## Amendment — 2026-09-24 (positive evidence and retrieval abstain)
+
+A span must show a responsibility, a qualification or an outcome before it is
+a claim or reaches the assessor. Reference lines, hobby lines and other
+non-work text are dropped before nearest-heading recovery. Retrieval may
+return no candidates. When the best eligible claim has no lexical overlap and
+similarity below 0.35, the assessor is not called and the mapping is
+`missing`. That cutoff is not a measured threshold. PLAN 14.7 still calibrates
+it. The 0.55 mapping floor still does not hide the locked paraphrase at
+similarity 0.42.
+
 ## Consequences
 
 - Keyword overlap and embedding agreement retrieve evidence. They do not decide
