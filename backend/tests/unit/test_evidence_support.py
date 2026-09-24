@@ -102,3 +102,19 @@ def test_a_dated_role_statement_is_evidence_of_tenure() -> None:
         "Platform Engineer — Northwind Energy Ltd Jan 2024 – Present"
     )
     assert not is_evidential_support("Java backend developer at Northwind.")
+
+
+def test_a_negation_is_context_even_though_it_is_not_evidence() -> None:
+    # PLAN 13D.3: adjacent sentences travel with a claim so negation and dates
+    # survive. They are shown to the assessor, never cited as support.
+    from career_assistant.domain.evidence_support import is_evidence_context
+
+    assert is_evidence_context("This was not production leadership.")
+    assert not is_evidential_support("This was not production leadership.")
+    for noise in (
+        "References available on request.",
+        "Edinburgh, UK",
+        "alex.rivera@example.com",
+        "Short",
+    ):
+        assert not is_evidence_context(noise), noise

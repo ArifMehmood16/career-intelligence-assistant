@@ -13,7 +13,10 @@ from career_assistant.application.ports.adjudication import (
 )
 from career_assistant.domain.assessment import EvidenceAssessment
 from career_assistant.domain.claims import Claim
-from career_assistant.domain.evidence_support import is_evidential_support
+from career_assistant.domain.evidence_support import (
+    is_evidence_context,
+    is_evidential_support,
+)
 from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
@@ -250,7 +253,7 @@ def _retrieved_indexes(
             if (
                 0 <= neighbor < len(claims)
                 and not claims[neighbor].self_authored
-                and is_evidential_support(claims[neighbor].context)
+                and is_evidence_context(claims[neighbor].context)
             ):
                 chosen.add(neighbor)
     return sorted(chosen)

@@ -93,18 +93,20 @@ _DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")
 
 
+def is_evidence_context(text: str) -> bool:
+    """True when the span may sit beside evidence so negation and dates survive.
+
+    Context is shown to the assessor and never cited as support. It excludes
+    only lines that name the candidate or say nothing: locations, contact
+    details, profile headlines and reference or hobby lines.
+    """
+    return not _is_noise(_plain(text))
+
+
 def is_evidential_support(text: str) -> bool:
     """True when the span can justify a met or partial mapping."""
-    plain = " ".join(text.split()).strip()
-    if len(plain) < 8:
-        return False
-    if _NON_EVIDENCE.search(plain):
-        return False
-    if _LOCATION.match(plain):
-        return False
-    if _CONTACT.search(plain) and len(plain) < 80:
-        return False
-    if _PROFILE_HEADLINE.match(plain):
+    plain = _plain(text)
+    if _is_noise(plain):
         return False
     if _ROLE_HEADING.search(plain) and _EMPLOYER_SEP.search(plain):
         if not _WORK.search(plain):
@@ -114,6 +116,20 @@ def is_evidential_support(text: str) -> bool:
     if not _WORK.search(plain) and not _OUTCOME.search(plain):
         return False
     return True
+
+
+def _plain(text: str) -> str:
+    return " ".join(text.split()).strip()
+
+
+def _is_noise(plain: str) -> bool:
+    return (
+        len(plain) < 8
+        or _NON_EVIDENCE.search(plain) is not None
+        or _LOCATION.match(plain) is not None
+        or (_CONTACT.search(plain) is not None and len(plain) < 80)
+        or _PROFILE_HEADLINE.match(plain) is not None
+    )
 
 
 def _states_tenure(plain: str) -> bool:
