@@ -25,6 +25,10 @@ Each case carries:
 
 ## Metrics
 
+These definitions are not results. Requirement precision, requirement recall and
+mapping accuracy have not been measured. The table is the contract for a future
+run. A dash or `TBD` means no observed number exists.
+
 | Metric | Definition | Threshold |
 |---|---|---|
 | `requirement_precision` | Extracted requirements that are real requirements | TBD |

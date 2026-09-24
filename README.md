@@ -6,15 +6,19 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-09-24):** model-first extraction (Phase 13C) and the structured
-> evidence assessment (Phase 13D) are implemented and are the running path on a local
-> Ollama model. The Phase 13D verification gate (13D.6g) is still open, so no accuracy
-> claim is made beyond the dated measurements in [docs/evaluation.md](docs/evaluation.md).
-> Durable operational audit (Phase 15B) is part-built. Evaluation (Phase 14),
-> the security pass (15) and verified containers (16) are not started.
-> This is a **personal tool for local use**, not a multi-user hosted product.
-> [BACKLOG.md](BACKLOG.md) lists every open item in order; [PLAN.md](PLAN.md) defines
-> each task and gate; [AGENTS.md](AGENTS.md) is the working protocol for coding agents.
+> **Status (2026-09-24):** the running path is Phase 13D structured evidence
+> assessment on a local Ollama model. Phase 13C model-first extraction is in that
+> path. The Phase 13D verification gate (13D.6g) is still open: requirement
+> precision, requirement recall and mapping accuracy are unmeasured, and the
+> running assessor prompt `evidence-assessment-v5` has not been remeasured.
+> The last measured prompt is `evidence-assessment-v3` (3 disagreements of 24,
+> including one unsupported `met`). No accuracy claim is made beyond the dated
+> rows in [docs/evaluation.md](docs/evaluation.md). Durable operational audit
+> (Phase 15B) is part-built. Evaluation (Phase 14), the security pass (15) and
+> verified containers (16) are not started. This is a **personal tool for local
+> use**, not a multi-user hosted product. [BACKLOG.md](BACKLOG.md) lists every
+> open item in order; [PLAN.md](PLAN.md) defines each task and gate;
+> [AGENTS.md](AGENTS.md) is the working protocol for coding agents.
 
 ## The engineering thesis
 

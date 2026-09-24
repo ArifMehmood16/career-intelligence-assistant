@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 131 — Adversarial package labels, unmeasured metrics left open
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6g still open
+- Prompt intent: tests should catch a model that labels salary and location as requirements, and the docs should not treat unmeasured extraction or assessment quality as known.
+- Suggestion: tick 13D.6g because the unit tests pass, and fill requirement precision, recall and mapping accuracy from the existing v3 disagreement count.
+- Outcome: rejected
+- Reason: the Northbridge fixture now has a run where every span is labelled `requirement`. Salary stays `benefit` and hybrid working stays `logistics`, and neither enters the score. Requirement precision, recall and mapping accuracy stay `TBD`. `evidence-assessment-v5` stays unmeasured. 13D.6g stays unchecked. The README status now leads with that open gate.
+- Human validation: `pytest tests/unit/test_aviva_shaped_fixture.py` passed (6). Ruff passed on that file. No labelled check-set run was performed.
+
 ### 130 — Requirement batches and rejected duplicate CV labels
 
 - Date: 2026-09-24

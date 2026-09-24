@@ -239,6 +239,41 @@ def test_headings_benefits_and_logistics_never_enter_scoring() -> None:
     assert len(skill_hits) == 8
 
 
+def test_a_model_that_calls_every_line_a_requirement_cannot_score_the_package() -> None:
+    """The server override holds when the scripted model is wrong on purpose."""
+    text = _load("jd-northbridge-mutual.txt")
+    items = [
+        {
+            "spanId": span_id("doc-jd", start, end),
+            "item_type": "requirement",
+            "must_have": True,
+            "competency": "general",
+        }
+        for start, end, _unit in candidate_units(text)
+    ]
+    result = ModelRequirementExtractor(
+        _ScriptedCompletion({"classifications": items})
+    ).extract(
+        document_id="doc-jd",
+        document_kind=DocumentKind.JOB_DESCRIPTION,
+        normalised_text=text,
+    )
+    assert result.complete is True
+    by_text = list(result.requirements)
+    salary = next(req for req in by_text if "Competitive salary" in req.text)
+    hybrid = next(req for req in by_text if "Hybrid working" in req.text)
+    assert salary.item_type.value == "benefit"
+    assert salary.must_have is False
+    assert hybrid.item_type.value == "logistics"
+    assert hybrid.must_have is False
+    scoreable = [req for req in result.requirements if req.is_scoreable]
+    joined = " ".join(req.text for req in scoreable)
+    labels = _labels()
+    for marker in labels["non_scoreable_markers"]:  # type: ignore[union-attr]
+        assert str(marker).lower() not in joined.lower()
+    assert any("Python Proficiency" in req.text for req in scoreable)
+
+
 def test_cv_preserves_six_roles_seventeen_claims_and_projects() -> None:
     text = _load("cv-jordan-hale.txt")
     result = ModelClaimExtractor(
