@@ -29,6 +29,7 @@ from career_assistant.domain.assessment import assessment_batch_slices
 from career_assistant.domain.candidate_spans import candidate_units, span_id
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.domain.evidence_support import is_evidential_support
 from career_assistant.domain.recency import (
     DateRange,
     derive_duration_signal,
@@ -368,6 +369,10 @@ def _assemble(
         if kind not in _CLAIM_KINDS:
             continue
         returned += 1
+        _start, _end, text = by_id[issued]
+        if not is_evidential_support(text):
+            dropped += 1
+            continue
         role_key = item.get("roleSpanId")
         heading = headings.get(role_key) if isinstance(role_key, str) else None
         if heading is not None and not _attaches(

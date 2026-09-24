@@ -528,6 +528,42 @@ def test_empty_role_headings_alone_do_not_fail_when_scoreable_claims_attach() ->
     assert result.claims_accepted == 1
 
 
+def test_a_reference_line_is_not_a_claim_and_does_not_attach() -> None:
+    """A model experience label does not turn boilerplate into role evidence."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Built Looker dashboards for store performance.\n"
+        "References available on request.\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Built Looker dashboards for store performance."],
+                "experience",
+            ),
+            _assign(ids["References available on request."], "experience"),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 1
+    assert result.claims[0].context.startswith("Built Looker")
+    assert result.claims[0].employer == "Northwind Analytics Ltd"
+    assert all("References" not in claim.context for claim in result.claims)
+
+
 def test_claim_with_missing_role_span_attaches_to_nearest_heading() -> None:
     text = normalise_text(
         "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"

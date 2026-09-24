@@ -201,3 +201,18 @@ stays scoreable. A line that is not under one of these headings is still
 classified by the model. There is no salary or remote regex over ordinary
 lines. Forced `benefit` and `logistics` items stay stored and are never mapped,
 scored, listed as gaps, ranked or turned into CV bullets.
+
+## Amendment — 2026-09-24 (weak CV evidence)
+
+An `experience` or `project` label is not enough to store a claim. The span
+must show a responsibility, a qualification or an outcome. A reference line,
+a hobby line or other non-evidential text is dropped before nearest-heading
+recovery, so it is not attached to a role. Recovery still applies to a span
+that passes that check. Dropping the line does not by itself fail completeness.
+
+Retrieval may return no claims. The 0.55 mapping floor still does not hide a
+paraphrase: the locked paraphrase at similarity 0.42 still reaches the
+assessor. When the best eligible claim has no lexical overlap and its
+similarity is below 0.35, the assessor is not called and the mapping is
+`missing`. That 0.35 cutoff is not a measured quality threshold. PLAN 14.7
+still owns calibration.

@@ -32,6 +32,9 @@ from career_assistant.domain.requirements import Requirement
 # How many claims one requirement may put in front of the assessor before
 # neighbours are added. Small enough to keep the prompt and the call bounded.
 _CANDIDATE_LIMIT = 5
+# Below the paraphrase the retrieval tests keep (0.42) and above a claim with
+# no shared keywords at 0.03. Not the 0.55 mapping floor. PLAN 14.7 calibrates it.
+_RETRIEVAL_ABSTAIN_FLOOR = 0.35
 
 
 @runtime_checkable
@@ -219,12 +222,12 @@ def _retrieved_indexes(
     similarities: Mapping[tuple[str, str], float],
     similarity_floor: float,
 ) -> list[int]:
-    """Shortlist the best few claims. The floor ranks evidence, it does not gate it.
+    """Shortlist the best few claims, or none when every signal is weak.
 
-    A paraphrase shares no keywords and can sit under the floor, so a gate
-    decides `missing` before the assessor sees anything. Ranking instead keeps
-    the call bounded and makes `missing` mean the evidence was read and
-    rejected. Neighbours come along to preserve negation and dates.
+    The 0.55 mapping floor still does not decide missing: a paraphrase can sit
+    under it and must reach the assessor. When the best claim has no lexical
+    overlap and its similarity is below the abstain floor, nothing is shown.
+    Neighbours are added only after that check, to preserve negation and dates.
     """
     ranked = sorted(
         (
@@ -235,6 +238,12 @@ def _retrieved_indexes(
         for index, claim in enumerate(claims)
         if not claim.self_authored and is_evidential_support(claim.context)
     )
+    if not ranked:
+        return []
+    best_similarity = -ranked[0][0]
+    best_overlap = -ranked[0][1]
+    if best_overlap < 1 and best_similarity < _RETRIEVAL_ABSTAIN_FLOOR:
+        return []
     chosen: set[int] = set()
     for _, _, index in ranked[:_CANDIDATE_LIMIT]:
         for neighbor in (index - 1, index, index + 1):

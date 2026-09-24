@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 129 — Weak CV lines are not evidence
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D corrective, retrieval abstain ahead of 14.7
+- Prompt intent: reference lines must not become claims, and retrieval must be able to show the assessor nothing when every relevance signal is weak.
+- Suggestion: keep accepting any long span the model calls experience, and keep sending the five least-weak claims so a paraphrase cannot be missed.
+- Outcome: rejected
+- Reason: a span needs a responsibility, qualification or outcome before it is a claim or reaches matching. Nearest-heading recovery does not apply to a line that fails that check. Retrieval returns no candidates when the best claim has no lexical overlap and similarity below 0.35. The 0.55 floor stays a rank signal, so the locked paraphrase at 0.42 still reaches the assessor. 0.35 is not a measured threshold; PLAN 14.7 still calibrates it.
+- Human validation: focused pytest on evidence support, claim extraction, retrieval, the Aviva-shaped fixture and three-signal matching passed (46). Ruff and mypy passed on the changed Python files.
+
 ### 128 — Benefits and Logistics sections stay unscoreable
 
 - Date: 2026-09-24

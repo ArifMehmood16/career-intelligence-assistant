@@ -151,7 +151,10 @@ the configuration file rather than hard-coding these literals.
   stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above
   the configured floor, and model adjudication of the pairs those two disagree
-  on. The combination, the status and the reason code stay in domain code.
+  on. Retrieval returns no evidence when the best claim has no lexical overlap
+  and similarity below 0.35, so the mapping can be a genuine miss. A paraphrase
+  at similarity 0.42 still reaches the assessor. The combination, the status
+  and the reason code stay in domain code.
   Hermetic analysis does not call the adjudicator and treats disagreement as
   the OR of the first two, so embedding-only adjacent matches still appear.
 - Status colour is never the only signal — every status carries a text mark, because
