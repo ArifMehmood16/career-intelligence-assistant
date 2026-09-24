@@ -29,6 +29,35 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 134 — Review of the PDF claim-extraction fix: two regressions closed
+
+- Date: 2026-09-24
+- Tool / model: Claude Opus 5.5, Cowork session
+- Plan task: review of the log-133 branch against PLAN 13D.6c, 13D.6d and log 120
+- Prompt intent: check that the log-133 changes fix the failed PDF CV job correctly
+  and follow the plan; fix what does not.
+- Suggestion: keep the three log-133 fixes and close two regressions they
+  introduced, test-first.
+- Outcome: changed
+- Reason: (1) the PDF reflow joined any full-width, unpunctuated line to the next,
+  so a job advert whose bullet glyphs were lost in the PDF merged four requirements
+  into one span — the silent merge 13D.6c forbids. A capitalised next line now
+  joins only when the line before ends on a connecting word or symbol. (2) The
+  opening-word rule for "own" and "lead" made job titles such as "Lead Software
+  Engineer" and "Lead Engineer — Acme Ltd" count as evidence, reversing entry 120;
+  the next word must now be lower case. ADR 010 had no amendment for the log-133
+  changes, although every earlier extraction corrective has one; added.
+- Human validation: pending. Red then green:
+  `test_list_items_without_bullet_glyphs_stay_separate` and
+  `test_a_job_title_starting_with_lead_is_not_work_evidence` failed on the log-133
+  code and pass after the change. Full backend `pytest` on Python 3.14.7 in a review
+  copy of the branch: the same 6 failures as `main` at `50aaabf` (confirmed by
+  running those tests on `main`), none in touched files; coverage 83.32%. Ruff
+  check, ruff format and mypy (145 files) passed. Not re-measured on the real CV:
+  the 106-span figure in entry 133 may rise slightly, because a capitalised
+  continuation after a non-connecting word is no longer joined. The model path was
+  not run.
+
 ### 133 — PDF CV failed claim extraction: wrapped lines, verbs, dated degrees
 
 - Date: 2026-09-24

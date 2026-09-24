@@ -227,3 +227,26 @@ batch is split and classified again. Each batch keeps the 4096-token output cap.
 A CV span id that appears more than once in one response is not accepted.
 The later label does not win. Those spans are retried once. A single valid
 classification on the retry is kept.
+
+## Amendment — 2026-09-24 (PDF line reflow and CV evidence wording)
+
+pypdf returns printed lines, so one sentence that wraps becomes two candidate
+spans. PDF pages are reflowed before spans are built. A line joins the next only
+when it fills most of the page's text width, ends without terminal punctuation,
+and is not a heading, dated line or contact line; the next line must not be a
+bullet, a `Label:` line, a heading, a dated line or a contact line. The next line
+must also read as a continuation: it starts in lower case, or the line before
+ends on a connecting word or symbol. List items that lost their bullet glyphs in
+the PDF are therefore never merged into one span (13D.6c). The stored page text
+is the reflowed text and span offsets are computed on it, so citations resolve
+as before. DOCX and pasted text are not reflowed, and a document already stored
+keeps its spans until it is uploaded again.
+
+The evidence-support rule accepts more delivered-work verbs, such as split,
+chose, traced, optimised, generated and "act as". "Own" and "lead" count only as
+the opening word and only when the next word is lower case, so a job title such
+as "Lead Software Engineer" still cannot justify a match.
+
+A qualification line — one that opens with a degree or award such as MSc, BEng
+or PhD — that the model leaves unclassified no longer fails completeness, even
+with a date range. An unclassified dated role heading still does.
