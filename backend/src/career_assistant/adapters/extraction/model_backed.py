@@ -28,6 +28,7 @@ from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.candidate_spans import (
     candidate_units,
     is_narrative_heading,
+    is_section_heading,
     span_id,
 )
 from career_assistant.domain.documents import DocumentKind, Span
@@ -230,13 +231,12 @@ class ModelRequirementExtractor:
             if item is None:
                 dropped += 1
                 continue
-            if is_narrative_heading(text):
+            if is_section_heading(text):
                 section = _heading_section(text)
             requirement, span = _from_server_span(
                 item, document_id, issued, start, end, text
             )
-            if section in {"about", "why"} and not is_narrative_heading(text):
-                requirement = _force_non_requirement(requirement)
+            requirement = _apply_section(requirement, section, text)
             kept_reqs.append(requirement)
             kept_spans.append(span)
             type_counts[requirement.item_type.value] = (
@@ -404,6 +404,37 @@ def _heading_section(text: str) -> str | None:
     if _ABOUT_HEADING.search(plain):
         return "about"
     return "other"
+
+
+def _apply_section(
+    requirement: Requirement, section: str | None, text: str
+) -> Requirement:
+    """Headings and About, Why, Benefits and Logistics blocks are not skills."""
+    if is_section_heading(text):
+        return _force_non_requirement(requirement)
+    if section in {"about", "why"}:
+        return _force_non_requirement(requirement)
+    if section == "benefits":
+        return _force_kind(requirement, ItemType.BENEFIT)
+    if section == "logistics":
+        return _force_kind(requirement, ItemType.LOGISTICS)
+    return requirement
+
+
+def _force_kind(requirement: Requirement, kind: ItemType) -> Requirement:
+    if requirement.item_type is kind and not requirement.must_have:
+        return requirement
+    return Requirement(
+        id=requirement.id,
+        text=requirement.text,
+        competency=requirement.competency,
+        seniority_signal=requirement.seniority_signal,
+        must_have=False,
+        source_span_id=requirement.source_span_id,
+        extraction_confidence=requirement.extraction_confidence,
+        is_vague=requirement.is_vague,
+        item_type=kind,
+    )
 
 
 def _force_non_requirement(requirement: Requirement) -> Requirement:

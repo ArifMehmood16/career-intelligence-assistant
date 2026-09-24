@@ -547,6 +547,66 @@ def test_about_why_headings_and_pitch_are_not_scoreable_when_model_mislabels() -
         assert all(marker not in req.text for req in scoreable), marker
 
 
+SECTIONED_PACKAGE = normalise_text(
+    "Benefits:\n"
+    "£70,000 - £80,000 depending on experience\n"
+    "Logistics:\n"
+    "Remote (UK) with quarterly team days in Newcastle\n"
+    "## Benefits\n"
+    "Share options, awarded on performance\n"
+    "## Logistics\n"
+    "Full-time employee role with the right to work in the UK\n"
+    "## Requirements\n"
+    "You will need strong experience with APIs, JSON and webhooks.\n"
+)
+
+
+def _label_every_span(text: str, kind: str) -> dict[str, object]:
+    return {
+        "classifications": [
+            _item(span_id("doc-jd", start, end), kind, must_have=True)
+            for start, end, _unit in candidate_units(text)
+        ]
+    }
+
+
+def test_benefit_and_logistics_sections_stay_unscoreable_when_model_mislabels() -> None:
+    """Colon and Markdown headings keep package lines out of the score."""
+    result, _ = _extract(
+        _label_every_span(SECTIONED_PACKAGE, "requirement"), text=SECTIONED_PACKAGE
+    )
+
+    by_text = {requirement.text: requirement for requirement in result.requirements}
+    salary = by_text["£70,000 - £80,000 depending on experience"]
+    remote = by_text["Remote (UK) with quarterly team days in Newcastle"]
+    shares = by_text["Share options, awarded on performance"]
+    right_to_work = by_text["Full-time employee role with the right to work in the UK"]
+    skill = by_text["You will need strong experience with APIs, JSON and webhooks."]
+    assert salary.item_type is ItemType.BENEFIT
+    assert remote.item_type is ItemType.LOGISTICS
+    assert shares.item_type is ItemType.BENEFIT
+    assert right_to_work.item_type is ItemType.LOGISTICS
+    assert skill.item_type is ItemType.REQUIREMENT
+    for line in (salary, remote, shares, right_to_work):
+        assert line.must_have is False
+        assert line.is_scoreable is False
+    for heading in (
+        "Benefits:",
+        "Logistics:",
+        "## Benefits",
+        "## Logistics",
+        "## Requirements",
+    ):
+        assert by_text[heading].is_scoreable is False
+    mapped = {
+        requirement.text
+        for requirement in result.requirements
+        if requirement.id
+        in {row.requirement_id for row in map_requirements(result.requirements, [])}
+    }
+    assert mapped == {skill.text}
+
+
 _PACKAGE_KINDS = {
     "APIs, JSON": "requirement",
     "£70,000": "benefit",
