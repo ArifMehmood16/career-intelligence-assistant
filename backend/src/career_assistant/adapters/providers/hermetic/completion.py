@@ -150,7 +150,13 @@ _SPAN_BLOCK = re.compile(
 
 
 def _cv_assignments(user: str) -> list[dict[str, str]]:
-    """Classify server spans without copying them into evidence text."""
+    """Classify server spans without copying them into evidence text.
+
+    Claim extraction sends spans in batches, so a role's heading can sit in the
+    previous call. A bullet with no heading in this call is still experience;
+    it carries no roleSpanId, and the extractor attaches it to the nearest
+    preceding heading, as it does for a real model that omits the id.
+    """
     blocks = _SPAN_BLOCK.findall(user)
     last_role: str | None = None
     assignments: list[dict[str, str]] = []
@@ -166,6 +172,8 @@ def _cv_assignments(user: str) -> list[dict[str, str]]:
                     "roleSpanId": last_role,
                 }
             )
+        elif _BULLET.match(text):
+            assignments.append({"spanId": issued, "kind": "experience"})
         else:
             assignments.append({"spanId": issued, "kind": "narrative"})
     return assignments

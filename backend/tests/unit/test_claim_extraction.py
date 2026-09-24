@@ -192,4 +192,9 @@ def test_model_backed_claim_extractor_keeps_span_backed_texts() -> None:
     )
     assert dropped == 0
     assert kept
-    assert any("dbt" in c.context.lower() for c in kept)
+    contexts = [c.context for c in kept]
+    # The dbt evidence is the bullet under the first role, whose heading ends
+    # the previous classification batch. A bare skills list mentions dbt too,
+    # but it is not evidence of delivery and must not be what satisfies this.
+    assert any(c.startswith("- Owned dbt models") for c in contexts), contexts
+    assert not any(c.startswith("dbt, Snowflake") for c in contexts), contexts
