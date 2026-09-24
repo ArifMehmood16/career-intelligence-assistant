@@ -931,3 +931,60 @@ def test_accounting_completion_records_extract_claims_purpose() -> None:
         r.metadata.get("purpose") == "extract_claims" for r in accountant.records
     )
     assert all(r.metadata.get("workspace_id") == "ws-1" for r in accountant.records)
+
+
+def test_an_unclassified_dated_qualification_does_not_fail_completeness() -> None:
+    """2026-09-24: a CV lists degrees with month ranges, the model has no education
+    kind, and one skipped degree line failed the whole job as if it were a role."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "MSc Data Science, Distinction — Synthetic University Sep 2021 – Sep 2022\n"
+        "BEng Computer Engineering — Synthetic Institute Sep 2014 – Jun 2018\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Owned dbt models in production."],
+                "experience",
+                role=heading,
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 1
+
+
+def test_an_unclassified_dated_role_heading_still_fails_completeness() -> None:
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Owned dbt models in production.\n"
+        "Southwind Data Ltd — Data Engineer, March 2019 – December 2022\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(heading, "role_heading", employer="Northwind Analytics Ltd"),
+            _assign(ids["Owned dbt models in production."], "experience", role=heading),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is False

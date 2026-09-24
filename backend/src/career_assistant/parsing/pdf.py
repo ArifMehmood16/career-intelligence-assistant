@@ -9,6 +9,7 @@ from pypdf.errors import FileNotDecryptedError, PdfReadError
 
 from career_assistant.application.intake.errors import IntakeError, IntakeErrorCode
 from career_assistant.domain.normalisation import normalise_text
+from career_assistant.parsing.reflow import reflow_wrapped_lines
 
 
 def extract_pdf_pages(data: bytes) -> list[str]:
@@ -36,7 +37,7 @@ def extract_pdf_pages(data: bytes) -> list[str]:
     try:
         for page in reader.pages:
             raw = page.extract_text() or ""
-            pages.append(normalise_text(raw))
+            pages.append(reflow_wrapped_lines(normalise_text(raw)))
     except FileNotDecryptedError as exc:
         raise IntakeError(
             IntakeErrorCode.DOCUMENT_UNREADABLE,

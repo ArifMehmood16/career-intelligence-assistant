@@ -38,7 +38,11 @@ product and threat-model decision.
       questions (`role-strong` / `req-sql` and `role-partial` /
       `req-reliability`) before tuning. Record requirement classification,
       unsupported matches, ranking agreement and latency in `docs/evaluation.md`.
-      The live entry point is:
+      The six baseline tests from log entry 133 pass again (log 135). Re-upload the
+      PDF CV, because reflow applies at upload (log 134), check its candidate-span
+      count, then re-run the job; if it still fails, capture `claims.batch` and
+      `claims.incomplete` with the skipped span ids rather than assuming the dated
+      qualification was the cause. The live entry point is:
       `RUN_LLM_SMOKE=1 .venv/bin/pytest tests/smoke/test_ollama_pilot.py -m smoke --no-cov -s`.
 - [ ] **13D.6g — verify the complete journey and close the evidence gate.** Check
       progress and loading states, actionable failures, readable resolving citations,
@@ -63,7 +67,9 @@ not block 13D.
       a test fixture; add the pull-request `synchronize` and `reopened` CI events;
       identify the synthetic/public-safe data class behind logged hosted runs; and
       delete genuinely unused or misleading configuration rather than implementing
-      features to justify it.
+      features to justify it. Correct the evidence-support rule so bare section
+      headings such as "EXPERIENCE" and "OPEN SOURCE PROJECTS" cannot become CV
+      evidence.
 - [ ] **15.1 — run the practical security checks.** Record the observed Bandit,
       dependency-audit and secret-scan results. Run container/filesystem scanning only
       for a supported container path.

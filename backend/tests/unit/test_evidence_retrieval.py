@@ -266,3 +266,28 @@ def test_the_lexical_path_never_decides_when_an_assessor_is_in_charge(
     assert mappings[0].reason_code is MappingReason.NO_RELATED_CLAIM
     assert mappings[0].retrieved_claim_ids == ()
     assert mappings[0].justifying_span_ids == ()
+
+
+def test_no_similarity_measured_is_not_a_weak_similarity() -> None:
+    """The abstain floor needs a measured signal to call it weak.
+
+    With no embeddings (the hermetic path, or a closed hosted gate) every
+    similarity is absent. Abstaining then would hide every paraphrase from the
+    assessor, which is the retrieval miss PLAN 13D.6 recorded as zero.
+    """
+    completion = _ScriptedCompletion(_missing_payload())
+    paraphrase = _claim(
+        "claim-paraphrase",
+        "Looked after the company's Postgres estate.",
+        "span-paraphrase",
+    )
+    mappings = map_role_requirements(
+        (_requirement(),),
+        (paraphrase,),
+        similarities={},
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    assert completion.calls == 1, "the requirement was never assessed"
+    assert "claim-paraphrase" in mappings[0].retrieved_claim_ids

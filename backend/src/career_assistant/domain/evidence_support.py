@@ -62,33 +62,80 @@ _WORK = re.compile(
     r"partnered|partnering|authored|authoring|coordinated|coordinating|"
     r"assisted|assisting|shadowed|shadowing|collected|collecting|"
     r"cleaned|cleaning|prepared|preparing|documented|documenting|"
-    r"published|publishing|"
+    r"published|publishing|completed|completing|"
+    r"split|splitting|chose|choosing|compared|comparing|traced|tracing|"
+    r"optimi[sz]ed|optimi[sz]ing|generated|generating|introduced|introducing|"
+    r"rebuilt|rebuilding|redirected|redirecting|automated|automating|"
+    r"integrated|integrating|specified|specifying|trained|"
+    r"act(?:ed|s)?\s+as|acting\s+as|"
     r"experience|proficien|familiar|certified|certification|degree|"
     r"diploma|bachelor|portfolio|internship|open[- ]source"
     r")\b",
     re.IGNORECASE,
 )
+# Present-tense duty verbs count only as the opening word: "own" and "lead"
+# are also an adjective and a noun ("your own machine", "the team lead").
+# The next word must be lower case, because "Lead" also opens job titles
+# ("Lead Software Engineer"), and a title never justifies a match.
+_LEADING_DUTY = re.compile(r"^(?:[-*]\s*)?(?:[Oo]wns?|[Ll]eads?)\s+[a-z]")
 _OUTCOME = re.compile(r"\b\d+(?:\.\d+)?\s*%")
+# A role held at an employer for stated years evidences tenure, which is what a
+# years-of-experience requirement asks for. Searched in three linear steps
+# rather than one pattern, so untrusted CV text cannot make it backtrack.
+_ROLE_NOUN = re.compile(
+    r"\b(?:developer|engineer|analyst|scientist|architect|consultant|manager|"
+    r"administrator|designer|specialist|technician|intern)\b",
+    re.IGNORECASE,
+)
+_EMPLOYER_LINK = re.compile(r"\b(?:at|for|with)\b", re.IGNORECASE)
+_YEAR = re.compile(r"\b(?:19|20)\d{2}\b")
 _DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")
 
 
+def is_evidence_context(text: str) -> bool:
+    """True when the span may sit beside evidence so negation and dates survive.
+
+    Context is shown to the assessor and never cited as support. It excludes
+    only lines that name the candidate or say nothing: locations, contact
+    details, profile headlines and reference or hobby lines.
+    """
+    return not _is_noise(_plain(text))
+
+
 def is_evidential_support(text: str) -> bool:
     """True when the span can justify a met or partial mapping."""
-    plain = " ".join(text.split()).strip()
-    if len(plain) < 8:
-        return False
-    if _NON_EVIDENCE.search(plain):
-        return False
-    if _LOCATION.match(plain):
-        return False
-    if _CONTACT.search(plain) and len(plain) < 80:
-        return False
-    if _PROFILE_HEADLINE.match(plain):
+    plain = _plain(text)
+    if _is_noise(plain):
         return False
     if _ROLE_HEADING.search(plain) and _EMPLOYER_SEP.search(plain):
         if not _WORK.search(plain):
             return False
+    if _LEADING_DUTY.match(plain) or _states_tenure(plain):
+        return True
     if not _WORK.search(plain) and not _OUTCOME.search(plain):
         return False
     return True
+
+
+def _plain(text: str) -> str:
+    return " ".join(text.split()).strip()
+
+
+def _is_noise(plain: str) -> bool:
+    return (
+        len(plain) < 8
+        or _NON_EVIDENCE.search(plain) is not None
+        or _LOCATION.match(plain) is not None
+        or (_CONTACT.search(plain) is not None and len(plain) < 80)
+        or _PROFILE_HEADLINE.match(plain) is not None
+    )
+
+
+def _states_tenure(plain: str) -> bool:
+    """A role, then an employer link, then a year: "developer at X from 2019"."""
+    role = _ROLE_NOUN.search(plain)
+    if role is None:
+        return False
+    link = _EMPLOYER_LINK.search(plain, role.end())
+    return link is not None and _YEAR.search(plain, link.end()) is not None

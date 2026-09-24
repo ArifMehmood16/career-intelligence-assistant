@@ -29,6 +29,75 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 135 — The six failing tests were five regressions and one stale assertion
+
+- Date: 2026-09-24
+- Tool / model: Claude Opus 5.5, Cowork session
+- Plan task: restore the six baseline tests recorded in entry 133 (BACKLOG "Now")
+- Prompt intent: `make test` fails six tests on `main`; fix the tests to match the
+  new logic.
+- Suggestion: rewrite the six assertions to match what 9af8e42 now does.
+- Outcome: changed
+- Reason: bisecting `04960f1..50aaabf` put all six on 9af8e42 (entry 129), which ran
+  only focused tests. Five of the failures were the tests doing their job. The new
+  work-verb rule dropped "Completed an introductory Python course." and "Java
+  backend developer at Northwind from 2019 to 2022.", so the course-versus-leadership
+  and overlap cases (PLAN 13D.5) never reached the assessor. The same rule, applied
+  to neighbours, dropped the negation that PLAN 13D.3 sends beside a claim. The
+  0.35 abstain floor treated a similarity that was never measured as 0.0, so with no
+  embeddings every labelled paraphrase was hidden, the retrieval miss PLAN 13D.6
+  records as zero. Rewriting those tests would have hidden real misses, which
+  AGENTS.md forbids, so the code was fixed: completed courses and dated role
+  statements count; neighbours pass a context check, never a support check; the
+  abstain rule needs a measured similarity. One test was stale: the dbt claim test
+  passed only because a bare skills list was accepted as a claim. It now asserts the
+  dbt bullet, and the hermetic fixture classifier labels a bullet whose heading sat
+  in the previous batch as experience, as a real model would.
+- Human validation: pending. Each fix went red then green. Full backend `pytest`
+  on Python 3.14.7: 466 passed, 3 skipped, 0 failed; coverage 83.33%. Ruff check,
+  ruff format and mypy (145 files) passed. ADR 010 amended. The live model path was
+  not run.
+
+### 134 — Review of the PDF claim-extraction fix: two regressions closed
+
+- Date: 2026-09-24
+- Tool / model: Claude Opus 5.5, Cowork session
+- Plan task: review of the log-133 branch against PLAN 13D.6c, 13D.6d and log 120
+- Prompt intent: check that the log-133 changes fix the failed PDF CV job correctly
+  and follow the plan; fix what does not.
+- Suggestion: keep the three log-133 fixes and close two regressions they
+  introduced, test-first.
+- Outcome: changed
+- Reason: (1) the PDF reflow joined any full-width, unpunctuated line to the next,
+  so a job advert whose bullet glyphs were lost in the PDF merged four requirements
+  into one span — the silent merge 13D.6c forbids. A capitalised next line now
+  joins only when the line before ends on a connecting word or symbol. (2) The
+  opening-word rule for "own" and "lead" made job titles such as "Lead Software
+  Engineer" and "Lead Engineer — Acme Ltd" count as evidence, reversing entry 120;
+  the next word must now be lower case. ADR 010 had no amendment for the log-133
+  changes, although every earlier extraction corrective has one; added.
+- Human validation: pending. Red then green:
+  `test_list_items_without_bullet_glyphs_stay_separate` and
+  `test_a_job_title_starting_with_lead_is_not_work_evidence` failed on the log-133
+  code and pass after the change. Full backend `pytest` on Python 3.14.7 in a review
+  copy of the branch: the same 6 failures as `main` at `50aaabf` (confirmed by
+  running those tests on `main`), none in touched files; coverage 83.32%. Ruff
+  check, ruff format and mypy (145 files) passed. Not re-measured on the real CV:
+  the 106-span figure in entry 133 may rise slightly, because a capitalised
+  continuation after a non-connecting word is no longer joined. The model path was
+  not run.
+
+### 133 — PDF CV failed claim extraction: wrapped lines, verbs, dated degrees
+
+- Date: 2026-09-24
+- Tool / model: Claude (Cowork), claude-opus-5-5
+- Plan task: 13D.6g still open; production defect found on a real CV
+- Prompt intent: a job failed at `extracting_claims` with `extraction_incomplete` (`spans_supplied=152, claims_returned=38, claims_accepted=12, claims_rejected=29`). Find the cause and fix it.
+- Suggestion: three fixes. Rejoin PDF lines that wrapped mid-sentence; add missing CV action verbs to the evidence-support rule; stop counting dated qualification lines as scoreable in the completeness gate.
+- Outcome: accepted
+- Reason: parsing the same CV gave 152 candidate spans from the PDF and 106 from the DOCX. pypdf returns printed lines, so bullets became fragments that failed the evidence gate and gave the model more ids to skip; from the logged counts the model left 3 spans unclassified after the retry, and at least one looked scoreable. Delivered-work lines such as "Split the payments monolith into seven services." were rejected for their verb in both formats. A skipped "MSc ... Sep 2022 – Sep 2023" line failed completeness although the existing test says education must not. Which three spans the model skipped is not recorded in the log line supplied, so the qualification fix addresses a likely contributor, not a proven one.
+- Human validation: red run recorded for each behaviour (reflow not joining; pdf intake not joining; "Split ..." not evidential; dated MSc failing completeness with `scoreable_unclassified`). On the real CV the PDF now yields 106 spans, 24 must-classify spans (27 before) and 39 evidence-eligible spans (34 before). `pytest` on the branch shows the same 6 failures as `main` at `ea1de6f`, none in touched files. Ruff and mypy passed on touched files. The model path was not run: no Ollama in this environment, so the job itself was not re-run end to end.
+
 ### 132 — Plan and docs record the extraction correctives
 
 - Date: 2026-09-24

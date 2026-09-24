@@ -60,6 +60,11 @@ _CLAIM_LEAD = re.compile(
     r"Shipped|Published|Coordinated)\b)",
     re.IGNORECASE,
 )
+_QUALIFICATION = re.compile(
+    r"^(?:[\-\*•]\s*)?(?:BSc|BA|BEng|MEng|MSc|MA|MBA|MRes|MPhil|PhD|DPhil|LLB|LLM|"
+    r"HND|HNC|Bachelor|Master|Doctorate|Diploma|Postgraduate|Undergraduate|"
+    r"PGCE|PGDip|GCSEs?|A[- ]levels?)\b"
+)
 # Keep each response under typical provider max_output_tokens. Live CVs
 # needed ~160 tokens per span when optional claim fields were filled.
 _DEFAULT_BATCH_SIZE = 12
@@ -569,6 +574,9 @@ def _recover_heading(
 
 
 def _looks_like_scoreable_evidence(text: str) -> bool:
+    if _QUALIFICATION.search(text):
+        # No span kind describes a degree, so a skipped one is not a lost claim.
+        return False
     if parse_date_range(text) is not None:
         return True
     if _CLAIM_LEAD.match(text.strip()):
