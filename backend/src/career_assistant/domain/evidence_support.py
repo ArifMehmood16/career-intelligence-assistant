@@ -75,7 +75,9 @@ _WORK = re.compile(
 )
 # Present-tense duty verbs count only as the opening word: "own" and "lead"
 # are also an adjective and a noun ("your own machine", "the team lead").
-_LEADING_DUTY = re.compile(r"^(?:[-*]\s*)?(?:own|owns|lead|leads)\b", re.IGNORECASE)
+# The next word must be lower case, because "Lead" also opens job titles
+# ("Lead Software Engineer"), and a title never justifies a match.
+_LEADING_DUTY = re.compile(r"^(?:[-*]\s*)?(?:[Oo]wns?|[Ll]eads?)\s+[a-z]")
 _OUTCOME = re.compile(r"\b\d+(?:\.\d+)?\s*%")
 _DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")

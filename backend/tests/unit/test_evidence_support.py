@@ -64,3 +64,17 @@ def test_common_cv_action_verbs_are_evidential() -> None:
 
     assert not is_evidential_support("It runs on your own machine.")
     assert not is_evidential_support("Reports to the team lead weekly.")
+
+
+def test_a_job_title_starting_with_lead_is_not_work_evidence() -> None:
+    # Entry 120: a title cannot justify a Met. "Lead" opens titles as often as
+    # it opens a duty.
+    assert not is_evidential_support("Lead Software Engineer")
+    assert not is_evidential_support("Lead Engineer — Acme Ltd")
+    assert not is_evidential_support("- Lead Data Engineer")
+
+
+def test_lead_and_own_as_a_duty_still_count() -> None:
+    assert is_evidential_support("Lead a team of five engineers")
+    assert is_evidential_support("Own the payments service end to end")
+    assert is_evidential_support("- Owns delivery of the pricing API")
