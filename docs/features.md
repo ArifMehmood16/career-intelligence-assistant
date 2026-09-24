@@ -8,8 +8,10 @@ One rule sits above all of them, from [AGENTS.md](../AGENTS.md):
 
 > **The model extracts. The domain decides.**
 
-Every feature below is designed so that removing the model entirely leaves a working,
-slightly blunter product. Nothing depends on a model being clever.
+Every feature below keeps judgement in domain code, so a model can be swapped without
+changing what a result means. Removing the model entirely leaves the hermetic fixture
+path: enough to run the tests offline, not a usable product on real documents
+([ADR 010](adr/010-model-first-extraction.md)).
 
 ---
 
@@ -414,9 +416,10 @@ argued about.
   PostgreSQL.
 - **Delete** the CV, supporting cover letter, role or chat history, with original
   bytes and every dependent record going with it.
-- **Retention** — documents older than the configured window are removed, and the
-  deletion path includes questions, answers, citations and generated drafts rather
-  than being implied.
+- **Retention** — *planned (PLAN 15.2), not implemented.* Documents older than the
+  configured window will be removed, with the deletion path covering questions,
+  answers, citations and generated drafts rather than implying them. Until then, data
+  stays until you delete it.
 - **Logs** contain no document text, question, answer, prompt, embedding or
   credential. A redaction test asserts it.
 
@@ -424,10 +427,10 @@ argued about.
 
 ## A session, end to end
 
-The walkthrough the README screenshots follow, and the path the end-to-end test
-takes. The numbers below are the synthetic fixture set, not measurements — every
-measured number in this repository lives in [evaluation.md](evaluation.md) with a date
-against it:
+The walkthrough the README screenshots follow, and the path the Playwright
+end-to-end test will take (PLAN 16.5; not written yet). The numbers below are the
+synthetic fixture set, not measurements — every measured number in this repository
+lives in [evaluation.md](evaluation.md) with a date against it:
 
 1. Upload `cv.pdf`. Three pages, parsed in a few seconds.
 2. Upload `previous-cover-letter.docx` as a supporting document. It is stored and can

@@ -44,7 +44,9 @@ the documents.
 
 Known gap closed at the contract layer: `docs/threat-model.md` now treats
 workspace-scoped operational audit as in scope ([ADR 012](adr/012-durable-operational-audit.md)).
-Implementation of tables and file handlers remains 15B.2–15B.10.
+The rotating file handler shipped in 15B.2 and the in-memory recorder in 15B.3–15B.5.
+The PostgreSQL tables are 15B.7; until then action, event and HTTP-envelope records
+are lost on restart.
 
 Already rejected (AI log **111**): a log statement in every backend function.
 That drowns signal and risks document text in traces. This plan does **not**
@@ -53,9 +55,8 @@ reopen that.
 **Partial coverage already shipped on the analysis path (2026-09-22):** stderr
 events with `site=module.function` on failures (`log_failure`), safe `input=`
 descriptors (ids/counts/stages only), claim batch diagnostics, and
-`provider_call_accounting` for extract/assess/embed. Durable action/event/HTTP
-tables and on-disk `LOG_FILE` are still this proposal — not implemented until
-the human decisions below are answered.
+`provider_call_accounting` for extract/assess/embed. The human decisions below
+were answered on 2026-09-22; see the task list for what has shipped.
 
 ---
 

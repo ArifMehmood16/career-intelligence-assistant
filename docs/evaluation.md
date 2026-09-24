@@ -187,8 +187,8 @@ pilot are one to two claims, so the call budget is unchanged.
 The hermetic baseline is unaffected — it has no separate retrieval step — and
 still shows 7 disagreements, 5 unsupported `met` and 0 order disagreements.
 
-**Not yet measured:** the live Ollama run has not been repeated since this
-change. The 9 disagreements, 1 unsupported `met` and 1 order disagreement
+*Superseded — measured in the next section.* When this was written, the live
+Ollama run had not been repeated since this change. The 9 disagreements, 1 unsupported `met` and 1 order disagreement
 recorded above are still the last observed live numbers.
 
 ## Local Ollama, retrieval fixed (Phase 13D.6)
@@ -234,7 +234,7 @@ the three levels, names an aspiration or a denial as `missing`, and says
 environment variable, so the same labels can be run against a stronger local
 model without changing the prompt.
 
-**Not yet measured:** no run has been recorded against `evidence-assessment-v2`.
+*Superseded — `evidence-assessment-v2` is measured in the next section.*
 
 ## Local Ollama, two models on the same labels (Phase 13D.6)
 

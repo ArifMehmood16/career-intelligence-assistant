@@ -1,17 +1,25 @@
 # Career Intelligence Assistant — frontend
 
-TanStack Start (React 19) UI for the Career Intelligence Assistant (CIA).
+TanStack Start (React 19) UI for the Career Intelligence Assistant. Agent rules for
+this directory are in [AGENTS.md](AGENTS.md).
 
-## Commands
+## Run it
+
+From the repository root, `make run-web` starts the dev server on `WEB_PORT` (default
+3000) and loads `API_BASE_URL` from `config/app.env` into the Start server, which
+proxies `/api/**` to the FastAPI backend. A plain `bun run dev` here does not load that
+file, so the proxy has no backend address. `make run` starts the API and the web app
+together.
+
+## Checks
 
 ```bash
 bun install --frozen-lockfile
-bun run dev
 bun run lint
 bun run typecheck
 bun run test
 bun run build
 ```
 
-The Start server proxies `/api/**` to the FastAPI backend. See
-`docs/frontend-integration.md` in the repository root.
+How the Lovable design became this app, and the proxy details, are in
+[docs/frontend-integration.md](../docs/frontend-integration.md).
