@@ -250,3 +250,22 @@ as "Lead Software Engineer" still cannot justify a match.
 A qualification line — one that opens with a degree or award such as MSc, BEng
 or PhD — that the model leaves unclassified no longer fails completeness, even
 with a date range. An unclassified dated role heading still does.
+
+## Amendment — 2026-09-24 (evidence, context and retrieval abstain)
+
+The weak-CV-evidence amendment asks for a responsibility, a qualification or an
+outcome. Two line shapes meet that and now count: a completed course, which is a
+qualification ("Completed an introductory Python course."), and a dated role
+statement, which is the tenure a years-of-experience requirement asks for ("Java
+backend developer at Northwind from 2019 to 2022."). A dash-separated role
+heading still does not count.
+
+Adjacent sentences sent with a retrieved claim are context, not evidence. They
+pass a lighter check that excludes only locations, contact details, profile
+headlines and reference or hobby lines, so a negation such as "This was not
+production leadership." reaches the assessor. A cited span must still pass the
+evidential-support rule before it can justify `met` or `partial`.
+
+Retrieval abstains only when the best claim shares no keyword and its similarity
+was measured below 0.35. A similarity that was never measured is not a weak one:
+with no embeddings, abstaining would hide every paraphrase from the assessor.

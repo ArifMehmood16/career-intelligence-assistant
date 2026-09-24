@@ -29,6 +29,35 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 135 — The six failing tests were five regressions and one stale assertion
+
+- Date: 2026-09-24
+- Tool / model: Claude Opus 5.5, Cowork session
+- Plan task: restore the six baseline tests recorded in entry 133 (BACKLOG "Now")
+- Prompt intent: `make test` fails six tests on `main`; fix the tests to match the
+  new logic.
+- Suggestion: rewrite the six assertions to match what 9af8e42 now does.
+- Outcome: changed
+- Reason: bisecting `04960f1..50aaabf` put all six on 9af8e42 (entry 129), which ran
+  only focused tests. Five of the failures were the tests doing their job. The new
+  work-verb rule dropped "Completed an introductory Python course." and "Java
+  backend developer at Northwind from 2019 to 2022.", so the course-versus-leadership
+  and overlap cases (PLAN 13D.5) never reached the assessor. The same rule, applied
+  to neighbours, dropped the negation that PLAN 13D.3 sends beside a claim. The
+  0.35 abstain floor treated a similarity that was never measured as 0.0, so with no
+  embeddings every labelled paraphrase was hidden, the retrieval miss PLAN 13D.6
+  records as zero. Rewriting those tests would have hidden real misses, which
+  AGENTS.md forbids, so the code was fixed: completed courses and dated role
+  statements count; neighbours pass a context check, never a support check; the
+  abstain rule needs a measured similarity. One test was stale: the dbt claim test
+  passed only because a bare skills list was accepted as a claim. It now asserts the
+  dbt bullet, and the hermetic fixture classifier labels a bullet whose heading sat
+  in the previous batch as experience, as a real model would.
+- Human validation: pending. Each fix went red then green. Full backend `pytest`
+  on Python 3.14.7: 466 passed, 3 skipped, 0 failed; coverage 83.33%. Ruff check,
+  ruff format and mypy (145 files) passed. ADR 010 amended. The live model path was
+  not run.
+
 ### 134 — Review of the PDF claim-extraction fix: two regressions closed
 
 - Date: 2026-09-24

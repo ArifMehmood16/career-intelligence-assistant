@@ -38,7 +38,7 @@ product and threat-model decision.
       questions (`role-strong` / `req-sql` and `role-partial` /
       `req-reliability`) before tuning. Record requirement classification,
       unsupported matches, ranking agreement and latency in `docs/evaluation.md`.
-      First restore the six baseline tests recorded in log entry 133. Re-upload the
+      The six baseline tests from log entry 133 pass again (log 135). Re-upload the
       PDF CV, because reflow applies at upload (log 134), check its candidate-span
       count, then re-run the job; if it still fails, capture `claims.batch` and
       `claims.incomplete` with the skipped span ids rather than assuming the dated
