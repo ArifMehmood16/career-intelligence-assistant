@@ -146,7 +146,7 @@ POST   /api/roles/{id}/reanalyse     → 202 { jobId }
 ```ts
 Role {
   id; title; company;
-  fitScore: number;            // 0 when not yet scored
+  fitScore: number;            // 0 when unscored; never a failure sentinel (see Incomplete analysis)
   bandLabel: string;           // "Strong match" | "Partial match" | "Limited match" | "Not scored yet"
   counts: { met: number; partial: number; missing: number };
   status: "analysing" | "ready" | "failed";   // additive

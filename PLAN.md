@@ -3,58 +3,15 @@
 Operational source of truth. Execute phases in order. A phase is complete only when
 its tests, documentation and exit gate are satisfied.
 
-**Current position:** Phase 13C implementation tasks 13C.1–13C.10 are complete.
-Its live exit gate has not been observed. 13D.1–13D.5 are implemented. A saved
-analysis round-trips claim detail and requirement seniority; a saved non-match
-stays missing after reload; the saved result records provider, model, prompt
-version, rubric version, whether content left the machine, and a failure status
-that marks an incomplete assessment apart from a poor fit. Duplicate requirement
-text scores once. Unknown conditions and contradictions cap coverage at partial,
-and a zero score from an incomplete assessment is banded `incomplete` rather
-than `limited`. Overlapping jobs in the same skill count as one stretch of time.
-Tied roles stay in title order and name the requirements that are not shared.
-A course does not meet years of leadership at the domain, API and SQL
-boundaries. A restarted store reads that saved ranking, and Fit, Gaps, Prepare
-and Letter are built from the stored bundle without mapping again. Role, gap-plan
-and ranking reads do not call the completion model. Hermetic analysis still uses
-the OR fallback for other cases. 13D.6 has one local Ollama measurement of this
-pilot recorded in `docs/evaluation.md`; it did not beat the hermetic baseline
-on disagreements or role order, and the rest of 13D.6 is open. On 2026-09-22
-`make lint` and `make test` passed, and `make test-integration` passed after
-stored embeddings could be read back when the driver returned a numpy array.
-That live run was then traced to retrieval rather than the assessment: a claim
-reached the assessor only on a shared keyword or a similarity above the floor,
-so 7 of 24 scoreable requirements were decided with no assessor call and 2
-labelled supporting passages were never shown. The floor now ranks evidence
-instead of gating it, an empty candidate set is recorded rather than handed to
-the lexical path, and every mapping carries what the assessor saw. Both counts
-are zero on the pilot. The repeated live run is recorded in
-`docs/evaluation.md`: retrieval misses zero, but 15 of 24 requirements
-disagreed in both directions, no labelled `met` came back as `met`, and the
-ranking inverted. On the agreed rule the assessment was revised rather than
-given more calls: `evidence-assessment-v2` states a criterion for each level,
-and the completion model is an environment variable so the same labels can be
-run against a stronger local model. Measured on both: `llama3.2` disagreed on 12
-of 24 and credited the injection case, `qwen2.5:7b` on 3 with the held-out split
-clean, so the local default is now `qwen2.5:7b` and the model is part of the
-assessment contract. Two further prompt revisions were measured and one was
-reverted: `evidence-assessment-v3` changed nothing, and v4, which showed cover
-letters to the assessor as uncitable context, took disagreements to 6 and was
-reverted. The measured configuration is v3 with `qwen2.5:7b`, meeting every
-predeclared gate except unsupported `met`, which is the one contradiction case
-whose denial lives only in a cover letter. The two remaining disagreements are
-label questions recorded in `docs/evaluation.md` for the reviewer to settle.
-A private local smoke run on 2026-09-22 then displayed 4/100, and a repeat of
-the same documents displayed 0/100 with band `incomplete`. Those figures are
-one incomplete analysis shown as fit. They are not a candidate-quality result.
-13D.6 stays open as the umbrella; 13D.6a–13D.6g order the completeness
-contract. 13D's closure includes the outstanding 13C verification; do not
-claim either gate has passed, and do not start the full Phase 14 comparison
-before the 13D.6 completeness contract is satisfied.
-On 2026-09-22 the maintainer started Phase 15B (durable operational audit)
-while 13D.6g remains open. 15B does not close 13D, 13C or 15.1–15.4. The
-contract is [ADR 012](docs/adr/012-durable-operational-audit.md); tasks are
-[docs/observability-logging-plan.md](docs/observability-logging-plan.md).
+**Current position (2026-09-24):** Phases 0–13B are complete. 13C.1–13C.10 and
+13D.1–13D.6f are implemented. **13D.6g is the open gate**, and it carries the
+outstanding 13C exit verification; do not claim either gate has passed. Phase 14 does
+not start until 13D.6g closes. Phase 15B was started early by maintainer override on
+2026-09-22: 15B.1–15B.5 are done and 15B.6–15B.10 are open. 15B closes nothing in 13C,
+13D or 15. The last measured assessor is `evidence-assessment-v3` with `qwen2.5:7b`;
+the running `evidence-assessment-v5` has not been measured
+([docs/evaluation.md](docs/evaluation.md)). Every open item, in working order, is in
+[BACKLOG.md](BACKLOG.md).
 
 ## Product objective and quality priority
 
@@ -68,14 +25,9 @@ substitutes for measured quality. Preserve the modular monolith, configurable
 local/hosted providers and PostgreSQL system of record. Make continues to use
 local PostgreSQL; Compose/deployment uses container PostgreSQL.
 
-**Planning status:** Phase 13D records the proposed direction from the product
-discussion, not a shipped feature or approval to send personal data to hosted
-models. Before implementing changed scoring/cover-letter semantics, record the
-decision and reconcile `AGENTS.md`, the feature contract and ADRs as specified in
-13D.2. 13D.6a–13D.6f are implemented. 13D.6g remains open for observed
-verification. A public API change stops for approval. Earlier checked
-tasks remain implementation history; they are not proof of ranking accuracy,
-nor should superseded unchecked 5.3/7.2 be restarted.
+**Planning status:** Phase 13D is not approval to send personal data to hosted
+models. Checked tasks are implementation history, not proof of ranking accuracy, and
+the superseded 5.3 and 7.2 are not restarted. A public API change stops for approval.
 
 The Lovable frontend design has landed in `frontend/` and is the shipped frontend
 ([ADR 006](docs/adr/006-tanstack-start-frontend.md)).
@@ -84,7 +36,8 @@ Read alongside this plan:
 
 | File | What it settles |
 |---|---|
-| [AGENTS.md](AGENTS.md) | The working protocol and the invariant |
+| [AGENTS.md](AGENTS.md) | The working protocol, development style and the invariant |
+| [BACKLOG.md](BACKLOG.md) | Every open item, in working order |
 | [docs/features.md](docs/features.md) | What each feature does and how it is used |
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract both halves are built against |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable app becomes the shipped app |
@@ -95,8 +48,8 @@ Read alongside this plan:
 Start each agent session with:
 
 ```text
-Read AGENTS.md, README.md, PLAN.md and AI_DEVELOPMENT_LOG.md.
-Identify the first incomplete task in PLAN.md. Do not modify files yet.
+Read AGENTS.md, BACKLOG.md, PLAN.md and the newest entries in AI_DEVELOPMENT_LOG.md.
+Take the first open item in BACKLOG.md "Now". Do not modify files yet.
 
 Report:
 1. the selected task and acceptance criteria;
@@ -112,14 +65,16 @@ Wait for approval before implementation.
 After approving the proposal:
 
 ```text
-Proceed only with the approved PLAN.md task and follow AGENTS.md.
-Demonstrate red-green-refactor. Run focused verification, inspect the diff,
-update the required documentation, and draft a factual AI_DEVELOPMENT_LOG.md entry.
+Proceed only with the approved task and follow AGENTS.md.
+Work on a task branch. Demonstrate red-green-refactor and commit each green step.
+Run the phase checks, inspect the branch diff, update the required documentation
+and BACKLOG.md, and add a factual AI_DEVELOPMENT_LOG.md entry.
 Stop at the task checkpoint and give the required task report.
-Do not commit or start the next task until I approve.
+Do not push, open a pull request or start the next task until I approve.
 ```
 
-The human reviews the diff, confirms verification, approves the log entry, commits.
+The human reviews the branch and its commits, confirms verification, approves the
+log entry and merges the pull request.
 
 ## Fixed technical direction
 
@@ -159,7 +114,8 @@ independent.
 - No unrelated changes.
 - Documentation accurate.
 - `AI_DEVELOPMENT_LOG.md` contains only verifiable facts.
-- A small, coherent commit is ready.
+- No new SonarQube-type findings on changed code (see `AGENTS.md`).
+- The work sits on a task branch as small commits, each of them green.
 
 ---
 
