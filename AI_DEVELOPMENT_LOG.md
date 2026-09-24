@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 128 — Benefits and Logistics sections stay unscoreable
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c corrective
+- Prompt intent: a Benefits or Logistics section, including a Markdown heading, must stay display-only when the model calls it a requirement.
+- Suggestion: leave section protection on About and Why only, and keep treating a heading as narrative only when it ends with a colon.
+- Outcome: rejected
+- Reason: body under a Benefits or Logistics heading is forced to `benefit` or `logistics` with `must_have` false. A Markdown heading starts that section the same way a colon heading does. A later requirements heading ends the block. Lines outside those headings are still classified by the model.
+- Human validation: `pytest tests/unit/test_model_requirement_extraction.py` passed (22). Ruff format, Ruff check and mypy passed on the changed Python files.
+
 ### 126 — Invalid requirement classifications are not scoreable
 
 - Date: 2026-09-24
