@@ -140,9 +140,7 @@ class ModelClaimExtractor:
         retries = 0
         batch_index = 0
 
-        def merge(
-            items: list[object], known: dict[str, tuple[int, int, str]]
-        ) -> None:
+        def merge(items: list[object], known: dict[str, tuple[int, int, str]]) -> None:
             nonlocal dropped
             scoped: list[object] = []
             for item in items:
