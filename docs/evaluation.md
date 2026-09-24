@@ -25,6 +25,10 @@ Each case carries:
 
 ## Metrics
 
+These definitions are not results. Requirement precision, requirement recall and
+mapping accuracy have not been measured. The table is the contract for a future
+run. A dash or `TBD` means no observed number exists.
+
 | Metric | Definition | Threshold |
 |---|---|---|
 | `requirement_precision` | Extracted requirements that are real requirements | TBD |
@@ -344,7 +348,10 @@ measured configuration — 3 disagreements of 24, held-out split clean, every
 predeclared gate met except unsupported `met`, which is the contradiction case
 above. On 2026-09-22 the assessor prompt moved to `evidence-assessment-v5` with
 domain exclusion of location/headline/title-only citations; that change is not
-yet remeasured on the pilot set.
+yet remeasured on the pilot set. The 2026-09-24 changes — positive CV evidence,
+the 0.35 retrieval abstain, batched requirement classification and rejected
+duplicate CV labels — are also unmeasured. Requirement precision, requirement
+recall and mapping accuracy remain `TBD`.
 
 ## Known measurement limits
 

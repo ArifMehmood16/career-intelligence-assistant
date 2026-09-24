@@ -131,6 +131,38 @@ def test_a_mapping_records_the_evidence_put_in_front_of_the_assessor() -> None:
         assert (claim.id in retrieved) is shown, claim.id
 
 
+def test_weak_signals_supply_no_evidence() -> None:
+    """The least-irrelevant claim is not shown when every signal is weak."""
+    completion = _ScriptedCompletion(_missing_payload())
+    claims = (
+        _claim(
+            "claim-paraphrase",
+            "Looked after the company's Postgres estate.",
+            "span-paraphrase",
+        ),
+        _claim(
+            "claim-other",
+            "Mentored two graduate engineers on code review.",
+            "span-other",
+        ),
+    )
+    mappings = map_role_requirements(
+        (_requirement(),),
+        claims,
+        similarities={
+            (_REQUIREMENT_ID, "claim-paraphrase"): 0.03,
+            (_REQUIREMENT_ID, "claim-other"): 0.03,
+        },
+        adjudicator=ModelAdjudicator(completion),
+        similarity_floor=0.55,
+    )
+
+    assert completion.calls == 0
+    assert mappings[0].status is MappingStatus.MISSING
+    assert mappings[0].reason_code is MappingReason.NO_RELATED_CLAIM
+    assert mappings[0].retrieved_claim_ids == ()
+
+
 def test_a_paraphrase_below_the_floor_still_reaches_the_assessor() -> None:
     """A gate on lexical overlap or the floor decides `missing` before the model."""
     completion = _ScriptedCompletion(_missing_payload())

@@ -5,8 +5,9 @@ The model classifies those ids. It does not copy the text, so Markdown
 markers do not have to be reproduced. Unknown ids, duplicated ids and ids
 from another document are rejected. A classification whose item_type is not
 an ItemType value, or whose must_have is not a boolean, is not accepted.
-Spans still unclassified are retried once. A span with no single accepted
-classification makes the extraction incomplete. Nothing is fuzzy-matched.
+Spans are classified in bounded batches. Spans still unclassified are retried
+once. A span with no single accepted classification makes the extraction
+incomplete. Nothing is fuzzy-matched.
 """
 
 from __future__ import annotations
@@ -24,7 +25,8 @@ from career_assistant.adapters.extraction.rules import (
 )
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.extraction import RequirementExtractionResult
-from career_assistant.application.ports.types import CompletionRequest
+from career_assistant.application.ports.types import CompletionRequest, CompletionResult
+from career_assistant.domain.assessment import assessment_batch_slices
 from career_assistant.domain.candidate_spans import (
     candidate_units,
     is_narrative_heading,
@@ -36,6 +38,9 @@ from career_assistant.domain.requirements import ItemType, Requirement
 from career_assistant.logconfig import log_event
 
 _log = logging.getLogger(__name__)
+
+_DEFAULT_BATCH_SIZE = 12
+_MAX_OUTPUT_TOKENS = 4096
 
 _PLAIN_MARKUP = re.compile(r"[*_`>#]+")
 _EMPLOYER_PITCH = re.compile(
@@ -154,8 +159,14 @@ _CLASSIFY_AFTER_JD = (
 class ModelRequirementExtractor:
     """CompletionPort extractor. Spans are the server's; kinds are the model's."""
 
-    def __init__(self, completion: CompletionPort) -> None:
+    def __init__(
+        self,
+        completion: CompletionPort,
+        *,
+        batch_size: int = _DEFAULT_BATCH_SIZE,
+    ) -> None:
         self._completion = completion
+        self._batch_size = max(1, batch_size)
 
     def extract(
         self,
@@ -179,49 +190,70 @@ class ModelRequirementExtractor:
             span_id(document_id, start, end): (start, end, text)
             for start, end, text in units
         }
-        result = self._completion.complete(
-            CompletionRequest(
-                system=_SYSTEM,
-                user=_user_message(document_id, normalised_text, units),
-                max_output_tokens=4096,
-                json_schema=REQUIREMENTS_JSON_SCHEMA,
-            )
-        )
-        items = _classification_items(result.text)
-        if items is None:
-            return RequirementExtractionResult(
-                requirements=(),
-                spans=(),
-                dropped_unverifiable=len(units),
-                complete=not units,
-            )
-
-        accepted, dropped, invalid = _accepted_classifications(items, by_id)
+        ordered = tuple(by_id)
+        accepted: dict[str, dict[str, object]] = {}
+        dropped = 0
+        invalid = 0
         retries = 0
-        missing = tuple(issued for issued in by_id if issued not in accepted)
+        seen_unknown: set[str] = set()
+
+        def merge(
+            items: list[object] | None, known: dict[str, tuple[int, int, str]]
+        ) -> None:
+            nonlocal dropped, invalid
+            if not items:
+                return
+            scoped: list[object] = []
+            for item in items:
+                if not isinstance(item, dict):
+                    dropped += 1
+                    continue
+                issued = item.get("spanId")
+                if issued not in known:
+                    if isinstance(issued, str) and issued not in by_id:
+                        if issued not in seen_unknown:
+                            seen_unknown.add(issued)
+                            dropped += 1
+                    elif not isinstance(issued, str):
+                        dropped += 1
+                    continue
+                scoped.append(item)
+            batch_accepted, batch_dropped, batch_invalid = _accepted_classifications(
+                scoped, known
+            )
+            dropped += batch_dropped
+            invalid += batch_invalid
+            for issued, item in batch_accepted.items():
+                if issued not in accepted:
+                    accepted[issued] = item
+
+        for start, end in assessment_batch_slices(len(ordered), self._batch_size):
+            batch_ids = ordered[start:end]
+            known = {issued: by_id[issued] for issued in batch_ids}
+            merge(
+                self._classify_batch(
+                    batch_ids,
+                    document_id=document_id,
+                    by_id=by_id,
+                    normalised_text=normalised_text,
+                ),
+                known,
+            )
+        missing = tuple(issued for issued in ordered if issued not in accepted)
         if missing:
             retries = 1
-            retry_known = {issued: by_id[issued] for issued in missing}
-            retry = self._completion.complete(
-                CompletionRequest(
-                    system=_SYSTEM,
-                    user=_user_message(
-                        document_id,
-                        normalised_text,
-                        tuple(retry_known[issued] for issued in missing),
+            for start, end in assessment_batch_slices(len(missing), self._batch_size):
+                batch_ids = missing[start:end]
+                known = {issued: by_id[issued] for issued in batch_ids}
+                merge(
+                    self._classify_batch(
+                        batch_ids,
+                        document_id=document_id,
+                        by_id=by_id,
+                        normalised_text=normalised_text,
                     ),
-                    max_output_tokens=4096,
-                    json_schema=REQUIREMENTS_JSON_SCHEMA,
+                    known,
                 )
-            )
-            retry_items = _classification_items(retry.text)
-            if retry_items is not None:
-                retry_accepted, retry_dropped, retry_invalid = (
-                    _accepted_classifications(retry_items, retry_known)
-                )
-                accepted.update(retry_accepted)
-                dropped += retry_dropped
-                invalid += retry_invalid
         kept_reqs: list[Requirement] = []
         kept_spans: list[Span] = []
         type_counts: dict[str, int] = {}
@@ -267,6 +299,64 @@ class ModelRequirementExtractor:
             dropped_unverifiable=dropped,
             complete=complete,
         )
+
+    def _classify_batch(
+        self,
+        batch_ids: tuple[str, ...],
+        *,
+        document_id: str,
+        by_id: dict[str, tuple[int, int, str]],
+        normalised_text: str,
+    ) -> list[object]:
+        if not batch_ids:
+            return []
+        result = self._completion.complete(
+            CompletionRequest(
+                system=_SYSTEM,
+                user=_user_message(
+                    document_id,
+                    normalised_text,
+                    tuple(by_id[issued] for issued in batch_ids),
+                ),
+                max_output_tokens=_MAX_OUTPUT_TOKENS,
+                json_schema=REQUIREMENTS_JSON_SCHEMA,
+            )
+        )
+        items = _classification_items(result.text)
+        truncated = _response_truncated(
+            result,
+            max_tokens=_MAX_OUTPUT_TOKENS,
+            parse_ok=items is not None,
+        )
+        if truncated and len(batch_ids) > 1:
+            mid = len(batch_ids) // 2
+            return self._classify_batch(
+                batch_ids[:mid],
+                document_id=document_id,
+                by_id=by_id,
+                normalised_text=normalised_text,
+            ) + self._classify_batch(
+                batch_ids[mid:],
+                document_id=document_id,
+                by_id=by_id,
+                normalised_text=normalised_text,
+            )
+        return items or []
+
+
+def _response_truncated(
+    result: CompletionResult, *, max_tokens: int, parse_ok: bool
+) -> bool:
+    if result.finish_reason == "length":
+        return True
+    output = result.output_tokens
+    if (
+        not parse_ok
+        and isinstance(output, int)
+        and output >= max(1, int(max_tokens * 0.95))
+    ):
+        return True
+    return False
 
 
 def _user_message(

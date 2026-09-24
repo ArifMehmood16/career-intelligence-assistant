@@ -179,8 +179,9 @@ an unrecognised kind as `requirement` so a real requirement would not be
 dropped — is withdrawn.
 
 Spans that still have no accepted classification are sent once more, and only
-those span ids are listed. A later valid assignment wins. Duplicate ids inside
-a single response stay rejected. If any span is still unclassified, the
+those span ids are listed. A single valid label on that retry is kept. An id
+repeated inside one response is not accepted, and the later label does not win.
+If any span is still unclassified, the
 extraction is incomplete and the job fails with `extraction_incomplete`. No
 fit score is published. A heading or employer-pitch override still corrects a
 valid label to `non_requirement`; it does not fill in a missing kind. Safe
@@ -201,3 +202,28 @@ stays scoreable. A line that is not under one of these headings is still
 classified by the model. There is no salary or remote regex over ordinary
 lines. Forced `benefit` and `logistics` items stay stored and are never mapped,
 scored, listed as gaps, ranked or turned into CV bullets.
+
+## Amendment — 2026-09-24 (weak CV evidence)
+
+An `experience` or `project` label is not enough to store a claim. The span
+must show a responsibility, a qualification or an outcome. A reference line,
+a hobby line or other non-evidential text is dropped before nearest-heading
+recovery, so it is not attached to a role. Recovery still applies to a span
+that passes that check. Dropping the line does not by itself fail completeness.
+
+Retrieval may return no claims. The 0.55 mapping floor still does not hide a
+paraphrase: the locked paraphrase at similarity 0.42 still reaches the
+assessor. When the best eligible claim has no lexical overlap and its
+similarity is below 0.35, the assessor is not called and the mapping is
+`missing`. That 0.35 cutoff is not a measured quality threshold. PLAN 14.7
+still owns calibration.
+
+## Amendment — 2026-09-24 (batched requirements and duplicate CV labels)
+
+Requirement classification uses the same bounded batches as CV claim
+extraction, with one retry for spans that are still unclassified. A truncated
+batch is split and classified again. Each batch keeps the 4096-token output cap.
+
+A CV span id that appears more than once in one response is not accepted.
+The later label does not win. Those spans are retried once. A single valid
+classification on the retry is kept.

@@ -1,8 +1,9 @@
 """Domain rules for what may justify a met or partial assessment.
 
 A citation proves a span exists. These checks decide whether that span can
-count as evidence of work. Location lines, contact details, profile headlines
-and bare employment titles name the candidate; they do not show the work.
+count as evidence of work. A line must show a responsibility, a qualification
+or an outcome. Location lines, contact details, profile headlines, reference
+lines and bare employment titles name the candidate; they do not show the work.
 """
 
 from __future__ import annotations
@@ -41,18 +42,34 @@ _ROLE_HEADING = re.compile(
     r")",
     re.IGNORECASE,
 )
-_DELIVERABLE = re.compile(
+_NON_EVIDENCE = re.compile(
+    r"\b(?:references?\s+available|available\s+(?:on|upon)\s+request|"
+    r"hobbies|interests\s+include|personal\s+profile)\b",
+    re.IGNORECASE,
+)
+_WORK = re.compile(
     r"\b(?:"
     r"built|build|building|owned|owning|designed|designing|led|leading|"
     r"developed|developing|implemented|implementing|shipped|shipping|"
     r"maintained|maintaining|wrote|writing|created|creating|delivered|"
     r"delivering|reviewed|reviewing|paired|pairing|tested|testing|"
     r"deployed|deploying|operated|operating|migrated|migrating|"
+    r"administer(?:ed|ing)|ran|running|mentored|mentoring|"
+    r"reduced|reducing|improved|improving|managed|managing|"
+    r"supported|supporting|tuned|tuning|chaired|chairing|"
+    r"presented|presenting|organised|organized|organising|organizing|"
+    r"kept|keeping|judged|judging|set\s+up|looked\s+after|"
+    r"partnered|partnering|authored|authoring|coordinated|coordinating|"
+    r"assisted|assisting|shadowed|shadowing|collected|collecting|"
+    r"cleaned|cleaning|prepared|preparing|documented|documenting|"
+    r"published|publishing|"
     r"experience|proficien|familiar|certified|certification|degree|"
-    r"portfolio|internship|open[- ]source"
+    r"diploma|bachelor|portfolio|internship|open[- ]source"
     r")\b",
     re.IGNORECASE,
 )
+_OUTCOME = re.compile(r"\b\d+(?:\.\d+)?\s*%")
+_DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")
 
 
@@ -61,6 +78,8 @@ def is_evidential_support(text: str) -> bool:
     plain = " ".join(text.split()).strip()
     if len(plain) < 8:
         return False
+    if _NON_EVIDENCE.search(plain):
+        return False
     if _LOCATION.match(plain):
         return False
     if _CONTACT.search(plain) and len(plain) < 80:
@@ -68,6 +87,8 @@ def is_evidential_support(text: str) -> bool:
     if _PROFILE_HEADLINE.match(plain):
         return False
     if _ROLE_HEADING.search(plain) and _EMPLOYER_SEP.search(plain):
-        if not _DELIVERABLE.search(plain):
+        if not _WORK.search(plain):
             return False
+    if not _WORK.search(plain) and not _OUTCOME.search(plain):
+        return False
     return True

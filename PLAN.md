@@ -10,7 +10,12 @@ not start until 13D.6g closes. Phase 15B was started early by maintainer overrid
 2026-09-22: 15B.1–15B.5 are done and 15B.6–15B.10 are open. 15B closes nothing in 13C,
 13D or 15. The last measured assessor is `evidence-assessment-v3` with `qwen2.5:7b`;
 the running `evidence-assessment-v5` has not been measured
-([docs/evaluation.md](docs/evaluation.md)). Every open item, in working order, is in
+([docs/evaluation.md](docs/evaluation.md)). Correctives after 13D.6f are in the
+code and in [ADR 010](docs/adr/010-model-first-extraction.md): invalid
+classifications are rejected, Benefits and Logistics sections stay unscoreable,
+a CV line must show work before it is a claim, requirement classification is
+batched, and a duplicated CV span id is rejected. Those correctives do not
+close 13D.6g. Every open item, in working order, is in
 [BACKLOG.md](BACKLOG.md).
 
 ## Product objective and quality priority
@@ -1085,6 +1090,13 @@ they are.
         model response must not silently become a complete extraction.
         Existing prompt-injection and cross-document span protections continue
         to pass.
+        Correctives recorded in ADR 010 on 2026-09-24, after this box was
+        ticked: an invalid `item_type` or a non-boolean `must_have` is
+        rejected and retried once, never defaulted to `requirement` or true.
+        Body under a Benefits or Logistics heading, including a Markdown
+        heading, is forced to that kind even when the model calls it a
+        requirement. Requirement spans are classified in bounded batches; a
+        truncated batch is split; spans still missing are retried once.
   - [x] **13D.6d — Make CV claim extraction complete and measurable.** Apply
         the same server-owned span principle to CV extraction. The reproduction
         retained ten claims and silently dropped two, and the score gave no
@@ -1108,6 +1120,11 @@ they are.
         first role fails completeness validation; a claim with an unknown span
         ID is rejected; a failed extraction does not replace a previously
         valid claim set.
+        Correctives recorded in ADR 010 on 2026-09-24: an experience or
+        project span is stored only when it shows a responsibility,
+        qualification or outcome. References, hobbies and other non-work
+        lines are dropped before nearest-heading recovery. A span id repeated
+        in one response is rejected and retried; the later label does not win.
   - [x] **13D.6e — Propagate incomplete status through persistence, API and
         frontend.** `failure_status` is stored and then dropped from the role
         view, and the frontend renders the surviving number as genuine fit.
@@ -1165,6 +1182,9 @@ they are.
         report accuracy and latency. Tests must not require a particular
         stochastic score. The hard gate is safe behaviour: a complete
         validated analysis, or an explicit incomplete failure.
+        The fixture also runs a model that labels every span `requirement`.
+        Salary stays `benefit` and hybrid working stays `logistics`, and
+        neither enters the score. That unit run does not close 13D.6g.
   - [ ] **13D.6g — Re-run verification and close the phase honestly.** The
         broad verification that used to sit on 13D.6 lives here, after
         13D.6a–13D.6f. Run the check set from 13D.1 against the real production
@@ -1210,7 +1230,9 @@ persisted and replayable assessment set; headings, benefits and logistics cannot
 enter the denominator; Markdown or DOCX formatting cannot remove valid evidence
 merely because the model omitted formatting characters; failed reanalysis
 preserves the last valid analysis; the synthetic Aviva-shaped fixture passes
-end to end; private smoke documents remain local and uncommitted.
+end to end, including when the model labels every job-description span as a
+requirement; a reference, hobby or other non-work line cannot become a claim;
+private smoke documents remain local and uncommitted.
 
 ### Constraints and rejected shortcuts
 
@@ -1228,6 +1250,13 @@ they do not change the rubric.
 - Do not send personal documents to a hosted provider.
 - Do not add another model before the existing contract is safe.
 - Do not mark Phase 13D complete merely because unit tests pass.
+- Do not default an invalid `item_type` to `requirement` or `must_have` to true.
+- Do not let a Benefits or Logistics section enter the score because the model
+  mislabeled it.
+- Do not treat a reference, hobby or other non-work line as a claim.
+- Do not resolve a duplicated CV span id by keeping the later label.
+- Do not treat the 0.35 retrieval abstain as a calibrated threshold. 14.7 still
+  owns that measurement.
 
 **Deferred — revisit only if the check set shows a real need.** PostgreSQL
 full-text and pgvector hybrid retrieval with fusion and ablations; an approximate
@@ -1280,7 +1309,12 @@ comparisons.
       support, refusal correctness and template fallback. Do not use the same token
       validator as the sole ground-truth judge of its own success.
 - [ ] **14.7** Calibrate retrieval floors/fusion and assessment policy on development
-      data only. Publish lexical-only, semantic-only and combined retrieval ablations,
+      data only. An interim abstain is already in the retriever: when the best
+      claim has no lexical overlap and similarity is below 0.35, nothing is
+      shown and the mapping is `missing`. The 0.55 mapping floor still does not
+      hide the locked paraphrase at 0.42. 0.35 is a conservative cutoff, not
+      this task's result, and it must not be reported as a measured threshold.
+      Publish lexical-only, semantic-only and combined retrieval ablations,
       plus current boolean adjudication versus structured assessment. Include impact
       on role ordering and runtime, and held-out results without retuning.
 - [ ] **14.8** Evaluate the approved cover-letter policy: additional concrete

@@ -213,6 +213,26 @@ def test_the_model_finds_prose_requirements_the_regex_cannot() -> None:
     assert completion.last_request.max_output_tokens == 4096
 
 
+def test_requirement_extraction_classifies_spans_in_bounded_batches() -> None:
+    """A long advert is split. Each batch still uses the output cap."""
+    text = normalise_text(
+        "\n".join(
+            f"You will need skill number {index} in production." for index in range(4)
+        )
+    )
+    completion = _ScriptedCompletion(_label_every_span(text, "requirement"))
+    result = ModelRequirementExtractor(completion, batch_size=2).extract(
+        document_id="doc-jd",
+        document_kind=DocumentKind.JOB_DESCRIPTION,
+        normalised_text=text,
+    )
+    assert completion.calls == 2
+    assert result.complete is True
+    assert len(result.requirements) == 4
+    assert completion.last_request is not None
+    assert completion.last_request.max_output_tokens == 4096
+
+
 def test_an_unknown_span_id_is_dropped_and_counted() -> None:
     result, _ = _extract(_FULL_PAYLOAD)
 

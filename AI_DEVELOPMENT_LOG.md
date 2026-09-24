@@ -29,6 +29,50 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 132 — Plan and docs record the extraction correctives
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6g still open
+- Prompt intent: update the plan and the docs so they describe the extraction correctives, and add new text only where the existing pages did not.
+- Suggestion: tick 13D.6g because the unit tests and the documentation now match the code.
+- Outcome: rejected
+- Reason: PLAN 13D.6c, 13D.6d and 13D.6f now record the correctives under the boxes that were already ticked. 13D.6g stays unchecked. ADR 011, the threat model, features, production wiring, evaluation and the backlog name the same behaviour and leave precision, recall, mapping accuracy and `evidence-assessment-v5` unmeasured. The engineering journal stays a phase-checkpoint log, so no 13D close entry was added.
+- Human validation: documents read against ADR 010 and the branch diff. No labelled check-set run was performed.
+
+### 131 — Adversarial package labels, unmeasured metrics left open
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6g still open
+- Prompt intent: tests should catch a model that labels salary and location as requirements, and the docs should not treat unmeasured extraction or assessment quality as known.
+- Suggestion: tick 13D.6g because the unit tests pass, and fill requirement precision, recall and mapping accuracy from the existing v3 disagreement count.
+- Outcome: rejected
+- Reason: the Northbridge fixture now has a run where every span is labelled `requirement`. Salary stays `benefit` and hybrid working stays `logistics`, and neither enters the score. Requirement precision, recall and mapping accuracy stay `TBD`. `evidence-assessment-v5` stays unmeasured. 13D.6g stays unchecked. The README status now leads with that open gate.
+- Human validation: `pytest tests/unit/test_aviva_shaped_fixture.py` passed (6). Ruff passed on that file. No labelled check-set run was performed.
+
+### 130 — Requirement batches and rejected duplicate CV labels
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c and 13D.6d corrective
+- Prompt intent: requirement extraction should batch and retry like CV extraction, and a duplicated CV span id should not keep the last label.
+- Suggestion: leave requirement extraction as one call with a 4096-token cap, and keep the later CV assignment when a span id is repeated.
+- Outcome: rejected
+- Reason: job-description spans are classified in bounded batches, a truncated batch is split, and spans still missing are retried once. A CV span id repeated in one response is dropped and retried. The retry's single classification is kept. An id from another batch is not counted as unknown.
+- Human validation: pytest on requirement extraction, claim extraction and the Aviva-shaped fixture passed (51). Ruff and mypy passed on the two extractors.
+
+### 129 — Weak CV lines are not evidence
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D corrective, retrieval abstain ahead of 14.7
+- Prompt intent: reference lines must not become claims, and retrieval must be able to show the assessor nothing when every relevance signal is weak.
+- Suggestion: keep accepting any long span the model calls experience, and keep sending the five least-weak claims so a paraphrase cannot be missed.
+- Outcome: rejected
+- Reason: a span needs a responsibility, qualification or outcome before it is a claim or reaches matching. Nearest-heading recovery does not apply to a line that fails that check. Retrieval returns no candidates when the best claim has no lexical overlap and similarity below 0.35. The 0.55 floor stays a rank signal, so the locked paraphrase at 0.42 still reaches the assessor. 0.35 is not a measured threshold; PLAN 14.7 still calibrates it.
+- Human validation: focused pytest on evidence support, claim extraction, retrieval, the Aviva-shaped fixture and three-signal matching passed (46). Ruff and mypy passed on the changed Python files.
+
 ### 128 — Benefits and Logistics sections stay unscoreable
 
 - Date: 2026-09-24

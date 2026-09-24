@@ -18,6 +18,7 @@ import json
 import logging
 import re
 import uuid
+from dataclasses import replace
 from datetime import date
 from typing import Any
 
@@ -29,6 +30,7 @@ from career_assistant.domain.assessment import assessment_batch_slices
 from career_assistant.domain.candidate_spans import candidate_units, span_id
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Span
+from career_assistant.domain.evidence_support import is_evidential_support
 from career_assistant.domain.recency import (
     DateRange,
     derive_duration_signal,
@@ -133,9 +135,30 @@ class ModelClaimExtractor:
             for start, end, text in units
         }
         ordered = tuple(by_id)
-        collected: list[object] = []
+        accepted: dict[str, dict[str, object]] = {}
+        dropped = 0
         retries = 0
         batch_index = 0
+
+        def merge(items: list[object], known: dict[str, tuple[int, int, str]]) -> None:
+            nonlocal dropped
+            scoped: list[object] = []
+            for item in items:
+                if not isinstance(item, dict):
+                    dropped += 1
+                    continue
+                issued = item.get("spanId")
+                if issued not in known:
+                    if not isinstance(issued, str) or issued not in by_id:
+                        dropped += 1
+                    continue
+                scoped.append(item)
+            batch_accepted, batch_dropped = _accepted(scoped, known)
+            dropped += batch_dropped
+            for issued, item in batch_accepted.items():
+                if issued not in accepted:
+                    accepted[issued] = item
+
         for start, end in assessment_batch_slices(len(ordered), self._batch_size):
             batch_ids = ordered[start:end]
             batch_index += 1
@@ -147,8 +170,7 @@ class ModelClaimExtractor:
                 batch_index=batch_index,
                 attempt="primary",
             )
-            collected.extend(items)
-        accepted, _dropped = _accepted(collected, by_id)
+            merge(items, {issued: by_id[issued] for issued in batch_ids})
         missing = tuple(issued for issued in ordered if issued not in accepted)
         if missing:
             retries = 1
@@ -163,14 +185,18 @@ class ModelClaimExtractor:
                     batch_index=batch_index,
                     attempt="retry",
                 )
-                collected.extend(items)
+                merge(items, {issued: by_id[issued] for issued in batch_ids})
         result, diagnostics = _assemble(
-            collected,
+            list(accepted.values()),
             by_id=by_id,
             document_id=document_id,
             as_of=self._as_of,
             self_authored=self_authored,
         )
+        if dropped:
+            result = replace(
+                result, dropped_unverifiable=result.dropped_unverifiable + dropped
+            )
         log_event(
             _log,
             "claims.extraction",
@@ -368,6 +394,10 @@ def _assemble(
         if kind not in _CLAIM_KINDS:
             continue
         returned += 1
+        _start, _end, text = by_id[issued]
+        if not is_evidential_support(text):
+            dropped += 1
+            continue
         role_key = item.get("roleSpanId")
         heading = headings.get(role_key) if isinstance(role_key, str) else None
         if heading is not None and not _attaches(
@@ -586,6 +616,8 @@ def _attaches(
 def _accepted(
     items: list[object], known: dict[str, tuple[int, int, str]]
 ) -> tuple[dict[str, dict[str, object]], int]:
+    """One classification per span in this response. A repeated id is rejected."""
+    counts: dict[str, int] = {}
     latest: dict[str, dict[str, object]] = {}
     dropped = 0
     for item in items:
@@ -597,9 +629,11 @@ def _accepted(
         if not isinstance(issued, str) or issued not in known or kind not in _KINDS:
             dropped += 1
             continue
-        # Batch then retry may repeat an id; the later assignment wins.
+        counts[issued] = counts.get(issued, 0) + 1
         latest[issued] = item
-    return latest, dropped
+    accepted = {issued: item for issued, item in latest.items() if counts[issued] == 1}
+    dropped += sum(count for count in counts.values() if count > 1)
+    return accepted, dropped
 
 
 def _label(raw: object, heading: str) -> str:

@@ -35,6 +35,12 @@ def test_work_bullets_and_qualifications_are_evidential() -> None:
     )
 
 
+def test_references_and_boilerplate_are_not_evidential() -> None:
+    assert not is_evidential_support("References available on request")
+    assert not is_evidential_support("Hobbies include hiking and photography")
+    assert is_evidential_support("Looked after the company's Postgres estate.")
+
+
 def test_contact_handles_and_urls_are_not_evidential() -> None:
     assert not is_evidential_support("GitHub: mehmooa7")
     assert not is_evidential_support("linkedin.com/in/someone")

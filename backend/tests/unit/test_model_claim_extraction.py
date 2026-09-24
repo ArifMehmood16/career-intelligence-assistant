@@ -528,6 +528,108 @@ def test_empty_role_headings_alone_do_not_fail_when_scoreable_claims_attach() ->
     assert result.claims_accepted == 1
 
 
+def test_a_reference_line_is_not_a_claim_and_does_not_attach() -> None:
+    """A model experience label does not turn boilerplate into role evidence."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Built Looker dashboards for store performance.\n"
+        "References available on request.\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Built Looker dashboards for store performance."],
+                "experience",
+            ),
+            _assign(ids["References available on request."], "experience"),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert result.claims_accepted == 1
+    assert result.claims[0].context.startswith("Built Looker")
+    assert result.claims[0].employer == "Northwind Analytics Ltd"
+    assert all("References" not in claim.context for claim in result.claims)
+
+
+def test_a_duplicated_span_is_rejected_and_the_retry_is_kept() -> None:
+    """Contradictory labels are not resolved by response order."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Built Looker dashboards for store performance.\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    bullet = ids["Built Looker dashboards for store performance."]
+    first = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(bullet, "experience"),
+            _assign(bullet, "narrative"),
+        ]
+    }
+    second = {"assignments": [_assign(bullet, "experience", role=heading)]}
+    completion = _SequencedCompletion((first, second))
+    result = ModelClaimExtractor(completion, as_of=AS_OF).extract(
+        document_id="doc-cv",
+        document_kind=DocumentKind.CV,
+        normalised_text=text,
+    )
+    assert completion.calls == 2
+    assert result.complete is True
+    assert result.claims_accepted == 1
+    assert result.claims[0].context.startswith("Built Looker")
+    assert result.claims[0].employer == "Northwind Analytics Ltd"
+
+
+class _SequencedCompletion:
+    def __init__(self, payloads: tuple[dict[str, object], ...]) -> None:
+        self._payloads = payloads
+        self.calls = 0
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return CapabilityDescriptor(
+            provider_id="scripted",
+            supports_completion=True,
+            supports_embedding=False,
+            supports_structured_output=True,
+            context_window_tokens=8192,
+            max_output_tokens=1024,
+            embedding_dimensions=None,
+            leaves_machine=False,
+        )
+
+    def complete(self, request: CompletionRequest) -> CompletionResult:
+        self.calls += 1
+        payload = self._payloads[min(self.calls - 1, len(self._payloads) - 1)]
+        return CompletionResult(
+            text=json.dumps(payload),
+            provider_id="scripted",
+            model_tag="scripted-v1",
+            left_machine=False,
+        )
+
+
 def test_claim_with_missing_role_span_attaches_to_nearest_heading() -> None:
     text = normalise_text(
         "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"

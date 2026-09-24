@@ -134,7 +134,13 @@ the configuration file rather than hard-coding these literals.
   under a Benefits or Logistics heading — a trailing colon or a Markdown
   heading — is forced to that kind even when the model calls it a requirement.
   The word "must" does not make a package line a skill. Only `requirement` and
-  `responsibility` items enter the mapping and the score.
+  `responsibility` items enter the mapping and the score. A missing or
+  non-boolean classification is rejected and retried once; it is never stored
+  as a requirement. Job-description spans are classified in bounded batches.
+- A CV line is a claim only when it shows a responsibility, a qualification or
+  an outcome. A reference line, a hobby line or other non-work text is dropped
+  and is not attached to a role. A span id repeated in one response is
+  rejected; the later label does not win.
 - A requirement with no justifying span is `missing`. Never "probably met".
 - The same requirement text counts once. Case and repeated spaces do not make
   a second copy. The extra line stays visible and adds no weight.
@@ -151,7 +157,10 @@ the configuration file rather than hard-coding these literals.
   stays `limited`.
 - Relatedness is three signals: lexical overlap, embedding cosine at or above
   the configured floor, and model adjudication of the pairs those two disagree
-  on. The combination, the status and the reason code stay in domain code.
+  on. Retrieval returns no evidence when the best claim has no lexical overlap
+  and similarity below 0.35, so the mapping can be a genuine miss. A paraphrase
+  at similarity 0.42 still reaches the assessor. The combination, the status
+  and the reason code stay in domain code.
   Hermetic analysis does not call the adjudicator and treats disagreement as
   the OR of the first two, so embedding-only adjacent matches still appear.
 - Status colour is never the only signal — every status carries a text mark, because
