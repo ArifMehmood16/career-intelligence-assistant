@@ -606,16 +606,14 @@ def test_an_invalid_item_type_is_not_a_scoreable_requirement() -> None:
             requirement.text
             for requirement in result.requirements
             if requirement.id
-            in {
-                row.requirement_id
-                for row in map_requirements(result.requirements, [])
-            }
+            in {row.requirement_id for row in map_requirements(result.requirements, [])}
         }
         assert result.complete is False
         assert completion.calls == 2
         assert not any("£70,000" in text or "Remote (UK)" in text for text in mapped)
         assert all(
-            "£70,000" not in requirement.text and "Remote (UK)" not in requirement.text
+            "£70,000" not in requirement.text
+            and "Remote (UK)" not in requirement.text
             or not requirement.is_scoreable
             for requirement in result.requirements
         )
@@ -681,6 +679,4 @@ def test_one_retry_accepts_a_later_valid_classification() -> None:
         for requirement in result.requirements
         if requirement.is_scoreable
     }
-    assert mapped == {
-        "You will need strong experience with APIs, JSON and webhooks."
-    }
+    assert mapped == {"You will need strong experience with APIs, JSON and webhooks."}
