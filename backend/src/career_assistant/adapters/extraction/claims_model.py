@@ -3,7 +3,8 @@
 The server splits the stored CV into stable spans. The model assigns each
 span id to a role heading, an experience claim, a project claim, a skills
 list or narrative. It does not copy the text. Dates are parsed from the
-heading span in domain code. A skills list is not a claim. Completeness
+heading span in domain code. A skills list is stored as a listed claim
+and is not attached to a role. Completeness
 covers scoreable evidence: claim attach failures and unclassified employment
 or claim-like spans. Empty role headings are counted but do not fail alone.
 A missing roleSpanId attaches to the nearest preceding heading. An unparsed
@@ -28,7 +29,7 @@ from career_assistant.application.ports.extraction import ClaimExtractionResult
 from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.assessment import assessment_batch_slices
 from career_assistant.domain.candidate_spans import candidate_units, span_id
-from career_assistant.domain.claims import Claim
+from career_assistant.domain.claims import LISTED_DURATION, Claim
 from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.evidence_support import is_evidential_support
 from career_assistant.domain.recency import (
@@ -396,6 +397,17 @@ def _assemble(
     nearest_recovered = 0
     for issued, item in accepted.items():
         kind = str(item.get("kind"))
+        if kind == "skills":
+            returned += 1
+            _append_listed_skill(
+                issued,
+                by_id=by_id,
+                document_id=document_id,
+                self_authored=self_authored,
+                claims=claims,
+                spans=spans,
+            )
+            continue
         if kind not in _CLAIM_KINDS:
             continue
         returned += 1
@@ -517,6 +529,41 @@ def _assemble(
         "incomplete_reasons": ",".join(incomplete_reasons),
     }
     return result, diagnostics
+
+
+def _append_listed_skill(
+    issued: str,
+    *,
+    by_id: dict[str, tuple[int, int, str]],
+    document_id: str,
+    self_authored: bool,
+    claims: list[Claim],
+    spans: list[Span],
+) -> None:
+    """A skills span is a listed tool claim. It has no role and no dates."""
+    start, end, text = by_id[issued]
+    span = Span(
+        id=issued,
+        document_id=document_id,
+        page_number=1,
+        start_offset=start,
+        end_offset=end,
+        text=text,
+    )
+    claims.append(
+        Claim(
+            id=str(uuid.uuid4()),
+            competency=_competency(text),
+            context=text,
+            duration_signal=LISTED_DURATION,
+            recency_signal="undated",
+            source_span_ids=(issued,),
+            extraction_confidence=0.8,
+            self_authored=self_authored,
+        )
+    )
+    if all(existing.id != span.id for existing in spans):
+        spans.append(span)
 
 
 def _count_missing_scoreable(
