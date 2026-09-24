@@ -1,7 +1,8 @@
 """PLAN 13D.6d — the server owns CV spans; the model classifies their ids.
 
-Dates are parsed from the heading span in domain code. A skills list is not a
-claim. Completeness covers scoreable evidence: rejected experience or project
+Dates are parsed from the heading span in domain code. A skills list is stored
+as an undated listed claim and is not attached to a role. Completeness covers
+scoreable evidence: rejected experience or project
 assignments, unclassified employment or claim-like spans, and role headings
 with no claims. Unclassified narrative, skills or education do not fail alone.
 An unparsed date becomes undated without failing the job.
@@ -377,10 +378,14 @@ def test_six_roles_and_seventeen_bullets_keep_their_associations() -> None:
 
     assert result.complete is True
     assert result.roles_detected == 6
-    assert result.claims_accepted == 17
+    assert result.claims_accepted == 18
     assert result.roles_without_claims == 0
-    assert all("Kubernetes" not in claim.context for claim in result.claims)
-    for claim in result.claims:
+    listed = [claim for claim in result.claims if claim.duration_signal == "listed"]
+    assert len(listed) == 1
+    assert "Kubernetes" in listed[0].context
+    delivered = [claim for claim in result.claims if claim.duration_signal != "listed"]
+    assert len(delivered) == 17
+    for claim in delivered:
         marker = claim.context.split("outcome ", 1)[1].split("-", 1)[0]
         assert claim.employer == f"Employer {marker}"
         assert claim.title == f"Title {marker}"
@@ -730,6 +735,47 @@ def test_an_unparsed_role_date_stays_undated_without_failing_completeness() -> N
     assert result.claims[0].recency_signal == "undated"
 
 
+def test_a_skills_span_is_stored_as_an_undated_listed_claim() -> None:
+    """A skills line needs no role heading and no work verb."""
+    text = normalise_text(
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
+        "Skills: Python, TypeScript, AWS, PostgreSQL, CI/CD\n"
+    )
+    ids = _ids(text)
+    heading = ids[
+        "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present."
+    ]
+    payload = {
+        "assignments": [
+            _assign(
+                heading,
+                "role_heading",
+                employer="Northwind Analytics Ltd",
+                title="Analytics Engineer",
+            ),
+            _assign(
+                ids["Skills: Python, TypeScript, AWS, PostgreSQL, CI/CD"],
+                "skills",
+            ),
+        ]
+    }
+
+    result, _ = _extract(payload, text=text)
+
+    assert result.complete is True
+    assert len(result.claims) == 1
+    listed = result.claims[0]
+    assert listed.duration_signal == "listed"
+    assert listed.recency_signal == "undated"
+    assert listed.employer == ""
+    assert listed.title == ""
+    assert listed.period_start is None
+    assert listed.source_span_ids == (
+        ids["Skills: Python, TypeScript, AWS, PostgreSQL, CI/CD"],
+    )
+    assert "Python" in listed.context
+
+
 def test_unclassified_skills_and_education_do_not_fail_completeness() -> None:
     text = normalise_text(
         "Northwind Analytics Ltd — Analytics Engineer, January 2023 – Present.\n"
@@ -807,7 +853,7 @@ def test_claim_extraction_classifies_in_bounded_batches() -> None:
     )
 
     assert result.complete is True
-    assert result.claims_accepted == 17
+    assert result.claims_accepted == 18
     assert completion.calls >= 4
     for request in completion.requests:
         assert len(_span_ids_in_request(request)) <= 5
@@ -829,7 +875,7 @@ def test_missing_scoreable_span_is_retried_once() -> None:
     assert completion._omitted is True
     assert completion.calls > len(by_span) // 8
     assert result.complete is True
-    assert result.claims_accepted == 17
+    assert result.claims_accepted == 18
 
 
 class _TruncatingThenOkCompletion:
@@ -898,7 +944,7 @@ def test_truncated_claim_batch_is_split_and_retried() -> None:
     assert "length" in completion.finish_reasons
     assert completion.calls >= 3
     assert result.complete is True
-    assert result.claims_accepted == 3
+    assert result.claims_accepted == 4
 
 
 def test_accounting_completion_records_extract_claims_purpose() -> None:

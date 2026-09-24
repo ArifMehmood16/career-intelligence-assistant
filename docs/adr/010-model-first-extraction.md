@@ -269,3 +269,16 @@ evidential-support rule before it can justify `met` or `partial`.
 Retrieval abstains only when the best claim shares no keyword and its similarity
 was measured below 0.35. A similarity that was never measured is not a weak one:
 with no embeddings, abstaining would hide every paraphrase from the assessor.
+
+## Amendment — 2026-09-24 (named tools on a skills line)
+
+A span the model classifies as `skills` is stored as a claim. It is undated, has
+no employer, and does not attach to a role heading. It does not have to show a
+responsibility, a qualification or an outcome. Its `duration_signal` is
+`listed`.
+
+That claim may be cited only for a requirement whose content words all appear
+in the span and which states no years, no leadership and no outcome. It is not
+proof of delivery. An unclassified skills span still does not fail
+completeness. An experience or project span is unchanged: it is stored only
+when it shows a responsibility, a qualification or an outcome.

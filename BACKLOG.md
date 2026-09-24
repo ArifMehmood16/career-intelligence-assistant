@@ -31,6 +31,19 @@ product and threat-model decision.
 
 ## Now — release path
 
+**Recorded override:** the human asked to settle named-tool evidence before
+13D.6g. 13D.6g stays the release gate and stays unchecked.
+
+- [x] **Named-tool evidence — a skills line can meet a tool the requirement only
+      names.** ADR 010 and ADR 011 record the contract. Store a `skills` span
+      as an undated `listed` claim with no role heading and no work-verb gate.
+      When the requirement's own words all appear in that span and it states
+      no years, no leadership and no outcome, the domain sets `met` and cites
+      the span. Do not call the assessor for that row. A work bullet that uses
+      the tool stays the citation when one exists. A depth requirement, a
+      responsibility that asks for work, and a soft requirement stay Missing
+      unless an experience or project claim supports them. No synonym list.
+      Re-upload is required before a CV already stored picks this up.
 - [ ] **13D.6g — run one consolidated local-Ollama release evaluation.** Use the
       current `evidence-assessment-v5` path and combine the previously separate pilot,
       production-path, Aviva-shaped and 13C representative-CV checks. Include at least

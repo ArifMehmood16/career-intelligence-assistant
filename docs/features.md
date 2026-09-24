@@ -152,6 +152,13 @@ the configuration file rather than hard-coding these literals.
 - An introductory course does not meet a requirement that asks for years of
   leadership, even when the model marks it met. It contributes no spans and
   no score.
+- A skills line that names a tool is `met` when the requirement's own words
+  all appear in that line and the requirement states no years, no leadership
+  and no outcome. The domain cites the line and does not ask the assessor.
+  The same line does not meet a requirement that asks for years, leadership,
+  an outcome, or other work, and it does not meet a soft requirement such as
+  communication. There is no synonym list. A work bullet that uses the tool
+  is the citation when one exists.
 - An assessment that does not complete is a failed analysis
   (`assessment_incomplete`), not a fit score. A zero score from assessed gaps
   stays `limited`.

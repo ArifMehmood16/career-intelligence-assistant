@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+# A skills span names tools. It is not a dated role and not proof of delivery.
+LISTED_DURATION = "listed"
+
 
 @dataclass(frozen=True, slots=True)
 class Claim:
