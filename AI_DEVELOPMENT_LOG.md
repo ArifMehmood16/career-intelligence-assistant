@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 133 — PDF CV failed claim extraction: wrapped lines, verbs, dated degrees
+
+- Date: 2026-09-24
+- Tool / model: Claude (Cowork), claude-opus-5-5
+- Plan task: 13D.6g still open; production defect found on a real CV
+- Prompt intent: a job failed at `extracting_claims` with `extraction_incomplete` (`spans_supplied=152, claims_returned=38, claims_accepted=12, claims_rejected=29`). Find the cause and fix it.
+- Suggestion: three fixes. Rejoin PDF lines that wrapped mid-sentence; add missing CV action verbs to the evidence-support rule; stop counting dated qualification lines as scoreable in the completeness gate.
+- Outcome: accepted
+- Reason: parsing the same CV gave 152 candidate spans from the PDF and 106 from the DOCX. pypdf returns printed lines, so bullets became fragments that failed the evidence gate and gave the model more ids to skip; from the logged counts the model left 3 spans unclassified after the retry, and at least one looked scoreable. Delivered-work lines such as "Split the payments monolith into seven services." were rejected for their verb in both formats. A skipped "MSc ... Sep 2022 – Sep 2023" line failed completeness although the existing test says education must not. Which three spans the model skipped is not recorded in the log line supplied, so the qualification fix addresses a likely contributor, not a proven one.
+- Human validation: red run recorded for each behaviour (reflow not joining; pdf intake not joining; "Split ..." not evidential; dated MSc failing completeness with `scoreable_unclassified`). On the real CV the PDF now yields 106 spans, 24 must-classify spans (27 before) and 39 evidence-eligible spans (34 before). `pytest` on the branch shows the same 6 failures as `main` at `ea1de6f`, none in touched files. Ruff and mypy passed on touched files. The model path was not run: no Ollama in this environment, so the job itself was not re-run end to end.
+
 ### 132 — Plan and docs record the extraction correctives
 
 - Date: 2026-09-24

@@ -46,6 +46,14 @@ product and threat-model decision.
       evidence, exports or comprehension. Update the documents named by the plan,
       then tick 13D.6g, 13D.6, the 13C carried verification and the 13D exit gate
       together.
+- [ ] **Fix the six tests that fail on `main`** (found 2026-09-24, log 133):
+      `test_structured_assessment.py` (3), `test_quality_baseline.py` (2) and
+      `test_claim_extraction.py::test_model_backed_claim_extractor_keeps_span_backed_texts`.
+      They fail at `ea1de6f` with or without the log-133 branch.
+- [ ] **Re-run the failed PDF CV job on local Ollama** after the log-133 fixes. If it
+      still fails, capture `claims.batch` and `claims.incomplete`: the skipped span ids
+      were never recorded, so the qualification fix is a likely contributor, not a
+      proven one.
 
 **Recorded scope decision:** a contradiction found only in a cover letter is not CV
 matching evidence. Cover letters remain narrative-only supporting documents and do
@@ -97,6 +105,9 @@ security or walkthrough work above.
       observability phase.
 - [ ] **Maintenance — revisit the FastAPI/Starlette TestClient deprecation warnings**
       when a compatible dependency upgrade exists; do not silence them.
+- [ ] **Bare section headings pass the evidence-support gate.** "EXPERIENCE" and
+      "OPEN SOURCE PROJECTS" match the work pattern on "experience" and "open
+      source". Found with log 133; not fixed there.
 - [ ] **Targeted refactoring — address a function or module only when tests,
       SonarLint, an observed defect or active work demonstrates a concrete problem.**
       File length and branch counts alone do not justify a release task.
