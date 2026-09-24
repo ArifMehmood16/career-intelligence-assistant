@@ -241,7 +241,8 @@ class SqlDocumentRepository:
         self, workspace_id: str, new_document: NewDocument
     ) -> StoredDocument:
         wid = _as_uuid(workspace_id)
-        # Invalidate mappings/scores/drafts that depended on the previous CV.
+        # Soft-invalidate analysis that depended on the previous CV; hard-delete
+        # generated drafts (they quote CV-derived text and were never filtered).
         for mapping in self._session.scalars(
             select(MappingRow).where(MappingRow.workspace_id == wid)
         ).all():
@@ -250,10 +251,9 @@ class SqlDocumentRepository:
             select(ScoreExplanationRow).where(ScoreExplanationRow.workspace_id == wid)
         ).all():
             score.invalidated = True
-        for draft in self._session.scalars(
-            select(GeneratedDraftRow).where(GeneratedDraftRow.workspace_id == wid)
-        ).all():
-            draft.invalidated = True
+        self._session.execute(
+            delete(GeneratedDraftRow).where(GeneratedDraftRow.workspace_id == wid)
+        )
 
         previous = self.get_active_cv(workspace_id)
         if previous is not None:

@@ -12,12 +12,17 @@ from tests.integration.conftest import make_document
 
 from career_assistant.adapters.persistence.migrate import downgrade_base, upgrade_head
 from career_assistant.adapters.persistence.models import (
+    AnswerRow,
+    GeneratedDraftRow,
     RoleRow,
     ScoreExplanationRow,
 )
 from career_assistant.adapters.persistence.schema import APP_SCHEMA
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.application.ports.persistence import NewGeneratedDraft
 from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.groundedness import GroundednessVerdict
+from career_assistant.domain.jobs import RoleStatus
 from career_assistant.settings import DatabaseSettings
 
 pytestmark = pytest.mark.integration
@@ -144,6 +149,7 @@ def test_cv_replacement_invalidates_scores_and_deletes_old(
                 title="Engineer",
                 job_description_document_id=uuid.UUID(stored_jd.id),
                 analysis_version=1,
+                status=RoleStatus.READY.value,
             )
         )
         session.add(
@@ -158,6 +164,25 @@ def test_cv_replacement_invalidates_scores_and_deletes_old(
                 invalidated=False,
             )
         )
+        session.flush()
+        draft_id = str(uuid.uuid4())
+        uow.drafts.save(
+            NewGeneratedDraft(
+                id=draft_id,
+                workspace_id=workspace_id,
+                role_id=str(role_id),
+                kind="cover-letter",
+                body="Draft grounded on the first CV.",
+                analysis_version=1,
+                citation_span_ids=(first.spans[0].id,),
+                provider="hermetic",
+                model_tag="rules-v1",
+                left_machine=False,
+                groundedness=GroundednessVerdict.PASS,
+                used_template_fallback=False,
+                regeneration_count=0,
+            )
+        )
         uow.commit()
 
     with uow:
@@ -170,10 +195,45 @@ def test_cv_replacement_invalidates_scores_and_deletes_old(
         assert active is not None
         assert active.id == replaced.id
         assert active.original_bytes == b"Second CV"
+        assert uow.drafts.get(workspace_id, draft_id) is None
+        assert uow.drafts.list_for_role(workspace_id, str(role_id)) == ()
 
     with session_factory() as session:
         score = session.scalars(select(ScoreExplanationRow)).one()
         assert score.invalidated is True
+        draft_count = session.execute(
+            text(f"SELECT count(*) FROM {APP_SCHEMA}.generated_drafts")
+        ).scalar_one()
+        assert draft_count == 0
+        citation_count = session.execute(
+            text(f"SELECT count(*) FROM {APP_SCHEMA}.draft_citations")
+        ).scalar_one()
+        assert citation_count == 0
+        assert not hasattr(GeneratedDraftRow, "invalidated")
+
+
+def test_answers_table_omits_unused_usage_columns(
+    session_factory: sessionmaker[Session],
+) -> None:
+    """Token/latency for chat lives in provider_call_accounting, not answers."""
+    with session_factory() as session:
+        columns = {
+            row[0]
+            for row in session.execute(
+                text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = :schema AND table_name = 'answers'"
+                ),
+                {"schema": APP_SCHEMA},
+            )
+        }
+    assert "prompt_tokens" not in columns
+    assert "completion_tokens" not in columns
+    assert "latency_ms" not in columns
+    assert "body" in columns
+    assert not hasattr(AnswerRow, "prompt_tokens")
+    assert not hasattr(AnswerRow, "completion_tokens")
+    assert not hasattr(AnswerRow, "latency_ms")
 
 
 def test_conversation_client_request_id_and_one_answer_constraints(
