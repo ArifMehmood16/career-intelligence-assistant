@@ -38,7 +38,10 @@ product and threat-model decision.
       questions (`role-strong` / `req-sql` and `role-partial` /
       `req-reliability`) before tuning. Record requirement classification,
       unsupported matches, ranking agreement and latency in `docs/evaluation.md`.
-      The live entry point is:
+      First restore the six baseline tests recorded in log entry 133. Re-run the PDF
+      CV job after those fixes; if it still fails, capture `claims.batch` and
+      `claims.incomplete` with the skipped span ids rather than assuming the dated
+      qualification was the cause. The live entry point is:
       `RUN_LLM_SMOKE=1 .venv/bin/pytest tests/smoke/test_ollama_pilot.py -m smoke --no-cov -s`.
 - [ ] **13D.6g — verify the complete journey and close the evidence gate.** Check
       progress and loading states, actionable failures, readable resolving citations,
@@ -46,14 +49,6 @@ product and threat-model decision.
       evidence, exports or comprehension. Update the documents named by the plan,
       then tick 13D.6g, 13D.6, the 13C carried verification and the 13D exit gate
       together.
-- [ ] **Fix the six tests that fail on `main`** (found 2026-09-24, log 133):
-      `test_structured_assessment.py` (3), `test_quality_baseline.py` (2) and
-      `test_claim_extraction.py::test_model_backed_claim_extractor_keeps_span_backed_texts`.
-      They fail at `ea1de6f` with or without the log-133 branch.
-- [ ] **Re-run the failed PDF CV job on local Ollama** after the log-133 fixes. If it
-      still fails, capture `claims.batch` and `claims.incomplete`: the skipped span ids
-      were never recorded, so the qualification fix is a likely contributor, not a
-      proven one.
 
 **Recorded scope decision:** a contradiction found only in a cover letter is not CV
 matching evidence. Cover letters remain narrative-only supporting documents and do
@@ -71,7 +66,9 @@ not block 13D.
       a test fixture; add the pull-request `synchronize` and `reopened` CI events;
       identify the synthetic/public-safe data class behind logged hosted runs; and
       delete genuinely unused or misleading configuration rather than implementing
-      features to justify it.
+      features to justify it. Correct the evidence-support rule so bare section
+      headings such as "EXPERIENCE" and "OPEN SOURCE PROJECTS" cannot become CV
+      evidence.
 - [ ] **15.1 — run the practical security checks.** Record the observed Bandit,
       dependency-audit and secret-scan results. Run container/filesystem scanning only
       for a supported container path.
@@ -105,9 +102,6 @@ security or walkthrough work above.
       observability phase.
 - [ ] **Maintenance — revisit the FastAPI/Starlette TestClient deprecation warnings**
       when a compatible dependency upgrade exists; do not silence them.
-- [ ] **Bare section headings pass the evidence-support gate.** "EXPERIENCE" and
-      "OPEN SOURCE PROJECTS" match the work pattern on "experience" and "open
-      source". Found with log 133; not fixed there.
 - [ ] **Targeted refactoring — address a function or module only when tests,
       SonarLint, an observed defect or active work demonstrates a concrete problem.**
       File length and branch counts alone do not justify a release task.
