@@ -24,6 +24,7 @@ from career_assistant.domain.mapping import (
     course_does_not_meet_depth,
     limit_concurrent_years,
     map_requirements,
+    named_tool_mapping,
 )
 from career_assistant.domain.relatedness import (
     RelatednessSignals,
@@ -38,6 +39,13 @@ _CANDIDATE_LIMIT = 5
 # Below the paraphrase the retrieval tests keep (0.42) and above a claim with
 # no shared keywords at 0.03. Not the 0.55 mapping floor. PLAN 14.7 calibrates it.
 _RETRIEVAL_ABSTAIN_FLOOR = 0.35
+# Requirement, optional assessment item, signals, and a domain decision.
+_PreparedRequirement = tuple[
+    Requirement,
+    AssessmentItem | None,
+    RelatednessSignals,
+    RequirementMapping | None,
+]
 
 
 @runtime_checkable
@@ -144,12 +152,17 @@ def _map_with_required_assessment(
 
     Every requirement with retrieved evidence is assessed, including when the
     two signals agree. No valid assessment means incomplete, not met.
+    A named tool the domain has already decided is not sent to the assessor.
     """
     claim_list = list(claims)
-    prepared: list[tuple[Requirement, AssessmentItem | None, RelatednessSignals]] = []
+    prepared: list[_PreparedRequirement] = []
     items: list[AssessmentItem] = []
     for requirement in requirements:
         if not requirement.is_scoreable:
+            continue
+        decided = named_tool_mapping(requirement, claim_list)
+        if decided is not None:
+            prepared.append((requirement, None, RelatednessSignals(), decided))
             continue
         indexes = _retrieved_indexes(
             requirement,
@@ -158,7 +171,7 @@ def _map_with_required_assessment(
             similarity_floor=similarity_floor,
         )
         if not indexes:
-            prepared.append((requirement, None, RelatednessSignals()))
+            prepared.append((requirement, None, RelatednessSignals(), None))
             continue
         item = _assessment_item(
             requirement,
@@ -179,11 +192,15 @@ def _map_with_required_assessment(
                     similarities=similarities,
                     similarity_floor=similarity_floor,
                 ),
+                None,
             )
         )
     assessments = assessor.assess(items) if items else {}
     mappings: list[RequirementMapping] = []
-    for requirement, batch, signals in prepared:
+    for requirement, batch, signals, decided in prepared:
+        if decided is not None:
+            mappings.append(decided)
+            continue
         if batch is None:
             mappings.append(_no_evidence_mapping(requirement))
             continue
