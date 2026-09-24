@@ -27,6 +27,17 @@ Never record a command output, metric, date or commit hash that was not observed
 
 ## Entries
 
+### 126 — Invalid requirement classifications are not scoreable
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c corrective
+- Prompt intent: a missing or invalid `item_type` or `must_have` must not become a scoreable requirement.
+- Suggestion: keep the fallback that scores an unrecognised kind as `requirement`, because dropping a real requirement was treated as the worse failure.
+- Outcome: rejected
+- Reason: an unrecognised or missing kind is not an accepted classification. Those spans are retried once; if they stay invalid the extraction is incomplete and no fit score is published. A valid heading label can still be forced to `non_requirement`.
+- Human validation: `pytest tests/unit/test_model_requirement_extraction.py` passed (21). Ruff and mypy passed on `model_backed.py`.
+
 ### 125 — GitHub Actions is work evidence, not a contact line
 
 - Date: 2026-09-24

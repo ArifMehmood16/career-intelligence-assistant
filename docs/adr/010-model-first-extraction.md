@@ -167,3 +167,21 @@ Safe logs record per-batch and aggregate counts only — never CV text. The job
 fails with `extraction_incomplete` only when that gate fails, and it does not
 publish a replacement claim set. Uploaded letters stay self-authored. Generated
 drafts still never raise a score.
+
+## Amendment — 2026-09-24 (invalid requirement classifications)
+
+A job-description classification is accepted only when `item_type` is one of
+`requirement`, `responsibility`, `benefit`, `logistics` or `non_requirement`,
+and `must_have` is a boolean. A missing, null, non-string or unknown kind, and
+a missing or non-boolean `must_have`, are not an accepted classification.
+They are not stored and they are not mapped. The previous trade-off — scoring
+an unrecognised kind as `requirement` so a real requirement would not be
+dropped — is withdrawn.
+
+Spans that still have no accepted classification are sent once more, and only
+those span ids are listed. A later valid assignment wins. Duplicate ids inside
+a single response stay rejected. If any span is still unclassified, the
+extraction is incomplete and the job fails with `extraction_incomplete`. No
+fit score is published. A heading or employer-pitch override still corrects a
+valid label to `non_requirement`; it does not fill in a missing kind. Safe
+logs record invalid-classification and retry counts only.
