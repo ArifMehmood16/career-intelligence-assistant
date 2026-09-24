@@ -216,3 +216,13 @@ assessor. When the best eligible claim has no lexical overlap and its
 similarity is below 0.35, the assessor is not called and the mapping is
 `missing`. That 0.35 cutoff is not a measured quality threshold. PLAN 14.7
 still owns calibration.
+
+## Amendment — 2026-09-24 (batched requirements and duplicate CV labels)
+
+Requirement classification uses the same bounded batches as CV claim
+extraction, with one retry for spans that are still unclassified. A truncated
+batch is split and classified again. Each batch keeps the 4096-token output cap.
+
+A CV span id that appears more than once in one response is not accepted.
+The later label does not win. Those spans are retried once. A single valid
+classification on the retry is kept.

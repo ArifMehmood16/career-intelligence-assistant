@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 130 — Requirement batches and rejected duplicate CV labels
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: 13D.6c and 13D.6d corrective
+- Prompt intent: requirement extraction should batch and retry like CV extraction, and a duplicated CV span id should not keep the last label.
+- Suggestion: leave requirement extraction as one call with a 4096-token cap, and keep the later CV assignment when a span id is repeated.
+- Outcome: rejected
+- Reason: job-description spans are classified in bounded batches, a truncated batch is split, and spans still missing are retried once. A CV span id repeated in one response is dropped and retried. The retry's single classification is kept. An id from another batch is not counted as unknown.
+- Human validation: pytest on requirement extraction, claim extraction and the Aviva-shaped fixture passed (51). Ruff and mypy passed on the two extractors.
+
 ### 129 — Weak CV lines are not evidence
 
 - Date: 2026-09-24
