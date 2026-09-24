@@ -3,7 +3,8 @@
 pypdf returns the printed lines of a page, so one sentence that wraps becomes
 two candidate spans. Joining is conservative: a line is treated as wrapped only
 when it runs close to the page's text width and ends without punctuation, and
-the next line reads as a continuation. Bullets, ``Label:`` lines, headings,
+the next line reads as a continuation: it starts in lower case, or the line
+before ends on a connecting word or symbol. Bullets, ``Label:`` lines, headings,
 dated role or education lines and contact lines always keep their break.
 DOCX paragraphs are already whole and never pass through here.
 """
@@ -26,6 +27,15 @@ _BULLET = re.compile(r"^[-*]")
 _LABEL = re.compile(r"^[A-Z][A-Za-z0-9 &/,+().'-]{0,48}:(?:\s|$)")
 _CONTACT = re.compile(
     r"@|https?://|(?:linkedin|github)\.com\b|^\+?\d[\d ()-]{7,}", re.IGNORECASE
+)
+# A capitalised next line is only a continuation when the previous line ends
+# mid-phrase. Without this, list items that lost their bullet glyphs in the PDF
+# would merge into one span, and distinct requirements with them.
+_CONNECTING_END = re.compile(
+    r"(?:[,·&/+(-]|\b(?:and|or|of|to|the|a|an|in|on|onto|into|for|with|by|from|"
+    r"at|as|via|using|across|over|under|between|that|which|who|including|than|"
+    r"our|their|its|my))$",
+    re.IGNORECASE,
 )
 
 
@@ -57,7 +67,9 @@ def _continues(previous: str, line: str, threshold: float) -> bool:
         return False
     if len(previous) < threshold or previous[-1] in _TERMINAL:
         return False
-    return not (_is_boundary(previous) or _starts_new_unit(line))
+    if _is_boundary(previous) or _starts_new_unit(line):
+        return False
+    return line[0].islower() or _CONNECTING_END.search(previous) is not None
 
 
 def _is_boundary(line: str) -> bool:

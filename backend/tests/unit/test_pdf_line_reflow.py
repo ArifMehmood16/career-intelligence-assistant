@@ -117,3 +117,37 @@ def test_pdf_intake_gives_whole_sentence_spans_with_valid_offsets() -> None:
     ) in page.text
     for span in parsed.spans:
         assert page.text[span.start_offset : span.end_offset] == span.text
+
+
+_JD_ITEMS = [
+    "Building and owning backend services in Python and the APIs around them",
+    "Developing scalable APIs and data-heavy systems for real-time operational use",
+    "Designing products that process large volumes of real-time information daily",
+    "Working closely with Product to deliver features end-to-end",
+]
+_JD_PAGE = "\n".join(
+    [
+        "We are building an entirely new platform from the ground up combining "
+        "real-time data and",
+        "distributed hardware, AI, and energy trading to solve complex problems "
+        "that matter today.",
+        "What You'll Be Doing",
+        *_JD_ITEMS,
+    ]
+)
+
+
+def test_list_items_without_bullet_glyphs_stay_separate() -> None:
+    # A job advert rendered to PDF often loses its bullet glyphs. Joining those
+    # lines would merge distinct requirements into one span (PLAN 13D.6c).
+    lines = reflow_wrapped_lines(_JD_PAGE).split("\n")
+
+    assert lines[-len(_JD_ITEMS) :] == _JD_ITEMS
+
+
+def test_a_wrap_after_a_connecting_word_joins_a_capitalised_continuation() -> None:
+    first = "- Moved the nightly settlement batch and its retry queue off cron onto"
+    second = "AWS Step Functions, so failures resume where they stopped."
+    text = "\n".join([_WIDE * 4 + ".", first, second, _WIDE * 4 + "."])
+
+    assert f"{first} {second}" in reflow_wrapped_lines(text).split("\n")
