@@ -34,7 +34,7 @@ product and threat-model decision.
 **Recorded override:** the human asked to settle named-tool evidence before
 13D.6g. 13D.6g stays the release gate and stays unchecked.
 
-- [ ] **Named-tool evidence — a skills line can meet a tool the requirement only
+- [x] **Named-tool evidence — a skills line can meet a tool the requirement only
       names.** ADR 010 and ADR 011 record the contract. Store a `skills` span
       as an undated `listed` claim with no role heading and no work-verb gate.
       When the requirement's own words all appear in that span and it states

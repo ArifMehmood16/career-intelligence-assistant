@@ -29,6 +29,26 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 136 — A skills line can meet a requirement that only names a tool
+
+- Date: 2026-09-24
+- Tool / model: Cursor Grok 4.7
+- Plan task: named-tool evidence, recorded ahead of 13D.6g
+- Prompt intent: tools listed on the CV were shown as Missing. Record the
+  contract, then make a skills line meet a requirement that only names that tool.
+- Suggestion: treat any shared keyword as met, including soft requirements and
+  years of leadership.
+- Outcome: changed
+- Reason: the human chose Met for a bare tool name, and Missing when the
+  requirement asks for years, leadership or an outcome. A skills span is stored
+  as an undated `listed` claim. The domain cites it, or a fresh work bullet that
+  contains the same words, and does not ask the assessor. There is no synonym
+  list. 13D.6g stays open. A CV already stored must be uploaded again before
+  this applies.
+- Human validation: `make lint` and `make test` passed. Backend pytest: 473
+  passed, 3 skipped, coverage 83.46%. Frontend vitest: 124 passed. The live
+  model path was not run.
+
 ### 135 — The six failing tests were five regressions and one stale assertion
 
 - Date: 2026-09-24
