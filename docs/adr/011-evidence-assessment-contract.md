@@ -76,6 +76,27 @@ similarity below 0.35, the assessor is not called and the mapping is
 it. The 0.55 mapping floor still does not hide the locked paraphrase at
 similarity 0.42.
 
+## Amendment — 2026-09-24 (named tool listed on the CV)
+
+When a requirement's content words all appear in one stored skills span, and
+the requirement states no years, no leadership and no outcome, the domain sets
+`met` and cites that span. The assessor is not called for that row. Prompt
+version stays `evidence-assessment-v5`.
+
+A requirement that asks for years, leadership or an outcome is unchanged. A
+skills span cannot meet it. It contributes no spans and no score, as an
+introductory course cannot meet years of leadership. A responsibility that
+asks for work, and a soft requirement such as ownership or communication, stay
+on the assessor path. They are `missing` when no experience or project claim
+supports them.
+
+If an experience or project claim also supports the named tool, that claim is
+the citation. There is no synonym list: the CV must contain the requirement's
+own words. Short names such as AWS and CI/CD are matched by this check, not by
+the retrieval token list that drops tokens of length 2.
+
+Keyword overlap still does not decide an ordinary requirement.
+
 ## Consequences
 
 - Keyword overlap and embedding agreement retrieve evidence. They do not decide

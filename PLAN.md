@@ -1125,6 +1125,13 @@ they are.
         qualification or outcome. References, hobbies and other non-work
         lines are dropped before nearest-heading recovery. A span id repeated
         in one response is rejected and retried; the later label does not win.
+        A later corrective, recorded in ADR 010 and ADR 011 on 2026-09-24,
+        permits the bare skills list this task withheld: a `skills` span is
+        stored as an undated `listed` claim and may be cited only when the
+        requirement's own words all appear in that span and it states no
+        years, no leadership and no outcome. The domain then sets `met`
+        without calling the assessor. It is not proof of delivery. 13D.6g
+        stays open.
   - [x] **13D.6e — Propagate incomplete status through persistence, API and
         frontend.** `failure_status` is stored and then dropped from the role
         view, and the frontend renders the surviving number as genuine fit.
