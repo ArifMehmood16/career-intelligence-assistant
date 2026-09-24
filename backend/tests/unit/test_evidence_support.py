@@ -45,3 +45,22 @@ def test_contact_handles_and_urls_are_not_evidential() -> None:
     assert not is_evidential_support("GitHub: mehmooa7")
     assert not is_evidential_support("linkedin.com/in/someone")
     assert not is_evidential_support("email me at a@example.com")
+
+
+def test_common_cv_action_verbs_are_evidential() -> None:
+    """2026-09-24 CV: these delivered-work lines were rejected for their verb."""
+    for line in (
+        "Split the payments monolith into seven services.",
+        "Chose the hosting model on evidence, then handed the platform over.",
+        "Compared in-house against cloud on cost and support effort.",
+        "Traced faults across service boundaries and specified the fixes.",
+        "Optimised the MySQL queries underneath the reports.",
+        "Generated synthetic data so edge cases were exercised before release.",
+        "Introduced Jira and a release process to the project.",
+        "Own the release test plan with QA.",
+        "Act as the technical point of contact for the whole business.",
+    ):
+        assert is_evidential_support(line), line
+
+    assert not is_evidential_support("It runs on your own machine.")
+    assert not is_evidential_support("Reports to the team lead weekly.")

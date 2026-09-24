@@ -63,11 +63,19 @@ _WORK = re.compile(
     r"assisted|assisting|shadowed|shadowing|collected|collecting|"
     r"cleaned|cleaning|prepared|preparing|documented|documenting|"
     r"published|publishing|"
+    r"split|splitting|chose|choosing|compared|comparing|traced|tracing|"
+    r"optimi[sz]ed|optimi[sz]ing|generated|generating|introduced|introducing|"
+    r"rebuilt|rebuilding|redirected|redirecting|automated|automating|"
+    r"integrated|integrating|specified|specifying|trained|"
+    r"act(?:ed|s)?\s+as|acting\s+as|"
     r"experience|proficien|familiar|certified|certification|degree|"
     r"diploma|bachelor|portfolio|internship|open[- ]source"
     r")\b",
     re.IGNORECASE,
 )
+# Present-tense duty verbs count only as the opening word: "own" and "lead"
+# are also an adjective and a noun ("your own machine", "the team lead").
+_LEADING_DUTY = re.compile(r"^(?:[-*]\s*)?(?:own|owns|lead|leads)\b", re.IGNORECASE)
 _OUTCOME = re.compile(r"\b\d+(?:\.\d+)?\s*%")
 _DELIVERABLE = _WORK
 _EMPLOYER_SEP = re.compile(r"\s+[—–-]\s+")
@@ -89,6 +97,8 @@ def is_evidential_support(text: str) -> bool:
     if _ROLE_HEADING.search(plain) and _EMPLOYER_SEP.search(plain):
         if not _WORK.search(plain):
             return False
+    if _LEADING_DUTY.match(plain):
+        return True
     if not _WORK.search(plain) and not _OUTCOME.search(plain):
         return False
     return True
