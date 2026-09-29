@@ -6,9 +6,12 @@ pipeline on the synthetic fixtures, never presented as model quality.
 
 from __future__ import annotations
 
+from dataclasses import replace
+from datetime import date
 from pathlib import Path
 
 import pytest
+from tests.support.in_memory_verdicts import InMemoryVerdictCache
 
 from career_assistant.adapters.providers.hermetic.structured import (
     HermeticStructuredCompleter,
@@ -17,11 +20,22 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.contracts.judge import JudgeResponse
+from career_assistant.application.contracts.agent import AgentAnswer
 from career_assistant.application.graph.taxonomy import TermTaxonomist
+from career_assistant.application.judge.cache import ModelIdentity
+from career_assistant.application.judge.prompt import JudgeLimits
+from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.errors import ProviderUnavailableError
 from career_assistant.application.ports.structured import StructuredRequest
+from career_assistant.domain.candidate_facts import CandidateFacts, Coverage, TermFact
 from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.experience import ExperienceFact
+from career_assistant.domain.judging import (
+    Candidate,
+    JudgedVerdict,
+    ProposedQuote,
+    RequirementPacket,
+)
 
 FIXTURES = Path(__file__).resolve().parents[3] / "sample-data" / "fixtures"
 CVS = sorted((FIXTURES / "resumes").glob("*.txt"))
@@ -114,6 +128,59 @@ def test_a_contract_with_no_fixture_is_refused() -> None:
     with pytest.raises(ProviderUnavailableError):
         HermeticStructuredCompleter().complete_structured(
             StructuredRequest(
-                contract=JudgeResponse, system="s", user="u", max_output_tokens=10
+                contract=AgentAnswer, system="s", user="u", max_output_tokens=10
             )
         )
+
+
+def _judge_packet(text: str, **changes: object) -> RequirementPacket:
+    packet = RequirementPacket(
+        requirement_id="r1",
+        quote="5+ years of pgvector",
+        statement="Five years with pgvector.",
+        must_have=True,
+        terms=("pgvector",),
+        candidates=(Candidate("c1", "experience", "cv", text),),
+    )
+    return replace(packet, **changes)  # type: ignore[arg-type]
+
+
+def _judged(packet: RequirementPacket, facts: CandidateFacts) -> JudgedVerdict:
+    judge = RequirementJudge(
+        HermeticStructuredCompleter(),
+        InMemoryVerdictCache(),
+        ModelIdentity("hermetic", "rules-v1"),
+        JudgeLimits(),
+    )
+    outcome = judge.judge([packet], facts, as_of=date(2026, 9, 1))
+    assert outcome.incomplete == ()
+    return outcome.verdicts[packet.requirement_id].verdict
+
+
+def test_the_judge_fixture_quotes_a_named_term_as_written() -> None:
+    verdict = _judged(
+        _judge_packet("Built retrieval over PGVector."), CandidateFacts((), ())
+    )
+
+    assert (verdict.verdict, verdict.match_score) == ("met", 3)
+    assert verdict.evidence == (ProposedQuote("c1", "PGVector"),)
+
+
+def test_the_judge_fixture_scores_years_from_the_facts() -> None:
+    fact = ExperienceFact(30, 1, 0, None, ongoing=False)
+    facts = CandidateFacts((TermFact("pgvector", Coverage.EXACT, fact),), ())
+    packet = _judge_packet("Built retrieval over pgvector.", years_expected=5.0)
+
+    verdict = _judged(packet, facts)
+
+    assert verdict.experience_score == 2
+
+
+def test_the_judge_fixture_finds_nothing_for_an_unnamed_term() -> None:
+    verdict = _judged(_judge_packet("Wrote Kafka consumers."), CandidateFacts((), ()))
+
+    assert (verdict.verdict, verdict.match_score, verdict.evidence) == (
+        "missing",
+        0,
+        (),
+    )

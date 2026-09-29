@@ -17,11 +17,13 @@ from career_assistant.adapters.providers.hermetic.chunking_rules import (
     job_chunks,
     letter_chunks,
 )
+from career_assistant.adapters.providers.hermetic.judging_rules import judge_verdicts
 from career_assistant.application.contracts.chunking import (
     CoverLetterChunkingResponse,
     CvChunkingResponse,
     JobChunkingResponse,
 )
+from career_assistant.application.contracts.judge import JudgeResponse
 from career_assistant.application.contracts.taxonomy import TaxonomyResponse
 from career_assistant.application.ports.errors import ProviderUnavailableError
 from career_assistant.application.ports.structured import (
@@ -46,6 +48,7 @@ DEFAULT_BUILDERS: Mapping[type[BaseModel], Builder] = {
     CoverLetterChunkingResponse: letter_chunks,
     JobChunkingResponse: job_chunks,
     TaxonomyResponse: taxonomy,
+    JudgeResponse: judge_verdicts,
 }
 
 
