@@ -3,7 +3,11 @@ import { useState, type ReactNode } from "react";
 import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
+import { VERDICTS } from "@/api/__fixtures__/verdicts";
+import { ToolSteps } from "@/components/ask/ToolSteps";
 import { AnalysisProgress } from "@/components/role/AnalysisProgress";
+import { V2GapsPanel } from "@/components/role/v2/V2GapsPanel";
+import { VerdictsPanel } from "@/components/role/v2/VerdictsPanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { GapsPanel } from "@/components/role/GapsPanel";
 import { LetterPanel } from "@/components/role/LetterPanel";
@@ -507,6 +511,10 @@ export const DEV_STATE_SECTION_TITLES = [
   "Analysis progress: judging (pipeline v2)",
   "Analysis progress: queued behind another analysis",
   "Analysis progress: first analysis, estimating",
+  "Fit, pipeline v2: verdicts and keyword coverage",
+  "Fit, pipeline v2: no finished analysis",
+  "Gaps, pipeline v2",
+  "Ask: the agent's tool steps",
   "Requirement table: all three status groups",
   "Requirement table: mobile card variant",
   "Evidence panel: matched requirement",
@@ -730,6 +738,47 @@ export function DevStatesPage() {
           }}
           observedAt={GALLERY_NOW}
           now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Fit, pipeline v2: verdicts and keyword coverage">
+        <VerdictsPanel
+          state="ready"
+          verdicts={VERDICTS}
+          onRetry={noop}
+          onShowTrace={noop}
+        />
+      </Section>
+
+      <Section title="Fit, pipeline v2: no finished analysis">
+        <VerdictsPanel
+          state="incomplete"
+          verdicts={null}
+          onRetry={noop}
+          onShowTrace={noop}
+        />
+      </Section>
+
+      <Section title="Gaps, pipeline v2">
+        <V2GapsPanel state="ready" verdicts={VERDICTS} onRetry={noop} />
+      </Section>
+
+      <Section title="Ask: the agent's tool steps">
+        <ToolSteps
+          steps={[
+            {
+              name: "search_evidence",
+              arguments: { query: "dbt in production" },
+              found: 2,
+              failed: false,
+            },
+            {
+              name: "get_chunk",
+              arguments: { chunk_id: "c-7" },
+              found: 1,
+              failed: false,
+            },
+          ]}
         />
       </Section>
 
