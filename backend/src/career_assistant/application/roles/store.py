@@ -23,6 +23,7 @@ from career_assistant.application.roles.hermetic_analysis import (
 )
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
+from career_assistant.domain.progress import ProgressView
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.logconfig import log_event
@@ -53,6 +54,7 @@ class RoleView:
     status: str
     updated_at: datetime
     description: str = ""
+    active_job: JobView | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,6 +72,7 @@ class JobView:
     started_at: datetime | None
     finished_at: datetime | None
     error: JobErrorView | None
+    progress: ProgressView | None = None
 
 
 @dataclass

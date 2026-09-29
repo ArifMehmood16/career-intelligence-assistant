@@ -11,6 +11,8 @@ from career_assistant.api.errors import AppError
 from career_assistant.api.schemas import (
     AnalysisJobResponse,
     JobErrorBody,
+    JobProgressWire,
+    JobTaskWire,
     ReanalyseResponse,
     RoleCounts,
     RoleCreatedResponse,
@@ -26,6 +28,7 @@ from career_assistant.application.roles.store import (
 )
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.generation import build_fit_summary
+from career_assistant.domain.progress import ProgressView
 
 router = APIRouter(tags=["roles"])
 _RUBRIC = load_scoring_rubric(
@@ -60,6 +63,7 @@ def _role_response(role: RoleView, *, fit_summary: str | None = None) -> RoleRes
         status=role.status,
         updated_at=role.updated_at.isoformat().replace("+00:00", "Z"),
         fit_summary=fit_summary,
+        active_job=_job_response(role.active_job) if role.active_job else None,
     )
 
 
@@ -97,7 +101,33 @@ def _job_response(job: JobView) -> AnalysisJobResponse:
             else job.finished_at.isoformat().replace("+00:00", "Z")
         ),
         error=error,
+        progress=_progress_wire(job.progress) if job.progress else None,
     )
+
+
+def _progress_wire(view: ProgressView) -> JobProgressWire:
+    return JobProgressWire(
+        tasks_done=view.tasks_done,
+        tasks_total=view.tasks_total,
+        fraction=round(view.fraction, 4),
+        current_task=view.current.value if view.current is not None else None,
+        elapsed_seconds=_whole_seconds(view.elapsed_seconds),
+        remaining_seconds=_whole_seconds(view.remaining_seconds),
+        queue_position=view.queue_position,
+        tasks=[
+            JobTaskWire(
+                key=task.key.value,
+                state=task.state.value,
+                units_done=task.units_done,
+                units_total=task.units_total,
+            )
+            for task in view.tasks
+        ],
+    )
+
+
+def _whole_seconds(seconds: float | None) -> int | None:
+    return None if seconds is None else round(seconds)
 
 
 @router.get("/roles", response_model=list[RoleResponse])

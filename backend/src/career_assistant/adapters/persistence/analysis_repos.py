@@ -383,11 +383,25 @@ class SqlAnalysisJobRepository:
         )
         return _to_job(row) if row is not None else None
 
+    def live_for_workspace(self, workspace_id: str) -> tuple[AnalysisJob, ...]:
+        """Queued and running jobs, in the order the worker takes them."""
+        rows = self._session.scalars(
+            select(AnalysisJobRow)
+            .where(
+                AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
+                AnalysisJobRow.state.in_(
+                    (JobState.QUEUED.value, JobState.RUNNING.value)
+                ),
+            )
+            .order_by(AnalysisJobRow.created_at.asc(), AnalysisJobRow.id.asc())
+        ).all()
+        return tuple(_to_job(row) for row in rows)
+
     def _list_by_state(self, state: JobState) -> tuple[AnalysisJob, ...]:
         rows = self._session.scalars(
             select(AnalysisJobRow)
             .where(AnalysisJobRow.state == state.value)
-            .order_by(AnalysisJobRow.created_at.asc())
+            .order_by(AnalysisJobRow.created_at.asc(), AnalysisJobRow.id.asc())
         ).all()
         return tuple(_to_job(row) for row in rows)
 

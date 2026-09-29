@@ -82,6 +82,42 @@ class RoleCounts(ApiModel):
     missing: int
 
 
+class JobErrorBody(ApiModel):
+    code: str
+    message: str
+
+
+class JobTaskWire(ApiModel):
+    key: str
+    state: str
+    units_done: int
+    units_total: int | None
+
+
+class JobProgressWire(ApiModel):
+    """Tasks done of total, and times in whole seconds; remaining is an estimate."""
+
+    tasks_done: int
+    tasks_total: int
+    fraction: float
+    current_task: str | None
+    elapsed_seconds: int | None
+    remaining_seconds: int | None
+    queue_position: int | None
+    tasks: list[JobTaskWire]
+
+
+class AnalysisJobResponse(ApiModel):
+    id: str
+    kind: str
+    state: str
+    stage: str | None
+    started_at: str | None
+    finished_at: str | None
+    error: JobErrorBody | None
+    progress: JobProgressWire | None = None
+
+
 class RoleResponse(ApiModel):
     id: str
     title: str
@@ -92,6 +128,7 @@ class RoleResponse(ApiModel):
     status: str
     updated_at: str
     fit_summary: str | None = None
+    active_job: AnalysisJobResponse | None = None
 
 
 class RoleCreateRequest(ApiModel):
@@ -107,21 +144,6 @@ class RoleCreatedResponse(ApiModel):
 
 class ReanalyseResponse(ApiModel):
     job_id: str
-
-
-class JobErrorBody(ApiModel):
-    code: str
-    message: str
-
-
-class AnalysisJobResponse(ApiModel):
-    id: str
-    kind: str
-    state: str
-    stage: str | None
-    started_at: str | None
-    finished_at: str | None
-    error: JobErrorBody | None
 
 
 class RelatednessSignalsWire(ApiModel):

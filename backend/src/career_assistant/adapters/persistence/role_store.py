@@ -13,6 +13,7 @@ from typing import Protocol
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from career_assistant.adapters.persistence.job_progress import WorkspaceProgress
 from career_assistant.adapters.persistence.models import (
     ClaimRow,
     ClaimSpanRow,
@@ -53,6 +54,7 @@ from career_assistant.domain.jobs import (
 )
 from career_assistant.domain.mapping import MappingStatus
 from career_assistant.domain.pipeline import PipelineVersion
+from career_assistant.domain.progress import ProgressView
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.domain.requirements import ItemType, Requirement
@@ -235,8 +237,10 @@ class SqlRoleStore:
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:
         with self._uow_factory() as uow:
             records = uow.roles.list_for_workspace(workspace_id)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
             return tuple(
-                self._role_view(uow, workspace_id, record) for record in records
+                self._role_view(uow, workspace_id, record, progress)
+                for record in records
             )
 
     def get_role(self, workspace_id: str, role_id: str) -> RoleView | None:
@@ -244,7 +248,8 @@ class SqlRoleStore:
             record = uow.roles.get(workspace_id, role_id)
             if record is None:
                 return None
-            return self._role_view(uow, workspace_id, record)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
+            return self._role_view(uow, workspace_id, record, progress)
 
     def get_span(
         self, workspace_id: str, span_id: str
@@ -280,7 +285,8 @@ class SqlRoleStore:
             job = uow.jobs.get(workspace_id, job_id)
             if job is None:
                 return None
-            return _job_view(job)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
+            return _job_view(job, progress.view(job))
 
     def require_analysis(self, workspace_id: str, role_id: str) -> AnalysisBundle:
         with self._uow_factory() as uow:
@@ -415,7 +421,11 @@ class SqlRoleStore:
         return session
 
     def _role_view(
-        self, uow: SqlUnitOfWork, workspace_id: str, record: RoleRecord
+        self,
+        uow: SqlUnitOfWork,
+        workspace_id: str,
+        record: RoleRecord,
+        progress: WorkspaceProgress | None = None,
     ) -> RoleView:
         session = self._session(uow)
         score_row = session.scalar(
@@ -448,6 +458,7 @@ class SqlRoleStore:
             status=record.status.value,
             updated_at=created,
             description=description,
+            active_job=_active_job(progress, record.id),
         )
 
     def _load_bundle(
@@ -652,7 +663,14 @@ def _verdict_counts(result: V2RoleResult | None) -> dict[str, int]:
     return counts
 
 
-def _job_view(job: AnalysisJob) -> JobView:
+def _active_job(progress: WorkspaceProgress | None, role_id: str) -> JobView | None:
+    if progress is None:
+        return None
+    job = progress.active_for_role(role_id)
+    return _job_view(job, progress.view(job)) if job is not None else None
+
+
+def _job_view(job: AnalysisJob, progress: ProgressView | None = None) -> JobView:
     error = None
     if job.error is not None:
         error = JobErrorView(code=job.error.code, message=job.error.message)
@@ -664,6 +682,7 @@ def _job_view(job: AnalysisJob) -> JobView:
         started_at=job.started_at,
         finished_at=job.finished_at,
         error=error,
+        progress=progress,
     )
 
 
