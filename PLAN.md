@@ -1541,13 +1541,16 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       `domain/experience.py`, `domain/knowledge_graph.py`, `TermTaxonomist` and
       `SqlKnowledgeGraphRepository`. Not yet called by ingestion (18.10) and not run
       against a live model.*
-- [ ] **18.6** Hybrid search. `career_assistant.hybrid_search()` with dense,
+- [x] **18.6** Hybrid search. `career_assistant.hybrid_search()` with dense,
       lexical (`ts_rank` over an OR query, generic words removed) and exact-term legs
       fused by weighted RRF with ties broken on chunk id; a `HybridSearchPort` with
       the SQL adapter and an in-memory fake that pass one contract suite; the trace
       stored per search. Tests show each leg finding what the others miss
       (paraphrase, stemmed words, `C#` / `C++`), workspace isolation, the
-      active-CV rule and cover-letter eligibility.
+      active-CV rule and cover-letter eligibility. *Done 2026-09-29: migration
+      e2c7a4b9d150, `SqlHybridSearch`, `SqlRetrievalTraceRepository`, and the
+      contract suite in `tests/contract/test_hybrid_search_contract.py`. Nothing
+      calls it yet (18.10); the leg weights are the design's 1.0 until 18.14.*
 - [ ] **18.7** Model judge. Packet builder with graph facts and exact-term results;
       batch size from the capability descriptor; stable-first prompt layout; the
       server rules and caps in ADR 014; one repair call; verdict cache keyed by input

@@ -29,6 +29,33 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 144 — Hybrid search as one PostgreSQL function (PLAN 18.6)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.6
+- Prompt intent: continue the remaining Phase 18 work in TDD commits.
+- Suggestion: pure query shaping and weighted RRF in the domain; a
+  `HybridSearchPort` with a contract suite run against a test-only in-memory fake
+  and PostgreSQL; the design's SQL sketch as migration `e2c7a4b9d150`; a trace
+  repository for the per-requirement candidates.
+- Outcome: changed. The function gained two guards over the sketch — `documents`
+  filtered by workspace, and job-description chunks refused even when listed as a
+  source. The trace stores no terms, because `retrieval_traces` has no column for
+  them. The fake's lexical leg is word overlap rather than a stemmer, so stemming,
+  context-header matching, coverage ranking and `C#` / `C++` are PostgreSQL-only
+  regression tests. The v2 seed data moved into a shared fixture in its own
+  `refactor(test)` commit, rather than one test importing another's fixture.
+- Reason: the contract suite pins what callers depend on — scope, eligibility,
+  ranks, tie-breaks, limits — and leaves the parser to the database it belongs to.
+- Human validation: TBD. Observed: the domain tests failed first on assertions;
+  the PostgreSQL contract row failed on the missing function (after a seeding
+  flush-order fix in the test world), then passed; the trace tests failed on
+  assertions, then passed. The in-memory fake and the five leg tests passed on
+  their first run and are kept as regression tests. `make lint` clean; `make test`
+  690 passed, 3 skipped, 96 deselected, coverage 85.05%; 124 frontend tests
+  passed; integration 95 passed on local Homebrew PostgreSQL 17.10.
+
 ### 143 — The knowledge graph and the experience calculator (PLAN 18.5)
 
 - Date: 2026-09-29

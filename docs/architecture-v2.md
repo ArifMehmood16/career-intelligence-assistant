@@ -427,6 +427,14 @@ as $$
 $$;
 ```
 
+The migration (`e2c7a4b9d150`, PLAN 18.6) differs from the sketch in two guards: it
+also filters `documents` by workspace, and it refuses job-description chunks even if
+a caller lists them as a source. The exact-term leg compares lowercased values, so
+whatever writes `chunks.tech_terms` stores them lowercased. `SqlHybridSearch` and the
+test-only in-memory fake pass one contract suite; the fake's lexical leg is word
+overlap, so stemming and the `C#` / `C++` behaviour are pinned by PostgreSQL-only
+tests.
+
 **Indexes.** A GIN index on `chunks.fts`, a GIN index on `chunks.tech_terms`, and a
 B-tree on `chunk_embeddings (workspace_id, model_key)`, so the dense leg is an exact
 scan over one workspace's vectors. A workspace holds tens to hundreds of chunks; at
@@ -438,7 +446,9 @@ predicate so the planner can use it — and pgvector 0.8's iterative scans so th
 workspace filter does not starve the result set. It is written down, not built.
 
 **The retrieval trace.** For every requirement, matching stores the query text,
-the terms, and each candidate's dense, lexical and exact ranks and fused score. "Why
+the round (0, or 1 after the one rewrite), and each candidate's dense, lexical and
+exact ranks and fused score. The terms are not stored: `retrieval_traces` has no
+column for them, and they follow from the requirement item. "Why
 did the judge see this bullet and not that one?" is a query, not a guess.
 
 ## 7. Knowledge graph
