@@ -8,6 +8,7 @@ from typing import Protocol
 
 from career_assistant.application.ports.types import EmbeddingInputType
 from career_assistant.domain.chunking import Chunk
+from career_assistant.domain.knowledge_graph import DocumentGraph
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +44,31 @@ class EmbeddingModel:
 class ChunkVector:
     chunk_id: str
     vector: tuple[float, ...]
+
+
+class DocumentIndexStore(Protocol):
+    """One transaction per call, so no model call runs inside a transaction."""
+
+    def find_chunks(
+        self, workspace_id: str, document_id: str, *, prompt_version: str
+    ) -> tuple[StoredChunk, ...]: ...
+
+    def save_document(
+        self,
+        workspace_id: str,
+        document_id: str,
+        chunks: Sequence[Chunk],
+        provenance: ChunkProvenance,
+        graph: DocumentGraph,
+    ) -> tuple[StoredChunk, ...]: ...
+
+    def embedded_chunk_ids(
+        self, workspace_id: str, document_id: str, model_key: str
+    ) -> frozenset[str]: ...
+
+    def save_vectors(
+        self, workspace_id: str, model: EmbeddingModel, vectors: Sequence[ChunkVector]
+    ) -> None: ...
 
 
 class ChunkRepository(Protocol):
