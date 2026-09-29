@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import pytest
 from tests.unit.test_analysis_pipeline import _service
 
 from career_assistant.application.analysis.similarity import (
     InMemoryEmbeddingCache,
     requirement_claim_similarities,
 )
+from career_assistant.application.ports.errors import JobCancelled
 from career_assistant.application.ports.extraction import (
     ClaimExtractionResult,
     RequirementExtractionResult,
@@ -197,3 +199,21 @@ def test_requirement_claim_similarities_empty_when_port_missing() -> None:
         model_tag="lexical-hash-v1",
     )
     assert sims == {}
+
+
+class _CancelledEmbedding(_BoomEmbedding):
+    def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
+        raise JobCancelled("job-1")
+
+
+def test_a_cancelled_job_is_not_mistaken_for_an_embedding_failure() -> None:
+    with pytest.raises(JobCancelled):
+        requirement_claim_similarities(
+            workspace_id="ws-1",
+            requirements=(_REQ,),
+            claims=(_CLAIM,),
+            embedding=_CancelledEmbedding(),
+            cache=InMemoryEmbeddingCache(),
+            provider_id="boom",
+            model_tag="boom-v1",
+        )

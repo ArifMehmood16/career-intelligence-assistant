@@ -10,6 +10,7 @@ from career_assistant.application.ports.embedding import (
     EmbeddingCachePort,
     EmbeddingPort,
 )
+from career_assistant.application.ports.errors import JobCancelled
 from career_assistant.application.ports.types import EmbeddingRequest
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.requirements import Requirement
@@ -120,6 +121,8 @@ def requirement_claim_similarities(
                     max_chars_per_text=max_chars_per_text,
                 )
             )
+        except JobCancelled:
+            raise
         except Exception:
             return {}
         if len(result.vectors) != len(unique_texts):
