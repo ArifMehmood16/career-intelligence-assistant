@@ -206,3 +206,51 @@ def test_capabilities_never_require_branching_on_unknown_fields(
     assert caps.max_output_tokens >= 0
     assert isinstance(caps.leaves_machine, bool)
     assert isinstance(caps.supports_structured_output, bool)
+
+
+def _truncated(provider: str) -> object:
+    cut = '{"requirements": [{"text": "SQ'
+    replies = {
+        "ollama": ("/api/chat", {"message": {"content": cut}, "done_reason": "length"}),
+        "openai": (
+            "/chat/completions",
+            {"choices": [{"message": {"content": cut}, "finish_reason": "length"}]},
+        ),
+        "anthropic": (
+            "/messages",
+            {"content": [{"type": "text", "text": cut}], "stop_reason": "max_tokens"},
+        ),
+    }
+    path, payload = replies[provider]
+    transport = ScriptedTransport(
+        {path: HttpResponse(200, json.dumps(payload).encode(), {})}
+    )
+    builders = {
+        "ollama": lambda: OllamaCompletionAdapter(
+            base_url="http://ollama.test",
+            model_tag="m",
+            transport=transport,
+            resilience=_resilience(),
+        ),
+        "openai": lambda: OpenAICompletionAdapter(
+            api_key="k", model_tag="m", transport=transport, resilience=_resilience()
+        ),
+        "anthropic": lambda: AnthropicCompletionAdapter(
+            api_key="k", model_tag="m", transport=transport, resilience=_resilience()
+        ),
+    }
+    return builders[provider]()
+
+
+@pytest.mark.parametrize("provider", ["ollama", "openai", "anthropic"])
+def test_a_truncated_reply_reports_finish_reason_length(provider: str) -> None:
+    result = _truncated(provider).complete(  # type: ignore[attr-defined]
+        CompletionRequest(
+            system="Extract requirements.",
+            user="- SQL",
+            max_output_tokens=5,
+            json_schema=REQUIREMENTS_SCHEMA,
+        )
+    )
+
+    assert result.finish_reason == "length"
