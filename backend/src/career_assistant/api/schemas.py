@@ -5,6 +5,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from career_assistant.domain.pipeline import PipelineVersion
+
 
 class ApiModel(BaseModel):
     """Shared base for every request/response schema exposed under ``/api``."""
@@ -281,6 +283,10 @@ class ProviderChoiceResponse(ApiModel):
     answer_model: str
     index_provider_id: str
     index_model: str
+
+
+class PipelineSetting(ApiModel):
+    pipeline_version: PipelineVersion
 
 
 class ProviderChoiceUpdateRequest(ApiModel):

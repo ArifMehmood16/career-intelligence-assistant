@@ -69,6 +69,8 @@ Provider resolvers:
 | GET /api/providers | list_provider_catalogue | list_provider_catalogue | none (server config) |
 | GET /api/settings/providers | get persisted choice | none | SqlProviderSettingsStore |
 | PUT /api/settings/providers | apply_provider_choice | apply_provider_choice + egress | SqlProviderSettingsStore |
+| GET /api/settings/pipeline | PipelineVersionStore.get (v1 when unset) | none | SqlPipelineVersionStore |
+| PUT /api/settings/pipeline | PipelineVersionStore.put | none | SqlPipelineVersionStore |
 
 Call accounting for completion and embeddings goes through `AccountingCompletion`
 / `AccountingEmbedding` into `SqlCallAccountant` / `provider_call_accounting`.

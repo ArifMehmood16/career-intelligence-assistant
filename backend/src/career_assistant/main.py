@@ -37,6 +37,7 @@ from career_assistant.api.routes_analysis import router as analysis_router
 from career_assistant.api.routes_cv import router as cv_router
 from career_assistant.api.routes_documents import router as documents_router
 from career_assistant.api.routes_messages import router as messages_router
+from career_assistant.api.routes_pipeline import router as pipeline_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
@@ -49,6 +50,10 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentStore,
 )
 from career_assistant.application.observability.memory import InMemoryAuditRecorder
+from career_assistant.application.pipeline_store import (
+    InMemoryPipelineVersionStore,
+    PipelineVersionStore,
+)
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
@@ -194,6 +199,7 @@ def create_app(
     provider_choice_store: ProviderChoiceStore | None = None,
     analysis_worker: SqlAnalysisWorker | None = None,
     audit_recorder: AuditRecorder | None = None,
+    pipeline_store: PipelineVersionStore | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -251,6 +257,9 @@ def create_app(
         if provider_choice_store is not None
         else InMemoryProviderChoiceStore()
     )
+    app.state.pipeline_store = (
+        pipeline_store if pipeline_store is not None else InMemoryPipelineVersionStore()
+    )
     app.state.analysis_worker = analysis_worker
     if isinstance(resolved_conversation, SqlConversationStore):
         app.state.call_accountant = SqlCallAccountant(
@@ -262,6 +271,7 @@ def create_app(
         app.state.role_store.extractor_factory = _extractor_factory(app)
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
+    app.include_router(pipeline_router, prefix="/api")
     app.include_router(cv_router, prefix="/api")
     app.include_router(documents_router, prefix="/api")
     app.include_router(spans_router, prefix="/api")
