@@ -29,6 +29,35 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 140 — Pydantic contracts and a structured completion port (PLAN 18.2)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.2
+- Prompt intent: continue Phase 18 in TDD fashion.
+- Suggestion: one Pydantic model per v2 model call — CV, cover-letter and
+  job-description chunking, taxonomy, judge verdicts, agent answer — each with
+  `extra="forbid"` and a contract version; a repair message rendered from the
+  validation error; a `StructuredCompletionPort` implemented once over any
+  completion port, with one repair call and typed failures.
+- Outcome: accepted
+- Reason: the contracts check shape only — closed kinds per document type, 0–4
+  scores, required fields — so the server's semantic rules stay in domain code
+  where ADR 013 and ADR 014 put them. The repair message lists JSON paths and
+  Pydantic's messages and never repeats the invalid values, which may be CV text.
+  A truncated reply is not repaired, because repairing a half-written JSON object
+  wastes a call; the caller splits the work instead. Checking the new port against
+  the hermetic adapter showed that it only produces v1 shapes; rather than grow its
+  property-name `if` chain, each contract's hermetic fixture lands with the task
+  that first uses it, and the plan says so.
+- Human validation: TBD. Observed in this session: each contract, repair and
+  completer test failed first on an assertion against a stub, then passed; the
+  contract test through the three HTTP adapters passed on first run and is a
+  regression test. After the last code commit `ruff check`, `ruff format --check`
+  and `mypy` were clean and `pytest` gave 597 passed, 3 skipped, 58 deselected,
+  coverage 84.30%. `pydantic` is now declared in `pyproject.toml` at the version
+  the lock already pinned.
+
 ### 139 — Provider foundations for v2 (PLAN 18.1)
 
 - Date: 2026-09-29

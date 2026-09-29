@@ -1494,11 +1494,15 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       schema dialects, the chat API and the task prefixes; v1 requests are sent as
       before except for the native schema enforcement. Not run against a live
       provider.*
-- [ ] **18.2** LLM contracts. Pydantic models in `application/contracts/` for the
+- [x] **18.2** LLM contracts. Pydantic models in `application/contracts/` for the
       chunking, taxonomy, judge and agent-answer payloads are the single source of
       each JSON schema. A validation error renders as the text of a repair request.
       A `StructuredCompletionPort` returns validated objects. Unit tests cover schema
       generation, a valid payload, each invalid shape and the repair message.
+      *Done 2026-09-29. The hermetic completion adapter still produces only v1
+      shapes, so each contract's hermetic fixture lands with the task that first
+      uses it: chunking in 18.4, taxonomy in 18.5, the judge in 18.7 and the agent
+      answer in 18.11.*
 - [ ] **18.3** Chunk store and migration. Tables `chunks`, `chunk_embeddings`,
       `requirement_items`, `kg_nodes`, `kg_edges`, `match_verdicts`,
       `verdict_evidence` and `retrieval_traces`; generated `tsvector` column and GIN

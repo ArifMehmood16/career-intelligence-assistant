@@ -28,8 +28,8 @@ product and threat-model decision.
   blocker.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
-- Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29 and 18.1 is done.
-  **18.2 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+- Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
+  done. **18.3 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -121,7 +121,7 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 
 - [x] **18.1 — provider foundations:** native structured output, `num_ctx`,
       per-model limits, truncation, embedding input type.
-- [ ] **18.2 — LLM contracts:** Pydantic schemas and the repair message.
+- [x] **18.2 — LLM contracts:** Pydantic schemas and the repair message.
 - [ ] **18.3 — chunk store and migration**, proven on local PostgreSQL and on
       Supabase's Postgres image, with the extended hard-delete test.
 - [ ] **18.4 — LLM chunker** with coverage and verbatim validation.
