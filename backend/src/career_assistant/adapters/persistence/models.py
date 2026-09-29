@@ -36,6 +36,7 @@ NAMING = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
+PIPELINE_VERSION_ALLOWED = "pipeline_version IN ('v1', 'v2')"
 
 
 class Base(DeclarativeBase):
@@ -48,8 +49,14 @@ def _uuid() -> uuid.UUID:
 
 class WorkspaceRow(Base):
     __tablename__ = "workspaces"
+    __table_args__ = (
+        CheckConstraint(PIPELINE_VERSION_ALLOWED, name="pipeline_version"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    pipeline_version: Mapped[str] = mapped_column(
+        String(8), nullable=False, server_default="v1"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -411,6 +418,7 @@ class AnalysisJobRow(Base):
     __table_args__ = (
         Index("ix_analysis_jobs_workspace_id", "workspace_id"),
         Index("ix_analysis_jobs_workspace_state", "workspace_id", "state"),
+        CheckConstraint(PIPELINE_VERSION_ALLOWED, name="pipeline_version"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
@@ -429,6 +437,9 @@ class AnalysisJobRow(Base):
     )
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pipeline_version: Mapped[str] = mapped_column(
+        String(8), nullable=False, server_default="v1"
+    )
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

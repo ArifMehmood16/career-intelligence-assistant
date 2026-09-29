@@ -13,6 +13,7 @@ from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import AnalysisJob, RoleStatus
 from career_assistant.domain.mapping import RequirementMapping
+from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
 
@@ -105,6 +106,12 @@ class HistoryMessage:
 
 class WorkspaceRepository(Protocol):
     def ensure(self, workspace_id: str) -> None: ...
+
+    def pipeline_version(self, workspace_id: str) -> PipelineVersion: ...
+
+    def set_pipeline_version(
+        self, workspace_id: str, version: PipelineVersion
+    ) -> None: ...
 
 
 class DocumentRepository(Protocol):

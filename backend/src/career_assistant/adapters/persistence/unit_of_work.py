@@ -57,6 +57,7 @@ from career_assistant.application.ports.search import RetrievalTraceRepository
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Page, Span
+from career_assistant.domain.pipeline import PipelineVersion
 
 # Documents whose chunks a v2 verdict may cite as evidence.
 _EVIDENCE_KINDS = frozenset({"cv", "cover_letter"})
@@ -95,6 +96,19 @@ class SqlWorkspaceRepository:
         existing = self._session.get(WorkspaceRow, wid)
         if existing is None:
             self._session.add(WorkspaceRow(id=wid))
+            self._session.flush()
+
+    def pipeline_version(self, workspace_id: str) -> PipelineVersion:
+        row = self._session.get(WorkspaceRow, _as_uuid(workspace_id))
+        if row is None:
+            return PipelineVersion.V1
+        return PipelineVersion(row.pipeline_version)
+
+    def set_pipeline_version(self, workspace_id: str, version: PipelineVersion) -> None:
+        self.ensure(workspace_id)
+        row = self._session.get(WorkspaceRow, _as_uuid(workspace_id))
+        if row is not None:
+            row.pipeline_version = version.value
             self._session.flush()
 
 

@@ -157,7 +157,9 @@ class _WorkspaceRepo(Protocol):
 
 class _EmbeddingUnitOfWork(Protocol):
     embeddings: SqlEmbeddingRepository
-    workspaces: _WorkspaceRepo
+
+    @property
+    def workspaces(self) -> _WorkspaceRepo: ...
 
     def commit(self) -> None: ...
 
