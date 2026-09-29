@@ -29,6 +29,33 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 150 — Tool registry and the bounded ask agent (PLAN 18.11)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Grok 4.7)
+- Plan task: 18.11
+- Prompt intent: continue, TDD with regular commits, and only the work the
+  acceptance criteria need.
+- Suggestion: one tool registry, a `ToolCallingPort` with hermetic, Ollama,
+  OpenAI and Anthropic adapters on one recorded-reply contract, and a bounded
+  loop that validates same-turn citations. The intent router stays for the
+  stored-analysis questions. Open questions use the agent only when the
+  completion capability descriptor reports tool calling.
+- Outcome: changed in one place. `search_evidence` and `skill_experience` read
+  the spans already retrieved for the question. They do not call `hybrid_search`
+  or the knowledge graph, so years are reported as unknown. Tool steps are
+  checked in memory and are not stored with the answer.
+- Reason: the citation rule is the same either way — a quote counts only when
+  this turn's tools returned that text verbatim — and the ask route already
+  holds those spans. A new database round trip was not required to meet the
+  tests. MCP stays 18.12.
+- Human validation: TBD. Observed:
+  - `make lint` clean. `make test`: 825 passed, 3 skipped, 123 deselected,
+    coverage 84.96%, and 124 frontend tests passed.
+  - The agent tests cover the tool-call budget, a guessed chunk id, a
+    paraphrased quote and an injection kept inside the untrusted delimiter.
+  - Hermetic providers only. No live model and no real document was used.
+
 ### 149 — Pipeline v2 wiring and the verdict and trace routes (PLAN 18.10)
 
 - Date: 2026-09-29
