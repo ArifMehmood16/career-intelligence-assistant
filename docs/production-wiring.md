@@ -73,7 +73,7 @@ Provider resolvers:
 | GET /api/ranking | rank_roles | none | SqlRoleStore |
 | GET /api/compare | compare_requirement_sets | none | SqlRoleStore |
 | GET /api/messages | list persisted conversation | none | SqlConversationStore |
-| POST /api/messages | AskService (stream or JSON) | completion_port_for for every intent; insufficient evidence does not call the model | SqlConversationStore; retrieval via SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
+| POST /api/messages | AskService (stream or JSON). Open questions use the agent when the answer model reports tool calling; otherwise scoped retrieval. Gaps, fit, comparison and interview preparation stay on the router | completion_port_for; build_tool_calling_port for the agent (hermetic, Ollama, OpenAI, Anthropic) | SqlConversationStore; retrieval via SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | DELETE /api/messages | hard-delete conversation | none | SqlConversationStore |
 | GET /api/providers | list_provider_catalogue | list_provider_catalogue | none (server config) |
 | GET /api/settings/providers | get persisted choice | none | SqlProviderSettingsStore |

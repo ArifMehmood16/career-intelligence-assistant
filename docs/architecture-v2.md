@@ -787,7 +787,16 @@ it. The model cannot cite a chunk id it guessed. Ask stores each tool call's nam
 and the ids of the chunks it returned with the answer; that record is what the
 citation check reads and what the UI shows as the agent's steps.
 
-**No framework.** The loop is a use case of roughly a hundred and fifty lines over a
+As built (PLAN 18.11): `run_agent` in `application/ask/agent.py` over
+`ToolCallingPort`, with hermetic, Ollama, OpenAI and Anthropic adapters on one
+contract suite. The eight tools are `evidence_registry`. They read the role
+analyses and the spans already retrieved for the question, and the gap plan and
+comparison call the existing domain functions. `search_evidence` does not call
+`hybrid_search` yet, and `skill_experience` does not read the knowledge graph, so
+it reports no years. Tool steps are checked in memory for that turn and are not
+stored with the answer yet; the UI for them is PLAN 18.13.
+
+**No framework.** The loop is a use case over a
 `ToolCallingPort`. LangGraph, LangChain and LlamaIndex were considered and rejected
 for the same reason v1 rejected them: the control flow, the budget and the egress
 gate have to be visible and testable, and a hermetic scripted fixture has to be able

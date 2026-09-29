@@ -1584,12 +1584,15 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       `V2JobRunner`, and `GET /api/roles/{id}/verdicts` and `.../trace`, proven with
       the hermetic providers on PostgreSQL. Only the CV and the advert are indexed;
       cover letters are not part of a v2 analysis yet. Not run against a live model.*
-- [ ] **18.11** Tool registry and agentic Ask. Registry with the tools in
+- [x] **18.11** Tool registry and agentic Ask. Registry with the tools in
       architecture-v2 §11; `ToolCallingPort` with four adapters and one contract
       suite; the bounded loop; validated structured answer with same-turn citations;
       router fast path kept; deterministic fallback when tool calling is unsupported.
       Tests include budget exhaustion, a guessed chunk id, a paraphrased quote and an
-      injection probe. `docs/threat-model.md` updated.
+      injection probe. `docs/threat-model.md` updated. *Done 2026-09-29: hermetic
+      providers only, no live model. `search_evidence` reads the spans already
+      retrieved for the question, and `skill_experience` reports no years, because
+      hybrid search and the knowledge graph are not on the ask path yet.*
 - [ ] **18.12** MCP server. `career-assistant-mcp` over stdio, read-only tools from
       the registry with output schemas and `readOnlyHint`; `MCP_ENABLED` and
       `MCP_WORKSPACE_ID` read from the server configuration file, never the launching
