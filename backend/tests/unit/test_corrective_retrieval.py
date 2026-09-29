@@ -7,6 +7,7 @@ from datetime import date
 from typing import Any
 
 from tests.support.in_memory_verdicts import InMemoryVerdictCache
+from tests.support.recording_progress import RecordingProgress
 from tests.support.scripted_structured import ScriptedStructured
 
 from career_assistant.application.contracts.judge import JudgeResponse
@@ -19,7 +20,6 @@ from career_assistant.application.judge.prompt import JudgeLimits
 from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import Candidate, RequirementPacket
-from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.search import SearchHit
 
 AS_OF = date(2026, 9, 1)
@@ -237,20 +237,6 @@ def test_an_incomplete_requirement_is_not_searched_again() -> None:
 
     assert outcome.incomplete == ("r1",)
     assert len(search.queries) == 1
-
-
-@dataclass
-class RecordingProgress:
-    events: list[tuple[object, ...]] = field(default_factory=list)
-
-    def enter(self, key: TaskKey) -> None:
-        self.events.append(("enter", key.value))
-
-    def count(self, key: TaskKey, done: int, total: int) -> None:
-        self.events.append((key.value, done, total))
-
-    def skip(self, key: TaskKey) -> None:
-        self.events.append(("skip", key.value))
 
 
 def test_progress_counts_searches_judgements_and_rechecks() -> None:
