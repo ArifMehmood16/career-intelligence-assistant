@@ -3,6 +3,11 @@
 > This page describes what runs today. The accepted next architecture, being built
 > in PLAN Phase 18, is [architecture-v2.md](architecture-v2.md).
 
+The decisions behind it: [ADR 010](adr/010-model-first-extraction.md) is why
+extraction is model-first, [ADR 011](adr/011-evidence-assessment-contract.md) is the
+evidence-assessment contract and [ADR 012](adr/012-durable-operational-audit.md) is
+the operational-audit contract. Every decision is in [adr/](adr/).
+
 ## The engineering thesis
 
 A naive version of this product asks a model "how good is this candidate for this
