@@ -38,6 +38,9 @@ from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
 from career_assistant.adapters.persistence.search_repos import (
     SqlRetrievalTraceRepository,
 )
+from career_assistant.adapters.persistence.v2_analysis_repos import (
+    SqlV2AnalysisRepository,
+)
 from career_assistant.application.ports.graph import KnowledgeGraphRepository
 from career_assistant.application.ports.persistence import (
     AnalysisJobRepository,
@@ -605,6 +608,7 @@ class SqlUnitOfWork:
         self.embeddings = SqlEmbeddingRepository(self._session)
         self.graph = SqlKnowledgeGraphRepository(self._session)
         self.chunks = SqlChunkRepository(self._session)
+        self.v2 = SqlV2AnalysisRepository(self._session, self.roles, self.jobs)
         self.traces = SqlRetrievalTraceRepository(self._session)
         return self
 
