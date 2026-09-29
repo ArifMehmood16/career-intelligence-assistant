@@ -176,3 +176,41 @@ def test_an_injection_in_a_tool_result_stays_untrusted_data() -> None:
     assert _INJECTION in tool_message.content
     assert outcome.result.kind is AnswerKind.INSUFFICIENT
     assert not outcome.result.content.startswith("hired immediately")
+
+
+def test_the_answer_lists_each_tool_the_agent_called() -> None:
+    missing = ToolCallingResult(
+        content="",
+        tool_calls=(ToolCall("c2", "get_chunk", {"chunk_id": "nope"}),),
+        provider_id="hermetic",
+        model_tag="m",
+    )
+    port = _Port([_tool_call(), missing, _text(_answer(_TEXT))])
+
+    outcome = run_agent(
+        question="Where is dbt?",
+        port=port,
+        registry=evidence_registry((), _pool()),
+        limits=AgentLimits(),
+    )
+
+    steps = outcome.result.tool_steps
+    assert [(s.name, s.found, s.failed) for s in steps] == [
+        ("search_evidence", 1, False),
+        ("get_chunk", 0, True),
+    ]
+    assert steps[0].arguments == (("query", "dbt"),)
+
+
+def test_a_refusal_still_lists_the_tools_it_tried() -> None:
+    port = _Port([_tool_call(), _text(_answer(_TEXT, chunk_id="guessed"))])
+
+    outcome = run_agent(
+        question="Where is dbt?",
+        port=port,
+        registry=evidence_registry((), _pool()),
+        limits=AgentLimits(),
+    )
+
+    assert outcome.result.kind is AnswerKind.INSUFFICIENT
+    assert [s.name for s in outcome.result.tool_steps] == ["search_evidence"]

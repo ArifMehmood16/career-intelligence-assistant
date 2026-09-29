@@ -28,6 +28,18 @@ class AnswerResult:
     content: str
     citations: tuple[AnswerCitation, ...]
     intent: Intent
+    # The tools the agent called for this answer, in order; empty off the agent.
+    tool_steps: tuple[ToolStep, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ToolStep:
+    """One tool call: what the agent asked for and how much came back."""
+
+    name: str
+    arguments: tuple[tuple[str, str], ...]
+    found: int
+    failed: bool
 
 
 @dataclass(frozen=True, slots=True)

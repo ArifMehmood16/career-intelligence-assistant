@@ -8,7 +8,7 @@ from it. One repair, then an honest refusal that shows what was found.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from pydantic import ValidationError
 
@@ -29,6 +29,7 @@ from career_assistant.domain.ask import (
     AnswerCitation,
     AnswerKind,
     AnswerResult,
+    ToolStep,
 )
 from career_assistant.domain.intents import Intent
 
@@ -44,6 +45,7 @@ _UNTRUSTED_START = "<<<UNTRUSTED>>>"
 _UNTRUSTED_END = "<<<END_UNTRUSTED>>>"
 _REFUSAL = "I couldn't support an answer from the documents."
 _MAX_FOUND_CHARS = 160
+_MAX_ARGUMENT_CHARS = 120
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +80,7 @@ def run_agent(
 ) -> AgentOutcome:
     messages: list[ChatMessage] = [ChatMessage("user", question)]
     chunks: dict[str, str] = {}
+    steps: list[ToolStep] = []
     tool_runs = 0
     repairs = 0
     provider_id = port.capabilities.provider_id
@@ -110,21 +113,34 @@ def run_agent(
             break
         if turned.tool_calls and allow_tools:
             tool_runs = _run_tools(
-                messages, chunks, turned, registry, tool_runs, limits.max_tool_calls
+                messages,
+                chunks,
+                steps,
+                turned,
+                registry,
+                tool_runs,
+                limits.max_tool_calls,
             )
             continue
         outcome = _finish(messages, turned, chunks, repairs)
         if outcome is None:
             repairs += 1
             continue
-        return AgentOutcome(outcome, provider_id, model_tag, left_machine)
+        return AgentOutcome(
+            replace(outcome, tool_steps=tuple(steps)),
+            provider_id,
+            model_tag,
+            left_machine,
+        )
 
-    return AgentOutcome(_refuse(chunks), provider_id, model_tag, left_machine)
+    refused = replace(_refuse(chunks), tool_steps=tuple(steps))
+    return AgentOutcome(refused, provider_id, model_tag, left_machine)
 
 
 def _run_tools(
     messages: list[ChatMessage],
     chunks: dict[str, str],
+    steps: list[ToolStep],
     turned: ToolCallingResult,
     registry: ToolRegistry,
     tool_runs: int,
@@ -135,6 +151,14 @@ def _run_tools(
     for call in accepted:
         ran = registry.call(call.name, call.arguments)
         chunks.update(ran.chunks)
+        steps.append(
+            ToolStep(
+                name=call.name,
+                arguments=_shown_arguments(call.arguments),
+                found=len(ran.chunks),
+                failed=ran.error is not None,
+            )
+        )
         messages.append(
             ChatMessage(
                 "tool",
@@ -145,6 +169,18 @@ def _run_tools(
         )
         tool_runs += 1
     return tool_runs
+
+
+def _shown_arguments(arguments: Mapping[str, object]) -> tuple[tuple[str, str], ...]:
+    """The call's arguments as short strings, for showing the person who asked."""
+    shown: list[tuple[str, str]] = []
+    for key, value in arguments.items():
+        if isinstance(value, list | tuple):
+            text = ", ".join(str(item) for item in value)
+        else:
+            text = str(value)
+        shown.append((str(key), text[:_MAX_ARGUMENT_CHARS]))
+    return tuple(shown)
 
 
 def _finish(
