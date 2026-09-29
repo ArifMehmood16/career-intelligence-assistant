@@ -30,9 +30,20 @@ from career_assistant.adapters.providers.resilience import (
     CircuitBreaker,
     ResiliencePolicy,
 )
+from career_assistant.adapters.providers.tool_calling import (
+    AnthropicToolCaller,
+    OllamaToolCaller,
+    OpenAIToolCaller,
+)
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.errors import ProviderUnavailableError
+from career_assistant.application.ports.tool_calling import (
+    HermeticToolCaller,
+    ToolCallingPort,
+    ToolCallingRequest,
+    ToolCallingResult,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -307,6 +318,108 @@ class _CallTimeEgressEmbedding:
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
         _assert_hosted_call_permitted(self._settings, self._hosted_kind)
         return self._inner.embed(request)
+
+
+def build_tool_calling_port(
+    settings: ProviderSettings,
+    *,
+    transport: HttpTransport | None = None,
+    egress: HostedEgressPolicy | None = None,
+    provider_id: str | None = None,
+    model_tag: str | None = None,
+    catalogue: ModelCatalogue | None = None,
+) -> ToolCallingPort:
+    """The tool-calling adapter for the workspace's answer model."""
+    policy = egress or build_egress_policy(settings)
+    http = transport or HttpxTransport()
+    resilience = build_resilience(settings)
+    selected = provider_id or settings.completion_provider
+    caller = _tool_caller_for(
+        selected,
+        settings=settings,
+        egress=policy,
+        transport=http,
+        resilience=resilience,
+        model_tag=model_tag,
+        catalogue=catalogue or default_model_catalogue(),
+    )
+    if selected in {"openai", "anthropic"}:
+        return _CallTimeEgressToolCaller(
+            caller, settings=settings, hosted_kind=selected
+        )
+    log_event(
+        _log,
+        "provider.constructed",
+        kind="tool_calling",
+        provider_id=selected,
+        model_tag=model_tag or "",
+    )
+    return caller
+
+
+def _tool_caller_for(
+    provider_id: str,
+    *,
+    settings: ProviderSettings,
+    egress: HostedEgressPolicy,
+    transport: HttpTransport,
+    resilience: ResiliencePolicy,
+    model_tag: str | None,
+    catalogue: ModelCatalogue,
+) -> ToolCallingPort:
+    if provider_id == "hermetic":
+        return HermeticToolCaller()
+    if provider_id == "ollama":
+        tag = model_tag or settings.ollama_completion_model or "qwen2.5:7b"
+        return OllamaToolCaller(
+            base_url=settings.ollama_base_url,
+            model_tag=tag,
+            transport=transport,
+            resilience=resilience,
+            profile=catalogue.profile("ollama", tag),
+        )
+    if provider_id == "openai":
+        tag = model_tag or settings.openai_completion_model
+        return OpenAIToolCaller(
+            api_key=egress.assert_openai_constructible(),
+            model_tag=tag,
+            transport=transport,
+            resilience=resilience,
+            profile=catalogue.profile("openai", tag),
+        )
+    if provider_id == "anthropic":
+        tag = model_tag or settings.anthropic_completion_model
+        return AnthropicToolCaller(
+            api_key=egress.assert_anthropic_constructible(),
+            model_tag=tag,
+            transport=transport,
+            resilience=resilience,
+            profile=catalogue.profile("anthropic", tag),
+        )
+    raise ProviderUnavailableError(f"unknown tool-calling provider {provider_id!r}")
+
+
+class _CallTimeEgressToolCaller:
+    """Re-assert hosted egress on every tool-calling turn, not only at construction."""
+
+    def __init__(
+        self,
+        inner: ToolCallingPort,
+        *,
+        settings: ProviderSettings,
+        hosted_kind: str,
+    ) -> None:
+        self._inner = inner
+        self._settings = settings
+        self._hosted_kind = hosted_kind
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return self._inner.capabilities
+
+    def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
+        _assert_hosted_call_permitted(self._settings, self._hosted_kind)
+        return self._inner.complete(request)
 
 
 def _assert_hosted_call_permitted(settings: ProviderSettings, hosted_kind: str) -> None:
