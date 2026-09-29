@@ -24,6 +24,7 @@ class TaskKey(StrEnum):
     READ_ADVERT = "read_advert"
     READ_CV = "read_cv"
     MATCH = "match"
+    SEARCH = "search"
     JUDGE = "judge"
     RECHECK = "recheck"
     SCORE = "score"
@@ -49,6 +50,7 @@ _PLANS: Mapping[PipelineVersion, tuple[TaskKey, ...]] = {
         TaskKey.PREPARE,
         TaskKey.READ_CV,
         TaskKey.READ_ADVERT,
+        TaskKey.SEARCH,
         TaskKey.JUDGE,
         TaskKey.RECHECK,
         TaskKey.SCORE,

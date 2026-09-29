@@ -60,6 +60,7 @@ def test_each_pipeline_plans_its_tasks_in_run_order() -> None:
         TaskKey.PREPARE,
         TaskKey.READ_CV,
         TaskKey.READ_ADVERT,
+        TaskKey.SEARCH,
         TaskKey.JUDGE,
         TaskKey.RECHECK,
         TaskKey.SCORE,
@@ -133,10 +134,10 @@ def test_summary_counts_done_and_skipped_and_the_running_share() -> None:
 
     summary = summarise(tasks)
 
-    assert (summary.tasks_done, summary.tasks_total) == (3, 6)
+    assert (summary.tasks_done, summary.tasks_total) == (4, 7)
     assert summary.current is not None
     assert summary.current.key is TaskKey.JUDGE
-    assert summary.fraction == pytest.approx((3 + 3 / 12) / 6)
+    assert summary.fraction == pytest.approx((4 + 3 / 12) / 7)
 
 
 def test_a_failed_job_shows_where_it_stopped() -> None:
