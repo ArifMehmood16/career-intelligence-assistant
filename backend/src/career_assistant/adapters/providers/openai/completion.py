@@ -10,6 +10,10 @@ from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
     classify_http_status,
 )
+from career_assistant.adapters.providers.schema_dialects import (
+    drop_strict_mode_nulls,
+    openai_strict_schema,
+)
 from career_assistant.application.ports.errors import (
     ProviderInputTooLargeError,
     ProviderRefusedError,
@@ -69,22 +73,7 @@ class OpenAICompletionAdapter:
         if len(request.system) + len(request.user) > _MAX_INPUT_CHARS:
             raise ProviderInputTooLargeError("openai input too large")
 
-        body: dict[str, object] = {
-            "model": self._model_tag,
-            "messages": [
-                {"role": "system", "content": request.system},
-                {"role": "user", "content": request.user},
-            ],
-            "max_tokens": request.max_output_tokens,
-        }
-        if request.json_schema is not None:
-            body["response_format"] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "career_assistant_payload",
-                    "schema": request.json_schema,
-                },
-            }
+        body = self._body(request)
 
         def _call() -> CompletionResult:
             response = self._transport.request(
@@ -102,6 +91,8 @@ class OpenAICompletionAdapter:
             choice = (data.get("choices") or [{}])[0]
             message = choice.get("message") or {}
             text = str(message.get("content") or "")
+            if request.json_schema is not None:
+                text = drop_strict_mode_nulls(text, request.json_schema)
             if choice.get("finish_reason") == "content_filter" or not text:
                 if choice.get("finish_reason") == "content_filter":
                     raise ProviderRefusedError("openai refused the request")
@@ -118,6 +109,31 @@ class OpenAICompletionAdapter:
             )
 
         return self._resilience.run(_call)
+
+    def _body(self, request: CompletionRequest) -> dict[str, object]:
+        body: dict[str, object] = {
+            "model": self._model_tag,
+            "messages": [
+                {"role": "system", "content": request.system},
+                {"role": "user", "content": request.user},
+            ],
+            # max_tokens is deprecated and rejected by reasoning models.
+            "max_completion_tokens": request.max_output_tokens,
+        }
+        if request.json_schema is not None:
+            body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "career_assistant_payload",
+                    "strict": True,
+                    "schema": openai_strict_schema(request.json_schema),
+                },
+            }
+        if request.temperature is not None and self._profile.supports_temperature:
+            body["temperature"] = request.temperature
+        if request.seed is not None and self._profile.supports_seed:
+            body["seed"] = request.seed
+        return body
 
 
 def _int_or_none(value: Any) -> int | None:

@@ -8,8 +8,11 @@ enforce move into the description; the server still validates the full schema.
 
 from __future__ import annotations
 
+import json
+
 from career_assistant.adapters.providers.schema_dialects import (
     anthropic_output_schema,
+    drop_strict_mode_nulls,
     openai_strict_schema,
 )
 
@@ -99,3 +102,48 @@ def test_definitions_and_any_of_members_are_adapted_too() -> None:
 
     assert point["additionalProperties"] is False
     assert "maximum" not in point["properties"]["n"]
+
+
+def test_nulls_strict_mode_forced_into_optional_properties_are_removed() -> None:
+    reply = '{"verdicts": [{"score": 3, "quote": "led it", "note": null}]}'
+
+    restored = json.loads(drop_strict_mode_nulls(reply, _SCHEMA))
+
+    assert restored == {"verdicts": [{"score": 3, "quote": "led it"}]}
+
+
+def test_a_null_the_original_schema_requires_is_kept() -> None:
+    schema: dict[str, object] = {
+        "type": "object",
+        "properties": {"level": {"type": ["string", "null"]}},
+        "required": ["level"],
+    }
+
+    assert json.loads(drop_strict_mode_nulls('{"level": null}', schema)) == {
+        "level": None
+    }
+
+
+def test_optional_nulls_inside_definitions_are_removed() -> None:
+    schema: dict[str, object] = {
+        "type": "object",
+        "properties": {"point": {"$ref": "#/$defs/Point"}},
+        "required": ["point"],
+        "$defs": {
+            "Point": {
+                "type": "object",
+                "properties": {"n": {"type": "integer"}, "label": {"type": "string"}},
+                "required": ["n"],
+            }
+        },
+    }
+
+    restored = json.loads(
+        drop_strict_mode_nulls('{"point": {"n": 1, "label": null}}', schema)
+    )
+
+    assert restored == {"point": {"n": 1}}
+
+
+def test_text_that_is_not_json_is_returned_unchanged() -> None:
+    assert drop_strict_mode_nulls("not json", _SCHEMA) == "not json"
