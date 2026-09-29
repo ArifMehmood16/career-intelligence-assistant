@@ -61,17 +61,32 @@ class OllamaEmbeddingAdapter:
             supports_seed=self._profile.supports_seed,
         )
 
+    def _prefixed(self, text: str, request: EmbeddingRequest) -> str:
+        if request.input_type == "query":
+            return f"{self._profile.embedding_query_prefix}{text}"
+        if request.input_type == "document":
+            return f"{self._profile.embedding_document_prefix}{text}"
+        return text
+
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
         vectors: list[tuple[float, ...]] = []
         for text in request.texts:
             if len(text) > request.max_chars_per_text:
                 raise ProviderInputTooLargeError("ollama embedding input too large")
 
-            def _call(current: str = text) -> tuple[float, ...]:
+            def _call(
+                current: str = self._prefixed(text, request),
+            ) -> tuple[float, ...]:
                 response = self._transport.request(
                     "POST",
                     f"{self._base_url}/api/embeddings",
-                    json_body={"model": self._model_tag, "prompt": current},
+                    json_body={
+                        "model": self._model_tag,
+                        "prompt": current,
+                        # Explicit, as for completion: the server default may be
+                        # smaller than the model's own window.
+                        "options": {"num_ctx": self._profile.context_window_tokens},
+                    },
                     timeout_seconds=self._resilience.timeout_seconds,
                 )
                 classify_http_status(response.status_code)

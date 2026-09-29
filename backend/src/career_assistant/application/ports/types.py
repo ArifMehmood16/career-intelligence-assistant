@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,10 +64,15 @@ class CompletionResult:
     finish_reason: str | None = None
 
 
+EmbeddingInputType = Literal["query", "document"]
+
+
 @dataclass(frozen=True, slots=True)
 class EmbeddingRequest:
     texts: tuple[str, ...]
     max_chars_per_text: int
+    # None is a v1 request: embedded exactly as before, with no task prefix.
+    input_type: EmbeddingInputType | None = None
 
 
 @dataclass(frozen=True, slots=True)
