@@ -14,6 +14,7 @@ from tests.support.search_worlds import (
     ChunkSeed,
     InMemoryWorld,
     SearchWorld,
+    SqlWorld,
 )
 
 from career_assistant.application.ports.search import HybridQuery
@@ -21,10 +22,16 @@ from career_assistant.domain.documents import DocumentKind
 
 WORLDS: dict[str, Callable[[pytest.FixtureRequest], SearchWorld]] = {
     "in-memory": lambda _request: InMemoryWorld(),
+    "postgresql": lambda request: SqlWorld(request.getfixturevalue("session_factory")),
 }
 
 
-@pytest.fixture(params=list(WORLDS))
+@pytest.fixture(
+    params=[
+        pytest.param("in-memory"),
+        pytest.param("postgresql", marks=pytest.mark.integration),
+    ]
+)
 def world(request: pytest.FixtureRequest) -> SearchWorld:
     return WORLDS[request.param](request)
 
