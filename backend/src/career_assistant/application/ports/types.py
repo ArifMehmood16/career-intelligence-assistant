@@ -46,6 +46,9 @@ class CompletionRequest:
     user: str
     max_output_tokens: int
     json_schema: dict[str, Any] | None = None
+    # Sent only when the model's capability descriptor says it accepts them.
+    temperature: float | None = None
+    seed: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

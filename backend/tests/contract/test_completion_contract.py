@@ -65,12 +65,13 @@ def _hermetic() -> HermeticCompletionAdapter:
 def _ollama() -> OllamaCompletionAdapter:
     structured = json.dumps({"requirements": [{"text": "SQL", "must_have": True}]})
     payload = {
-        "response": structured,
+        "message": {"role": "assistant", "content": structured},
+        "done_reason": "stop",
         "prompt_eval_count": 3,
         "eval_count": 2,
     }
     transport = ScriptedTransport(
-        {"/api/generate": HttpResponse(200, json.dumps(payload).encode(), {})}
+        {"/api/chat": HttpResponse(200, json.dumps(payload).encode(), {})}
     )
     return OllamaCompletionAdapter(
         base_url="http://ollama.test",

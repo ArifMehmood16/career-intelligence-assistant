@@ -71,8 +71,11 @@ class OllamaCompletionAdapter:
         payload: dict[str, object] = {
             "model": self._model_tag,
             "stream": False,
-            "prompt": f"{request.system}\n\n{request.user}",
-            "options": {"num_predict": request.max_output_tokens},
+            "messages": [
+                {"role": "system", "content": request.system},
+                {"role": "user", "content": request.user},
+            ],
+            "options": self._options(request),
         }
         if request.json_schema is not None:
             # The schema is the structured-output contract. "json" alone only
@@ -83,13 +86,14 @@ class OllamaCompletionAdapter:
         def _call() -> CompletionResult:
             response = self._transport.request(
                 "POST",
-                f"{self._base_url}/api/generate",
+                f"{self._base_url}/api/chat",
                 json_body=payload,
                 timeout_seconds=self._resilience.timeout_seconds,
             )
             classify_http_status(response.status_code)
             data = json.loads(response.body.decode("utf-8"))
-            text = str(data.get("response", ""))
+            message = data.get("message") or {}
+            text = str(message.get("content", "")) if isinstance(message, dict) else ""
             if text.strip().lower().startswith("i cannot"):
                 raise ProviderRefusedError("ollama refused the request")
             return CompletionResult(
@@ -99,12 +103,32 @@ class OllamaCompletionAdapter:
                 left_machine=False,
                 input_tokens=_int_or_none(data.get("prompt_eval_count")),
                 output_tokens=_int_or_none(data.get("eval_count")),
+                finish_reason=_str_or_none(data.get("done_reason")),
             )
 
         return self._resilience.run(_call)
 
+    def _options(self, request: CompletionRequest) -> dict[str, object]:
+        # num_ctx is explicit: without it Ollama uses its server default and cuts a
+        # long prompt without an error, whatever the descriptor reports.
+        options: dict[str, object] = {
+            "num_ctx": self._profile.context_window_tokens,
+            "num_predict": request.max_output_tokens,
+        }
+        if request.temperature is not None and self._profile.supports_temperature:
+            options["temperature"] = request.temperature
+        if request.seed is not None and self._profile.supports_seed:
+            options["seed"] = request.seed
+        return options
+
 
 def _int_or_none(value: Any) -> int | None:
     if isinstance(value, int):
+        return value
+    return None
+
+
+def _str_or_none(value: Any) -> str | None:
+    if isinstance(value, str) and value:
         return value
     return None
