@@ -18,6 +18,10 @@ class CapabilityDescriptor:
     max_output_tokens: int
     embedding_dimensions: int | None
     leaves_machine: bool
+    supports_tool_calling: bool = False
+    supports_prompt_caching: bool = False
+    supports_temperature: bool = False
+    supports_seed: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -17,7 +17,11 @@ from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     EmbeddingRequest,
     EmbeddingResult,
+    ModelProfile,
 )
+
+# The v1 constants, used when no catalogue profile is passed (tests, old callers).
+_DEFAULT_PROFILE = ModelProfile(context_window_tokens=8_192, max_output_tokens=0)
 
 
 class OllamaEmbeddingAdapter:
@@ -31,12 +35,14 @@ class OllamaEmbeddingAdapter:
         transport: HttpTransport,
         resilience: ResiliencePolicy,
         dimensions: int = 768,
+        profile: ModelProfile | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model_tag = model_tag
         self._transport = transport
         self._resilience = resilience
         self._dimensions = dimensions
+        self._profile = profile or _DEFAULT_PROFILE
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -45,10 +51,14 @@ class OllamaEmbeddingAdapter:
             supports_completion=False,
             supports_embedding=True,
             supports_structured_output=False,
-            context_window_tokens=8_192,
+            context_window_tokens=self._profile.context_window_tokens,
             max_output_tokens=0,
             embedding_dimensions=self._dimensions,
             leaves_machine=False,
+            supports_tool_calling=self._profile.supports_tool_calling,
+            supports_prompt_caching=self._profile.supports_prompt_caching,
+            supports_temperature=self._profile.supports_temperature,
+            supports_seed=self._profile.supports_seed,
         )
 
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:

@@ -18,9 +18,14 @@ from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
     CompletionResult,
+    ModelProfile,
 )
 
 _MAX_INPUT_CHARS = 100_000
+
+
+# The v1 constants, used when no catalogue profile is passed (tests, old callers).
+_DEFAULT_PROFILE = ModelProfile(context_window_tokens=32_768, max_output_tokens=4_096)
 
 
 class OllamaCompletionAdapter:
@@ -33,11 +38,13 @@ class OllamaCompletionAdapter:
         model_tag: str,
         transport: HttpTransport,
         resilience: ResiliencePolicy,
+        profile: ModelProfile | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model_tag = model_tag
         self._transport = transport
         self._resilience = resilience
+        self._profile = profile or _DEFAULT_PROFILE
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -46,10 +53,14 @@ class OllamaCompletionAdapter:
             supports_completion=True,
             supports_embedding=False,
             supports_structured_output=True,
-            context_window_tokens=32_768,
-            max_output_tokens=4_096,
+            context_window_tokens=self._profile.context_window_tokens,
+            max_output_tokens=self._profile.max_output_tokens,
             embedding_dimensions=None,
             leaves_machine=False,
+            supports_tool_calling=self._profile.supports_tool_calling,
+            supports_prompt_caching=self._profile.supports_prompt_caching,
+            supports_temperature=self._profile.supports_temperature,
+            supports_seed=self._profile.supports_seed,
         )
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
