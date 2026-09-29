@@ -79,8 +79,8 @@ are authoritative for product behaviour. Non-negotiable boundaries for this buil
 For every task:
 
 1. Read this file, `BACKLOG.md`, the relevant `PLAN.md` phase and the newest relevant
-   entries at the top of `AI_DEVELOPMENT_LOG.md`. Read `README.md` when the task
-   touches setup, scope or architecture.
+   entries at the top of `AI_DEVELOPMENT_LOG.md`. Read `README.md`, and the page it
+   links for the topic, when the task touches setup, scope or architecture.
 2. Take the first open item in the `BACKLOG.md` "Now" section unless the human names
    another. Do not start a later phase while an earlier exit gate is open, unless the
    human overrides that and `PLAN.md` records the override.
@@ -347,7 +347,10 @@ Update `docs/threat-model.md` when a trust boundary or control changes.
 
 Documentation is part of the change.
 
-- Keep `README.md` commands, status and scope boundaries accurate.
+- Keep `README.md` short: status, what the product does, one diagram, quick start and
+  the documentation index. Detail lives in the page it links (`docs/running-locally.md`,
+  `docs/architecture.md`, `docs/model-providers.md` and the rest). Keep both accurate:
+  commands, status and scope boundaries.
 - Keep `BACKLOG.md` current: add an item when you find open work, remove or tick it
   when its `PLAN.md` box is ticked. Do not restate acceptance criteria there — link
   the `PLAN.md` id.
