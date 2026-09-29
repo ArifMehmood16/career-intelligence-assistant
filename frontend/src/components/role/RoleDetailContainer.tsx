@@ -43,6 +43,7 @@ import {
   type RoleDetailTabId,
 } from "@/components/role/role-detail-tabs";
 import { RoleHeader, type RoleHeaderState } from "@/components/role/RoleHeader";
+import { V2RoleFitContainer } from "@/components/role/v2/V2RoleFitContainer";
 import type {
   CoverLetterDraft,
   Evidence,
@@ -120,6 +121,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
       setFailureCode(null);
       setFailureReason(null);
       void queryClient.invalidateQueries({ queryKey: ["role", roleId] });
+      void queryClient.invalidateQueries({ queryKey: ["verdicts", roleId] });
       return;
     }
     if (job.state === "failed") {
@@ -130,6 +132,8 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
     }
   }, [jobQuery.data, analysisJobId, queryClient, roleId]);
   const roleStatus = roleQuery.data?.status;
+  // A v2 analysis is read from the verdict routes; the v1 routes carry none of it.
+  const isV2 = roleQuery.data?.analysisPipeline === "v2";
   const fetchFit = shouldFetchRoleTabResource({
     roleStatus,
     activeTab,
@@ -153,17 +157,17 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
   const breakdownQuery = useQuery({
     queryKey: ["breakdown", roleId],
     queryFn: () => getFitBreakdown(roleId),
-    enabled: fetchFit,
+    enabled: fetchFit && !isV2,
   });
   const requirementsQuery = useQuery({
     queryKey: ["requirements", roleId],
     queryFn: () => getRequirements(roleId),
-    enabled: fetchFit,
+    enabled: fetchFit && !isV2,
   });
   const gapPlanQuery = useQuery({
     queryKey: ["gap-plan", roleId],
     queryFn: () => getGapPlan(roleId),
-    enabled: fetchGaps,
+    enabled: fetchGaps && !isV2,
   });
   const interviewPackQuery = useQuery({
     queryKey: ["interview-pack", roleId],
@@ -518,8 +522,12 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
               replace: true,
             });
           }}
-          fit={fitPane}
-          gaps={gapsPane}
+          fit={
+            isV2 ? <V2RoleFitContainer roleId={roleId} pane="fit" /> : fitPane
+          }
+          gaps={
+            isV2 ? <V2RoleFitContainer roleId={roleId} pane="gaps" /> : gapsPane
+          }
           prepare={
             <PreparePanel
               state={prepareState}
