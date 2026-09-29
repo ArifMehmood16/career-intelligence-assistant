@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
-import { VERDICTS } from "@/api/__fixtures__/verdicts";
 import { ToolSteps } from "@/components/ask/ToolSteps";
 import { AnalysisProgress } from "@/components/role/AnalysisProgress";
 import { V2GapsPanel } from "@/components/role/v2/V2GapsPanel";
@@ -36,6 +35,7 @@ import type {
   RankedRole,
   Requirement,
   Role,
+  RoleVerdicts,
   SupportingDocument,
 } from "@/types";
 
@@ -118,6 +118,83 @@ const queuedJob: AnalysisJob = {
       unitsTotal: null,
     })),
   },
+};
+
+const sampleVerdicts: RoleVerdicts = {
+  roleId: "role-harbour",
+  analysisId: "analysis-harbour-2",
+  fitScore: 68.2,
+  band: "partial",
+  gated: true,
+  rubricVersion: "scoring-rubric-v2",
+  leftMachine: false,
+  verdicts: [
+    {
+      requirementId: "req-python",
+      quote: "5+ years of Python in production",
+      statement: "Has five or more years of production Python.",
+      mustHave: true,
+      verdict: "partial",
+      requirementScore: 0.58,
+      match: {
+        score: 3,
+        rationale: "Python services in two roles, both in production.",
+      },
+      seniority: null,
+      experience: {
+        score: 2,
+        rationale: "The dated roles cover about three years.",
+      },
+      unmetConditions: ["five years"],
+      contradiction: false,
+      adjustments: [],
+      evidence: [
+        {
+          chunkId: "chunk-cv-4",
+          documentId: "cv-demo",
+          quote: "Built Python services that serve the pricing API",
+        },
+      ],
+      provider: "ollama",
+      model: "qwen2.5:7b",
+    },
+    {
+      requirementId: "req-kafka",
+      quote: "Kafka or another event stream",
+      statement: "Has worked with Kafka or another event stream.",
+      mustHave: false,
+      verdict: "missing",
+      requirementScore: 0,
+      match: { score: 1, rationale: "Only batch pipelines are described." },
+      seniority: null,
+      experience: null,
+      unmetConditions: ["event streaming"],
+      contradiction: false,
+      adjustments: [],
+      evidence: [],
+      provider: "ollama",
+      model: "qwen2.5:7b",
+    },
+  ],
+  keywordCoverage: {
+    exact: ["Python", "dbt"],
+    alias: ["Postgres"],
+    missing: ["Kafka"],
+  },
+  gapPlan: [
+    {
+      requirementId: "req-kafka",
+      dimension: "match",
+      current: 1,
+      delta: 9.4,
+    },
+    {
+      requirementId: "req-python",
+      dimension: "experience",
+      current: 2,
+      delta: 4.1,
+    },
+  ],
 };
 
 const analysingRole: Role = {
@@ -744,7 +821,7 @@ export function DevStatesPage() {
       <Section title="Fit, pipeline v2: verdicts and keyword coverage">
         <VerdictsPanel
           state="ready"
-          verdicts={VERDICTS}
+          verdicts={sampleVerdicts}
           onRetry={noop}
           onShowTrace={noop}
         />
@@ -760,7 +837,7 @@ export function DevStatesPage() {
       </Section>
 
       <Section title="Gaps, pipeline v2">
-        <V2GapsPanel state="ready" verdicts={VERDICTS} onRetry={noop} />
+        <V2GapsPanel state="ready" verdicts={sampleVerdicts} onRetry={noop} />
       </Section>
 
       <Section title="Ask: the agent's tool steps">
