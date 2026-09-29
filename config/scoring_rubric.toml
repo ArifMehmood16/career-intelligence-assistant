@@ -26,3 +26,31 @@ partial_match_min = 50
 # Initial floor. Phase 14.7 calibrates this per embedding provider.
 [mapping]
 similarity_floor = 0.55
+
+# Scoring v2 (ADR 014, docs/architecture-v2.md §9). v1 above is read unchanged.
+# Starting values, not measurements. A judge score of 3 is full credit.
+[v2]
+version = "scoring-rubric-v2"
+
+[v2.dimension_weights]
+match = 0.5
+experience = 0.3
+seniority = 0.2
+
+[v2.weights]
+must_have = 3
+desirable = 1
+
+[v2.recency]
+within_2y = 1.0
+from_2y_to_5y = 0.85
+over_5y = 0.7
+undated = 0.85
+
+[v2.bands]
+strong_match_min = 75
+partial_match_min = 50
+
+# A must-have whose match is at or below this caps the band at partial.
+[v2.gate]
+must_have_match_max = 1
