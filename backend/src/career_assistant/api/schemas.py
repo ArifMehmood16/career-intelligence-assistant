@@ -129,6 +129,7 @@ class RoleResponse(ApiModel):
     updated_at: str
     fit_summary: str | None = None
     active_job: AnalysisJobResponse | None = None
+    analysis_pipeline: str | None = None
 
 
 class RoleCreateRequest(ApiModel):

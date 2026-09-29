@@ -55,6 +55,8 @@ class RoleView:
     updated_at: datetime
     description: str = ""
     active_job: JobView | None = None
+    # "v1" or "v2" once an analysis is published; None before that.
+    analysis_pipeline: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +126,7 @@ class InMemoryRoleStore:
             band_label=band_label(bundle.explanation.band),
             counts=count_statuses(bundle.mappings),
             status="ready",
+            analysis_pipeline="v1",
             updated_at=now,
             description=description,
         )
@@ -254,6 +257,7 @@ class InMemoryRoleStore:
             band_label=band_label(bundle.explanation.band),
             counts=count_statuses(bundle.mappings),
             status="ready",
+            analysis_pipeline="v1",
             updated_at=now,
             description=role.description,
         )

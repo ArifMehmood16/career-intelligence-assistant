@@ -64,6 +64,7 @@ def _role_response(role: RoleView, *, fit_summary: str | None = None) -> RoleRes
         updated_at=role.updated_at.isoformat().replace("+00:00", "Z"),
         fit_summary=fit_summary,
         active_job=_job_response(role.active_job) if role.active_job else None,
+        analysis_pipeline=role.analysis_pipeline,
     )
 
 

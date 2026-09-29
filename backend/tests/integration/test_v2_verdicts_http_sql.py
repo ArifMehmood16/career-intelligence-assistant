@@ -117,3 +117,23 @@ def test_v1_routes_do_not_fail_on_a_v2_analysis(
     response = app.client.get(f"/api/roles/{role_id}/{route}")
 
     assert response.status_code < 500, response.text
+
+
+def test_a_role_says_which_pipeline_its_analysis_ran_on(
+    session_factory: sessionmaker[Session],
+) -> None:
+    app, v2_role = _v2_role(session_factory)
+    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v1"})
+    created = app.client.post(
+        "/api/roles",
+        json={"title": "Waiting", "company": "Acme", "description": "Python"},
+    ).json()
+
+    waiting = app.client.get(f"/api/roles/{created['role']['id']}").json()
+    assert waiting["analysisPipeline"] is None
+
+    app.worker.drain()
+
+    listed = {r["id"]: r for r in app.client.get("/api/roles").json()}
+    assert listed[v2_role]["analysisPipeline"] == "v2"
+    assert listed[created["role"]["id"]]["analysisPipeline"] == "v1"

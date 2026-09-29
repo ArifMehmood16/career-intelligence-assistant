@@ -459,6 +459,7 @@ class SqlRoleStore:
             updated_at=created,
             description=description,
             active_job=_active_job(progress, record.id),
+            analysis_pipeline=_pipeline_of(score_row),
         )
 
     def _load_bundle(
@@ -650,6 +651,12 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
         if isinstance(raw, list):
             ids.extend(str(item) for item in raw)
     return tuple(dict.fromkeys(ids))
+
+
+def _pipeline_of(score_row: ScoreExplanationRow | None) -> str | None:
+    if score_row is None:
+        return None
+    return PipelineVersion.V2.value if _is_v2(score_row) else PipelineVersion.V1.value
 
 
 def _is_v2(score_row: ScoreExplanationRow) -> bool:
