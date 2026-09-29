@@ -76,6 +76,18 @@ class DocumentGraph:
     nodes: tuple[GraphNode, ...]
     edges: tuple[GraphEdge, ...]
 
+    def with_inferred(self, edges: Sequence[GraphEdge]) -> DocumentGraph:
+        """Add taxonomy edges, and a node for each endpoint the graph lacks."""
+        if any(not edge.inferred for edge in edges):
+            raise ValueError("only inferred edges can be added after the chunks")
+        nodes = {node.key: node for node in self.nodes}
+        merged = dict.fromkeys(self.edges)
+        for edge in edges:
+            for key in (edge.source, edge.target):
+                nodes.setdefault(key, GraphNode(key))
+            merged.setdefault(edge, None)
+        return DocumentGraph(nodes=tuple(nodes.values()), edges=tuple(merged))
+
 
 DOCUMENT_NODE = NodeKey(NodeKind.DOCUMENT, "document")
 

@@ -199,6 +199,29 @@ def test_an_advert_requirement_requires_its_verified_technologies() -> None:
     ] == [("postgres", "postgresql")]
 
 
+def test_inferred_edges_join_the_graph_with_the_nodes_they_name() -> None:
+    graph = _cv_graph()
+    edge = GraphEdge(
+        _tech_key("kafka"),
+        NodeKey(NodeKind.CATEGORY, "event streaming"),
+        Relation.IS_A,
+        None,
+    )
+
+    joined = graph.with_inferred([edge, edge])
+
+    assert joined.edges == (*graph.edges, edge)
+    added = [n.key for n in joined.nodes if n not in graph.nodes]
+    assert added == [NodeKey(NodeKind.CATEGORY, "event streaming")]
+
+
+def test_only_inferred_edges_can_be_joined_later() -> None:
+    asserted = GraphEdge(_tech_key("a"), _tech_key("b"), Relation.USED, 1)
+
+    with pytest.raises(ValueError, match="inferred"):
+        _cv_graph().with_inferred([asserted])
+
+
 @pytest.mark.parametrize(
     ("relation", "cites_line"),
     [(Relation.USED, None), (Relation.IS_A, 3)],
