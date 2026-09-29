@@ -28,8 +28,20 @@ product and threat-model decision.
   blocker.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
+- Phase 18 (architecture v2) is designed, not built. **18.0, the design review, is
+  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
+
+**Recorded override (2026-09-29):** the human asked for the Phase 18 v2
+architecture before 13D.6g. Take 18.0, then the
+[Phase 18 list](#phase-18--architecture-v2-after-180), before the rest of this
+section. 13D.6g stays the v1 release gate and stays unchecked; its measurement
+becomes the v1 baseline in 18.14.
+
+- [ ] **18.0 — review the v2 design.** Accept, amend or reject ADRs 013–015 and
+      `docs/architecture-v2.md` (PLAN 18.0). No Phase 18 implementation starts
+      until this is ticked.
 
 **Recorded override:** the human asked to settle named-tool evidence before
 13D.6g. 13D.6g stays the release gate and stays unchecked.
@@ -104,6 +116,28 @@ not block 13D.
       and single-user until authentication exists. Keep the limitations explicit and
       commands reproducible.
 
+## Phase 18 — architecture v2, after 18.0
+
+In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
+
+- [ ] **18.1 — provider foundations:** native structured output, `num_ctx`,
+      per-model limits, truncation, embedding input type.
+- [ ] **18.2 — LLM contracts:** Pydantic schemas and the repair message.
+- [ ] **18.3 — chunk store and migration**, proven on local PostgreSQL and on
+      Supabase's Postgres image, with the extended hard-delete test.
+- [ ] **18.4 — LLM chunker** with coverage and verbatim validation.
+- [ ] **18.5 — knowledge graph** and the experience calculator.
+- [ ] **18.6 — hybrid search:** `hybrid_search()` and its contract suite.
+- [ ] **18.7 — model judge** with server rules and the verdict cache.
+- [ ] **18.8 — corrective retrieval**, one bounded rewrite.
+- [ ] **18.9 — scoring v2** and keyword coverage.
+- [ ] **18.10 — pipeline v2 wiring**; the API addition stops for approval.
+- [ ] **18.11 — tool registry and agentic Ask.**
+- [ ] **18.12 — MCP server**, stdio, off by default.
+- [ ] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
+- [ ] **18.14 — evaluation:** ablations, long-context baseline, judge agreement.
+- [ ] **18.15 — retire v1**, only if 18.14 supports it.
+
 ## Later — valuable after the release path
 
 These items may improve maintainability, but none should interrupt the evidence,
@@ -163,7 +197,8 @@ decision changes architecture.
 
 ## Deferred retrieval experiments
 
-Revisit only if the evaluation set demonstrates a need: PostgreSQL full-text plus
-pgvector hybrid retrieval, an approximate vector index, a second reviewing model, or
-per-sentence semantic groundedness checks. Multi-CV comparison, authentication and
-the rest of the product's deliberately excluded features remain out of scope.
+PostgreSQL full-text plus pgvector hybrid retrieval is promoted to Phase 18 (18.6).
+Revisit the rest only if the evaluation set demonstrates a need: an approximate
+vector index, a second reviewing model, or per-sentence semantic groundedness
+checks. Multi-CV comparison, authentication and the rest of the product's
+deliberately excluded features remain out of scope.
