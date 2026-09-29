@@ -11,13 +11,16 @@ import {
 import { describeApiError, formatDescribedError } from "@/api/errors";
 import { ChatView, type ChatViewState } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
-import type { ChatMessage, Citation } from "@/types";
+import type { ChatMessage, Citation, ToolStep } from "@/types";
 
 export function ChatContainer() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
+  // Tool steps are sent with a fresh answer and not stored, so the page keeps
+  // them for this session after history is refetched.
+  const [toolSteps, setToolSteps] = useState<Record<string, ToolStep[]>>({});
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [citation, setCitation] = useState<Citation | null>(null);
@@ -88,6 +91,7 @@ export function ChatContainer() {
 
     const controller = new AbortController();
     abortRef.current = controller;
+    let answerId: string | null = null;
 
     try {
       await postMessageStream({
@@ -96,6 +100,7 @@ export function ChatContainer() {
         signal: controller.signal,
         onEvent: (event) => {
           if (event.type === "meta") {
+            answerId = event.messageId;
             setStreamingId(event.messageId);
             setStreamingText("");
             const placeholder: ChatMessage = {
@@ -115,6 +120,12 @@ export function ChatContainer() {
               );
               return [...withoutDupes, optimisticUser, placeholder];
             });
+          }
+          if (event.type === "tools") {
+            const id = answerId;
+            if (id !== null) {
+              setToolSteps((current) => ({ ...current, [id]: event.steps }));
+            }
           }
           if (event.type === "token") {
             setStreamingText((text) => text + event.text);
@@ -152,6 +163,15 @@ export function ChatContainer() {
     [providersQuery.data],
   );
 
+  const messages = useMemo(
+    () =>
+      (messagesQuery.data ?? []).map((message): ChatMessage => {
+        const steps = toolSteps[message.id];
+        return steps ? { ...message, toolSteps: steps } : message;
+      }),
+    [messagesQuery.data, toolSteps],
+  );
+
   const state: ChatViewState = messagesQuery.isPending
     ? "loading"
     : messagesQuery.isError
@@ -171,7 +191,7 @@ export function ChatContainer() {
     <div className="flex h-full min-h-0 flex-col">
       <ChatView
         state={state}
-        messages={messagesQuery.data ?? []}
+        messages={messages}
         streamingId={streamingId}
         streamingText={streamingText}
         draft={draft}
