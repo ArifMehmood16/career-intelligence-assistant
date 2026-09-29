@@ -34,6 +34,9 @@ from career_assistant.adapters.persistence.models import (
     WorkspaceRow,
 )
 from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
+from career_assistant.adapters.persistence.search_repos import (
+    SqlRetrievalTraceRepository,
+)
 from career_assistant.application.ports.graph import KnowledgeGraphRepository
 from career_assistant.application.ports.persistence import (
     AnalysisJobRepository,
@@ -50,6 +53,7 @@ from career_assistant.application.ports.persistence import (
     StoredDocument,
     WorkspaceRepository,
 )
+from career_assistant.application.ports.search import RetrievalTraceRepository
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Page, Span
@@ -568,6 +572,7 @@ class SqlUnitOfWork:
         self.drafts: DraftRepository
         self.embeddings: SqlEmbeddingRepository
         self.graph: KnowledgeGraphRepository
+        self.traces: RetrievalTraceRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -584,6 +589,7 @@ class SqlUnitOfWork:
         self.drafts = SqlDraftRepository(self._session)
         self.embeddings = SqlEmbeddingRepository(self._session)
         self.graph = SqlKnowledgeGraphRepository(self._session)
+        self.traces = SqlRetrievalTraceRepository(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:

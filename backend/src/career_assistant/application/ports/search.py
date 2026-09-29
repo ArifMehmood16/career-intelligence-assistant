@@ -30,3 +30,21 @@ class HybridQuery:
 
 class HybridSearchPort(Protocol):
     def search(self, query: HybridQuery) -> tuple[SearchHit, ...]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class RetrievalTrace:
+    """What the judge saw for one requirement: round 0, or 1 after a rewrite."""
+
+    verdict_id: str
+    round: int
+    query_text: str
+    hits: tuple[SearchHit, ...]
+
+
+class RetrievalTraceRepository(Protocol):
+    def save(self, workspace_id: str, trace: RetrievalTrace) -> None: ...
+
+    def list_for_verdict(
+        self, workspace_id: str, verdict_id: str
+    ) -> tuple[RetrievalTrace, ...]: ...
