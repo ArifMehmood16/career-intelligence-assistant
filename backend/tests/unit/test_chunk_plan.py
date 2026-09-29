@@ -15,6 +15,7 @@ from career_assistant.domain.chunking import (
     ProposedChunk,
     RoleProposal,
     TechTermProposal,
+    retrieval_text,
     validate_chunk_plan,
 )
 from career_assistant.domain.documents import DocumentKind
@@ -196,6 +197,20 @@ def test_evidence_eligibility_follows_the_chunk_kind() -> None:
     plan = _cv_plan(*_good_cv())
 
     assert [c.evidence_eligible for c in plan.chunks] == [False, False, True, True]
+
+
+def test_contact_chunks_are_never_indexed_for_retrieval() -> None:
+    plan = _cv_plan(*_good_cv())
+    contact, heading, experience, skills = plan.chunks
+
+    assert retrieval_text(contact) is None
+    assert retrieval_text(heading) == heading.text
+    expected = (
+        "Northwind retrieval work.\n"
+        "Built hybrid retrieval\nover pgvector for an assistant."
+    )
+    assert retrieval_text(experience) == expected
+    assert retrieval_text(skills) == skills.text
 
 
 def test_a_role_date_text_is_parsed_and_an_unparsed_date_leaves_the_role_undated() -> (

@@ -97,6 +97,21 @@ _EVIDENCE_KINDS: dict[DocumentKind, frozenset[str]] = {
     DocumentKind.COVER_LETTER: frozenset({"experience"}),
     DocumentKind.JOB_DESCRIPTION: frozenset(),
 }
+
+
+def retrieval_text(chunk: Chunk) -> str | None:
+    """Text for embedding and full-text search.
+
+    Contact is never indexed. The model-written context header is prepended for
+    retrieval only and is never shown as evidence.
+    """
+    if chunk.kind == "contact":
+        return None
+    if chunk.context:
+        return f"{chunk.context}\n{chunk.text}"
+    return chunk.text
+
+
 # Words that state a level. A level the advert does not state is not kept.
 _LEVEL_WORDS: dict[str, tuple[str, ...]] = {
     "intern": ("intern", "internship"),
