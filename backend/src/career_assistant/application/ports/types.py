@@ -21,6 +21,20 @@ class CapabilityDescriptor:
 
 
 @dataclass(frozen=True, slots=True)
+class ModelProfile:
+    """Published limits and capabilities of one model tag, from configuration."""
+
+    context_window_tokens: int
+    max_output_tokens: int
+    supports_tool_calling: bool = False
+    supports_prompt_caching: bool = False
+    supports_temperature: bool = False
+    supports_seed: bool = False
+    embedding_query_prefix: str = ""
+    embedding_document_prefix: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class CompletionRequest:
     """Use-case shaped completion input. No chat-message or tool arrays."""
 

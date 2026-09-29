@@ -1,0 +1,61 @@
+version = "model-catalogue-v1"
+
+# Limits and capabilities per model tag, read by the provider factory and
+# reported through each adapter's capability descriptor (PLAN 18.1).
+#
+# A tag with no row of its own uses its provider's [defaults.<provider>] table,
+# and a row overrides those defaults field by field. The defaults are deliberately
+# conservative: an unknown hosted model is not sent a temperature or a seed, and
+# an unknown local model gets a small context window so Ollama does not reserve
+# memory the machine may not have. Values are the vendors' published limits,
+# not measurements. Add a row when you configure a new model tag.
+
+[defaults.ollama]
+context_window_tokens = 8192
+max_output_tokens = 4096
+supports_tool_calling = false
+supports_prompt_caching = false
+supports_temperature = true
+supports_seed = true
+
+[defaults.openai]
+context_window_tokens = 8192
+max_output_tokens = 4096
+supports_tool_calling = true
+supports_prompt_caching = false
+supports_temperature = false
+supports_seed = false
+
+[defaults.anthropic]
+context_window_tokens = 200000
+max_output_tokens = 4096
+supports_tool_calling = true
+supports_prompt_caching = true
+supports_temperature = true
+supports_seed = false
+
+[models.ollama."qwen2.5:7b"]
+context_window_tokens = 32768
+max_output_tokens = 8192
+supports_tool_calling = true
+
+[models.ollama."nomic-embed-text"]
+context_window_tokens = 2048
+max_output_tokens = 0
+embedding_query_prefix = "search_query: "
+embedding_document_prefix = "search_document: "
+
+[models.openai."gpt-4o-mini"]
+context_window_tokens = 128000
+max_output_tokens = 16384
+supports_prompt_caching = true
+supports_temperature = true
+supports_seed = true
+
+[models.openai."text-embedding-3-small"]
+context_window_tokens = 8191
+max_output_tokens = 0
+
+[models.anthropic."claude-sonnet-4-0"]
+context_window_tokens = 200000
+max_output_tokens = 64000
