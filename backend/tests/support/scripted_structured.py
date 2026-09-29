@@ -22,6 +22,7 @@ class ScriptedStructured:
     supports_temperature: bool = False
     supports_seed: bool = False
     model_tag: str = "scripted-v1"
+    model_digest: str | None = None
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -36,6 +37,7 @@ class ScriptedStructured:
             leaves_machine=False,
             supports_temperature=self.supports_temperature,
             supports_seed=self.supports_seed,
+            model_digest=self.model_digest,
         )
 
     def complete_structured[T: BaseModel](

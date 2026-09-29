@@ -95,9 +95,10 @@ class RequirementJudge:
         *,
         as_of: date,
     ) -> JudgeOutcome:
+        capabilities = self._structured.capabilities
+        model = replace(self._model, model_digest=capabilities.model_digest)
         keys = {
-            p.requirement_id: verdict_key(p, facts, self._model, as_of=as_of)
-            for p in packets
+            p.requirement_id: verdict_key(p, facts, model, as_of=as_of) for p in packets
         }
         context = _Context(facts=facts, as_of=as_of, keys=keys)
         records: dict[str, VerdictRecord] = {}
@@ -109,7 +110,6 @@ class RequirementJudge:
             else:
                 records[packet.requirement_id] = _rebound(hit, packet.requirement_id)
         prefix = len(render_facts(facts, as_of=as_of))
-        capabilities = self._structured.capabilities
         for batch in judge_batches(
             pending, capabilities, self._limits, prefix_chars=prefix
         ):

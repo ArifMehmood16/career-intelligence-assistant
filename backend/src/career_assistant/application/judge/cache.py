@@ -29,6 +29,8 @@ from career_assistant.domain.recency import DateRange
 
 @dataclass(frozen=True, slots=True)
 class ModelIdentity:
+    """The configured model. The judge takes the digest from the descriptor."""
+
     provider_id: str
     model_tag: str
     model_digest: str | None = None

@@ -232,6 +232,18 @@ def test_an_unchanged_requirement_reuses_its_cached_verdict() -> None:
     assert structured.requests == []
 
 
+def test_a_re_pulled_tag_with_new_weights_is_judged_again() -> None:
+    cache = InMemoryVerdictCache()
+    before = ScriptedStructured([_reply(_verdict("r1"))], model_digest="sha256:a")
+    _judge(before, cache).judge([_packet("r1")], FACTS, as_of=AS_OF)
+    after = ScriptedStructured([_reply(_verdict("r1"))], model_digest="sha256:b")
+
+    outcome = _judge(after, cache).judge([_packet("r1")], FACTS, as_of=AS_OF)
+
+    assert outcome.verdicts["r1"].cached is False
+    assert len(after.requests) == 1
+
+
 def test_a_verdict_from_a_fallback_model_is_not_cached() -> None:
     cache = InMemoryVerdictCache()
     fallback = ScriptedStructured([_reply(_verdict("r1"))], model_tag="other-model")
