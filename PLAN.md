@@ -1561,10 +1561,12 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       `application/judge/`. The digest is an optional `CapabilityDescriptor` field
       that Ollama fills from `/api/tags`; the human chose that over a new port.
       Nothing calls the judge yet (18.10).*
-- [ ] **18.8** Corrective retrieval. `retrieval_feedback` with `rewrite_query`; one
+- [x] **18.8** Corrective retrieval. `retrieval_feedback` with `rewrite_query`; one
       rewrite per requirement and a per-analysis cap; merged candidates; both rounds
       in the trace. Tests cover the cap, a rewrite that finds nothing, and a rewrite
-      that finds the evidence.
+      that finds the evidence. *Done 2026-09-29: `EvidenceMatcher` in
+      `application/judge/matching.py`. The cap is a constructor argument until
+      18.10 reads `JUDGE_MAX_REWRITES` from configuration.*
 - [ ] **18.9** Scoring v2. `scoring-rubric-v2` in `config/scoring_rubric.toml`;
       pure domain aggregation with 3 as full credit, recency, must-have gate and
       bands; keyword coverage (exact, alias-only, missing) reported beside the

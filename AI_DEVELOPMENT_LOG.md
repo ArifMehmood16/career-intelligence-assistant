@@ -29,6 +29,28 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 147 — Corrective retrieval, one bounded rewrite (PLAN 18.8)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.8
+- Prompt intent: continue with 18.8 in the same TDD style.
+- Suggestion: an `EvidenceMatcher` workflow over a narrow `CandidateSearch` port
+  (hits for the trace, candidates for the judge), because `HybridSearchPort`
+  returns ranked ids without text.
+- Outcome: accepted as suggested. Two choices the design text leaves open:
+  - A rewrite that finds no new chunk makes no second judge call.
+  - A re-judgement that comes back incomplete keeps the first verdict, which had
+    already passed the server's rules, rather than making the requirement
+    incomplete.
+- Reason: the model decides whether it has enough evidence; the workflow bounds
+  how much it may look.
+- Human validation: TBD. Observed:
+  - The seven tests failed against a stub that returned nothing, then passed.
+  - `make lint` clean. `make test`: 769 passed, 3 skipped, 96 deselected,
+    coverage 85.84%, and 124 frontend tests passed.
+  - No persistence changed.
+
 ### 146 — The model digest, and transport errors as provider errors (PLAN 18.7)
 
 - Date: 2026-09-29

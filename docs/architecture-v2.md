@@ -638,6 +638,19 @@ requirement only. One rewrite per requirement and a per-analysis cap
 trace. This is corrective RAG: the model decides whether it has enough evidence,
 the workflow decides how much it is allowed to look.
 
+As built (PLAN 18.8, `application/judge/matching.py`):
+
+- Round 0 searches with the requirement's statement.
+- Rewrites are granted in requirement order until the cap is reached.
+- New candidates are appended after the first set, with duplicates removed.
+- A rewrite that finds no new chunk makes no judge call.
+- The first verdict stands if nothing new is found or the re-judgement is
+  incomplete, because it already passed the server's rules.
+- A requirement incomplete in round 0 is not searched again.
+- The search behind it is a narrow `CandidateSearch` port returning hits for the
+  trace and candidates for the judge. 18.10 implements it over `hybrid_search`
+  and the chunk store.
+
 ### Reproducibility
 
 The judge runs at temperature 0 with a fixed seed where the model accepts them; the
