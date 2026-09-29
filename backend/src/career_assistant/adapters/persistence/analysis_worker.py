@@ -7,7 +7,6 @@ import threading
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Protocol
 
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.rules import RulesRequirementExtractor
@@ -16,6 +15,11 @@ from career_assistant.adapters.extraction.selected import (
 )
 from career_assistant.adapters.persistence.accounting import SqlCallAccountant
 from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingCache
+from career_assistant.adapters.persistence.job_guards import (
+    JobCancelled,
+    require_documents,
+    require_role,
+)
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.providers.factory import build_embedding_port
 from career_assistant.adapters.providers.http_transport import HttpTransport
@@ -82,50 +86,6 @@ _RUBRIC_VERSION = load_rubric_version(_RUBRIC_PATH)
 _MAPPING = load_mapping_config(_RUBRIC_PATH)
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
 _log = logging.getLogger(__name__)
-
-
-class JobCancelled(Exception):
-    """The role was deleted while its analysis was still running."""
-
-
-class DocumentReader(Protocol):
-    def get(self, workspace_id: str, document_id: str) -> object | None: ...
-
-
-class RoleReader(Protocol):
-    def get(self, workspace_id: str, role_id: str) -> object | None: ...
-
-
-def require_role(roles: RoleReader, workspace_id: str, role_id: str) -> None:
-    """A deleted role is a cancellation, not an analysis failure.
-
-    Hard delete removes the role, its job rows and its job description. The
-    worker may already be past extraction. Writing spans then fails a foreign
-    key, and recording that failure fails because the job row is gone too.
-    """
-    if roles.get(workspace_id, role_id) is None:
-        raise JobCancelled(role_id)
-
-
-def require_documents(
-    documents: DocumentReader,
-    workspace_id: str,
-    document_ids: Sequence[str],
-) -> None:
-    """Fail by name when an upload the analysis started from has gone.
-
-    Extraction runs for minutes between reading a document and writing its
-    spans, and a replaced or deleted upload takes its row with it. Writing
-    anyway raised a foreign-key violation from the driver, which says nothing
-    about what happened.
-    """
-    missing = [
-        document_id
-        for document_id in document_ids
-        if documents.get(workspace_id, document_id) is None
-    ]
-    if missing:
-        raise RuntimeError("documents_changed")
 
 
 class SqlAnalysisWorker:
