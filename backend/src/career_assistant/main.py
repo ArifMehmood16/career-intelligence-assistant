@@ -317,6 +317,7 @@ def create_production_app(
         conversation_store=stores.conversations,
         provider_choice_store=stores.provider_choices,
         analysis_worker=stores.analysis_worker,
+        pipeline_store=stores.pipeline,
     )
 
 
