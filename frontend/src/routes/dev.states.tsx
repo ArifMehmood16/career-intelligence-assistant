@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
+import { AnalysisProgress } from "@/components/role/AnalysisProgress";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { GapsPanel } from "@/components/role/GapsPanel";
 import { LetterPanel } from "@/components/role/LetterPanel";
@@ -17,6 +18,7 @@ import { RankingPanel } from "@/components/workspace/RankingPanel";
 import { RolesPanel } from "@/components/workspace/RolesPanel";
 import { Button } from "@/components/ui/button";
 import type {
+  AnalysisJob,
   BulletDraft,
   ChatMessage,
   Comparison,
@@ -25,6 +27,7 @@ import type {
   Evidence,
   GapItem,
   InterviewPack,
+  JobProgress,
   Provider,
   RankedRole,
   Requirement,
@@ -56,6 +59,74 @@ export const Route = createFileRoute("/dev/states")({
 });
 
 const noop = () => undefined;
+
+// Fixed so the gallery renders the same times on every load.
+const GALLERY_NOW = Date.UTC(2026, 8, 29, 12, 0);
+
+const judgingProgress: JobProgress = {
+  tasksDone: 4,
+  tasksTotal: 7,
+  fraction: (4 + 5 / 12) / 7,
+  currentTask: "judge",
+  elapsedSeconds: 96,
+  remainingSeconds: 74,
+  queuePosition: null,
+  tasks: [
+    { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "read_cv", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "read_advert", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "search", state: "done", unitsDone: 12, unitsTotal: 12 },
+    { key: "judge", state: "running", unitsDone: 5, unitsTotal: 12 },
+    { key: "recheck", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
+  ],
+};
+
+const judgingJob: AnalysisJob = {
+  id: "job-judging",
+  kind: "role_analysis",
+  state: "running",
+  stage: "mapping",
+  startedAt: "2026-09-29T11:58:24.000Z",
+  finishedAt: null,
+  error: null,
+  progress: judgingProgress,
+};
+
+const queuedJob: AnalysisJob = {
+  ...judgingJob,
+  id: "job-queued",
+  state: "queued",
+  stage: null,
+  startedAt: null,
+  progress: {
+    ...judgingProgress,
+    tasksDone: 0,
+    fraction: 0,
+    currentTask: null,
+    elapsedSeconds: null,
+    remainingSeconds: 250,
+    queuePosition: 1,
+    tasks: judgingProgress.tasks.map((task) => ({
+      ...task,
+      state: "pending",
+      unitsDone: 0,
+      unitsTotal: null,
+    })),
+  },
+};
+
+const analysingRole: Role = {
+  id: "role-analysing",
+  title: "Machine Learning Engineer",
+  company: "Harbour Labs",
+  fitScore: 0,
+  bandLabel: "Not scored yet",
+  counts: { met: 0, partial: 0, missing: 0 },
+  status: "analysing",
+  updatedAt: "2026-09-29T11:58:00.000Z",
+  activeJob: judgingJob,
+};
 
 const sampleCv: CvDocument = {
   id: "cv-demo",
@@ -432,6 +503,10 @@ export const DEV_STATE_SECTION_TITLES = [
   "Roles table: error",
   "Roles table: populated",
   "Roles stacked cards: populated",
+  "Roles table: analysing with progress",
+  "Analysis progress: judging (pipeline v2)",
+  "Analysis progress: queued behind another analysis",
+  "Analysis progress: first analysis, estimating",
   "Requirement table: all three status groups",
   "Requirement table: mobile card variant",
   "Evidence panel: matched requirement",
@@ -601,6 +676,60 @@ export function DevStatesPage() {
             </Button>
           }
           layout="cards"
+        />
+      </Section>
+
+      <Section title="Roles table: analysing with progress">
+        <RolesPanel
+          state="ready"
+          roles={[analysingRole, ...sampleRoles.slice(0, 1)]}
+          sortKey="fit"
+          sortDirection="desc"
+          onSort={noop}
+          onRetry={noop}
+          addRoleSlot={null}
+          layout="table"
+        />
+      </Section>
+
+      <Section title="Analysis progress: judging (pipeline v2)">
+        <AnalysisProgress
+          job={judgingJob}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Analysis progress: queued behind another analysis">
+        <AnalysisProgress
+          job={queuedJob}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Analysis progress: first analysis, estimating">
+        <AnalysisProgress
+          job={{
+            ...judgingJob,
+            progress: {
+              ...judgingProgress,
+              tasksDone: 1,
+              fraction: 1 / 7,
+              currentTask: "read_cv",
+              elapsedSeconds: 12,
+              remainingSeconds: null,
+              tasks: judgingProgress.tasks.map((task, index) => ({
+                ...task,
+                state:
+                  index === 0 ? "done" : index === 1 ? "running" : "pending",
+                unitsDone: 0,
+                unitsTotal: null,
+              })),
+            },
+          }}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
         />
       </Section>
 
