@@ -47,8 +47,8 @@ def sql_app(session_factory: sessionmaker[Session]) -> SqlApp:
     return SqlApp(client, SqlAnalysisWorker(uow_factory), uow_factory)
 
 
-def analyse(app: SqlApp) -> tuple[str, str]:
-    """Upload the CV, add the role and drain the worker. Returns role and job ids."""
+def queue_role(app: SqlApp) -> tuple[str, str]:
+    """Upload the CV and add the role, leaving its job queued. Returns role, job."""
     posted = app.client.post("/api/cv", json={"text": CV, "filename": "cv.txt"})
     assert posted.status_code == 201
     created = app.client.post(
@@ -56,5 +56,11 @@ def analyse(app: SqlApp) -> tuple[str, str]:
         json={"title": "Data Engineer", "company": "Northwind", "description": JD},
     )
     assert created.status_code == 202
-    app.worker.drain()
     return created.json()["role"]["id"], created.json()["jobId"]
+
+
+def analyse(app: SqlApp) -> tuple[str, str]:
+    """Queue the role and drain the worker. Returns role and job ids."""
+    ids = queue_role(app)
+    app.worker.drain()
+    return ids
