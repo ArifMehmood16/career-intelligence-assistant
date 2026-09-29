@@ -38,3 +38,61 @@ jobs:
 
       - name: Hermetic tests
         run: make test
+
+  postgres:
+    # PLAN 18.3: the same migrations and SQL adapters on plain PostgreSQL with
+    # pgvector and on Supabase's Postgres image. The Supabase row was written
+    # without a local Docker run; its first CI run is its verification.
+    name: Integration tests (${{ matrix.database.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        database:
+          - name: PostgreSQL 16 + pgvector
+            image: pgvector/pgvector:pg16
+          - name: Supabase Postgres 17
+            image: supabase/postgres:17.6.1.173
+
+    services:
+      db:
+        image: ${{ matrix.database.image }}
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/career_assistant
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/career_assistant_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install backend
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -U pip
+          backend/.venv/bin/pip install -r backend/requirements-dev.lock
+          backend/.venv/bin/pip install --no-deps -e ./backend
+
+      - name: Create the application and test databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for db in career_assistant career_assistant_test; do
+            psql -h localhost -U postgres -d postgres -c "CREATE DATABASE $db"
+          done
+
+      - name: Integration tests
+        run: make test-integration
