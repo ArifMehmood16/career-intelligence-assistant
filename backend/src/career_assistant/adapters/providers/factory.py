@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from functools import cache
+from pathlib import Path
 
 from career_assistant.adapters.providers.anthropic.completion import (
     AnthropicCompletionAdapter,
@@ -42,10 +44,20 @@ from career_assistant.application.providers.fallback import (
     CompletingWithOptionalFallback,
     FallbackPolicy,
 )
+from career_assistant.application.providers.model_catalogue import (
+    ModelCatalogue,
+    load_model_catalogue,
+)
 from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
 
 _log = logging.getLogger(__name__)
+_CATALOGUE_PATH = Path(__file__).resolve().parents[5] / "config" / "models.toml"
+
+
+@cache
+def default_model_catalogue() -> ModelCatalogue:
+    return load_model_catalogue(_CATALOGUE_PATH)
 
 
 def build_egress_policy(settings: ProviderSettings) -> HostedEgressPolicy:
@@ -71,6 +83,7 @@ def build_completion_port(
     egress: HostedEgressPolicy | None = None,
     provider_id: str | None = None,
     model_tag: str | None = None,
+    catalogue: ModelCatalogue | None = None,
 ) -> CompletionPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
@@ -84,6 +97,7 @@ def build_completion_port(
         transport=http,
         resilience=resilience,
         model_tag=model_tag,
+        catalogue=catalogue or default_model_catalogue(),
     )
     if selected in {"openai", "anthropic"}:
         wrapped = CompletingWithOptionalFallback(
@@ -119,6 +133,7 @@ def build_embedding_port(
     egress: HostedEgressPolicy | None = None,
     provider_id: str | None = None,
     model_tag: str | None = None,
+    catalogue: ModelCatalogue | None = None,
 ) -> EmbeddingPort:
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
@@ -131,6 +146,7 @@ def build_embedding_port(
         transport=http,
         resilience=resilience,
         model_tag=model_tag,
+        catalogue=catalogue or default_model_catalogue(),
     )
     log_event(_log, "provider.constructed", kind="embedding", provider_id=selected)
     return port
@@ -143,37 +159,44 @@ def _completion_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
-    model_tag: str | None = None,
+    model_tag: str | None,
+    catalogue: ModelCatalogue,
 ) -> CompletionPort:
     if provider_id == "hermetic":
         return HermeticCompletionAdapter()
     if provider_id == "ollama":
+        tag = model_tag or settings.ollama_completion_model or "qwen2.5:7b"
         return OllamaCompletionAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=model_tag or settings.ollama_completion_model or "qwen2.5:7b",
+            model_tag=tag,
             transport=transport,
             resilience=resilience,
+            profile=catalogue.profile("ollama", tag),
         )
     if provider_id == "openai":
         key = egress.assert_openai_constructible()
+        tag = model_tag or settings.openai_completion_model
         return _CallTimeEgressCompletion(
             OpenAICompletionAdapter(
                 api_key=key,
-                model_tag=model_tag or settings.openai_completion_model,
+                model_tag=tag,
                 transport=transport,
                 resilience=resilience,
+                profile=catalogue.profile("openai", tag),
             ),
             settings=settings,
             hosted_kind="openai",
         )
     if provider_id == "anthropic":
         key = egress.assert_anthropic_constructible()
+        tag = model_tag or settings.anthropic_completion_model
         return _CallTimeEgressCompletion(
             AnthropicCompletionAdapter(
                 api_key=key,
-                model_tag=model_tag or settings.anthropic_completion_model,
+                model_tag=tag,
                 transport=transport,
                 resilience=resilience,
+                profile=catalogue.profile("anthropic", tag),
             ),
             settings=settings,
             hosted_kind="anthropic",
@@ -188,27 +211,30 @@ def _embedding_for(
     egress: HostedEgressPolicy,
     transport: HttpTransport,
     resilience: ResiliencePolicy,
-    model_tag: str | None = None,
+    model_tag: str | None,
+    catalogue: ModelCatalogue,
 ) -> EmbeddingPort:
     if provider_id == "hermetic":
         return HermeticEmbeddingAdapter()
     if provider_id == "ollama":
+        tag = model_tag or settings.ollama_embedding_model or "nomic-embed-text"
         return OllamaEmbeddingAdapter(
             base_url=settings.ollama_base_url,
-            model_tag=(
-                model_tag or settings.ollama_embedding_model or "nomic-embed-text"
-            ),
+            model_tag=tag,
             transport=transport,
             resilience=resilience,
+            profile=catalogue.profile("ollama", tag),
         )
     if provider_id == "openai":
         key = egress.assert_openai_constructible()
+        tag = model_tag or settings.openai_embedding_model
         return _CallTimeEgressEmbedding(
             OpenAIEmbeddingAdapter(
                 api_key=key,
-                model_tag=model_tag or settings.openai_embedding_model,
+                model_tag=tag,
                 transport=transport,
                 resilience=resilience,
+                profile=catalogue.profile("openai", tag),
             ),
             settings=settings,
             hosted_kind="openai",
