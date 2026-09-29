@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from career_assistant.adapters.extraction.claims_model import ModelClaimExtractor
 from career_assistant.adapters.extraction.claims_rules import RulesClaimExtractor
 from career_assistant.adapters.extraction.model_backed import ModelRequirementExtractor
@@ -11,6 +13,7 @@ from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.adapters.relatedness.model import ModelAdjudicator
 from career_assistant.adapters.relatedness.null import NullAdjudicator
 from career_assistant.application.ports.adjudication import AdjudicationPort
+from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.extraction import (
     ClaimExtractionPort,
     RequirementExtractionPort,
@@ -67,6 +70,7 @@ def analysis_ports_for_choice(
     transport: HttpTransport | None = None,
     accountant: CallAccountant | None = None,
     workspace_id: str | None = None,
+    wrap: Callable[[CompletionPort], CompletionPort] | None = None,
 ) -> tuple[RequirementExtractionPort, ClaimExtractionPort, AdjudicationPort]:
     if choice.answer_provider_id == "hermetic":
         return (
@@ -80,6 +84,8 @@ def analysis_ports_for_choice(
         provider_id=choice.answer_provider_id,
         model_tag=choice.answer_model,
     )
+    if wrap is not None:
+        completion = wrap(completion)
     req_port = completion
     claim_port = completion
     assess_port = completion

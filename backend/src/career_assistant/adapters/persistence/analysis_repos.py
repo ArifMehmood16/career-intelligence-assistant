@@ -292,6 +292,18 @@ class SqlAnalysisJobRepository:
         )
         return _to_job(row) if row else None
 
+    def get_for_update(self, workspace_id: str, job_id: str) -> AnalysisJob | None:
+        """Read the job and hold its row lock until this unit of work ends."""
+        row = self._session.scalar(
+            select(AnalysisJobRow)
+            .where(
+                AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
+                AnalysisJobRow.id == _as_uuid(job_id),
+            )
+            .with_for_update()
+        )
+        return _to_job(row) if row else None
+
     def save(self, job: AnalysisJob) -> AnalysisJob:
         row = self._session.scalar(
             select(AnalysisJobRow).where(

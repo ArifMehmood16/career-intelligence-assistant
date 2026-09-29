@@ -14,11 +14,12 @@ from career_assistant.adapters.extraction.selected import (
     analysis_ports_for_choice,
 )
 from career_assistant.adapters.persistence.accounting import SqlCallAccountant
+from career_assistant.adapters.persistence.cancellation import SqlJobLiveness
 from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingCache
 from career_assistant.adapters.persistence.job_guards import (
     JobCancelled,
     require_documents,
-    require_role,
+    require_live_job,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_worker import (
@@ -56,6 +57,11 @@ from career_assistant.application.providers.accounting import (
     AccountingCompletion,
     AccountingEmbedding,
     CallAccountant,
+)
+from career_assistant.application.providers.cancellable import (
+    CancellableCompletion,
+    CancellableEmbedding,
+    CancellationCheck,
 )
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.scoring.rubric_loader import (
@@ -242,7 +248,7 @@ class SqlAnalysisWorker:
             )
             staged = mark_stage(running, JobStage.EXTRACTING_REQUIREMENTS)
             with self._uow_factory() as uow:
-                require_role(uow.roles, job.workspace_id, job.role_id)
+                require_live_job(uow.jobs, job.workspace_id, job.id)
                 require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
                 uow.documents.ensure_spans(job.workspace_id, jd_id, jd_spans)
                 uow.documents.ensure_spans(job.workspace_id, cv_id, cv_spans)
@@ -271,8 +277,9 @@ class SqlAnalysisWorker:
                 role_id=job.role_id,
                 stage=stage.value,
             )
+            check = SqlJobLiveness(self._uow_factory, job)
             requirement_extractor, claim_extractor, adjudicator = (
-                self._analysis_ports_for(job.workspace_id)
+                self._analysis_ports_for(job.workspace_id, check)
             )
             req_result = requirement_extractor.extract(
                 document_id=jd_id,
@@ -307,7 +314,7 @@ class SqlAnalysisWorker:
                     ),
                 )
                 with self._uow_factory() as uow:
-                    require_role(uow.roles, job.workspace_id, job.role_id)
+                    require_live_job(uow.jobs, job.workspace_id, job.id)
                     uow.analysis.fail_job(
                         workspace_id=job.workspace_id,
                         role_id=job.role_id,
@@ -334,7 +341,7 @@ class SqlAnalysisWorker:
             stage = JobStage.EXTRACTING_CLAIMS
             job = mark_stage(job, stage)
             with self._uow_factory() as uow:
-                require_role(uow.roles, job.workspace_id, job.role_id)
+                require_live_job(uow.jobs, job.workspace_id, job.id)
                 uow.jobs.save(job)
                 uow.commit()
             log_event(
@@ -380,7 +387,7 @@ class SqlAnalysisWorker:
                     ),
                 )
                 with self._uow_factory() as uow:
-                    require_role(uow.roles, job.workspace_id, job.role_id)
+                    require_live_job(uow.jobs, job.workspace_id, job.id)
                     uow.analysis.fail_job(
                         workspace_id=job.workspace_id,
                         role_id=job.role_id,
@@ -420,6 +427,8 @@ class SqlAnalysisWorker:
                 stage=stage.value,
             )
             embeddings, provider_id, model_tag = self._embedding_for(job.workspace_id)
+            if embeddings is not None:
+                embeddings = CancellableEmbedding(embeddings, check)
             similarities = requirement_claim_similarities(
                 workspace_id=job.workspace_id,
                 requirements=req_result.requirements,
@@ -488,7 +497,7 @@ class SqlAnalysisWorker:
                     ),
                 )
                 with self._uow_factory() as uow:
-                    require_role(uow.roles, job.workspace_id, job.role_id)
+                    require_live_job(uow.jobs, job.workspace_id, job.id)
                     uow.analysis.fail_job(
                         workspace_id=job.workspace_id,
                         role_id=job.role_id,
@@ -516,7 +525,7 @@ class SqlAnalysisWorker:
                 return failed
             terminal = mark_succeeded(staged, at=self._clock())
             with self._uow_factory() as uow:
-                require_role(uow.roles, job.workspace_id, job.role_id)
+                require_live_job(uow.jobs, job.workspace_id, job.id)
                 require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
                 uow.documents.ensure_spans(job.workspace_id, jd_id, req_result.spans)
                 uow.documents.ensure_spans(job.workspace_id, cv_id, claim_result.spans)
@@ -653,7 +662,7 @@ class SqlAnalysisWorker:
         return failed
 
     def _analysis_ports_for(
-        self, workspace_id: str
+        self, workspace_id: str, check: CancellationCheck
     ) -> tuple[RequirementExtractionPort, ClaimExtractionPort, AdjudicationPort]:
         if self._requirement_extractor is not None or self._claim_extractor is not None:
             return (
@@ -676,6 +685,7 @@ class SqlAnalysisWorker:
             transport=self._transport,
             accountant=accountant,
             workspace_id=workspace_id,
+            wrap=lambda port: CancellableCompletion(port, check),
         )
 
     def _settings(self) -> ProviderSettings:

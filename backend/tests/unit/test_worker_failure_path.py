@@ -9,6 +9,7 @@ queued for ever with no error anywhere in the interface.
 from __future__ import annotations
 
 import threading
+from dataclasses import replace
 from datetime import UTC, datetime
 from types import TracebackType
 
@@ -18,11 +19,12 @@ from career_assistant.adapters.persistence.analysis_worker import (
     JobCancelled,
     SqlAnalysisWorker,
     require_documents,
-    require_role,
+    require_live_job,
 )
 from career_assistant.application.analysis.service import StartupRecovery
 from career_assistant.domain.jobs import (
     AnalysisJob,
+    JobError,
     JobKind,
     JobStage,
     JobState,
@@ -140,12 +142,12 @@ def test_a_document_removed_mid_analysis_is_named_not_a_constraint_error() -> No
         require_documents(documents, "workspace-1", ("doc-jd", "doc-cv"))
 
 
-class _Roles:
-    def __init__(self, present: bool) -> None:
-        self._present = present
+class _Jobs:
+    def __init__(self, job: AnalysisJob | None) -> None:
+        self._job = job
 
-    def get(self, workspace_id: str, role_id: str) -> object | None:
-        return object() if self._present else None
+    def get_for_update(self, workspace_id: str, job_id: str) -> AnalysisJob | None:
+        return self._job
 
 
 def test_a_role_deleted_mid_analysis_is_a_cancellation_not_a_failure() -> None:
@@ -156,7 +158,22 @@ def test_a_role_deleted_mid_analysis_is_a_cancellation_not_a_failure() -> None:
     failure because the job row had gone with the role. Nobody asked for an
     error here: the work was cancelled.
     """
-    require_role(_Roles(present=True), "workspace-1", "role-1")
+    assert require_live_job(_Jobs(_job()), "workspace-1", "job-1") == _job()
 
     with pytest.raises(JobCancelled):
-        require_role(_Roles(present=False), "workspace-1", "role-1")
+        require_live_job(_Jobs(None), "workspace-1", "job-1")
+
+
+def test_a_job_stopped_by_a_cv_delete_is_not_written_back_to_running() -> None:
+    """Deleting the CV fails the role's job as `cv_deleted` while it runs.
+
+    The worker must not save its in-memory running job over that, or publish.
+    """
+    stopped = replace(
+        _job(),
+        state=JobState.FAILED,
+        error=JobError(code="cv_deleted", message="The CV was deleted."),
+    )
+
+    with pytest.raises(JobCancelled):
+        require_live_job(_Jobs(stopped), "workspace-1", "job-1")

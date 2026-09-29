@@ -6,27 +6,32 @@ from collections.abc import Sequence
 from typing import Protocol
 
 from career_assistant.application.ports.errors import JobCancelled
+from career_assistant.domain.jobs import LIVE_STATES, AnalysisJob
 
-__all__ = ["JobCancelled", "require_documents", "require_role"]
+__all__ = ["JobCancelled", "require_documents", "require_live_job"]
 
 
 class DocumentReader(Protocol):
     def get(self, workspace_id: str, document_id: str) -> object | None: ...
 
 
-class RoleReader(Protocol):
-    def get(self, workspace_id: str, role_id: str) -> object | None: ...
+class JobLocker(Protocol):
+    def get_for_update(self, workspace_id: str, job_id: str) -> AnalysisJob | None: ...
 
 
-def require_role(roles: RoleReader, workspace_id: str, role_id: str) -> None:
-    """A deleted role is a cancellation, not an analysis failure.
+def require_live_job(jobs: JobLocker, workspace_id: str, job_id: str) -> AnalysisJob:
+    """A deleted or stopped job is a cancellation, not an analysis failure.
 
-    Hard delete removes the role, its job rows and its job description. The
-    worker may already be past extraction. Writing spans then fails a foreign
-    key, and recording that failure fails because the job row is gone too.
+    Hard delete removes the role, its job rows and its job description; deleting
+    or replacing the CV fails the job while it runs. The worker may already be
+    past extraction. Writing then fails a foreign key, or saves the in-memory
+    running job over `cv_deleted`. The row stays locked until the caller's
+    transaction ends, so a delete cannot land between this check and the write.
     """
-    if roles.get(workspace_id, role_id) is None:
-        raise JobCancelled(role_id)
+    job = jobs.get_for_update(workspace_id, job_id)
+    if job is None or job.state not in LIVE_STATES:
+        raise JobCancelled(job_id)
+    return job
 
 
 def require_documents(

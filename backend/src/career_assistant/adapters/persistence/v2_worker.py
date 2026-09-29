@@ -12,11 +12,12 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from career_assistant.adapters.persistence.cancellation import SqlJobLiveness
 from career_assistant.adapters.persistence.index_store import SqlDocumentIndexStore
 from career_assistant.adapters.persistence.job_guards import (
     JobCancelled,
     require_documents,
-    require_role,
+    require_live_job,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_analysis_repos import (
@@ -43,6 +44,11 @@ from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.search import HybridQuery
 from career_assistant.application.ports.structured import StructuredCompletionPort
+from career_assistant.application.providers.cancellable import (
+    CancellableEmbedding,
+    CancellableStructured,
+    CancellationCheck,
+)
 from career_assistant.domain.attribution import AnalysisAttribution
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
@@ -129,7 +135,10 @@ class V2JobRunner:
             loaded = self._load(job)
             job = self._start(job)
             stage = JobStage.MAPPING
-            providers = self._providers(job.workspace_id)
+            providers = _cancellable(
+                self._providers(job.workspace_id),
+                SqlJobLiveness(self._uow_factory, job),
+            )
             analysis = self._analysis(job.workspace_id, providers).run(loaded.documents)
             stage = JobStage.SCORING
             if not analysis.fit.publishable:
@@ -180,7 +189,7 @@ class V2JobRunner:
         )
         staged = mark_stage(running, JobStage.MAPPING)
         with self._uow_factory() as uow:
-            require_role(uow.roles, job.workspace_id, job.role_id)
+            require_live_job(uow.jobs, job.workspace_id, job.id)
             uow.jobs.save(staged)
             uow.jobs.set_pipeline_version(job.workspace_id, job.id, PipelineVersion.V2)
             uow.commit()
@@ -228,7 +237,7 @@ class V2JobRunner:
             mark_stage(running, stage), at=self._config.clock(), error=error
         )
         with self._uow_factory() as uow:
-            require_role(uow.roles, job.workspace_id, job.role_id)
+            require_live_job(uow.jobs, job.workspace_id, job.id)
             uow.analysis.fail_job(
                 workspace_id=job.workspace_id, role_id=job.role_id, job=failed
             )
@@ -254,7 +263,7 @@ class V2JobRunner:
         terminal = mark_succeeded(job, at=self._config.clock())
         documents = loaded.documents
         with self._uow_factory() as uow:
-            require_role(uow.roles, job.workspace_id, job.role_id)
+            require_live_job(uow.jobs, job.workspace_id, job.id)
             require_documents(
                 uow.documents,
                 job.workspace_id,
@@ -290,3 +299,12 @@ class V2JobRunner:
             band=analysis.fit.band,
         )
         return terminal
+
+
+def _cancellable(providers: V2Providers, check: CancellationCheck) -> V2Providers:
+    """No provider call starts once the role or the CV has been deleted."""
+    return V2Providers(
+        structured=CancellableStructured(providers.structured, check),
+        embedding=CancellableEmbedding(providers.embedding, check),
+        judge_model=providers.judge_model,
+    )
