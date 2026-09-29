@@ -1607,14 +1607,21 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       during the first model call of a v1 and a v2 analysis and assert no second
       call. A call already in flight is not interrupted. Not observed against a
       live model, so no estimate accuracy is claimed.*
-- [ ] **18.12** MCP server. `career-assistant-mcp` over stdio, read-only tools from
+- [x] **18.12** MCP server. `career-assistant-mcp` over stdio, read-only tools from
       the registry with output schemas and `readOnlyHint`; `MCP_ENABLED` and
       `MCP_WORKSPACE_ID` read from the server configuration file, never the launching
       environment, and off by default; the egress notice in every tool description
       and result. SDK support verified for the 2026-07-28 specification with
       2025-11-25 compatibility before pinning. Tests drive it
       with an in-process MCP client. The architecture guard forbids `mcp` in
-      `domain/` and `application/`. README and threat model updated.
+      `domain/` and `application/`. README and threat model updated. *Done
+      2026-09-29: `mcp` 2.2.0, released 2026-09-07, pinned `>=2.2,<3` after
+      checking that it serves the 2026-07-28 envelope and the 2025-11-25
+      handshake. In-process client tests run in both modes. A real stdio run with
+      the process started from another directory worked in both modes against
+      PostgreSQL. Hermetic data only. The tools are still the 18.11 handlers: word
+      overlap rather than `hybrid_search()`, no years, and v1 analyses only
+      ([docs/mcp.md](docs/mcp.md)).*
 - [ ] **18.13** Frontend. Fit shows the three dimension scores with quotes and a
       retrieval-trace drawer; a keyword-coverage panel flags alias-only matches
       an applicant-tracking system may miss; Ask shows the agent's tool steps.

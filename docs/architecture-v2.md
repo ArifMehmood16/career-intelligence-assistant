@@ -856,6 +856,22 @@ calls; the MCP client governs its own. Every tool description says so — under 
 instructions — every tool result carries `leftMachine: "decided by the MCP client"`,
 and the README states it plainly.
 
+**As built (18.12, 2026-09-29).** `career-assistant-mcp` is in
+`adapters/mcp/`. It uses the official Python SDK, `mcp` 2.2, whose low-level
+`Server` serves both the 2025-11-25 handshake and the 2026-07-28 envelope.
+The eight tools, their descriptions and their input and output schemas come from
+the ask registry. Each tool adds a required `leftMachine` constant to its output
+schema and is annotated read-only and non-destructive. Every call rebuilds the
+registry from PostgreSQL for the one configured workspace. The tool handlers are
+still the 18.11 ones, which has three consequences:
+
+- `search_evidence` ranks spans by the words they share with the query rather
+  than calling `hybrid_search()`.
+- `skill_experience` returns no years.
+- A v2 role is listed with its band and score but no requirements.
+
+[docs/mcp.md](mcp.md) is the user's page.
+
 ## 12. Providers, structured output and token budgets
 
 ### Structured output is enforced by the API, not requested in prose

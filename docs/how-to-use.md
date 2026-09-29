@@ -27,6 +27,8 @@
 6. **Settings** — choose the answer and index providers. Hosted providers are offered
    only when egress is enabled on the server, and choosing one requires acknowledging
    that document text may leave the machine.
+7. **Optional: MCP** — let Claude Desktop or Cursor read the same workspace,
+   read-only. It is off until you enable it; see [MCP server](mcp.md).
 
 ## Screenshots
 

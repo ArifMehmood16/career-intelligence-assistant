@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, and 18.4–18.11 and 18.11a are done.
-  **18.12 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.12 and 18.11a are done.
+  18.12 is done. **18.13 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -138,7 +138,10 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
       wiring them to hybrid search and the knowledge graph is open.
 - [x] **18.11a — analysis progress and cancellation on delete** (human request,
       taken before 18.12). Estimate accuracy against a live model is not measured.
-- [ ] **18.12 — MCP server**, stdio, off by default.
+- [x] **18.12 — MCP server**, stdio, off by default. The tools still read
+      the 18.11 handlers: wiring `search_evidence` to `hybrid_search()`,
+      `skill_experience` to the graph and v2 verdicts into `get_role_analysis` is
+      open, and serves the in-app agent and MCP alike.
 - [ ] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
       For a v2 role the v1 read routes (requirements, breakdown, gap plan, interview
       pack, fit summary, ranking reasons) return empty or zeroed data; the fit view

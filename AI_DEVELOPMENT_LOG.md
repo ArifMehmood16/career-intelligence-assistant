@@ -29,6 +29,48 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 152 — MCP server (PLAN 18.12)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.12
+- Prompt intent: build the MCP server, then continue with 18.13. The human first
+  asked whether MCP helps the app or is for other agents; the answer given was
+  that it is for other agents and changes nothing in the web app.
+- Suggestion: pin the official SDK after checking its protocol support. Build a
+  low-level `Server` adapter over the ask registry, with an output schema per tool
+  and a workspace-wide registry read fresh per call. Read the switches from
+  `config/app.env` only, and test with the SDK's in-process client in both
+  protocol modes.
+- Outcome: built as proposed, plus three additions.
+  - An output model per registry tool, and an error code on a failed call. The
+    18.11 registry had neither.
+  - `--list-workspaces`, so `MCP_WORKSPACE_ID` can be found without reading an
+    HTTP-only cookie.
+  - `python -m career_assistant.adapters.mcp` as an alternative to the script.
+  - No `--config` flag: the client controls the command line as well as the
+    environment, so a flag would hand it the switch.
+- Reason: the configuration file is the only input the MCP client does not
+  control. Keeping the 18.11 handlers keeps one definition for the agent and MCP;
+  wiring them to hybrid search and the graph improves both and is recorded as
+  open in `BACKLOG.md`.
+- Human validation: TBD. Observed:
+  - `mcp` 2.2.0 on PyPI is dated 2026-09-07. Its `mcp_types.version` lists
+    2026-07-28 as the modern version and 2025-11-25 as the newest handshake
+    version. In-process tests negotiated `2025-11-25` in legacy mode and
+    `2026-07-28` in modern mode.
+  - A stdio run was made in the cloud copy, with a disposable `config/app.env` and
+    hermetic data on PostgreSQL 16, launching the process from `/tmp`. It listed 8
+    read-only tools, and `list_roles` and `search_evidence` returned structured
+    results carrying the notice in both modes. With the switches only in the
+    environment, the process printed the reason and exited 2.
+  - Backend: ruff, format and mypy clean. 878 unit tests passed, coverage 85.13%.
+    The MCP integration tests passed on PostgreSQL.
+  - pip-audit on the new lock found no advisories in the added packages. The
+    existing `cryptography` 46.0.7 pin has 7 advisories whose fixes need 48 or
+    later, outside the current `<47` range; this is not changed here.
+  - No live model and no real document were used.
+
 ### 151 — Analysis progress and cancellation on delete (PLAN 18.11a)
 
 - Date: 2026-09-29

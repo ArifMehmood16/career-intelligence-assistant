@@ -114,7 +114,7 @@ Every command, the database topology, Compose and logging:
 |---|---|
 | **Product** | [Features](docs/features.md) · [How to use it](docs/how-to-use.md) · [Known limitations and what's next](docs/limitations.md) |
 | **Architecture** | [v1, running](docs/architecture.md) · [v2, being built](docs/architecture-v2.md) · [Decisions (ADRs)](docs/adr/) · [Model providers and the egress gate](docs/model-providers.md) · [Route wiring](docs/production-wiring.md) · [API contract](docs/api-contract.md) |
-| **Running it** | [Running locally](docs/running-locally.md) · [Productionisation](docs/productionisation.md) |
+| **Running it** | [Running locally](docs/running-locally.md) · [MCP server](docs/mcp.md) · [Productionisation](docs/productionisation.md) |
 | **Trust and quality** | [Evaluation](docs/evaluation.md) · [Privacy position](docs/privacy.md) · [Threat model](docs/threat-model.md) · [Engineering standards and AI use](docs/engineering-standards.md) |
 | **Working on it** | [AGENTS.md](AGENTS.md) (protocol for coding agents; [CLAUDE.md](CLAUDE.md) imports it) · [PLAN.md](PLAN.md) (tasks and gates) · [BACKLOG.md](BACKLOG.md) (open work, in order) · [AI_DEVELOPMENT_LOG.md](AI_DEVELOPMENT_LOG.md) · [Engineering journal](docs/engineering-journal.md) |
 | **Frontend** | [Lovable brief](docs/frontend-brief.md) · [Integration record](docs/frontend-integration.md) |
