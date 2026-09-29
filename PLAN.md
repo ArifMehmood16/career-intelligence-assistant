@@ -1515,8 +1515,10 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       2026-09-29: migration d3a18c0f2b61; 69 integration tests passed on PostgreSQL
       16.13 with pgvector 0.6.0. The Supabase Postgres 17 row is a CI job that has
       not run yet — container registries are not reachable from the session that
-      wrote it — so this box stays open until that run passes.*
-- [ ] **18.4** LLM chunker. Server line numbering; one call per document within the
+      wrote it — so this box stays open until that run passes. 2026-09-29: the
+      same 69 passed on the developer's local Homebrew PostgreSQL 17.10; that is
+      not the Supabase image, so the CI row is still the open evidence.*
+- [x] **18.4** LLM chunker. Server line numbering; one call per document within the
       budget, one per server-detected section otherwise; validation for coverage
       (no ignore list), shape, size, role references, verbatim fields, stated years
       and levels, dates and enums; one repair call; ingestion
@@ -1524,7 +1526,9 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       Contextual header built for retrieval only. A hermetic chunker fixture keeps
       `make test` offline. Tests include a dropped line, an overlapping range, an
       invented technology, a wrapped PDF line and an injection line in a job
-      description.
+      description. *Done 2026-09-29: `DocumentChunker`, `validate_chunk_plan`,
+      `retrieval_text` and `HermeticStructuredCompleter`. Not yet called by
+      ingestion — that is 18.10 — and not run against a live model.*
 - [ ] **18.5** Knowledge graph. Asserted edges from validated chunks cite them;
       inferred edges — one batched taxonomy call per ingestion for new technology
       terms, plus the chunker's canonical spellings as `ALIAS_OF` — cite nothing and

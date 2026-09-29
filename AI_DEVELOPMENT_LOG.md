@@ -29,6 +29,35 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 142 — The model-defined chunker and its hermetic fixture (PLAN 18.4)
+
+- Date: 2026-09-29
+- Tool / model: Claude Code session (commits 2717e85–5047065), then Cursor agent
+  (Claude Opus 5.5) for the rest.
+- Plan task: 18.4
+- Prompt intent: continue from 18.3, find where the work stopped and pick it up.
+- Suggestion: line numbering, section splitting by the provider's budget, plan
+  validation and a `DocumentChunker` with one repair call had been committed. A
+  rule-based hermetic structured fixture was on disk, untracked. The Cursor session
+  committed that fixture, parsed a role's verbatim `date_text` in domain code, and
+  added `retrieval_text`: the context header followed by the verbatim text, and
+  `None` for a contact chunk.
+- Outcome: accepted
+- Reason: the fixture is a registry keyed by contract, so 18.5, 18.7 and 18.11
+  add a builder each instead of an `if` chain, and it refuses a contract it has no
+  builder for. Unparsed date text leaves the role undated rather than guessing.
+  `retrieval_text` keeps the model-written header out of the text the user sees.
+  The `fts` generated column already returns null for contact chunks. The chunker
+  is not yet called by ingestion; that wiring is 18.10.
+- Human validation: TBD. Observed in the Cursor session: the two new tests
+  failed first on assertions (`'Jane Doe\njane@example.com' is not None` and
+  `None == DateRange(...)`), then passed. The fixture's 15 tests passed
+  when it was first run from the untracked files. `make lint` was clean; `make
+  test` gave 648 passed, 3 skipped, 70 deselected, coverage 85.17%, and 124
+  frontend tests passed; `make test-integration` gave 69 passed on local Homebrew
+  PostgreSQL 17.10. Docker is not available on this machine, so the Supabase
+  image row for 18.3 still waits on CI.
+
 ### 141 — The v2 schema, and a cloud PostgreSQL runner for it (PLAN 18.3)
 
 - Date: 2026-09-29
