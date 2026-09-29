@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
-import type { KeyboardEvent, ReactNode } from "react";
+import { useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { AnalysisProgress } from "@/components/role/AnalysisProgress";
 import {
   incompleteAnalysisDetail,
   isIncompleteAnalysisCode,
@@ -28,6 +29,8 @@ export interface RolesPanelProps {
   failureCodes?: Record<string, string>;
   addRoleSlot: ReactNode;
   layout?: RolesLayout;
+  /** Epoch ms when `roles` arrived; the progress clocks count from it. */
+  observedAt?: number;
 }
 
 const COLUMNS: { key: RolesSortKey; label: string; numeric: boolean }[] = [
@@ -43,12 +46,23 @@ function FitCell({
   failureReason,
   failureCode,
   onReanalyse,
+  observedAt,
 }: {
   role: Role;
   failureReason?: string | undefined;
   failureCode?: string | undefined;
   onReanalyse?: ((roleId: string) => void) | undefined;
+  observedAt: number;
 }) {
+  if (role.status === "analysing" && role.activeJob?.progress) {
+    return (
+      <AnalysisProgress
+        job={role.activeJob}
+        observedAt={observedAt}
+        variant="compact"
+      />
+    );
+  }
   if (role.status === "analysing") {
     return (
       <span role="status" aria-live="polite" className="text-muted-foreground">
@@ -142,8 +156,11 @@ export function RolesPanel({
   failureCodes = {},
   addRoleSlot,
   layout = "responsive",
+  observedAt,
 }: RolesPanelProps) {
   const navigate = useNavigate();
+  const [fallbackObservedAt] = useState(() => Date.now());
+  const snapshotAt = observedAt ?? fallbackObservedAt;
 
   const tableClass =
     layout === "table"
@@ -303,6 +320,7 @@ export function RolesPanel({
                         failureReason={failureReasons[role.id]}
                         failureCode={failureCodes[role.id]}
                         onReanalyse={onReanalyse}
+                        observedAt={snapshotAt}
                       />
                     </td>
                     <td className="py-2 text-right font-mono">
@@ -347,6 +365,7 @@ export function RolesPanel({
                         failureReason={failureReasons[role.id]}
                         failureCode={failureCodes[role.id]}
                         onReanalyse={onReanalyse}
+                        observedAt={snapshotAt}
                       />
                     </span>
                     {role.status === "ready" ? (
