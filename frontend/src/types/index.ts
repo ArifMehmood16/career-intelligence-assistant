@@ -27,6 +27,8 @@ export interface Role {
   updatedAt: string;
   /** Present on GET /roles/{id} once analysis is ready; omitted from list rows. */
   fitSummary?: string | null;
+  /** The queued or running analysis, with its progress. */
+  activeJob?: AnalysisJob | null;
 }
 
 export type RequirementType = "must" | "desirable";
@@ -107,6 +109,38 @@ export interface AnalysisJobError {
   message: string;
 }
 
+export type AnalysisTaskKey =
+  | "prepare"
+  | "read_advert"
+  | "read_cv"
+  | "match"
+  | "search"
+  | "judge"
+  | "recheck"
+  | "score";
+
+export type AnalysisTaskState =
+  "pending" | "running" | "done" | "skipped" | "failed";
+
+export interface AnalysisTask {
+  key: AnalysisTaskKey;
+  state: AnalysisTaskState;
+  unitsDone: number;
+  unitsTotal: number | null;
+}
+
+/** Server snapshot; `remainingSeconds` is an estimate and null until it can be made. */
+export interface JobProgress {
+  tasksDone: number;
+  tasksTotal: number;
+  fraction: number;
+  currentTask: AnalysisTaskKey | null;
+  elapsedSeconds: number | null;
+  remainingSeconds: number | null;
+  queuePosition: number | null;
+  tasks: AnalysisTask[];
+}
+
 export interface AnalysisJob {
   id: string;
   kind: AnalysisJobKind;
@@ -115,6 +149,8 @@ export interface AnalysisJob {
   startedAt: string | null;
   finishedAt: string | null;
   error: AnalysisJobError | null;
+  /** Absent from the in-memory store and older servers. */
+  progress?: JobProgress | null;
 }
 
 export type GapItemReason =

@@ -35,6 +35,10 @@ export const roleSchema = z
     status: z.enum(["analysing", "ready", "failed"]),
     updatedAt: z.string(),
     fitSummary: z.string().nullable().optional(),
+    activeJob: z
+      .lazy(() => analysisJobSchema)
+      .nullable()
+      .optional(),
   })
   .passthrough();
 
@@ -115,6 +119,35 @@ export const providerChoiceUpdateResponseSchema = providerChoiceSchema.extend({
     .optional(),
 });
 
+const analysisTaskKeySchema = z.enum([
+  "prepare",
+  "read_advert",
+  "read_cv",
+  "match",
+  "search",
+  "judge",
+  "recheck",
+  "score",
+]);
+
+export const jobProgressSchema = z.object({
+  tasksDone: z.number().int(),
+  tasksTotal: z.number().int(),
+  fraction: z.number(),
+  currentTask: analysisTaskKeySchema.nullable(),
+  elapsedSeconds: z.number().nullable(),
+  remainingSeconds: z.number().nullable(),
+  queuePosition: z.number().int().nullable(),
+  tasks: z.array(
+    z.object({
+      key: analysisTaskKeySchema,
+      state: z.enum(["pending", "running", "done", "skipped", "failed"]),
+      unitsDone: z.number().int(),
+      unitsTotal: z.number().int().nullable(),
+    }),
+  ),
+});
+
 export const analysisJobSchema = z
   .object({
     id: z.string(),
@@ -138,6 +171,7 @@ export const analysisJobSchema = z
         z.null(),
       ])
       .optional(),
+    progress: jobProgressSchema.nullable().optional(),
   })
   .passthrough();
 

@@ -182,6 +182,9 @@ function mapRole(raw: z.infer<typeof roleSchema>): Role {
     status: raw.status,
     updatedAt: raw.updatedAt,
     fitSummary: raw.fitSummary ?? null,
+    ...(raw.activeJob === undefined
+      ? {}
+      : { activeJob: raw.activeJob === null ? null : mapJob(raw.activeJob) }),
   };
 }
 
@@ -448,6 +451,10 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
   const raw = await request(`/api/jobs/${jobId}`, {
     schema: analysisJobSchema,
   });
+  return mapJob(raw);
+}
+
+function mapJob(raw: z.infer<typeof analysisJobSchema>): AnalysisJob {
   const error =
     raw.error == null
       ? null
@@ -462,6 +469,7 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
     startedAt: raw.startedAt,
     finishedAt: raw.finishedAt,
     error,
+    ...(raw.progress === undefined ? {} : { progress: raw.progress }),
   };
 }
 
