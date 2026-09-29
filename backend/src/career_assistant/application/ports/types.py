@@ -22,6 +22,8 @@ class CapabilityDescriptor:
     supports_prompt_caching: bool = False
     supports_temperature: bool = False
     supports_seed: bool = False
+    # The weights behind the tag, where the provider exposes it (Ollama does).
+    model_digest: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

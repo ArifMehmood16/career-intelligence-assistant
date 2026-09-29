@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 from career_assistant.adapters.providers.http_transport import HttpTransport
@@ -39,12 +40,15 @@ class OllamaCompletionAdapter:
         transport: HttpTransport,
         resilience: ResiliencePolicy,
         profile: ModelProfile | None = None,
+        digest_lookup: Callable[[], str | None] | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model_tag = model_tag
         self._transport = transport
         self._resilience = resilience
         self._profile = profile or _DEFAULT_PROFILE
+        self._digest_lookup = digest_lookup
+        self._digest: str | None = None
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -61,7 +65,14 @@ class OllamaCompletionAdapter:
             supports_prompt_caching=self._profile.supports_prompt_caching,
             supports_temperature=self._profile.supports_temperature,
             supports_seed=self._profile.supports_seed,
+            model_digest=self._model_digest(),
         )
+
+    def _model_digest(self) -> str | None:
+        """Looked up until found, then kept: a failed lookup is tried again."""
+        if self._digest is None and self._digest_lookup is not None:
+            self._digest = self._digest_lookup()
+        return self._digest
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
         total = len(request.system) + len(request.user)

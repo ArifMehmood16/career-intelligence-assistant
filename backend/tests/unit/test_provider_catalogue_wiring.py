@@ -11,12 +11,15 @@ from career_assistant.adapters.providers.factory import (
     build_completion_port,
     build_embedding_port,
 )
+from career_assistant.adapters.providers.http_transport import HttpResponse
 from career_assistant.application.providers.model_catalogue import load_model_catalogue
 from career_assistant.settings import ProviderSettings
 
 _CATALOGUE = load_model_catalogue(
     Path(__file__).resolve().parents[3] / "config" / "models.toml"
 )
+# Reading an Ollama descriptor looks up the model digest.
+_NO_MODELS_PULLED = {"/api/tags": HttpResponse(200, b'{"models": []}', {})}
 
 
 def _settings(**overrides: object) -> ProviderSettings:
@@ -26,7 +29,7 @@ def _settings(**overrides: object) -> ProviderSettings:
 def test_ollama_completion_reports_its_catalogue_row() -> None:
     port = build_completion_port(
         _settings(completion_provider="ollama", ollama_completion_model="qwen2.5:7b"),
-        transport=ScriptedTransport({}),
+        transport=ScriptedTransport(_NO_MODELS_PULLED),
     )
 
     expected = _CATALOGUE.profile("ollama", "qwen2.5:7b")
@@ -38,7 +41,7 @@ def test_ollama_completion_reports_its_catalogue_row() -> None:
 def test_an_unnamed_ollama_tag_gets_the_provider_defaults() -> None:
     port = build_completion_port(
         _settings(completion_provider="ollama"),
-        transport=ScriptedTransport({}),
+        transport=ScriptedTransport(_NO_MODELS_PULLED),
         model_tag="a-model-nobody-listed",
     )
 

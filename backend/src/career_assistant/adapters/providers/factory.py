@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from functools import cache
+from functools import cache, partial
 from pathlib import Path
 
 from career_assistant.adapters.providers.anthropic.completion import (
@@ -20,6 +20,7 @@ from career_assistant.adapters.providers.httpx_transport import HttpxTransport
 from career_assistant.adapters.providers.ollama.completion import (
     OllamaCompletionAdapter,
 )
+from career_assistant.adapters.providers.ollama.digest import ollama_model_digest
 from career_assistant.adapters.providers.ollama.embedding import OllamaEmbeddingAdapter
 from career_assistant.adapters.providers.openai.completion import (
     OpenAICompletionAdapter,
@@ -172,6 +173,13 @@ def _completion_for(
             transport=transport,
             resilience=resilience,
             profile=catalogue.profile("ollama", tag),
+            digest_lookup=partial(
+                ollama_model_digest,
+                transport,
+                base_url=settings.ollama_base_url,
+                model_tag=tag,
+                timeout_seconds=resilience.timeout_seconds,
+            ),
         )
     if provider_id == "openai":
         key = egress.assert_openai_constructible()
