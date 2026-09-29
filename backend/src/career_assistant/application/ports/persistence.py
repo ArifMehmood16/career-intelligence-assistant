@@ -220,6 +220,10 @@ class AnalysisJobRepository(Protocol):
 
     def save(self, job: AnalysisJob) -> AnalysisJob: ...
 
+    def set_pipeline_version(
+        self, workspace_id: str, job_id: str, version: PipelineVersion
+    ) -> None: ...
+
     def enqueue_reanalysis_for_workspace(
         self,
         *,

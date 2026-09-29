@@ -41,6 +41,7 @@ from career_assistant.domain.mapping import (
     MappingStatus,
     RequirementMapping,
 )
+from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.reanalysis import resolve_failed_analysis_pointer
 from career_assistant.domain.relatedness import RelatednessSignals
 from career_assistant.domain.requirements import Requirement
@@ -341,6 +342,14 @@ class SqlAnalysisJobRepository:
             assigned.append(job_id)
         self._session.flush()
         return tuple(assigned)
+
+    def set_pipeline_version(
+        self, workspace_id: str, job_id: str, version: PipelineVersion
+    ) -> None:
+        row = self._session.get(AnalysisJobRow, _as_uuid(job_id))
+        if row is not None and row.workspace_id == _as_uuid(workspace_id):
+            row.pipeline_version = version.value
+            self._session.flush()
 
     def list_queued(self) -> tuple[AnalysisJob, ...]:
         return self._list_by_state(JobState.QUEUED)

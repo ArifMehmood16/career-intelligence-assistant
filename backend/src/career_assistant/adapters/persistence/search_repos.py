@@ -96,6 +96,16 @@ class SqlHybridSearch:
             return hybrid_search(session, query)
 
 
+class SqlSessionHybridSearch:
+    """Hybrid search inside a unit of work's session."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def search(self, query: HybridQuery) -> tuple[SearchHit, ...]:
+        return hybrid_search(self._session, query)
+
+
 def hybrid_search(session: Session, query: HybridQuery) -> tuple[SearchHit, ...]:
     weights = query.weights
     params = {

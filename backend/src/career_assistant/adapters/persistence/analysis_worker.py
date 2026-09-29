@@ -21,8 +21,16 @@ from career_assistant.adapters.persistence.job_guards import (
     require_role,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.persistence.v2_worker import (
+    V2JobRunner,
+    V2Providers,
+    V2RunnerConfig,
+)
 from career_assistant.adapters.providers.factory import build_embedding_port
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.adapters.providers.structured_factory import (
+    build_structured_port,
+)
 from career_assistant.application.analysis.relatedness import (
     NullAdjudicator,
     map_role_requirements,
@@ -31,7 +39,10 @@ from career_assistant.application.analysis.service import JobClock, StartupRecov
 from career_assistant.application.analysis.similarity import (
     requirement_claim_similarities,
 )
+from career_assistant.application.analysis.v2 import V2Limits
+from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.ports.adjudication import AdjudicationPort
+from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.errors import (
     EgressNotPermittedError,
@@ -42,6 +53,7 @@ from career_assistant.application.ports.extraction import (
     RequirementExtractionPort,
 )
 from career_assistant.application.providers.accounting import (
+    AccountingCompletion,
     AccountingEmbedding,
     CallAccountant,
 )
@@ -50,6 +62,7 @@ from career_assistant.application.scoring.rubric_loader import (
     load_mapping_config,
     load_rubric_version,
     load_scoring_rubric,
+    load_scoring_rubric_v2,
 )
 from career_assistant.domain.assessment import PROMPT_VERSION
 from career_assistant.domain.attribution import (
@@ -70,6 +83,7 @@ from career_assistant.domain.jobs import (
     recover_stale_running,
 )
 from career_assistant.domain.mapping import RequirementMapping
+from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.scoring import ScoringRubric, score_fit
 from career_assistant.logconfig import (
     bind_request_context,
@@ -82,6 +96,7 @@ from career_assistant.settings import ProviderSettings
 _ROOT = Path(__file__).resolve().parents[5]
 _RUBRIC_PATH = _ROOT / "config" / "scoring_rubric.toml"
 _DEFAULT_RUBRIC = load_scoring_rubric(_RUBRIC_PATH)
+_DEFAULT_RUBRIC_V2 = load_scoring_rubric_v2(_RUBRIC_PATH)
 _RUBRIC_VERSION = load_rubric_version(_RUBRIC_PATH)
 _MAPPING = load_mapping_config(_RUBRIC_PATH)
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
@@ -117,6 +132,20 @@ class SqlAnalysisWorker:
         self._transport = transport
         self._embedding_port = embedding_port
         self._call_accountant = call_accountant
+        settings = self._settings()
+        self._v2 = V2JobRunner(
+            uow_factory,
+            providers=self._v2_providers,
+            config=V2RunnerConfig(
+                rubric=_DEFAULT_RUBRIC_V2,
+                limits=V2Limits(
+                    max_rewrites=settings.judge_max_rewrites,
+                    max_chars_per_text=settings.embedding_max_chars_per_text,
+                ),
+                clock=self._clock,
+            ),
+            fail=self._fail,
+        )
 
     def startup(self) -> StartupRecovery:
         failed: list[str] = []
@@ -168,6 +197,10 @@ class SqlAnalysisWorker:
     def complete(self, job: AnalysisJob) -> AnalysisJob:
         bind_request_context(correlation_id=job.id, workspace_id=job.workspace_id)
         try:
+            with self._uow_factory() as uow:
+                pipeline = uow.workspaces.pipeline_version(job.workspace_id)
+            if pipeline is PipelineVersion.V2:
+                return self._v2.run(job)
             return self._run_job(job)
         finally:
             clear_request_context()
@@ -645,13 +678,47 @@ class SqlAnalysisWorker:
             workspace_id=workspace_id,
         )
 
-    def _embedding_for(
-        self, workspace_id: str
-    ) -> tuple[EmbeddingPort | None, str, str]:
-        settings = self._providers or ProviderSettings(
+    def _settings(self) -> ProviderSettings:
+        return self._providers or ProviderSettings(
             completion_provider="hermetic",
             embedding_provider="hermetic",
         )
+
+    def _v2_providers(self, workspace_id: str) -> V2Providers:
+        settings = self._settings()
+        with self._uow_factory() as uow:
+            choice = uow.provider_settings.get(workspace_id)
+        if choice is None:
+            choice = default_provider_choice(settings)
+        embedding, _, _ = self._embedding_for(workspace_id)
+        if embedding is None:
+            raise ProviderUnavailableError("embedding_unavailable")
+        accountant = self._call_accountant or SqlCallAccountant(self._uow_factory)
+
+        def accounted(port: CompletionPort) -> CompletionPort:
+            return AccountingCompletion(
+                port, accountant, workspace_id=workspace_id, purpose="analysis_v2"
+            )
+
+        structured = build_structured_port(
+            settings,
+            provider_id=choice.answer_provider_id,
+            model_tag=choice.answer_model,
+            transport=self._transport,
+            wrap=accounted,
+        )
+        return V2Providers(
+            structured=structured,
+            embedding=embedding,
+            judge_model=ModelIdentity(
+                structured.capabilities.provider_id, choice.answer_model
+            ),
+        )
+
+    def _embedding_for(
+        self, workspace_id: str
+    ) -> tuple[EmbeddingPort | None, str, str]:
+        settings = self._settings()
         with self._uow_factory() as uow:
             choice = uow.provider_settings.get(workspace_id)
         if choice is None:

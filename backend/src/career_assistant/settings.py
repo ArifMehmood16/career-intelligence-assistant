@@ -109,6 +109,10 @@ class ProviderSettings(BaseSettings):
     assessment_output_tokens_per_requirement: int = Field(default=256, ge=1)
     # Claim classification batches so a real CV is not truncated by one response.
     claim_batch_max_spans: int = Field(default=12, ge=1)
+    # v2: corrective searches allowed per analysis, and the longest chunk text
+    # sent to the embedding model.
+    judge_max_rewrites: int = Field(default=5, ge=0)
+    embedding_max_chars_per_text: int = Field(default=8_000, ge=1)
 
     def secret_values(self) -> tuple[str, ...]:
         """Configured secrets for redaction tests — never expose via routes."""

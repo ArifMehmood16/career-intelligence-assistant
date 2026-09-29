@@ -37,6 +37,7 @@ from career_assistant.adapters.persistence.models import (
 from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
 from career_assistant.adapters.persistence.search_repos import (
     SqlRetrievalTraceRepository,
+    SqlSessionHybridSearch,
 )
 from career_assistant.adapters.persistence.v2_analysis_repos import (
     SqlV2AnalysisRepository,
@@ -610,6 +611,7 @@ class SqlUnitOfWork:
         self.chunks = SqlChunkRepository(self._session)
         self.v2 = SqlV2AnalysisRepository(self._session, self.roles, self.jobs)
         self.traces = SqlRetrievalTraceRepository(self._session)
+        self.search = SqlSessionHybridSearch(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:
