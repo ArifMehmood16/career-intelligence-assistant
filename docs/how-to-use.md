@@ -5,8 +5,15 @@
 2. **Upload a CV** on Workspace (PDF, DOCX or paste). Optionally upload supporting
    cover letters — Ask and drafting can cite them; they are not fit evidence today.
 3. **Add a role** with a job description. Analysis runs as a job; wait until the role
-   is `ready`. An analysis the model could not complete shows **Analysis incomplete**
-   with a retry, never a fake low score.
+   is `ready`. While it runs, the roles list and the role page show how many tasks
+   are done out of the total, the task running now (for example "Judging each
+   requirement · 5 of 12 requirements"), the elapsed time and an estimate of the time
+   left. A queued analysis shows how many are ahead of it. The estimate comes from
+   your recent analyses, so the first one shows "Estimating time left…" until it
+   has something to go on. An analysis the model could not complete shows
+   **Analysis incomplete** with a retry, never a fake low score.
+   Deleting the role, or the CV, stops its analysis: no further model call is made,
+   although one already in flight finishes first.
 4. **Open the role** and work the tabs:
    - **Fit** — summary, score breakdown, and every scoreable requirement as met /
      partial / missing with cited evidence.

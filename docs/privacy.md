@@ -11,7 +11,9 @@ a paragraph at the end of it:
   that produced it, so "where did this go?" is a query rather than a guess.
 - Every document has an owner and a hard delete that removes original bytes,
   embeddings of requirement and claim text, mappings, drafts, questions, answers and
-  citations — not just the top-level row. An automatic retention window is planned
+  citations — not just the top-level row. Deleting a role or the CV also stops its
+  running analysis, so no further text is sent to a provider for it. Analysis
+  progress rows hold task names, counts and timestamps, never document text. An automatic retention window is planned
   (PLAN 15.2) and not built yet.
 - No CV or cover-letter text, questions, answers, prompts, embeddings, draft bodies or
   model bodies in logs.

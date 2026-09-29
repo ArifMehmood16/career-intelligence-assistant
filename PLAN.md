@@ -1593,6 +1593,20 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       providers only, no live model. `search_evidence` reads the spans already
       retrieved for the question, and `skill_experience` reports no years, because
       hybrid search and the knowledge graph are not on the ask path yet.*
+- [x] **18.11a** Analysis progress and cancellation on delete. *Recorded override
+      (2026-09-29): the human asked for this before 18.12.* While a role is analysed
+      the user sees tasks done of total, the task running now with its counts,
+      elapsed time and an estimate of the time left, and a queued job's place in the
+      queue, on the roles list and the role page, for pipelines v1 and v2. Task rows
+      store keys, counts and timestamps only and go with the job. The estimate is
+      domain arithmetic over this job's pace and the median task durations of the
+      workspace's recent successful analyses, and is shown as unknown rather than
+      guessed. Deleting the role or the CV stops its analysis before the next
+      provider call and is not recorded as a failure. *Done 2026-09-29: hermetic
+      providers on PostgreSQL 16; integration tests delete the role and the CV
+      during the first model call of a v1 and a v2 analysis and assert no second
+      call. A call already in flight is not interrupted. Not observed against a
+      live model, so no estimate accuracy is claimed.*
 - [ ] **18.12** MCP server. `career-assistant-mcp` over stdio, read-only tools from
       the registry with output schemas and `readOnlyHint`; `MCP_ENABLED` and
       `MCP_WORKSPACE_ID` read from the server configuration file, never the launching

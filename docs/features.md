@@ -55,10 +55,14 @@ wide without the system getting complicated: there is one hard problem, solved o
 3. Each file is parsed into spans and its card shows filename, page count and the time
    it was parsed. Nothing is scored yet — there is nothing to score against.
 4. Add a role: title, company, and the job description pasted or uploaded.
-5. The role appears immediately with the status `Analysing`. When the job finishes it
-   carries a score, a band and met/partial/missing counts.
+5. The role appears immediately with the status `Analysing` and its progress: tasks
+   done out of the total, the task running now and its counts, elapsed time, and an
+   estimate of the time left — or its place in the queue. The role page lists every
+   task. When the job finishes it carries a score, a band and met/partial/missing
+   counts.
 6. Delete a role from the workspace table or the role header. Confirmation is required;
-   the role, its mappings, drafts and job description are hard-deleted.
+   the role, its mappings, drafts and job description are hard-deleted. A running
+   analysis for it stops before its next model call.
 7. Replace the CV at any time. Every role is re-analysed against the new one, and the
    old mapping is deleted rather than kept alongside.
 
@@ -81,7 +85,8 @@ wide without the system getting complicated: there is one hard problem, solved o
   image, too large, unsupported type). It is never half-ingested.
 
 **States the UI must carry:** empty (no CV), parsing, parsed, parse failed, no roles,
-role analysing, role failed, role ready, role not found, role load failed. A failed
+role queued, role analysing with progress, time left still estimating, role failed,
+role ready, role not found, role load failed. A failed
 query is an error with retry, never an empty success.
 
 ---

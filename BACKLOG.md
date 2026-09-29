@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, and 18.4–18.11 are done. **18.12 is
-  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.11 and 18.11a are done.
+  **18.12 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -136,6 +136,8 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 - [x] **18.11 — tool registry and agentic Ask.** `search_evidence` and
       `skill_experience` still read the spans already retrieved for the question;
       wiring them to hybrid search and the knowledge graph is open.
+- [x] **18.11a — analysis progress and cancellation on delete** (human request,
+      taken before 18.12). Estimate accuracy against a live model is not measured.
 - [ ] **18.12 — MCP server**, stdio, off by default.
 - [ ] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
       For a v2 role the v1 read routes (requirements, breakdown, gap plan, interview

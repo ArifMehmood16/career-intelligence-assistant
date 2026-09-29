@@ -29,6 +29,49 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 151 — Analysis progress and cancellation on delete (PLAN 18.11a)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.11a, a recorded override taken before 18.12
+- Prompt intent: while an analysis runs after a job description is added, show how
+  many tasks are done out of the total, the elapsed time and the time left for each
+  analysis. Mid-task, the human added a second requirement: stop pending analysis
+  jobs and provider calls when a job description (role) or the CV is deleted.
+- Suggestion: a per-job task plan for each pipeline and a task table holding keys,
+  counts and timestamps only. The time left is domain arithmetic. The worker reports
+  every transition, and the API returns `progress` on jobs and `activeJob` on roles.
+  Cancellation checks the job row before every provider call and locks it before
+  every worker write.
+- Outcome: built as proposed, with three changes found during the work.
+  - Before this change, deleting the CV failed the job as `cv_deleted`, but the
+    worker kept calling the model. In v2 its final write then failed a foreign key
+    and was recorded as a stage failure. The new integration test showed it on the
+    code before the fix: three of four cases failed.
+  - Evidence search became its own v2 task, because it makes one embedding call per
+    requirement before judging starts.
+  - The v1 role-deleted case already stopped after one call with the fixture used:
+    requirement extraction is a single call, and the existing role check ran before
+    the next write. It is kept as a regression test.
+- Reason: a remaining time that is invented looks precise and misleads, so the
+  estimate is unknown until this job's pace or recent history supports one. A call
+  already in flight cannot be interrupted from a synchronous worker without closing
+  a shared HTTP client, so the design only guarantees that no call starts after the
+  delete.
+- Human validation: TBD. Observed:
+  - Backend: ruff, format and mypy clean. 860 unit tests passed, 3 skipped,
+    coverage 84.89%. On PostgreSQL 16.13 with pgvector 0.6.0, 138 integration tests
+    passed, including the new cancellation, task store, worker progress and HTTP
+    progress tests.
+  - Frontend: `tsc --noEmit` and eslint clean. 143 vitest tests passed.
+  - The red runs observed were the domain, tracker, judge-callback, matcher,
+    v2-analysis, cancellation, similarity, header and component tests. The
+    integration tests for the task store, worker progress and HTTP progress, and
+    the roles-list component test, were written alongside the code and were not
+    run red first.
+  - Hermetic providers only. No live model and no real document were used, so the
+    estimate's accuracy is not measured.
+
 ### 150 — Tool registry and the bounded ask agent (PLAN 18.11)
 
 - Date: 2026-09-29
