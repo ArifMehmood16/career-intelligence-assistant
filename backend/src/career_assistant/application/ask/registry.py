@@ -7,12 +7,14 @@ graph is not on this request, and a guess would be a score the model invented.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic.alias_generators import to_camel
 
 from career_assistant.application.ports.tool_calling import ToolDefinition
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
@@ -74,6 +76,8 @@ class _Search(BaseModel):
 
 
 class EvidenceChunk(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     chunk_id: str
     text: str
     document_id: str
@@ -81,10 +85,91 @@ class EvidenceChunk(BaseModel):
     rank: int
 
 
+class _Output(BaseModel):
+    """A tool result as the caller sees it: camelCase keys, nothing undeclared."""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        serialize_by_alias=True,
+        extra="forbid",
+    )
+
+
+class RoleSummary(_Output):
+    role_id: str
+    title: str
+    band: str
+    score: float
+
+
+class RolesOutput(_Output):
+    roles: list[RoleSummary]
+
+
+class ChunksOutput(_Output):
+    chunks: list[EvidenceChunk]
+
+
+class RequirementStatus(_Output):
+    requirement_id: str
+    text: str
+    must_have: bool
+    status: str
+
+
+class RoleAnalysisOutput(_Output):
+    role_id: str
+    band: str
+    score: float
+    requirements: list[RequirementStatus]
+
+
+class RequirementOutput(_Output):
+    requirement_id: str
+    text: str
+    status: str
+    quotes: list[EvidenceChunk]
+
+
+class GapOutput(_Output):
+    requirement_id: str
+    text: str
+    status: str
+    score_delta: float
+
+
+class GapPlanOutput(_Output):
+    role_id: str
+    current_score: float
+    items: list[GapOutput]
+
+
+class SharedRequirement(_Output):
+    text: str
+    status_a: str
+    status_b: str
+
+
+class ComparisonOutput(_Output):
+    shared: list[SharedRequirement]
+    only_a: list[str]
+    only_b: list[str]
+    differentiator: str
+
+
+class SkillOutput(_Output):
+    term: str
+    years: float | None
+    chunks: list[EvidenceChunk]
+
+
 @dataclass(frozen=True, slots=True)
 class ToolRun:
     output: str
     chunks: tuple[tuple[str, str], ...] = ()
+    # Set when the call failed; `output` then holds only the error.
+    error: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,6 +177,7 @@ class RegisteredTool:
     name: str
     description: str
     input_model: type[BaseModel]
+    output_model: type[BaseModel]
     read_only: bool
     invoke: Callable[[BaseModel], ToolRun]
 
@@ -118,11 +204,11 @@ class ToolRegistry:
     def call(self, name: str, arguments: dict[str, object]) -> ToolRun:
         tool = self._by_name.get(name)
         if tool is None or not tool.read_only:
-            return ToolRun(_dump({"error": "unknown_tool", "name": name}))
+            return _error("unknown_tool", name=name)
         try:
             payload = tool.input_model.model_validate(arguments)
         except ValidationError:
-            return ToolRun(_dump({"error": "invalid_input", "name": name}))
+            return _error("invalid_input", name=name)
         return tool.invoke(payload)
 
 
@@ -135,46 +221,71 @@ def evidence_registry(
     """Tools over one ask request. Every one is read-only."""
     bound = _Handlers(roles, pool, rubric)
     specs: tuple[
-        tuple[str, str, type[BaseModel], Callable[[BaseModel], ToolRun]], ...
+        tuple[
+            str,
+            str,
+            type[BaseModel],
+            type[BaseModel],
+            Callable[[BaseModel], ToolRun],
+        ],
+        ...,
     ] = (
-        ("list_roles", "List roles with band and score.", _Empty, bound.list_roles),
+        (
+            "list_roles",
+            "List roles with band and score.",
+            _Empty,
+            RolesOutput,
+            bound.list_roles,
+        ),
         (
             "search_evidence",
             "Search retrieved evidence. Returns verbatim chunks with ids.",
             _Search,
+            ChunksOutput,
             bound.search_evidence,
         ),
         (
             "get_role_analysis",
             "Verdict-style statuses for one role's requirements.",
             _RoleId,
+            RoleAnalysisOutput,
             bound.get_role_analysis,
         ),
         (
             "explain_requirement",
             "One requirement, its status and the spans that support it.",
             _RequirementId,
+            RequirementOutput,
             bound.explain_requirement,
         ),
         (
             "get_gap_plan",
             "Gaps for one role, from the deterministic gap plan.",
             _RoleId,
+            GapPlanOutput,
             bound.get_gap_plan,
         ),
         (
             "compare_roles",
             "Side-by-side deciding requirements for two roles.",
             _Compare,
+            ComparisonOutput,
             bound.compare_roles,
         ),
         (
             "skill_experience",
             "Chunks that name a skill. Years are omitted until the graph is loaded.",
             _Skill,
+            SkillOutput,
             bound.skill_experience,
         ),
-        ("get_chunk", "Verbatim text of one chunk id.", _ChunkId, bound.get_chunk),
+        (
+            "get_chunk",
+            "Verbatim text of one chunk id.",
+            _ChunkId,
+            EvidenceChunk,
+            bound.get_chunk,
+        ),
     )
     return ToolRegistry(
         tuple(
@@ -182,18 +293,21 @@ def evidence_registry(
                 name=name,
                 description=description + _NOTE,
                 input_model=model,
+                output_model=output,
                 read_only=True,
                 invoke=invoke,
             )
-            for name, description, model, invoke in specs
+            for name, description, model, output, invoke in specs
         )
     )
 
 
 def _dump(payload: object) -> str:
-    import json
-
     return json.dumps(payload)
+
+
+def _error(code: str, **detail: str) -> ToolRun:
+    return ToolRun(_dump({"error": code, **detail}), error=code)
 
 
 class _Handlers:
@@ -238,7 +352,7 @@ class _Handlers:
     def get_role_analysis(self, payload: BaseModel) -> ToolRun:
         role = self._role(_role_of(payload))
         if role is None:
-            return ToolRun(_dump({"error": "role_not_found"}))
+            return _error("role_not_found")
         by_id = {item.requirement_id: item.status.value for item in role.mappings}
         return ToolRun(
             _dump(
@@ -294,12 +408,12 @@ class _Handlers:
                 ),
                 _texts(quotes),
             )
-        return ToolRun(_dump({"error": "requirement_not_found"}))
+        return _error("requirement_not_found")
 
     def get_gap_plan(self, payload: BaseModel) -> ToolRun:
         role = self._role(_role_of(payload))
         if role is None:
-            return ToolRun(_dump({"error": "role_not_found"}))
+            return _error("role_not_found")
         plan = build_gap_plan(
             role.requirements, role.mappings, (), self._rubric or _default_rubric()
         )
@@ -323,11 +437,11 @@ class _Handlers:
 
     def compare_roles(self, payload: BaseModel) -> ToolRun:
         if not isinstance(payload, _Compare):
-            return ToolRun(_dump({"error": "invalid_input"}))
+            return _error("invalid_input")
         left = self._role(payload.role_id_a)
         right = self._role(payload.role_id_b)
         if left is None or right is None:
-            return ToolRun(_dump({"error": "role_not_found"}))
+            return _error("role_not_found")
         compared = compare_requirement_sets(
             title_a=left.title,
             title_b=right.title,
@@ -375,7 +489,7 @@ class _Handlers:
         chunk_id = payload.chunk_id if isinstance(payload, _ChunkId) else ""
         found = next((item for item in self._pool if item.span.id == chunk_id), None)
         if found is None:
-            return ToolRun(_dump({"error": "chunk_not_found"}))
+            return _error("chunk_not_found")
         chunk = _chunk(found, 1)
         return ToolRun(_dump(chunk.model_dump()), ((chunk.chunk_id, chunk.text),))
 

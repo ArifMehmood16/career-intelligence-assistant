@@ -107,3 +107,36 @@ def test_the_gap_plan_lists_the_unmet_requirement() -> None:
 
     assert "dbt" in plan.output
     assert "missing" in plan.output
+
+
+_CALLS: dict[str, dict[str, object]] = {
+    "list_roles": {},
+    "search_evidence": {"query": "dbt"},
+    "get_role_analysis": {"role_id": "role-1"},
+    "explain_requirement": {"requirement_id": "dbt"},
+    "get_gap_plan": {"role_id": "role-1"},
+    "compare_roles": {"role_id_a": "role-1", "role_id_b": "role-1"},
+    "skill_experience": {"term": "dbt"},
+    "get_chunk": {"chunk_id": "span-1"},
+}
+
+
+def test_every_tool_output_matches_its_declared_schema() -> None:
+    registry = evidence_registry((_view(),), _pool())
+    assert set(_CALLS) == set(TOOL_NAMES)
+
+    for tool in registry.tools:
+        run = registry.call(tool.name, _CALLS[tool.name])
+        assert run.error is None, tool.name
+        tool.output_model.model_validate_json(run.output)
+
+
+def test_a_failed_call_names_its_error_for_the_caller() -> None:
+    registry = evidence_registry((_view(),), _pool())
+
+    assert registry.call("get_role_analysis", {"role_id": "nope"}).error == (
+        "role_not_found"
+    )
+    assert registry.call("get_chunk", {"chunk_id": "nope"}).error == ("chunk_not_found")
+    assert registry.call("delete_role", {}).error == "unknown_tool"
+    assert registry.call("search_evidence", {}).error == "invalid_input"
