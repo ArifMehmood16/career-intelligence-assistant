@@ -289,6 +289,80 @@ class PipelineSetting(ApiModel):
     pipeline_version: PipelineVersion
 
 
+class DimensionScoreWire(ApiModel):
+    score: int
+    rationale: str
+
+
+class VerdictEvidenceWire(ApiModel):
+    chunk_id: str
+    document_id: str
+    quote: str
+
+
+class VerdictWire(ApiModel):
+    requirement_id: str
+    quote: str
+    statement: str
+    must_have: bool
+    verdict: str
+    requirement_score: float | None
+    match: DimensionScoreWire
+    seniority: DimensionScoreWire | None
+    experience: DimensionScoreWire | None
+    unmet_conditions: list[str]
+    contradiction: bool
+    adjustments: list[str]
+    evidence: list[VerdictEvidenceWire]
+    provider: str
+    model: str
+
+
+class KeywordCoverageWire(ApiModel):
+    exact: list[str]
+    alias: list[str]
+    missing: list[str]
+
+
+class V2GapWire(ApiModel):
+    requirement_id: str
+    dimension: str
+    current: float
+    delta: float
+
+
+class RoleVerdictsWire(ApiModel):
+    role_id: str
+    analysis_id: str
+    fit_score: float
+    band: str
+    gated: bool
+    rubric_version: str
+    left_machine: bool
+    verdicts: list[VerdictWire]
+    keyword_coverage: KeywordCoverageWire
+    gap_plan: list[V2GapWire]
+
+
+class TraceHitWire(ApiModel):
+    chunk_id: str
+    fused_score: float
+    dense_rank: int | None
+    lexical_rank: int | None
+    exact_rank: int | None
+
+
+class TraceRoundWire(ApiModel):
+    round: int
+    query_text: str
+    hits: list[TraceHitWire]
+
+
+class RetrievalTraceWire(ApiModel):
+    requirement_id: str
+    rounds: list[TraceRoundWire]
+
+
 class ProviderChoiceUpdateRequest(ApiModel):
     answer_provider_id: str
     answer_model: str

@@ -25,6 +25,7 @@ from career_assistant.adapters.persistence.supporting_store import (
     SqlSupportingDocumentStore,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
 from career_assistant.logconfig import log_event
 from career_assistant.settings import DatabaseSettings, ProviderSettings
 
@@ -39,6 +40,7 @@ class SqlStores:
     conversations: SqlConversationStore
     provider_choices: SqlProviderSettingsStore
     pipeline: SqlPipelineVersionStore
+    v2_results: SqlV2ResultReader
     analysis_worker: SqlAnalysisWorker
 
 
@@ -72,5 +74,6 @@ def build_sql_stores(
         conversations=SqlConversationStore(uow_factory),
         provider_choices=SqlProviderSettingsStore(uow_factory),
         pipeline=SqlPipelineVersionStore(uow_factory),
+        v2_results=SqlV2ResultReader(uow_factory),
         analysis_worker=SqlAnalysisWorker(uow_factory, providers=providers),
     )

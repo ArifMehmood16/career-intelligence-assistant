@@ -123,6 +123,10 @@ class SqlV2AnalysisRepository:
         self, workspace_id: str, role_id: str, requirement_id: str
     ) -> tuple[RetrievalTrace, ...] | None:
         score = self._score_row(workspace_id, role_id)
+        try:
+            requirement = uuid.UUID(requirement_id)
+        except ValueError:
+            return None
         if score is None:
             return None
         verdict_id = self._session.scalar(
@@ -130,7 +134,7 @@ class SqlV2AnalysisRepository:
                 MatchVerdictRow.workspace_id == uuid.UUID(workspace_id),
                 MatchVerdictRow.analysis_id
                 == uuid.UUID(str(score.explanation["analysis_id"])),
-                MatchVerdictRow.requirement_item_id == uuid.UUID(requirement_id),
+                MatchVerdictRow.requirement_item_id == requirement,
             )
         )
         if verdict_id is None:

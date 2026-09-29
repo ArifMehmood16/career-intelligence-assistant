@@ -41,7 +41,9 @@ from career_assistant.api.routes_pipeline import router as pipeline_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
+from career_assistant.api.routes_verdicts import router as verdicts_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.application.analysis.v2_results import NoV2Results
 from career_assistant.application.ask.memory import InMemoryConversationStore
 from career_assistant.application.ask.service import ConversationStore
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
@@ -59,6 +61,7 @@ from career_assistant.application.ports.extraction import (
     RequirementExtractionPort,
 )
 from career_assistant.application.ports.observability import AuditRecorder
+from career_assistant.application.ports.v2_results import V2ResultReader
 from career_assistant.application.providers.accounting import CallAccountant
 from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.providers.choice_store import (
@@ -200,6 +203,7 @@ def create_app(
     analysis_worker: SqlAnalysisWorker | None = None,
     audit_recorder: AuditRecorder | None = None,
     pipeline_store: PipelineVersionStore | None = None,
+    v2_results: V2ResultReader | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -260,6 +264,7 @@ def create_app(
     app.state.pipeline_store = (
         pipeline_store if pipeline_store is not None else InMemoryPipelineVersionStore()
     )
+    app.state.v2_results = v2_results if v2_results is not None else NoV2Results()
     app.state.analysis_worker = analysis_worker
     if isinstance(resolved_conversation, SqlConversationStore):
         app.state.call_accountant = SqlCallAccountant(
@@ -277,6 +282,7 @@ def create_app(
     app.include_router(spans_router, prefix="/api")
     app.include_router(roles_router, prefix="/api")
     app.include_router(analysis_router, prefix="/api")
+    app.include_router(verdicts_router, prefix="/api")
     app.include_router(messages_router, prefix="/api")
     return app
 
@@ -318,6 +324,7 @@ def create_production_app(
         provider_choice_store=stores.provider_choices,
         analysis_worker=stores.analysis_worker,
         pipeline_store=stores.pipeline,
+        v2_results=stores.v2_results,
     )
 
 

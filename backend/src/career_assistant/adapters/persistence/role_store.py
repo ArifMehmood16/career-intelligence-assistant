@@ -30,6 +30,7 @@ from career_assistant.application.ports.persistence import (
     ParseStatus,
     RoleRecord,
 )
+from career_assistant.application.ports.v2_results import V2RoleResult
 from career_assistant.application.roles.hermetic_analysis import (
     AnalysisBundle,
     band_label,
@@ -51,6 +52,7 @@ from career_assistant.domain.jobs import (
     new_role_analysis_job,
 )
 from career_assistant.domain.mapping import MappingStatus
+from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.domain.requirements import ItemType, Requirement
@@ -424,7 +426,11 @@ class SqlRoleStore:
                 ScoreExplanationRow.invalidated.is_(False),
             )
         )
-        mappings = uow.analysis.list_mappings(workspace_id, record.id)
+        counts = (
+            _verdict_counts(uow.v2.result(workspace_id, record.id))
+            if score_row is not None and _is_v2(score_row)
+            else count_statuses(uow.analysis.list_mappings(workspace_id, record.id))
+        )
         fit_score = int(round(score_row.score)) if score_row is not None else 0
         band = score_row.band if score_row is not None else "unscored"
         jd = uow.documents.get(workspace_id, record.job_description_document_id)
@@ -438,7 +444,7 @@ class SqlRoleStore:
             company=record.company,
             fit_score=fit_score,
             band_label=band_label(band),
-            counts=count_statuses(mappings),
+            counts=counts,
             status=record.status.value,
             updated_at=created,
             description=description,
@@ -633,6 +639,17 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
         if isinstance(raw, list):
             ids.extend(str(item) for item in raw)
     return tuple(dict.fromkeys(ids))
+
+
+def _is_v2(score_row: ScoreExplanationRow) -> bool:
+    return score_row.explanation.get("pipeline_version") == PipelineVersion.V2.value
+
+
+def _verdict_counts(result: V2RoleResult | None) -> dict[str, int]:
+    counts = {"met": 0, "partial": 0, "missing": 0}
+    for stored in result.verdicts if result is not None else ():
+        counts[stored.verdict.verdict] += 1
+    return counts
 
 
 def _job_view(job: AnalysisJob) -> JobView:

@@ -16,6 +16,7 @@ from career_assistant.adapters.persistence.pipeline_store import (
 )
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
 from career_assistant.main import create_app
 
 FIXTURES = Path(__file__).resolve().parents[3] / "sample-data" / "fixtures"
@@ -40,6 +41,7 @@ def sql_app(session_factory: sessionmaker[Session]) -> SqlApp:
             cv_store=cv_store,
             role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
             pipeline_store=SqlPipelineVersionStore(uow_factory),
+            v2_results=SqlV2ResultReader(uow_factory),
         )
     )
     return SqlApp(client, SqlAnalysisWorker(uow_factory), uow_factory)

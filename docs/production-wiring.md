@@ -32,6 +32,13 @@ Provider resolvers:
   Phase 2 embedding factory, egress-checked at construction and call time; used
   by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
   over vectors.
+- `build_structured_port` — used by `SqlAnalysisWorker` only when the workspace
+  pipeline is `v2` (`PUT /api/settings/pipeline`). The workspace answer choice
+  drives the chunker, taxonomist and judge through `V2JobRunner`, wrapped in
+  `AccountingCompletion`; hermetic uses `HermeticStructuredCompleter`. Chunks are
+  embedded through `build_embedding_port`, and hybrid search runs on
+  `SqlSessionHybridSearch`. Retrieval covers CV chunks only; cover letters are
+  not searched yet. A `v1` workspace (the default) keeps the resolvers above.
 - `list_provider_catalogue` / `apply_provider_choice` — catalogue and egress
   acknowledgement only; no document text leaves the process
 
@@ -56,6 +63,8 @@ Provider resolvers:
 | GET /api/roles/{role_id}/requirements | stored mappings | none | SqlRoleStore |
 | GET /api/roles/{role_id}/breakdown | stored score explanation | none | SqlRoleStore |
 | GET /api/roles/{role_id}/gap-plan | build_gap_plan | none | SqlRoleStore |
+| GET /api/roles/{role_id}/verdicts | stored v2 verdicts, fit, keyword coverage and gap plan (409 `analysis_incomplete` without a v2 analysis) | none | SqlV2ResultReader (SqlV2AnalysisRepository) |
+| GET /api/roles/{role_id}/verdicts/{requirement_id}/trace | stored retrieval traces for one verdict | none | SqlV2ResultReader (SqlRetrievalTraceRepository) |
 | GET /api/roles/{role_id}/interview-pack | generate_draft (phrasing) | completion_port_for | SqlRoleStore |
 | POST /api/roles/{role_id}/bullets | generate_draft | completion_port_for | SqlRoleStore |
 | POST /api/roles/{role_id}/cover-letter | generate_draft | completion_port_for | SqlRoleStore |
