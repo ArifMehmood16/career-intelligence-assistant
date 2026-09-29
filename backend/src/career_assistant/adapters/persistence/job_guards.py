@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol
 
+from career_assistant.application.ports.errors import JobCancelled
 
-class JobCancelled(Exception):
-    """The role was deleted while its analysis was still running."""
+__all__ = ["JobCancelled", "require_documents", "require_role"]
 
 
 class DocumentReader(Protocol):

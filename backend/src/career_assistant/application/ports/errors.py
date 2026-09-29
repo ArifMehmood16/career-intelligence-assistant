@@ -27,6 +27,14 @@ class ProviderTransientError(ProviderError):
     """Retryable upstream failure (429/5xx after local classification)."""
 
 
+class JobCancelled(Exception):
+    """The job this work belongs to was deleted or stopped: end it quietly.
+
+    Raised when a role or the CV is deleted mid-analysis. It is not a failure, so
+    nothing is recorded against the job.
+    """
+
+
 class StructuredOutputError(Exception):
     """The model replied, but not with a usable contract object."""
 
