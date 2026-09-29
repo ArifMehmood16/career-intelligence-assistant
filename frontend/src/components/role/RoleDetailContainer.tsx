@@ -498,6 +498,7 @@ export function RoleDetailContainer({ roleId }: RoleDetailContainerProps) {
         state={headerState}
         failureCode={failureCode}
         failureReason={failureReason}
+        observedAt={roleQuery.dataUpdatedAt}
         onRetry={() => {
           if (headerState === "failed") {
             reanalyse.mutate();
