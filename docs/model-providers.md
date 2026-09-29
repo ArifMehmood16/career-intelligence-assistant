@@ -20,6 +20,31 @@ The two ports are independent on purpose. Anthropic serves no embedding model, s
 selecting it for completion leaves embeddings wherever they already were — and local
 embeddings with a hosted completer is a sensible configuration in its own right.
 
+## Model limits and structured output
+
+Each model tag's context window, output limit and capabilities — tool calling, prompt
+caching, and whether it accepts a temperature or a seed — come from
+[config/models.toml](../config/models.toml). A tag the file does not name uses its
+provider's conservative defaults. Add a row when you configure a new model tag.
+
+Where the model supports it (`native_structured_output` in the catalogue), the
+provider's API enforces the JSON schema. Otherwise the adapter sends what v1 sent.
+
+| Provider | Native structured output | Otherwise | Truncation |
+|---|---|---|---|
+| Ollama | `/api/chat` with the schema as `format`; `num_ctx` is always sent from the catalogue, so the prompt window is the one the descriptor reports | — (every model) | `done_reason: length` |
+| OpenAI | `json_schema` with `strict: true`; the schema is adapted to strict mode, and the nulls strict mode forces into optional fields are removed from the reply | `json_schema` without `strict` | `finish_reason: length` |
+| Anthropic | `output_config.format`, with the schema adapted to the supported subset of JSON Schema | The schema in the prompt. The configured default, `claude-sonnet-4-0`, is on this path: Anthropic lists structured outputs from Sonnet 4.5 | `stop_reason: max_tokens`, reported as `length` |
+| Hermetic | Scripted, schema-shaped fixtures | — | — |
+
+Constraints an API cannot enforce, such as a numeric range, move into the field's
+description. Temperature and seed are sent only when the catalogue says the model
+accepts them.
+
+Embedding requests say whether they embed a query or a document, and the catalogue's
+prefixes for that model are applied — `search_query:` and `search_document:` for
+`nomic-embed-text`. A request with no input type is embedded exactly as before.
+
 ## The egress gate
 
 Hosted providers are unreachable unless two things are true: `ALLOW_HOSTED_PROVIDERS`

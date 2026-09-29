@@ -28,8 +28,8 @@ product and threat-model decision.
   blocker.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
-- Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29. **18.1 is the next
-  item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+- Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29 and 18.1 is done.
+  **18.2 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -97,8 +97,9 @@ not block 13D.
       dependency-audit and secret-scan results. Run container/filesystem scanning only
       for a supported container path.
 - [ ] **16.1 and 16.4 — choose and prove the Docker support outcome.** Either repair
-      the known Compose/provider/configuration drift, build the images and verify one
-      clean startup, or remove Docker from the supported quick-start claims. Do not
+      the known Compose/provider/configuration drift — the backend image copies
+      neither `config/scoring_rubric.toml` nor `config/models.toml`, which the API
+      reads at start-up — build the images and verify one clean startup, or remove Docker from the supported quick-start claims. Do not
       maintain two equivalent clean-room walkthroughs merely for symmetry.
 - [ ] **16.5 — add one minimal Playwright smoke journey.** Upload a CV, add a role,
       wait for analysis, then view fit and cited evidence. Keep duplicate uploads,
@@ -118,7 +119,7 @@ not block 13D.
 
 In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 
-- [ ] **18.1 — provider foundations:** native structured output, `num_ctx`,
+- [x] **18.1 — provider foundations:** native structured output, `num_ctx`,
       per-model limits, truncation, embedding input type.
 - [ ] **18.2 — LLM contracts:** Pydantic schemas and the repair message.
 - [ ] **18.3 — chunk store and migration**, proven on local PostgreSQL and on

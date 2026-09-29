@@ -29,6 +29,62 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 139 — Provider foundations for v2 (PLAN 18.1)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.1
+- Prompt intent: continue with Phase 18 in TDD fashion with regular commits and
+  the documentation kept current.
+- Suggestion: a per-model catalogue in `config/models.toml` behind the capability
+  descriptor; native structured output on every hosted API with a schema adapted
+  to each dialect; Ollama's chat API with an explicit `num_ctx`; truncation as
+  `finish_reason: length` everywhere; temperature and seed gated by the catalogue;
+  embedding input types with the model's task prefixes.
+- Outcome: accepted
+- Reason: every change is additive for v1. A request with no input type, no
+  temperature and no seed is sent as before, apart from the schema now being
+  enforced by the API. Two findings changed the work while it ran. OpenAI strict
+  mode forces every optional property to be present as null, and the v1 claim and
+  requirement extractors read optional fields with `str(item.get(...))`, which
+  would have stored the text "None"; the adapter now removes those forced nulls
+  from the reply. The Ollama embedding call sends `num_ctx` too, because the
+  completion fix alone would have left the same silent cut on embeddings. A check
+  of Anthropic's supported-model list during the checkpoint found that the
+  configured default, `claude-sonnet-4-0`, predates structured outputs, so native
+  enforcement became a per-model catalogue flag (f677b77) and that model keeps the
+  v1 prompt instruction.
+- Human validation: TBD. Observed in this session, on the local VM with Python
+  3.14.7: each behaviour's test failed first on an assertion or on the missing
+  parameter it introduces, then passed; after the last commit `ruff check`,
+  `ruff format --check` and `mypy` were clean and `pytest` gave 541 passed,
+  3 skipped, 58 deselected, coverage 83.88%. Two contract tests passed on their
+  first run and are recorded as regression tests. No live provider, database or
+  frontend command was run; bun is not installed on the VM and no frontend file
+  changed.
+
+### 138 — Accept the v2 design and split the README
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.0; README maintenance
+- Prompt intent: "let's continue" after the design summary; then keep the README
+  updated, remove clutter from it, and move detail into linked sub-files.
+- Suggestion: record 18.0 as accepted without amendment, and move the README's long
+  sections unchanged into eight pages under `docs/`, keeping a short README with a
+  documentation index.
+- Outcome: accepted, with one correction
+- Reason: the human's instruction to continue was taken as acceptance of ADRs
+  013–015 as written; the plan records that reading. The README split moved text
+  without editing it, apart from relative links. It also moved the provider table
+  and the ADR pointers that `test_readme_status_matches_observed_phase_13c_behaviour`
+  checks, and that test failed on the next full run. The check was changed to read
+  the README and the pages it links, keeping every assertion, and
+  `docs/architecture.md` regained the ADR 010–012 pointers the old documentation
+  table carried. The commit that broke the test is fffad11; the fix is b6ed3e7.
+- Human validation: TBD. Observed: every relative link and anchor in the
+  repository's Markdown resolved; the full backend suite passed after the fix.
+
 ### 137 — Design the v2 architecture: chunks, hybrid search, a model judge, agents and MCP
 
 - Date: 2026-09-29

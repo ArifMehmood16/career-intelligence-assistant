@@ -1479,7 +1479,7 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       ADRs 004, 009, 010 and 011 get a one-line pointer to what supersedes them. No
       implementation starts before this box is ticked. *Accepted by the human on
       2026-09-29 without amendment ("let's continue" after the design summary).*
-- [ ] **18.1** Provider foundations. Structured output is enforced by each API:
+- [x] **18.1** Provider foundations. Structured output is enforced by each API:
       Ollama moves to `/api/chat` with `format` set to the schema and `num_ctx` set
       explicitly; OpenAI sends `strict: true`; Anthropic uses `output_config.format`.
       Capability descriptors read context window and output limits from a per-model
@@ -1490,7 +1490,10 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       finish reason on every adapter. `EmbeddingRequest` gains `input_type`; the
       Ollama adapter applies nomic prefixes and sets `num_ctx` on embedding calls.
       The contract suite covers all of it for all four adapters with recorded
-      fixtures and no network.
+      fixtures and no network. *Done 2026-09-29: `config/models.toml`, the
+      schema dialects, the chat API and the task prefixes; v1 requests are sent as
+      before except for the native schema enforcement. Not run against a live
+      provider.*
 - [ ] **18.2** LLM contracts. Pydantic models in `application/contracts/` for the
       chunking, taxonomy, judge and agent-answer payloads are the single source of
       each JSON schema. A validation error renders as the text of a repair request.
