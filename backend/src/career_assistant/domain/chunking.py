@@ -18,6 +18,7 @@ from dataclasses import dataclass, replace
 
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.lines import NumberedLine
+from career_assistant.domain.recency import DateRange, parse_date_range
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +33,7 @@ class RoleProposal:
     title: str | None = None
     date_text: str | None = None
     seniority_level: str | None = None
+    dates: DateRange | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -272,7 +274,12 @@ def _verbatim_role(
     }
     kept = {k: v for k, v in fields.items() if v is not None and _norm(v) in haystack}
     lost = sum(1 for v in fields.values() if v is not None) - len(kept)
-    return replace(role, **{**dict.fromkeys(fields), **kept}), lost
+    date_text = kept.get("date_text")
+    dates = parse_date_range(date_text) if isinstance(date_text, str) else None
+    return (
+        replace(role, **{**dict.fromkeys(fields), **kept}, dates=dates),
+        lost,
+    )
 
 
 def _checked_requirements(

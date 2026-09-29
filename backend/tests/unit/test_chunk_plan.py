@@ -7,6 +7,8 @@ that is not in the text, such as an invented technology, is dropped and counted.
 
 from __future__ import annotations
 
+from datetime import date
+
 from career_assistant.domain.chunking import (
     AtomicRequirementProposal,
     ChunkLimits,
@@ -17,6 +19,7 @@ from career_assistant.domain.chunking import (
 )
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.lines import number_lines
+from career_assistant.domain.recency import DateRange
 
 CV = (
     "Jane Doe\n"
@@ -193,6 +196,28 @@ def test_evidence_eligibility_follows_the_chunk_kind() -> None:
     plan = _cv_plan(*_good_cv())
 
     assert [c.evidence_eligible for c in plan.chunks] == [False, False, True, True]
+
+
+def test_a_role_date_text_is_parsed_and_an_unparsed_date_leaves_the_role_undated() -> (
+    None
+):
+    parsed = _cv_plan(*_good_cv()).chunks[1].role
+    assert parsed is not None
+    assert parsed.dates == DateRange(start=date(2021, 3, 1), end=date(2024, 12, 1))
+
+    chunks = _good_cv()
+    chunks[1] = ProposedChunk(
+        first_line=3,
+        last_line=3,
+        kind="role_heading",
+        role=RoleProposal(
+            employer="Northwind",
+            title="Senior Data Engineer",
+            date_text="Northwind",
+        ),
+    )
+    role = _cv_plan(*chunks).chunks[1].role
+    assert role is not None and role.date_text == "Northwind" and role.dates is None
 
 
 def _jd_plan(
