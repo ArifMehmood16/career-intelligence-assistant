@@ -82,6 +82,20 @@ class ProgressSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class ProgressView:
+    """What a person watching the analysis is shown."""
+
+    tasks: tuple[JobTask, ...]
+    tasks_done: int
+    tasks_total: int
+    fraction: float
+    current: TaskKey | None
+    elapsed_seconds: float | None
+    remaining_seconds: float | None
+    queue_position: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class TaskBaseline:
     """Recent median durations of one task, whole and per counted unit."""
 
@@ -96,8 +110,16 @@ class TaskSample:
     units: int | None
 
 
+Baselines = Mapping[PipelineVersion, Mapping[TaskKey, TaskBaseline]]
+
+
 def plan_for(pipeline: PipelineVersion) -> tuple[JobTask, ...]:
     return tuple(JobTask(key) for key in _PLANS[pipeline])
+
+
+def pipeline_of(tasks: Sequence[JobTask]) -> PipelineVersion | None:
+    keys = tuple(task.key for task in tasks)
+    return next((p for p, plan in _PLANS.items() if plan == keys), None)
 
 
 def start(
@@ -207,6 +229,31 @@ def estimate_remaining(
     return total
 
 
+def progress_view(
+    *,
+    state: JobState,
+    started_at: datetime | None,
+    finished_at: datetime | None,
+    tasks: Sequence[JobTask],
+    now: datetime,
+    baselines: Baselines,
+    ahead: Sequence[Sequence[JobTask]] = (),
+) -> ProgressView:
+    """A job's progress. `ahead` is the tasks of each live job before a queued one."""
+    settled = settle(tasks, state)
+    summary = summarise(settled)
+    return ProgressView(
+        tasks=settled,
+        tasks_done=summary.tasks_done,
+        tasks_total=summary.tasks_total,
+        fraction=summary.fraction,
+        current=summary.current.key if summary.current is not None else None,
+        elapsed_seconds=_elapsed(started_at, finished_at, now),
+        remaining_seconds=_job_remaining(state, settled, now, baselines, ahead),
+        queue_position=len(ahead) if state is JobState.QUEUED else None,
+    )
+
+
 def baselines_from(samples: Iterable[TaskSample]) -> dict[TaskKey, TaskBaseline]:
     seconds: dict[TaskKey, list[float]] = defaultdict(list)
     per_unit: dict[TaskKey, list[float]] = defaultdict(list)
@@ -221,6 +268,37 @@ def baselines_from(samples: Iterable[TaskSample]) -> dict[TaskKey, TaskBaseline]
         )
         for key, values in seconds.items()
     }
+
+
+def _elapsed(
+    started_at: datetime | None, finished_at: datetime | None, now: datetime
+) -> float | None:
+    if started_at is None:
+        return None
+    return max(0.0, ((finished_at or now) - started_at).total_seconds())
+
+
+def _job_remaining(
+    state: JobState,
+    tasks: Sequence[JobTask],
+    now: datetime,
+    baselines: Baselines,
+    ahead: Sequence[Sequence[JobTask]],
+) -> float | None:
+    if state is JobState.SUCCEEDED:
+        return 0.0
+    if state is JobState.FAILED:
+        return None
+    waiting = ahead if state is JobState.QUEUED else ()
+    total = 0.0
+    for job_tasks in (*waiting, tasks):
+        pipeline = pipeline_of(job_tasks)
+        known = baselines.get(pipeline, {}) if pipeline is not None else {}
+        left = estimate_remaining(job_tasks, now=now, baselines=known)
+        if left is None:
+            return None
+        total += left
+    return total
 
 
 def _task_remaining(

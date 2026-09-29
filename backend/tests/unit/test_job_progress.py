@@ -20,7 +20,9 @@ from career_assistant.domain.progress import (
     enter,
     estimate_remaining,
     finish,
+    pipeline_of,
     plan_for,
+    progress_view,
     settle,
     skip,
     start,
@@ -214,3 +216,105 @@ def test_baselines_are_medians_of_recent_tasks() -> None:
 
     assert baselines[TaskKey.READ_CV] == TaskBaseline(seconds=30)
     assert baselines[TaskKey.JUDGE] == TaskBaseline(seconds=12, seconds_per_unit=2.5)
+
+
+_V1_BASELINES = {
+    PipelineVersion.V1: {
+        TaskKey.READ_ADVERT: TaskBaseline(seconds=30),
+        TaskKey.READ_CV: TaskBaseline(seconds=50),
+        TaskKey.MATCH: TaskBaseline(seconds=20),
+    }
+}
+
+
+def test_a_running_jobs_view_counts_times_and_names_the_current_task() -> None:
+    tasks = _running(PipelineVersion.V1, TaskKey.READ_CV)
+
+    view = progress_view(
+        state=JobState.RUNNING,
+        started_at=T0,
+        finished_at=None,
+        tasks=tasks,
+        now=_at(15),
+        baselines=_V1_BASELINES,
+    )
+
+    assert (view.tasks_done, view.tasks_total) == (2, 5)
+    assert view.current is TaskKey.READ_CV
+    assert view.elapsed_seconds == 15
+    assert view.remaining_seconds == 35 + 20
+    assert view.queue_position is None
+
+
+def test_a_failed_jobs_view_marks_where_it_stopped_and_has_no_time_left() -> None:
+    tasks = _running(PipelineVersion.V1, TaskKey.MATCH)
+
+    view = progress_view(
+        state=JobState.FAILED,
+        started_at=T0,
+        finished_at=_at(40),
+        tasks=tasks,
+        now=_at(99),
+        baselines=_V1_BASELINES,
+    )
+
+    assert view.tasks[3].state is TaskState.FAILED
+    assert view.current is None
+    assert view.elapsed_seconds == 40
+    assert view.remaining_seconds is None
+
+
+def test_a_succeeded_jobs_view_has_nothing_left() -> None:
+    view = progress_view(
+        state=JobState.SUCCEEDED,
+        started_at=T0,
+        finished_at=_at(70),
+        tasks=finish(
+            _running(PipelineVersion.V1, TaskKey.SCORE), TaskKey.SCORE, at=_at(70)
+        ),
+        now=_at(99),
+        baselines={},
+    )
+
+    assert (view.tasks_done, view.remaining_seconds) == (5, 0)
+
+
+def test_a_queued_job_waits_for_the_jobs_ahead_then_its_own_tasks() -> None:
+    ahead_running = _running(PipelineVersion.V1, TaskKey.MATCH)  # 20 s, 10 gone
+    ahead_queued = plan_for(PipelineVersion.V1)  # 100 s
+
+    view = progress_view(
+        state=JobState.QUEUED,
+        started_at=None,
+        finished_at=None,
+        tasks=plan_for(PipelineVersion.V1),
+        now=_at(10),
+        baselines=_V1_BASELINES,
+        ahead=(ahead_running, ahead_queued),
+    )
+
+    assert view.queue_position == 2
+    assert view.elapsed_seconds is None
+    assert view.remaining_seconds == 10 + 100 + 100
+
+
+def test_a_queued_jobs_time_is_unknown_when_any_job_ahead_is() -> None:
+    view = progress_view(
+        state=JobState.QUEUED,
+        started_at=None,
+        finished_at=None,
+        tasks=plan_for(PipelineVersion.V1),
+        now=_at(10),
+        baselines=_V1_BASELINES,
+        ahead=(_running(PipelineVersion.V2, TaskKey.READ_CV),),
+    )
+
+    assert view.remaining_seconds is None
+
+
+def test_the_pipeline_is_read_from_the_task_plan() -> None:
+    assert pipeline_of(plan_for(PipelineVersion.V2)) is PipelineVersion.V2
+    assert pipeline_of(_running(PipelineVersion.V1, TaskKey.MATCH)) is (
+        PipelineVersion.V1
+    )
+    assert pipeline_of(()) is None
