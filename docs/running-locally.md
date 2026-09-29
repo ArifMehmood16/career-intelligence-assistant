@@ -38,11 +38,13 @@ creates the `DATABASE_URL` and `TEST_DATABASE_URL` databases when they are missi
 the role in those URLs must already exist and be allowed to `CREATE DATABASE`.
 Application tables live in the dedicated Postgres schema `career_assistant` (not
 `public`); Alembic creates that schema and owns the table set. pgvector lives in an
-`extensions` schema, where Supabase keeps it; the v2 migration (PLAN 18.3) moves it
-there from `public`. That move needs the role in `DATABASE_URL` to own the
-extension, which it does when the migrations created it. If a superuser created
-pgvector by hand, have a superuser run `CREATE SCHEMA IF NOT EXISTS extensions;
-ALTER EXTENSION vector SET SCHEMA extensions;` once before `make db-migrate`. Every
+`extensions` schema, where Supabase keeps it. `make db-migrate` creates that schema
+and moves pgvector into it (PLAN 18.3); nothing needs running by hand when the
+migrations installed pgvector, because the role in `DATABASE_URL` then owns it. Only
+if pgvector was installed by a different role — for example `CREATE EXTENSION vector`
+run as `postgres` — does the migration stop with `must be owner of extension vector`;
+then have a superuser run `CREATE SCHEMA IF NOT EXISTS extensions; ALTER EXTENSION
+vector SET SCHEMA extensions;` once, and run `make db-migrate` again. Every
 application table has row-level security enabled with no policies: the owning role
 is unaffected, and any other role reads nothing. `make run-docker`
 instead starts the Compose `db` container; the API reaches it privately as
