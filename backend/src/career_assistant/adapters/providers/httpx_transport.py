@@ -7,6 +7,10 @@ from collections.abc import Mapping
 import httpx
 
 from career_assistant.adapters.providers.http_transport import HttpResponse
+from career_assistant.application.ports.errors import (
+    ProviderTransientError,
+    ProviderUnavailableError,
+)
 
 
 class HttpxTransport:
@@ -37,6 +41,10 @@ class HttpxTransport:
                 body=response.content,
                 headers=dict(response.headers),
             )
+        except httpx.TimeoutException as exc:
+            raise ProviderTransientError("provider request timed out") from exc
+        except httpx.TransportError as exc:
+            raise ProviderUnavailableError("provider could not be reached") from exc
         finally:
             if self._owns_client and self._client is None:
                 client.close()
