@@ -13,6 +13,7 @@ from career_assistant.adapters.persistence.analysis_repos import (
     SqlAnalysisResultRepository,
     SqlRoleRepository,
 )
+from career_assistant.adapters.persistence.chunk_repos import SqlChunkRepository
 from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
 from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRepository
 from career_assistant.adapters.persistence.graph_repos import (
@@ -603,6 +604,7 @@ class SqlUnitOfWork:
         self.drafts = SqlDraftRepository(self._session)
         self.embeddings = SqlEmbeddingRepository(self._session)
         self.graph = SqlKnowledgeGraphRepository(self._session)
+        self.chunks = SqlChunkRepository(self._session)
         self.traces = SqlRetrievalTraceRepository(self._session)
         return self
 
