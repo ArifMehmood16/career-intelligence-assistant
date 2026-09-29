@@ -29,6 +29,49 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 145 — The model judge and the server's rules (PLAN 18.7)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.7
+- Prompt intent: continue the remaining Phase 18 work in TDD commits.
+- Suggestion:
+  - ADR 014's rules and caps as pure domain code over proposal value objects, as
+    `domain/chunking.py` does.
+  - Graph facts per required term: exact, alias-only or missing, with years.
+  - A stable-first prompt, batched from the capability descriptor.
+  - A cache key over everything the judge saw.
+  - A use case with one repair call.
+  - A rule-based hermetic judge.
+- Outcome: changed during the work.
+  - The fact tests were first written with hand-built `Chunk` objects, then
+    rewritten through `validate_chunk_plan`, as the graph tests do.
+  - The hermetic fixture tests first imported the use case's private mapping;
+    they were rewritten through `RequirementJudge`.
+  - A duplicated whole-word term finder became one `find_term` in its own
+    `refactor` commit. A verification pipe (`mypy | tail`) hid a type error, so
+    that commit was made broken. It was amended before any push, with the
+    domain change applied and verified under `pipefail`.
+  - The model digest is only half done. `ModelIdentity` carries it into the
+    key, but no adapter reports one, because reading Ollama's digest would
+    change a port. It stays open for the human.
+- Reason:
+  - A problem goes back to the model with ids and fields only.
+  - A schema failure the port already repaired is not repaired again.
+  - Truncation splits rather than repairs, as the error type asks.
+  - A fallback model's verdict is never cached under the primary's key.
+- Human validation: TBD. Observed:
+  - The rules (18 of 20), fact, prompt, key and use-case tests failed on
+    assertions against stubs, then passed. The two rules tests that passed
+    against the stub pass vacuously there and are meaningful after.
+  - The hermetic tests failed on "no hermetic fixture for JudgeResponse", then
+    passed.
+  - The injection tests passed on their first run, as regression tests. The
+    obedient-judge test failed when the evidence rule was disabled in memory.
+  - `make lint` clean. `make test`: 749 passed, 3 skipped, 96 deselected,
+    coverage 85.65%, and 124 frontend tests passed.
+  - Integration: 95 passed; no persistence changed.
+
 ### 144 — Hybrid search as one PostgreSQL function (PLAN 18.6)
 
 - Date: 2026-09-29

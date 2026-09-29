@@ -1557,6 +1557,10 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       hash, including the model digest where exposed and the `as_of` date;
       analysis incomplete on a second failure. The existing job-description injection
       fixture is extended to the judge. Hermetic judge fixture for default tests.
+      *Implemented 2026-09-29 (`domain/judging.py`, `domain/candidate_facts.py`,
+      `application/judge/`), except the digest source: `ModelIdentity` carries a
+      digest into the key, but no adapter reports one. Open until the human
+      decides how Ollama's digest is read.*
 - [ ] **18.8** Corrective retrieval. `retrieval_feedback` with `rewrite_query`; one
       rewrite per requirement and a per-analysis cap; merged candidates; both rounds
       in the trace. Tests cover the cap, a rewrite that finds nothing, and a rewrite

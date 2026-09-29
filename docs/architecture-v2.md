@@ -607,6 +607,26 @@ verified at ingestion (§5). Depth without a number is part of match.
 A batch that fails validation gets one repair call listing the exact errors. A
 requirement still invalid after that makes the analysis incomplete.
 
+As built (PLAN 18.7), the rules live in `domain/judging.py` and the use case in
+`application/judge/service.py`:
+
+- The repair call carries only the requirements that failed, with each problem
+  named by requirement id and field. Problems never repeat document text.
+- A verdict for a requirement that was not sent is dropped, not repaired.
+- A met verdict whose match a cap lowers below 3 becomes partial, and that is
+  recorded too.
+- The structured-output port already makes one schema repair. A reply still
+  invalid after it leaves its batch incomplete, with no second judge call. A
+  truncated reply splits the batch in half. A refusal, a transient failure or an
+  oversized input leaves the batch incomplete. A closed egress gate or an
+  unavailable provider is not a verdict, so it propagates.
+- The judge sends temperature 0 and seed 0 only when the descriptor says the
+  model accepts them.
+- The cache key leaves out the requirement id, so an unchanged re-extraction
+  reuses its verdict. A verdict is cached only when the model that answered is
+  the configured one, so a fallback's answer is never replayed as the primary's.
+  The key takes a model digest, but no adapter reports one yet (`BACKLOG.md`).
+
 ### Corrective retrieval (the bounded agentic step)
 
 When the judge sets `retrieval_feedback.sufficient` to `false`, it must supply a
