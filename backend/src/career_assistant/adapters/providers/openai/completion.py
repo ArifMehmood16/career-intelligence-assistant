@@ -91,7 +91,10 @@ class OpenAICompletionAdapter:
             choice = (data.get("choices") or [{}])[0]
             message = choice.get("message") or {}
             text = str(message.get("content") or "")
-            if request.json_schema is not None:
+            if (
+                request.json_schema is not None
+                and self._profile.native_structured_output
+            ):
                 text = drop_strict_mode_nulls(text, request.json_schema)
             if choice.get("finish_reason") == "content_filter" or not text:
                 if choice.get("finish_reason") == "content_filter":
@@ -110,6 +113,15 @@ class OpenAICompletionAdapter:
 
         return self._resilience.run(_call)
 
+    def _json_schema(self, schema: dict[str, Any]) -> dict[str, object]:
+        if not self._profile.native_structured_output:
+            return {"name": "career_assistant_payload", "schema": schema}
+        return {
+            "name": "career_assistant_payload",
+            "strict": True,
+            "schema": openai_strict_schema(schema),
+        }
+
     def _body(self, request: CompletionRequest) -> dict[str, object]:
         body: dict[str, object] = {
             "model": self._model_tag,
@@ -123,11 +135,7 @@ class OpenAICompletionAdapter:
         if request.json_schema is not None:
             body["response_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": "career_assistant_payload",
-                    "strict": True,
-                    "schema": openai_strict_schema(request.json_schema),
-                },
+                "json_schema": self._json_schema(request.json_schema),
             }
         if request.temperature is not None and self._profile.supports_temperature:
             body["temperature"] = request.temperature

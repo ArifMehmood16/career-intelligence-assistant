@@ -41,12 +41,13 @@ def _resilience() -> ResiliencePolicy:
     )
 
 
-def _profile(*, sampling: bool) -> ModelProfile:
+def _profile(*, sampling: bool, native: bool) -> ModelProfile:
     return ModelProfile(
         context_window_tokens=128_000,
         max_output_tokens=16_384,
         supports_temperature=sampling,
         supports_seed=sampling,
+        native_structured_output=native,
     )
 
 
@@ -71,14 +72,14 @@ def _openai_reply(finish_reason: str = "stop") -> dict[str, object]:
 
 
 def _openai(
-    transport: RecordingTransport, *, sampling: bool = True
+    transport: RecordingTransport, *, sampling: bool = True, native: bool = True
 ) -> OpenAICompletionAdapter:
     return OpenAICompletionAdapter(
         api_key="test-key",
         model_tag="gpt-test",
         transport=transport,
         resilience=_resilience(),
-        profile=_profile(sampling=sampling),
+        profile=_profile(sampling=sampling, native=native),
     )
 
 
@@ -91,14 +92,14 @@ def _anthropic_reply(stop_reason: str = "end_turn") -> dict[str, object]:
 
 
 def _anthropic(
-    transport: RecordingTransport, *, sampling: bool = True
+    transport: RecordingTransport, *, sampling: bool = True, native: bool = True
 ) -> AnthropicCompletionAdapter:
     return AnthropicCompletionAdapter(
         api_key="test-key",
         model_tag="claude-test",
         transport=transport,
         resilience=_resilience(),
-        profile=_profile(sampling=sampling),
+        profile=_profile(sampling=sampling, native=native),
     )
 
 
@@ -174,3 +175,27 @@ def test_openai_hides_the_nulls_strict_mode_forces_into_optional_fields() -> Non
     result = _openai(RecordingTransport(reply)).complete(_request())
 
     assert json.loads(result.text) == {"score": 3}
+
+
+def test_openai_without_native_structured_output_sends_the_plain_schema() -> None:
+    transport = RecordingTransport(_openai_reply())
+
+    _openai(transport, native=False).complete(_request())
+
+    json_schema = transport.last.body["response_format"]["json_schema"]
+    assert "strict" not in json_schema
+    assert json_schema["schema"] == _SCHEMA
+
+
+def test_anthropic_without_native_structured_output_asks_for_json_in_the_prompt() -> (
+    None
+):
+    transport = RecordingTransport(_anthropic_reply())
+
+    _anthropic(transport, native=False).complete(_request())
+
+    body = transport.last.body
+    assert "output_config" not in body
+    content = body["messages"][0]["content"]
+    assert content.startswith("untrusted text")
+    assert json.dumps(_SCHEMA) in content

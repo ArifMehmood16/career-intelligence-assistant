@@ -124,3 +124,18 @@ def test_a_malformed_row_is_a_configuration_error(tmp_path: Path, row: str) -> N
 
     with pytest.raises(ModelCatalogueError):
         load_model_catalogue(path).profile("ollama", "any")
+
+
+def test_native_structured_output_is_a_per_model_flag() -> None:
+    catalogue = load_model_catalogue(_REPO_CATALOGUE)
+
+    # Anthropic lists Sonnet 4.5 and later, not Sonnet 4, for structured outputs.
+    assert (
+        catalogue.profile("anthropic", "claude-sonnet-4-0").native_structured_output
+        is False
+    )
+    assert (
+        catalogue.profile("anthropic", "claude-sonnet-4-5").native_structured_output
+        is True
+    )
+    assert catalogue.profile("openai", "gpt-4o-mini").native_structured_output is True

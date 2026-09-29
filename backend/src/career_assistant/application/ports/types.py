@@ -34,6 +34,8 @@ class ModelProfile:
     supports_prompt_caching: bool = False
     supports_temperature: bool = False
     supports_seed: bool = False
+    # The API enforces a JSON schema itself; otherwise the adapter asks in the prompt.
+    native_structured_output: bool = False
     embedding_query_prefix: str = ""
     embedding_document_prefix: str = ""
 

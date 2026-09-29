@@ -5,14 +5,15 @@ version = "model-catalogue-v1"
 #
 # A tag with no row of its own uses its provider's [defaults.<provider>] table,
 # and a row overrides those defaults field by field. The defaults are deliberately
-# conservative: an unknown hosted model is not sent a temperature or a seed, and
-# an unknown local model gets a small context window so Ollama does not reserve
-# memory the machine may not have. Values are the vendors' published limits,
+# conservative: an unknown hosted model is not sent a temperature or a seed and is
+# not assumed to support native structured outputs, and an unknown local model gets
+# a small context window so Ollama does not reserve memory the machine may not have. Values are the vendors' published limits,
 # not measurements. Add a row when you configure a new model tag.
 
 [defaults.ollama]
 context_window_tokens = 8192
 max_output_tokens = 4096
+native_structured_output = true
 supports_tool_calling = false
 supports_prompt_caching = false
 supports_temperature = true
@@ -21,6 +22,7 @@ supports_seed = true
 [defaults.openai]
 context_window_tokens = 8192
 max_output_tokens = 4096
+native_structured_output = false
 supports_tool_calling = true
 supports_prompt_caching = false
 supports_temperature = false
@@ -29,6 +31,7 @@ supports_seed = false
 [defaults.anthropic]
 context_window_tokens = 200000
 max_output_tokens = 4096
+native_structured_output = false
 supports_tool_calling = true
 supports_prompt_caching = true
 supports_temperature = true
@@ -48,6 +51,7 @@ embedding_document_prefix = "search_document: "
 [models.openai."gpt-4o-mini"]
 context_window_tokens = 128000
 max_output_tokens = 16384
+native_structured_output = true
 supports_prompt_caching = true
 supports_temperature = true
 supports_seed = true
@@ -56,6 +60,14 @@ supports_seed = true
 context_window_tokens = 8191
 max_output_tokens = 0
 
+# Anthropic lists structured outputs for Sonnet 4.5 and later, not Sonnet 4, so the
+# configured default is asked for JSON in the prompt.
 [models.anthropic."claude-sonnet-4-0"]
 context_window_tokens = 200000
 max_output_tokens = 64000
+native_structured_output = false
+
+[models.anthropic."claude-sonnet-4-5"]
+context_window_tokens = 200000
+max_output_tokens = 64000
+native_structured_output = true

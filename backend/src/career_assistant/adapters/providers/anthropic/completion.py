@@ -117,13 +117,23 @@ class AnthropicCompletionAdapter:
             "system": request.system,
             "messages": [{"role": "user", "content": request.user}],
         }
-        if request.json_schema is not None:
+        schema = request.json_schema
+        if schema is not None and self._profile.native_structured_output:
             body["output_config"] = {
                 "format": {
                     "type": "json_schema",
-                    "schema": anthropic_output_schema(request.json_schema),
+                    "schema": anthropic_output_schema(schema),
                 }
             }
+        elif schema is not None:
+            # Models without structured outputs are asked in the prompt, as in v1.
+            body["messages"] = [
+                {
+                    "role": "user",
+                    "content": f"{request.user}\n\nRespond with JSON only matching "
+                    f"this schema:\n{json.dumps(schema)}",
+                }
+            ]
         if request.temperature is not None and self._profile.supports_temperature:
             body["temperature"] = request.temperature
         return body
