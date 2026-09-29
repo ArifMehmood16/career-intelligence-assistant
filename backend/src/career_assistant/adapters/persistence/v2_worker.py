@@ -19,6 +19,7 @@ from career_assistant.adapters.persistence.job_guards import (
     require_documents,
     require_live_job,
 )
+from career_assistant.adapters.persistence.progress import sql_progress
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_analysis_repos import (
     SqlVerdictCache,
@@ -62,6 +63,7 @@ from career_assistant.domain.jobs import (
     mark_succeeded,
 )
 from career_assistant.domain.pipeline import PipelineVersion
+from career_assistant.domain.progress import JobTask, TaskKey
 from career_assistant.domain.scoring_v2 import RubricV2
 from career_assistant.domain.search import SearchHit
 from career_assistant.logconfig import log_event, log_failure
@@ -131,7 +133,11 @@ class V2JobRunner:
 
     def run(self, job: AnalysisJob) -> AnalysisJob:
         stage = JobStage.PARSING
+        progress = sql_progress(
+            self._uow_factory, job, PipelineVersion.V2, self._config.clock
+        )
         try:
+            progress.enter(TaskKey.PREPARE)
             loaded = self._load(job)
             job = self._start(job)
             stage = JobStage.MAPPING
@@ -139,11 +145,14 @@ class V2JobRunner:
                 self._providers(job.workspace_id),
                 SqlJobLiveness(self._uow_factory, job),
             )
-            analysis = self._analysis(job.workspace_id, providers).run(loaded.documents)
+            analysis = self._analysis(job.workspace_id, providers).run(
+                loaded.documents, progress=progress
+            )
             stage = JobStage.SCORING
             if not analysis.fit.publishable:
                 return self._incomplete(job, stage, ASSESSMENT_INCOMPLETE)
-            return self._publish(job, loaded, analysis, providers)
+            finished = progress.finished_tasks()
+            return self._publish(job, loaded, analysis, providers, finished)
         except ChunkingIncompleteError:
             return self._incomplete(job, stage, EXTRACTION_INCOMPLETE)
         except JobCancelled:
@@ -259,6 +268,7 @@ class V2JobRunner:
         loaded: _Loaded,
         analysis: V2Analysis,
         providers: V2Providers,
+        tasks: tuple[JobTask, ...],
     ) -> AnalysisJob:
         terminal = mark_succeeded(job, at=self._config.clock())
         documents = loaded.documents
@@ -287,6 +297,7 @@ class V2JobRunner:
                     ),
                 )
             )
+            uow.job_tasks.put(job.workspace_id, job.id, tasks)
             uow.commit()
         log_event(
             _log,

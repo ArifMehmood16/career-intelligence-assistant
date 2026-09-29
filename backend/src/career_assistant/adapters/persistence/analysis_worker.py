@@ -21,6 +21,7 @@ from career_assistant.adapters.persistence.job_guards import (
     require_documents,
     require_live_job,
 )
+from career_assistant.adapters.persistence.progress import sql_progress
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_worker import (
     V2JobRunner,
@@ -90,6 +91,7 @@ from career_assistant.domain.jobs import (
 )
 from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.pipeline import PipelineVersion
+from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.scoring import ScoringRubric, score_fit
 from career_assistant.logconfig import (
     bind_request_context,
@@ -220,7 +222,9 @@ class SqlAnalysisWorker:
             role_id=job.role_id,
             stage=stage.value,
         )
+        progress = sql_progress(self._uow_factory, job, PipelineVersion.V1, self._clock)
         try:
+            progress.enter(TaskKey.PREPARE)
             with self._uow_factory() as uow:
                 role = uow.roles.get(job.workspace_id, job.role_id)
                 if role is None:
@@ -270,6 +274,7 @@ class SqlAnalysisWorker:
             )
 
             stage = JobStage.EXTRACTING_REQUIREMENTS
+            progress.enter(TaskKey.READ_ADVERT)
             log_event(
                 _log,
                 "worker.stage",
@@ -339,6 +344,7 @@ class SqlAnalysisWorker:
                 )
                 return failed
             stage = JobStage.EXTRACTING_CLAIMS
+            progress.enter(TaskKey.READ_CV)
             job = mark_stage(job, stage)
             with self._uow_factory() as uow:
                 require_live_job(uow.jobs, job.workspace_id, job.id)
@@ -419,6 +425,7 @@ class SqlAnalysisWorker:
                 )
                 return failed
             stage = JobStage.MAPPING
+            progress.enter(TaskKey.MATCH)
             log_event(
                 _log,
                 "worker.stage",
@@ -455,6 +462,7 @@ class SqlAnalysisWorker:
                 claims=len(claim_result.claims),
             )
             stage = JobStage.SCORING
+            progress.enter(TaskKey.SCORE)
             log_event(
                 _log,
                 "worker.stage",
@@ -524,6 +532,7 @@ class SqlAnalysisWorker:
                 )
                 return failed
             terminal = mark_succeeded(staged, at=self._clock())
+            finished_tasks = progress.finished_tasks()
             with self._uow_factory() as uow:
                 require_live_job(uow.jobs, job.workspace_id, job.id)
                 require_documents(uow.documents, job.workspace_id, (jd_id, cv_id))
@@ -541,6 +550,7 @@ class SqlAnalysisWorker:
                     job=terminal,
                     attribution=_attribution(adjudicator, mappings),
                 )
+                uow.job_tasks.put(job.workspace_id, job.id, finished_tasks)
                 uow.commit()
             log_event(
                 _log,
