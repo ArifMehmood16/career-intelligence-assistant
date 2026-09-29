@@ -270,3 +270,23 @@ def test_the_prompt_labels_document_text_untrusted() -> None:
     assert request.contract is JudgeResponse
     assert "untrusted" in request.system
     assert request.user.index("<candidate_facts>") < request.user.index(TEXT)
+
+
+def test_progress_counts_cached_verdicts_first_then_each_batch() -> None:
+    cache = InMemoryVerdictCache()
+    _judge(ScriptedStructured([_reply(_verdict("r1"))]), cache).judge(
+        [_packet("r1")], FACTS, as_of=AS_OF
+    )
+    structured = ScriptedStructured(
+        [_reply(_verdict("r2")), _reply(_verdict("r3"))], max_output_tokens=400
+    )
+    judged: list[int] = []
+
+    _judge(structured, cache).judge(
+        [_packet("r1"), _packet("r2"), _packet("r3")],
+        FACTS,
+        as_of=AS_OF,
+        on_judged=judged.append,
+    )
+
+    assert judged == [1, 2, 3]

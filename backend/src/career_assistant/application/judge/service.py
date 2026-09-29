@@ -9,7 +9,7 @@ is unavailable or not permitted is not a verdict at all, so that error propagate
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
 
@@ -94,7 +94,10 @@ class RequirementJudge:
         facts: CandidateFacts,
         *,
         as_of: date,
+        on_judged: Callable[[int], None] | None = None,
     ) -> JudgeOutcome:
+        """Judge every packet. `on_judged` hears how many have been handled."""
+        report = on_judged or _ignore
         capabilities = self._structured.capabilities
         model = replace(self._model, model_digest=capabilities.model_digest)
         keys = {
@@ -109,11 +112,15 @@ class RequirementJudge:
                 pending.append(packet)
             else:
                 records[packet.requirement_id] = _rebound(hit, packet.requirement_id)
+        handled = len(packets) - len(pending)
+        report(handled)
         prefix = len(render_facts(facts, as_of=as_of))
         for batch in judge_batches(
             pending, capabilities, self._limits, prefix_chars=prefix
         ):
             records.update(self._judge_batch(batch, context))
+            handled += len(batch)
+            report(handled)
         incomplete = tuple(
             p.requirement_id for p in packets if p.requirement_id not in records
         )
@@ -210,6 +217,10 @@ class RequirementJudge:
             seed=0 if capabilities.supports_seed else None,
         )
         return self._structured.complete_structured(request)
+
+
+def _ignore(handled: int) -> None:
+    del handled
 
 
 def _rebound(record: VerdictRecord, requirement_id: str) -> VerdictRecord:
