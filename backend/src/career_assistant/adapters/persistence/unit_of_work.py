@@ -15,6 +15,9 @@ from career_assistant.adapters.persistence.analysis_repos import (
 )
 from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
 from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRepository
+from career_assistant.adapters.persistence.graph_repos import (
+    SqlKnowledgeGraphRepository,
+)
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
@@ -31,6 +34,7 @@ from career_assistant.adapters.persistence.models import (
     WorkspaceRow,
 )
 from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
+from career_assistant.application.ports.graph import KnowledgeGraphRepository
 from career_assistant.application.ports.persistence import (
     AnalysisJobRepository,
     AnalysisResultRepository,
@@ -563,6 +567,7 @@ class SqlUnitOfWork:
         self.analysis: AnalysisResultRepository
         self.drafts: DraftRepository
         self.embeddings: SqlEmbeddingRepository
+        self.graph: KnowledgeGraphRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -578,6 +583,7 @@ class SqlUnitOfWork:
         )
         self.drafts = SqlDraftRepository(self._session)
         self.embeddings = SqlEmbeddingRepository(self._session)
+        self.graph = SqlKnowledgeGraphRepository(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:
