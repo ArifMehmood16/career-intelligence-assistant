@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from career_assistant.adapters.persistence.schema import APP_SCHEMA
+from career_assistant.adapters.persistence.schema import APP_SCHEMA, SEARCH_PATH
 from career_assistant.settings import DatabaseSettings
 
 
@@ -34,8 +34,8 @@ def create_db_engine(settings: DatabaseSettings, *, url: str | None = None) -> E
         cursor = dbapi_connection.cursor()  # type: ignore[attr-defined]
         try:
             cursor.execute("SET TIME ZONE 'UTC'")
-            # Application tables are in APP_SCHEMA; public remains for extensions.
-            cursor.execute(f"SET search_path TO {APP_SCHEMA}, public")
+            # Application tables, then pgvector's schema, then public.
+            cursor.execute(f"SET search_path TO {SEARCH_PATH}")
             cursor.execute(f"SET statement_timeout = {int(statement_timeout)}")
             cursor.execute(f"SET lock_timeout = {int(lock_timeout)}")
         finally:

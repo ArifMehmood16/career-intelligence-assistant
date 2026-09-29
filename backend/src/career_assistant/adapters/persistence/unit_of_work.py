@@ -30,6 +30,7 @@ from career_assistant.adapters.persistence.models import (
     SpanRow,
     WorkspaceRow,
 )
+from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
 from career_assistant.application.ports.persistence import (
     AnalysisJobRepository,
     AnalysisResultRepository,
@@ -48,6 +49,9 @@ from career_assistant.application.ports.persistence import (
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Page, Span
+
+# Documents whose chunks a v2 verdict may cite as evidence.
+_EVIDENCE_KINDS = frozenset({"cv", "cover_letter"})
 
 
 def _as_uuid(value: str) -> uuid.UUID:
@@ -234,6 +238,15 @@ class SqlDocumentRepository:
         self._session.execute(
             delete(EmbeddingRow).where(EmbeddingRow.workspace_id == row.workspace_id)
         )
+        if row.kind in _EVIDENCE_KINDS:
+            # A v2 verdict's rationale may paraphrase any evidence document it read.
+            # Chunks, vectors, graph rows, quotes and traces cascade in the
+            # database; the verdicts go here and are recomputed on re-analysis.
+            self._session.execute(
+                delete(MatchVerdictRow).where(
+                    MatchVerdictRow.workspace_id == row.workspace_id
+                )
+            )
         self._session.delete(row)
         self._session.flush()
 
