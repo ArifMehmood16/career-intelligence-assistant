@@ -25,6 +25,7 @@ _REQUIRED: dict[str, frozenset[str]] = {
             "status",
             "updatedAt",
             "activeJob",
+            "analysisPipeline",
         }
     ),
     "Requirement": frozenset({"id", "roleId", "text", "type", "status", "evidence"}),
@@ -40,7 +41,47 @@ _REQUIRED: dict[str, frozenset[str]] = {
             "model",
             "provider",
             "leftMachine",
+            "toolSteps",
         }
+    ),
+    "ToolStep": frozenset({"name", "arguments", "found", "failed"}),
+    "RoleVerdicts": frozenset(
+        {
+            "roleId",
+            "analysisId",
+            "fitScore",
+            "band",
+            "gated",
+            "rubricVersion",
+            "leftMachine",
+            "verdicts",
+            "keywordCoverage",
+            "gapPlan",
+        }
+    ),
+    "Verdict": frozenset(
+        {
+            "requirementId",
+            "quote",
+            "statement",
+            "mustHave",
+            "verdict",
+            "requirementScore",
+            "match",
+            "seniority",
+            "experience",
+            "unmetConditions",
+            "contradiction",
+            "adjustments",
+            "evidence",
+            "provider",
+            "model",
+        }
+    ),
+    "KeywordCoverage": frozenset({"exact", "alias", "missing"}),
+    "RetrievalTrace": frozenset({"requirementId", "rounds"}),
+    "TraceHit": frozenset(
+        {"chunkId", "fusedScore", "denseRank", "lexicalRank", "exactRank"}
     ),
     "Provider": frozenset(
         {"id", "name", "kind", "models", "available", "unavailableReason"}
@@ -148,6 +189,12 @@ _SHARED: dict[str, str] = {
     "AnalysisJob": "AnalysisJobResponse",
     "JobProgress": "JobProgressWire",
     "AnalysisTask": "JobTaskWire",
+    "ToolStep": "ToolStepWire",
+    "RoleVerdicts": "RoleVerdictsWire",
+    "Verdict": "VerdictWire",
+    "KeywordCoverage": "KeywordCoverageWire",
+    "RetrievalTrace": "RetrievalTraceWire",
+    "TraceHit": "TraceHitWire",
     "GapPlan": "GapPlanWire",
     "GapItem": "GapItemWire",
     "DraftProvenance": "DraftProvenanceWire",
