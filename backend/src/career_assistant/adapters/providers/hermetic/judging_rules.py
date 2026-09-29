@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from career_assistant.domain.judging import find_term
+
 _REQUIREMENT = re.compile(
     r'<requirement id="([^"\n]+)">\n(.*?)\n</requirement id="\1">', re.DOTALL
 )
@@ -64,22 +66,9 @@ def _first_named(body: str, terms: list[str]) -> tuple[str, str] | None:
     for chunk_id, block in _CHUNK.findall(body):
         text = block.split(_TEXT_MARKER, 1)[-1]
         for term in terms:
-            quote = _named(text, term)
+            quote = find_term(text, term)
             if quote is not None:
                 return chunk_id, quote
-    return None
-
-
-def _named(text: str, term: str) -> str | None:
-    folded, wanted = text.casefold(), term.casefold()
-    start = folded.find(wanted)
-    while start >= 0:
-        end = start + len(wanted)
-        before = folded[start - 1] if start else " "
-        after = folded[end] if end < len(folded) else " "
-        if not before.isalnum() and not after.isalnum():
-            return text[start:end]
-        start = folded.find(wanted, start + 1)
     return None
 
 

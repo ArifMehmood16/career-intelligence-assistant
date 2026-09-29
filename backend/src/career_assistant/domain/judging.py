@@ -253,10 +253,13 @@ def _bare_tool(packet: RequirementPacket, cited: Sequence[Candidate]) -> bool:
         return False
     if not packet.terms:
         return False
-    return any(all(_names(c.text, term) for term in packet.terms) for c in cited)
+    return any(
+        all(find_term(c.text, term) is not None for term in packet.terms) for c in cited
+    )
 
 
-def _names(text: str, term: str) -> bool:
+def find_term(text: str, term: str) -> str | None:
+    """The term as the text writes it, ignoring case, never inside another word."""
     folded, wanted = text.casefold(), term.casefold()
     start = folded.find(wanted)
     while start >= 0:
@@ -264,9 +267,9 @@ def _names(text: str, term: str) -> bool:
         before = folded[start - 1] if start else " "
         after = folded[end] if end < len(folded) else " "
         if not before.isalnum() and not after.isalnum():
-            return True
+            return text[start:end]
         start = folded.find(wanted, start + 1)
-    return False
+    return None
 
 
 def _collapse(value: str) -> str:
