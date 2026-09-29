@@ -29,6 +29,55 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 137 — Design the v2 architecture: chunks, hybrid search, a model judge, agents and MCP
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: Phase 18 design; PLAN 18.0 is the human review. Recorded override:
+  requested before 13D.6g.
+- Prompt intent: keep the career-assistant use case and change the architecture.
+  The model should define the chunks of CVs, cover letters and job descriptions;
+  RAG and hybrid search should match job-description points to CV and letter
+  chunks; the model should score the candidate matches on seniority, match and
+  experience; token budgets should be larger and responses JSON. The design should
+  show MCP, agentic behaviour, hybrid, semantic and lexical search, and Supabase or
+  pgvector. Work on a new branch.
+- Suggestion: build the design and the backend core in this session, with
+  Supabase-ready PostgreSQL rather than adopting Supabase Auth, explicit handling of
+  exact technology names, and the MCP server, agentic Ask and corrective retrieval
+  as the agentic pieces.
+- Outcome: changed
+- Reason: the human chose design only, reviewed before any code, instead of the
+  backend core; accepted Supabase-ready PostgreSQL, exact technology-name handling
+  and the three agentic pieces; and added a knowledge graph. The design keeps v1's rule that the server verifies every
+  model-written field against stored text, and keeps the fit score in domain code:
+  the model judges three dimensions per requirement and the domain aggregates them
+  (ADR 014). Reading the code for the design found four v1 gaps that the plan now
+  owns: the Ollama adapter sends no `num_ctx`; the Anthropic adapter asks for JSON
+  in the prompt instead of using structured output; `nomic-embed-text` is called
+  without its task prefixes; and ADR 010 carries nine amendments. Rejected inside
+  the design: an agent framework, a separate vector or graph database, a
+  cross-encoder reranker before measurement, a BM25 extension Supabase does not
+  ship, write tools and Streamable HTTP over MCP before authentication, and a
+  model-emitted fit score.
+- Human validation: TBD until the 18.0 review. Observed in this session: the eight
+  Mermaid diagrams in `docs/architecture-v2.md` rendered with
+  `@mermaid-js/mermaid-cli` 11 after two syntax fixes; the `hybrid_search` SQL
+  sketch ran against PostgreSQL 16.13 and pgvector 0.6.0, with pgvector in an
+  `extensions` schema and synthetic rows, and workspace isolation, the active-CV
+  rule, the source filter and all three legs behaved as described. A second Claude
+  agent reviewed the draft before the first commit. It found a scoring formula that
+  put a candidate who meets every requirement on the band boundary, two server rules
+  that changed nothing, an unstable verdict-cache key, graph rows and verdict quotes
+  that would survive a CV delete, an MCP switch the launching client could set, and
+  wrong Supabase, `ts_rank_cd` and n8n claims. Each was corrected in the design, the
+  ADRs and this plan; the `ts_rank_cd` and extension-schema findings were confirmed
+  on PostgreSQL first. No application code changed, so `make lint` and
+  `make test` were not run. `git fetch` left `.git/index.lock` and
+  `.git/objects/maintenance.lock` behind because the session could not delete
+  files; the human granted deletion for the repository folder and both were
+  removed before the branch was created.
+
 ### 136 — A skills line can meet a requirement that only names a tool
 
 - Date: 2026-09-24
