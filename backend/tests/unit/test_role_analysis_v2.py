@@ -9,10 +9,10 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from pydantic import BaseModel
 from tests.support.in_memory_index import InMemoryIndexStore
 from tests.support.in_memory_verdicts import InMemoryVerdictCache
 from tests.support.index_backed_search import IndexBackedSearch
+from tests.support.refusing_structured import RefusingJudge
 
 from career_assistant.adapters.providers.hermetic.embedding import (
     HermeticEmbeddingAdapter,
@@ -29,19 +29,12 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.contracts.judge import JudgeResponse
 from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JudgeLimits
 from career_assistant.application.judge.service import RequirementJudge
-from career_assistant.application.ports.errors import ProviderRefusedError
-from career_assistant.application.ports.structured import (
-    StructuredCompletionPort,
-    StructuredRequest,
-    StructuredResult,
-)
-from career_assistant.application.ports.types import CapabilityDescriptor
+from career_assistant.application.ports.structured import StructuredCompletionPort
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric_v2
 from career_assistant.domain.documents import DocumentKind
 
@@ -50,24 +43,6 @@ FIXTURES = ROOT / "sample-data" / "fixtures"
 RUBRIC = load_scoring_rubric_v2(ROOT / "config" / "scoring_rubric.toml")
 WS = "ws-1"
 AS_OF = date(2026, 9, 1)
-
-
-class RefusingJudge:
-    """Chunks and relates terms hermetically; refuses every judge call."""
-
-    def __init__(self) -> None:
-        self._inner = HermeticStructuredCompleter()
-
-    @property
-    def capabilities(self) -> CapabilityDescriptor:
-        return self._inner.capabilities
-
-    def complete_structured[T: BaseModel](
-        self, request: StructuredRequest[T]
-    ) -> StructuredResult[T]:
-        if request.contract is JudgeResponse:
-            raise ProviderRefusedError("refused")
-        return self._inner.complete_structured(request)
 
 
 def _documents() -> V2Documents:
