@@ -2,8 +2,8 @@
 
 > **Status (2026-09-29): accepted, being built.** This is the target architecture for
 > [PLAN.md Phase 18](../PLAN.md#phase-18--architecture-v2-hybrid-retrieval-model-judgement-agents-and-mcp);
-> building starts with 18.1. The running product is still the v1 path the
-> [README](../README.md) describes.
+> building starts with 18.1. The running product is still the v1 path described in
+> [architecture.md](architecture.md).
 > Nothing on this page is measured; every threshold and weight below is a starting
 > value that Phase 18.14 calibrates on development data. The decisions are recorded
 > in [ADR 013](adr/013-chunks-hybrid-search-knowledge-graph.md),
