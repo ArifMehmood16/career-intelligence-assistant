@@ -143,10 +143,20 @@ export function AnalysisProgress({
         aria-valuetext={tasksDoneLine(progress)}
         className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
       >
-        <div
-          className="h-full rounded-full bg-primary motion-safe:transition-[width] motion-safe:duration-500"
-          style={{ width: `${percent}%` }}
-        />
+        <svg
+          className="block h-1.5 w-full"
+          viewBox="0 0 100 4"
+          preserveAspectRatio="none"
+          role="presentation"
+        >
+          <rect
+            x="0"
+            y="0"
+            width={percent}
+            height="4"
+            className="fill-primary"
+          />
+        </svg>
       </div>
       {current ? (
         <p className="text-sm text-muted-foreground">{current}</p>
