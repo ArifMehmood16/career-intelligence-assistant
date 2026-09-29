@@ -453,6 +453,46 @@ class AnalysisJobRow(Base):
     )
 
 
+class AnalysisJobTaskRow(Base):
+    """One task of an analysis job: counts and timestamps, never document text."""
+
+    __tablename__ = "analysis_job_tasks"
+    __table_args__ = (
+        Index("ix_analysis_job_tasks_workspace_id", "workspace_id"),
+        CheckConstraint(
+            "state IN ('pending', 'running', 'done', 'skipped')", name="state"
+        ),
+        CheckConstraint(
+            "units_done >= 0 AND (units_total IS NULL OR units_done <= units_total)",
+            name="units",
+        ),
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("analysis_jobs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    units_done: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    units_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
 class ConversationRow(Base):
     __tablename__ = "conversations"
     __table_args__ = (Index("ix_conversations_workspace_id", "workspace_id"),)

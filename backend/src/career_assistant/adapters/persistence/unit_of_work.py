@@ -19,6 +19,7 @@ from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRe
 from career_assistant.adapters.persistence.graph_repos import (
     SqlKnowledgeGraphRepository,
 )
+from career_assistant.adapters.persistence.job_task_repos import SqlJobTaskRepository
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
@@ -592,6 +593,7 @@ class SqlUnitOfWork:
         self.embeddings: SqlEmbeddingRepository
         self.graph: KnowledgeGraphRepository
         self.traces: RetrievalTraceRepository
+        self.job_tasks: SqlJobTaskRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -611,6 +613,7 @@ class SqlUnitOfWork:
         self.chunks = SqlChunkRepository(self._session)
         self.v2 = SqlV2AnalysisRepository(self._session, self.roles, self.jobs)
         self.traces = SqlRetrievalTraceRepository(self._session)
+        self.job_tasks = SqlJobTaskRepository(self._session)
         self.search = SqlSessionHybridSearch(self._session)
         return self
 
