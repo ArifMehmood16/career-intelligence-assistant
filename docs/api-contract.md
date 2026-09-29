@@ -152,6 +152,7 @@ Role {
   status: "analysing" | "ready" | "failed";   // additive
   updatedAt: string;                          // additive
   fitSummary: string | null;                  // additive; GET /roles/{id} once ready, otherwise null
+  activeJob: AnalysisJob | null;              // additive; the queued or running job, with progress
 }
 
 RoleCreated { role: Role; jobId: string }
@@ -182,12 +183,49 @@ AnalysisJob {
   startedAt: string | null;
   finishedAt: string | null;
   error: { code: string; message: string } | null;
+  progress: JobProgress | null;   // additive; null from the in-memory store
 }
+
+JobProgress {
+  tasksDone: number;              // done or skipped
+  tasksTotal: number;
+  fraction: number;               // 0–1, including the running task's share of its units
+  currentTask: TaskKey | null;
+  elapsedSeconds: number | null;  // since the job started; null while queued
+  remainingSeconds: number | null;// an estimate; null while it cannot be made
+  queuePosition: number | null;   // live analyses ahead; only while queued
+  tasks: {
+    key: TaskKey;
+    state: "pending" | "running" | "done" | "skipped" | "failed";
+    unitsDone: number;
+    unitsTotal: number | null;    // requirements searched or judged, rechecks
+  }[];
+}
+
+TaskKey = "prepare" | "read_advert" | "read_cv" | "match"
+        | "search" | "judge" | "recheck" | "score";
+// v1 runs prepare, read_advert, read_cv, match, score.
+// v2 runs prepare, read_cv, read_advert, search, judge, recheck, score.
 ```
 
 The frontend polls this with react-query while `state` is `queued` or `running`, at a
 fixed interval, and stops on a terminal state. A failed job leaves the role at
 `status: "failed"` with the reason, and `POST /reanalyse` is the retry.
+
+**Progress.** The worker writes a row per task as it moves (keys, counts and
+timestamps, never document text). `remainingSeconds` is arithmetic, not a model
+output: this job's own pace inside a counted task, otherwise the median duration of
+the same task in the workspace's last ten successful analyses on the same pipeline,
+less the time already spent. It is `null` while any unfinished model task has neither,
+which is the case for a workspace's first analysis until judging starts. A queued job
+adds the time left of every live job ahead of it. A failed job shows the task it
+stopped in as `failed`. A queued job lists its pipeline's plan, all `pending`.
+
+**Cancellation.** Deleting a role, or the CV, stops its running analysis. Every
+provider call and every progress write first checks the job, so no model call starts
+after the delete. A call already in flight finishes or times out, and its result is
+discarded. A deleted role's job disappears (`404`); a deleted CV leaves the job
+`failed` with `cv_deleted`.
 
 **Incomplete analysis (13D.6a).** An extraction or assessment that does not
 validate is a failed job, not a fit score. The decision uses the existing
