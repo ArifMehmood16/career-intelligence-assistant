@@ -7,8 +7,11 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
+from career_assistant.application.ask.agent import AgentLimits, run_agent
+from career_assistant.application.ask.registry import evidence_registry
 from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.completion import CompletionPort
+from career_assistant.application.ports.tool_calling import ToolCallingPort
 from career_assistant.application.ports.types import CompletionRequest
 from career_assistant.domain.ask import (
     AnswerCitation,
@@ -111,9 +114,13 @@ class AskService:
         output_token_limit: int = 2000,
         max_question_chars: int = 4000,
         max_context_chars: int = 24000,
+        tool_calling: ToolCallingPort | None = None,
+        agent_limits: AgentLimits | None = None,
     ) -> None:
         self._store = store
         self._completion = completion
+        self._tool_calling = tool_calling
+        self._agent_limits = agent_limits or AgentLimits()
         self._known_span_ids = known_span_ids
         self._id_factory = id_factory
         if prompt_budget is None:
@@ -147,7 +154,7 @@ class AskService:
             answer_id=answer_id,
             body=result.content,
             kind=result.kind.value,
-            citations=tuple(c.span_id for c in result.citations),
+            citations=self._stored_citations(result),
             provider=provider,
             model_tag=model,
             left_machine=left,
@@ -212,7 +219,7 @@ class AskService:
             answer_id=answer_id,
             body=result.content,
             kind=result.kind.value,
-            citations=tuple(c.span_id for c in result.citations),
+            citations=self._stored_citations(result),
             provider=provider,
             model_tag=model,
             left_machine=left,
@@ -349,6 +356,9 @@ class AskService:
                 completion.left_machine,
             )
 
+        if self._uses_agent():
+            return self._run_agent(request)
+
         selected = select_spans_for_open_question(
             request.content,
             request.retrieved_pool,
@@ -382,6 +392,35 @@ class AskService:
             completion.provider_id,
             completion.model_tag,
             completion.left_machine,
+        )
+
+    def _uses_agent(self) -> bool:
+        return (
+            self._tool_calling is not None
+            and self._completion.capabilities.supports_tool_calling
+        )
+
+    def _run_agent(self, request: AskRequest) -> tuple[AnswerResult, str, str, bool]:
+        assert self._tool_calling is not None
+        outcome = run_agent(
+            question=request.content,
+            port=self._tool_calling,
+            registry=evidence_registry(request.roles, request.retrieved_pool),
+            limits=self._agent_limits,
+            max_output_tokens=self._budget.max_output_tokens,
+        )
+        return (
+            outcome.result,
+            outcome.provider_id,
+            outcome.model_tag,
+            outcome.left_machine,
+        )
+
+    def _stored_citations(self, result: AnswerResult) -> tuple[str, ...]:
+        return tuple(
+            citation.span_id
+            for citation in result.citations
+            if citation.span_id in self._known_span_ids
         )
 
 

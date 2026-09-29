@@ -160,6 +160,9 @@ class LimitSettings(BaseSettings):
     max_context_chars: int = Field(default=24_000, ge=1)
     max_excerpt_chars: int = Field(default=600, ge=1)
     max_roles_per_workspace: int = Field(default=25, ge=1)
+    agent_max_steps: int = Field(default=6, ge=1)
+    agent_max_tool_calls: int = Field(default=10, ge=1)
+    agent_max_input_tokens: int = Field(default=24_000, ge=1)
 
 
 class LoggingSettings(BaseSettings):

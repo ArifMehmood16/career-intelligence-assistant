@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -12,6 +13,12 @@ from career_assistant.application.ask.service import (
     ConversationStore,
 )
 from career_assistant.application.ports.completion import CompletionPort
+from career_assistant.application.ports.tool_calling import (
+    HermeticToolCaller,
+    ToolCall,
+    ToolCallingPort,
+    ToolCallingResult,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -21,12 +28,14 @@ from career_assistant.domain.ask import (
     AnswerKind,
     RoleAnalysisView,
 )
+from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.domain.intents import Intent
 from career_assistant.domain.mapping import (
     MappingReason,
     MappingStatus,
     RequirementMapping,
 )
+from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 
@@ -159,6 +168,7 @@ class _MemStore:
 class _TrackingCompletion:
     calls: int = 0
     last_request: CompletionRequest | None = None
+    tool_calling: bool = False
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -171,6 +181,7 @@ class _TrackingCompletion:
             max_output_tokens=256,
             embedding_dimensions=None,
             leaves_machine=False,
+            supports_tool_calling=self.tool_calling,
         )
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
@@ -232,6 +243,7 @@ def _role_view() -> RoleAnalysisView:
 def _service(
     store: ConversationStore | None = None,
     completion: CompletionPort | None = None,
+    tool_calling: ToolCallingPort | None = None,
 ) -> tuple[AskService, _MemStore, _TrackingCompletion]:
     mem = store if isinstance(store, _MemStore) else _MemStore()
     if isinstance(completion, _TrackingCompletion):
@@ -243,6 +255,7 @@ def _service(
         completion=comp,
         known_span_ids=frozenset({"jd-dbt", "cv-dbt"}),
         id_factory=lambda prefix: f"{prefix}-1",
+        tool_calling=tool_calling,
     )
     return service, mem, comp
 
@@ -422,3 +435,106 @@ def test_stream_meta_includes_intent_and_provider() -> None:
     meta = next(e for e in events if e.type == "meta")
     assert meta.intent is Intent.GAPS
     assert meta.provider == "hermetic"
+
+
+_CV = "Owned dbt models in production."
+
+
+def _open_request() -> AskRequest:
+    return AskRequest(
+        workspace_id="ws-1",
+        conversation_id="conv-1",
+        client_request_id="cr-open",
+        content="Which project shows the warehouse work?",
+        role_id=None,
+        roles=(_role_view(),),
+        retrieved_pool=(
+            RetrievedSpan(
+                span=Span(
+                    id="cv-dbt",
+                    document_id="doc-1",
+                    page_number=1,
+                    start_offset=0,
+                    end_offset=len(_CV),
+                    text=_CV,
+                ),
+                document_kind=DocumentKind.CV,
+            ),
+        ),
+    )
+
+
+def _agent_answer() -> str:
+    return json.dumps(
+        {
+            "answer": "The CV shows the warehouse work.",
+            "citations": [{"chunk_id": "cv-dbt", "quote": _CV}],
+            "support": "grounded",
+        }
+    )
+
+
+def test_a_stored_analysis_question_keeps_the_router() -> None:
+    completion = _TrackingCompletion()
+    completion.tool_calling = True
+    tools = HermeticToolCaller(
+        script=[ToolCallingResult(content=_agent_answer(), provider_id="hermetic")]
+    )
+    service, _, comp = _service(completion=completion, tool_calling=tools)
+
+    service.ask(
+        AskRequest(
+            workspace_id="ws-1",
+            conversation_id="conv-1",
+            client_request_id="cr-gaps",
+            content="What gaps should I close first?",
+            role_id="role-1",
+            roles=(_role_view(),),
+        )
+    )
+
+    assert tools.requests == []
+    assert comp.calls == 1
+
+
+def test_without_tool_calling_an_open_question_stays_on_retrieval() -> None:
+    tools = HermeticToolCaller(
+        script=[ToolCallingResult(content=_agent_answer(), provider_id="hermetic")]
+    )
+    service, _, comp = _service(tool_calling=tools)
+
+    service.ask(_open_request())
+
+    assert tools.requests == []
+    assert comp.calls == 1
+
+
+def test_with_tool_calling_an_open_question_uses_the_agent() -> None:
+    completion = _TrackingCompletion()
+    completion.tool_calling = True
+    tools = HermeticToolCaller(
+        script=[
+            ToolCallingResult(
+                content="",
+                tool_calls=(ToolCall("c1", "get_chunk", {"chunk_id": "cv-dbt"}),),
+                provider_id="hermetic",
+                model_tag="rules-v1",
+            ),
+            ToolCallingResult(
+                content=_agent_answer(),
+                provider_id="hermetic",
+                model_tag="rules-v1",
+            ),
+        ]
+    )
+    service, store, comp = _service(completion=completion, tool_calling=tools)
+
+    result = service.ask(_open_request())
+
+    assert comp.calls == 0
+    assert result.kind is AnswerKind.ANSWER
+    assert result.citations[0].span_id == "cv-dbt"
+    stored = next(
+        message for message in store.messages if message.author == "assistant"
+    )
+    assert stored.citations == ("cv-dbt",)

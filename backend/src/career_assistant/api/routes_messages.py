@@ -11,13 +11,17 @@ from fastapi.responses import StreamingResponse
 
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
-from career_assistant.api.provider_runtime import completion_port_for
+from career_assistant.api.provider_runtime import (
+    completion_port_for,
+    tool_calling_port_for,
+)
 from career_assistant.api.schemas import (
     ChatMessageWire,
     CitationWire,
     MessageCreateRequest,
 )
 from career_assistant.api.sse import format_ask_sse
+from career_assistant.application.ask.agent import AgentLimits
 from career_assistant.application.ask.memory import (
     InMemoryConversationStore,
     MemoryMessage,
@@ -136,14 +140,26 @@ def _ask_service(
     limits = getattr(request.app.state, "limits", None)
     if not isinstance(limits, LimitSettings):
         limits = LimitSettings(_env_file=None)
+    completion = completion_port_for(request, workspace_id)
+    tools = (
+        tool_calling_port_for(request, workspace_id)
+        if completion.capabilities.supports_tool_calling
+        else None
+    )
     return AskService(
         store=_conversation_store(request),
-        completion=completion_port_for(request, workspace_id),
+        completion=completion,
         known_span_ids=_known_span_ids(request, workspace_id, roles),
         id_factory=lambda _prefix: str(uuid.uuid4()),
         output_token_limit=output_limit,
         max_question_chars=limits.max_question_chars,
         max_context_chars=limits.max_context_chars,
+        tool_calling=tools,
+        agent_limits=AgentLimits(
+            max_steps=limits.agent_max_steps,
+            max_tool_calls=limits.agent_max_tool_calls,
+            max_input_tokens=limits.agent_max_input_tokens,
+        ),
     )
 
 
