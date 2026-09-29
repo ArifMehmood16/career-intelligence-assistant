@@ -29,7 +29,11 @@ export interface Role {
   fitSummary?: string | null;
   /** The queued or running analysis, with its progress. */
   activeJob?: AnalysisJob | null;
+  /** The pipeline that produced the published analysis; null before one exists. */
+  analysisPipeline?: AnalysisPipeline | null;
 }
+
+export type AnalysisPipeline = "v1" | "v2";
 
 export type RequirementType = "must" | "desirable";
 export type RequirementStatus = "met" | "partial" | "missing";
@@ -77,6 +81,15 @@ export interface ChatMessage {
   provider: string | null;
   leftMachine: boolean;
   createdAt?: string;
+  /** The agent's tool calls for a fresh answer. Not stored, so absent in history. */
+  toolSteps?: ToolStep[];
+}
+
+export interface ToolStep {
+  name: string;
+  arguments: Record<string, string>;
+  found: number;
+  failed: boolean;
 }
 
 export interface Provider {
@@ -282,4 +295,85 @@ export interface SupportingDocument {
   pageCount: number;
   parsedAt: string;
   createdAt: string;
+}
+
+/* ---- Pipeline v2 verdicts (PLAN 18.10 routes, 18.13 views) ---- */
+
+export type VerdictLabel = "met" | "partial" | "missing";
+export type JudgeDimension = "match" | "seniority" | "experience";
+
+/** A judge score on the 0–4 anchors, and the judge's own reason for it. */
+export interface DimensionScore {
+  score: number;
+  rationale: string;
+}
+
+export interface VerdictEvidence {
+  chunkId: string;
+  documentId: string;
+  /** Verbatim from the chunk; checked by the server before it was stored. */
+  quote: string;
+}
+
+export interface Verdict {
+  requirementId: string;
+  quote: string;
+  statement: string;
+  mustHave: boolean;
+  verdict: VerdictLabel;
+  requirementScore: number | null;
+  match: DimensionScore;
+  seniority: DimensionScore | null;
+  experience: DimensionScore | null;
+  unmetConditions: string[];
+  contradiction: boolean;
+  adjustments: string[];
+  evidence: VerdictEvidence[];
+  provider: string;
+  model: string;
+}
+
+export interface KeywordCoverage {
+  exact: string[];
+  alias: string[];
+  missing: string[];
+}
+
+export interface V2Gap {
+  requirementId: string;
+  dimension: JudgeDimension;
+  current: number;
+  delta: number;
+}
+
+export interface RoleVerdicts {
+  roleId: string;
+  analysisId: string;
+  fitScore: number;
+  band: string;
+  gated: boolean;
+  rubricVersion: string;
+  leftMachine: boolean;
+  verdicts: Verdict[];
+  keywordCoverage: KeywordCoverage;
+  gapPlan: V2Gap[];
+}
+
+export interface TraceHit {
+  chunkId: string;
+  fusedScore: number;
+  denseRank: number | null;
+  lexicalRank: number | null;
+  exactRank: number | null;
+}
+
+export interface TraceRound {
+  round: number;
+  queryText: string;
+  hits: TraceHit[];
+}
+
+export interface RetrievalTrace {
+  requirementId: string;
+  rounds: TraceRound[];
 }

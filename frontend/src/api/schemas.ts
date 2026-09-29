@@ -39,6 +39,7 @@ export const roleSchema = z
       .lazy(() => analysisJobSchema)
       .nullable()
       .optional(),
+    analysisPipeline: z.enum(["v1", "v2"]).nullable().optional(),
   })
   .passthrough();
 
@@ -90,6 +91,14 @@ export const chatMessageSchema = z.object({
   provider: z.string().nullable(),
   leftMachine: z.boolean(),
   createdAt: z.string().optional(),
+  toolSteps: z.lazy(() => toolStepSchema.array()).optional(),
+});
+
+export const toolStepSchema = z.object({
+  name: z.string(),
+  arguments: z.record(z.string(), z.string()),
+  found: z.number().int(),
+  failed: z.boolean(),
 });
 
 export const providerSchema = z
@@ -313,4 +322,76 @@ export const errorEnvelopeSchema = z.object({
     message: z.string(),
     correlationId: z.string(),
   }),
+});
+
+const dimensionScoreSchema = z.object({
+  score: z.number().int().min(0).max(4),
+  rationale: z.string(),
+});
+
+export const roleVerdictsSchema = z.object({
+  roleId: z.string(),
+  analysisId: z.string(),
+  fitScore: z.number(),
+  band: z.string(),
+  gated: z.boolean(),
+  rubricVersion: z.string(),
+  leftMachine: z.boolean(),
+  verdicts: z.array(
+    z.object({
+      requirementId: z.string(),
+      quote: z.string(),
+      statement: z.string(),
+      mustHave: z.boolean(),
+      verdict: z.enum(["met", "partial", "missing"]),
+      requirementScore: z.number().nullable(),
+      match: dimensionScoreSchema,
+      seniority: dimensionScoreSchema.nullable(),
+      experience: dimensionScoreSchema.nullable(),
+      unmetConditions: z.array(z.string()),
+      contradiction: z.boolean(),
+      adjustments: z.array(z.string()),
+      evidence: z.array(
+        z.object({
+          chunkId: z.string(),
+          documentId: z.string(),
+          quote: z.string(),
+        }),
+      ),
+      provider: z.string(),
+      model: z.string(),
+    }),
+  ),
+  keywordCoverage: z.object({
+    exact: z.array(z.string()),
+    alias: z.array(z.string()),
+    missing: z.array(z.string()),
+  }),
+  gapPlan: z.array(
+    z.object({
+      requirementId: z.string(),
+      dimension: z.enum(["match", "seniority", "experience"]),
+      current: z.number(),
+      delta: z.number(),
+    }),
+  ),
+});
+
+export const retrievalTraceSchema = z.object({
+  requirementId: z.string(),
+  rounds: z.array(
+    z.object({
+      round: z.number().int(),
+      queryText: z.string(),
+      hits: z.array(
+        z.object({
+          chunkId: z.string(),
+          fusedScore: z.number(),
+          denseRank: z.number().int().nullable(),
+          lexicalRank: z.number().int().nullable(),
+          exactRank: z.number().int().nullable(),
+        }),
+      ),
+    }),
+  ),
 });

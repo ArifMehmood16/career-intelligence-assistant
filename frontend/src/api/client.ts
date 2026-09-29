@@ -18,8 +18,11 @@ import type {
   ProviderChoice,
   RankedRole,
   Requirement,
+  RetrievalTrace,
   Role,
+  RoleVerdicts,
   SupportingDocument,
+  ToolStep,
 } from "@/types";
 import {
   analysisJobSchema,
@@ -40,9 +43,12 @@ import {
   rankedRoleSchema,
   reanalyseResponseSchema,
   requirementSchema,
+  retrievalTraceSchema,
   roleCreatedSchema,
   roleSchema,
+  roleVerdictsSchema,
   supportingDocumentSchema,
+  toolStepSchema,
 } from "./schemas";
 import { z } from "zod";
 
@@ -185,6 +191,9 @@ function mapRole(raw: z.infer<typeof roleSchema>): Role {
     ...(raw.activeJob === undefined
       ? {}
       : { activeJob: raw.activeJob === null ? null : mapJob(raw.activeJob) }),
+    ...(raw.analysisPipeline === undefined
+      ? {}
+      : { analysisPipeline: raw.analysisPipeline }),
   };
 }
 
@@ -225,6 +234,9 @@ function mapMessage(raw: z.infer<typeof chatMessageSchema>): ChatMessage {
   }
   if (raw.createdAt !== undefined) {
     message.createdAt = raw.createdAt;
+  }
+  if (raw.toolSteps !== undefined && raw.toolSteps.length > 0) {
+    message.toolSteps = raw.toolSteps;
   }
   return message;
 }
@@ -337,6 +349,22 @@ export function getRequirements(roleId: string): Promise<Requirement[]> {
 export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
   return request(`/api/roles/${roleId}/breakdown`, {
     schema: breakdownRowSchema.array(),
+  });
+}
+
+/** A v2 role's fit. 409 `analysis_incomplete` when it has no v2 analysis. */
+export function getRoleVerdicts(roleId: string): Promise<RoleVerdicts> {
+  return request(`/api/roles/${roleId}/verdicts`, {
+    schema: roleVerdictsSchema,
+  });
+}
+
+export function getVerdictTrace(
+  roleId: string,
+  requirementId: string,
+): Promise<RetrievalTrace> {
+  return request(`/api/roles/${roleId}/verdicts/${requirementId}/trace`, {
+    schema: retrievalTraceSchema,
   });
 }
 
@@ -505,6 +533,7 @@ export type MessageStreamEvent =
       model: string | null;
       leftMachine: boolean;
     }
+  | { type: "tools"; steps: ToolStep[] }
   | { type: "token"; text: string }
   | { type: "citations"; citations: Citation[] }
   | { type: "done"; kind: "answer" | "insufficient" }
@@ -520,6 +549,7 @@ export interface MessageStreamResult {
   model: string | null;
   leftMachine: boolean;
   clientRequestId: string;
+  toolSteps: ToolStep[];
 }
 
 export async function postMessageStream(options: {
@@ -593,6 +623,7 @@ export async function postMessageStream(options: {
     model: null,
     leftMachine: false,
     clientRequestId,
+    toolSteps: [],
   };
 
   const reader = response.body.getReader();
@@ -635,6 +666,14 @@ export async function postMessageStream(options: {
       result.model = event.model;
       result.leftMachine = event.leftMachine;
       options.onEvent(event);
+      return;
+    }
+
+    if (eventName === "tools") {
+      const parsed = z.array(toolStepSchema).safeParse(data["steps"] ?? []);
+      const steps = parsed.success ? parsed.data : [];
+      result.toolSteps = steps;
+      options.onEvent({ type: "tools", steps });
       return;
     }
 
