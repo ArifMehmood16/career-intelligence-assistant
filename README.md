@@ -21,7 +21,9 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > verified containers (16) are not started. This is a **personal tool for local
 > use**, not a multi-user hosted product. [BACKLOG.md](BACKLOG.md) lists every
 > open item in order; [PLAN.md](PLAN.md) defines each task and gate;
-> [AGENTS.md](AGENTS.md) is the working protocol for coding agents.
+> [AGENTS.md](AGENTS.md) is the working protocol for coding agents. The next
+> architecture, Phase 18, is designed and not built
+> ([docs/architecture-v2.md](docs/architecture-v2.md)).
 
 ## The engineering thesis
 
@@ -213,6 +215,20 @@ Intent routing is deterministic. Gap, fit, comparison and interview-prep questio
 are phrased by the configured model from the stored mapping and its score; the model
 does not calculate a new score. Open questions retrieve workspace-scoped spans,
 including an uploaded letter when it is relevant to the question.
+
+### Next: architecture v2 (designed, not built)
+
+Phase 18 replaces the span classifier and the rules around it. The model groups
+server-numbered lines into chunks. Hybrid search in PostgreSQL — pgvector, full-text
+search and exact technology terms, fused by reciprocal rank — finds candidate
+evidence. A knowledge graph supplies computed years of experience and widens
+searches. A model judge scores each requirement for match, seniority and
+experience, quoting its evidence, and domain code aggregates the score. Ask gains a
+bounded tool-calling agent, and the same tools are served to MCP clients. The server
+still verifies every quote against stored text, and the fit score is still
+arithmetic. The design, diagrams and trade-offs are in
+[docs/architecture-v2.md](docs/architecture-v2.md); the decisions are ADRs 013–015,
+all proposed. None of it is running yet.
 
 ## Stack
 
@@ -479,7 +495,8 @@ changed or rejected.
 | [docs/api-contract.md](docs/api-contract.md) | The wire contract between backend and frontend. |
 | [docs/production-wiring.md](docs/production-wiring.md) | Each route's use case, provider resolver and SQL adapter. |
 | [docs/frontend-integration.md](docs/frontend-integration.md) | How the Lovable design becomes the shipped frontend. |
-| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first; [ADR 011](docs/adr/011-evidence-assessment-contract.md) is the evidence-assessment contract; [ADR 012](docs/adr/012-durable-operational-audit.md) is the operational-audit contract. |
+| [docs/architecture-v2.md](docs/architecture-v2.md) | The v2 architecture, designed and not built: model-defined chunks, hybrid search, a knowledge graph, a model judge, agentic Ask and an MCP server (PLAN Phase 18). |
+| [docs/adr/](docs/adr/) | Decisions that are expensive to reverse. [ADR 010](docs/adr/010-model-first-extraction.md) is why extraction is model-first; [ADR 011](docs/adr/011-evidence-assessment-contract.md) is the evidence-assessment contract; [ADR 012](docs/adr/012-durable-operational-audit.md) is the operational-audit contract. ADRs 013–015 are the proposed v2 decisions. |
 | [docs/observability-logging-plan.md](docs/observability-logging-plan.md) | Phase 15B task detail: file, action, event and API-envelope logging. |
 | [docs/frontend-brief.md](docs/frontend-brief.md) | The Lovable prompt sequence that produced the design. |
 | [docs/evaluation.md](docs/evaluation.md) | Dataset, metrics, thresholds and every dated measurement. |
@@ -512,8 +529,8 @@ Written down rather than papered over:
 
 ## With more time
 
-In order, from [BACKLOG.md](BACKLOG.md): close the Phase 13D gate by remeasuring the
-current assessor and settling the two open label questions; make the audit trail
-durable (15B.6–15B.10); run the multi-provider evaluation with retrieval ablations
-(Phase 14); then retention, rate limiting and a recorded security scan (Phase 15), and
-verified containers with a Playwright walkthrough (Phase 16).
+In order, from [BACKLOG.md](BACKLOG.md): review and build the v2 architecture
+(Phase 18) and measure it against v1 — the 13D.6g measurement becomes that
+baseline — before v1 is retired. Then the rest of the release path: retention, rate
+limiting and a recorded security scan (Phase 15), a durable audit trail
+(15B.6–15B.10), and verified containers with a Playwright walkthrough (Phase 16).
