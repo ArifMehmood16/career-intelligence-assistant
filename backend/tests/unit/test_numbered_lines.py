@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from career_assistant.domain.lines import number_lines
 
-_TEXT = "Jane Doe\njane@example.com\n\nExperience\n- Built hybrid retrieval\n  over pgvector.\n"
+_TEXT = (
+    "Jane Doe\njane@example.com\n\nExperience\n"
+    "- Built hybrid retrieval\n  over pgvector.\n"
+)
 
 
 def test_non_empty_lines_are_numbered_from_one() -> None:
