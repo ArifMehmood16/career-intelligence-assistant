@@ -92,28 +92,32 @@ class SqlHybridSearch:
         self._session_factory = session_factory
 
     def search(self, query: HybridQuery) -> tuple[SearchHit, ...]:
-        weights = query.weights
-        params = {
-            "workspace_id": query.workspace_id,
-            "query_text": lexical_query_text(query.text),
-            "embedding": "[" + ",".join(repr(float(v)) for v in query.embedding) + "]",
-            "terms": list(query.terms),
-            "model_key": query.embedding_model_key,
-            "sources": [source.value for source in query.sources],
-            "match_count": query.match_count,
-            "leg_count": query.leg_count,
-            "weights": [weights.dense, weights.lexical, weights.exact],
-            "rrf_k": query.rrf_k,
-        }
         with self._session_factory() as session:
-            rows = session.execute(_SEARCH_SQL, params).all()
-        return tuple(
-            SearchHit(
-                chunk_id=str(chunk_id),
-                fused_score=float(score),
-                dense_rank=dense,
-                lexical_rank=lexical,
-                exact_rank=exact,
-            )
-            for chunk_id, score, dense, lexical, exact in rows
+            return hybrid_search(session, query)
+
+
+def hybrid_search(session: Session, query: HybridQuery) -> tuple[SearchHit, ...]:
+    weights = query.weights
+    params = {
+        "workspace_id": query.workspace_id,
+        "query_text": lexical_query_text(query.text),
+        "embedding": "[" + ",".join(repr(float(v)) for v in query.embedding) + "]",
+        "terms": list(query.terms),
+        "model_key": query.embedding_model_key,
+        "sources": [source.value for source in query.sources],
+        "match_count": query.match_count,
+        "leg_count": query.leg_count,
+        "weights": [weights.dense, weights.lexical, weights.exact],
+        "rrf_k": query.rrf_k,
+    }
+    rows = session.execute(_SEARCH_SQL, params).all()
+    return tuple(
+        SearchHit(
+            chunk_id=str(chunk_id),
+            fused_score=float(score),
+            dense_rank=dense,
+            lexical_rank=lexical,
+            exact_rank=exact,
         )
+        for chunk_id, score, dense, lexical, exact in rows
+    )
