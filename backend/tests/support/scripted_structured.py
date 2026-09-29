@@ -19,6 +19,9 @@ class ScriptedStructured:
     context_window_tokens: int = 32_768
     max_output_tokens: int = 8_192
     requests: list[StructuredRequest[BaseModel]] = field(default_factory=list)
+    supports_temperature: bool = False
+    supports_seed: bool = False
+    model_tag: str = "scripted-v1"
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -31,6 +34,8 @@ class ScriptedStructured:
             max_output_tokens=self.max_output_tokens,
             embedding_dimensions=None,
             leaves_machine=False,
+            supports_temperature=self.supports_temperature,
+            supports_seed=self.supports_seed,
         )
 
     def complete_structured[T: BaseModel](
@@ -46,7 +51,7 @@ class ScriptedStructured:
         return StructuredResult(
             value=reply,
             provider_id="scripted",
-            model_tag="scripted-v1",
+            model_tag=self.model_tag,
             left_machine=False,
             attempts=1,
             input_tokens=100,
