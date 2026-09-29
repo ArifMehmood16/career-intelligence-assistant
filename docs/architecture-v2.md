@@ -481,8 +481,19 @@ flowchart LR
   They may widen a search. They are never evidence, never shown as a candidate's
   claim, and never count as an exact match.
 
+Technology nodes are keyed by the spelling the document wrote, which the chunk
+validation has checked. The chunker's canonical spelling is a separate node reached
+by an inferred `ALIAS_OF` edge, so "postgresql" is never an exact match for a CV that
+only wrote "Postgres". A skills line or project with no role is a `MENTIONS` edge
+from the document's own `document` node; it cites its chunk but adds no years. If the
+taxonomy call fails — an unusable reply, a refusal, a transient error — the graph is
+stored without inferred edges and ingestion carries on, because those edges only
+widen a search; a provider that is missing or not permitted still fails.
+
 Every node and edge records the document it came from. Deleting that document
-deletes them in the same transaction.
+deletes them in the same transaction. Taxonomy edges are stored with the document
+whose ingestion first met the term, so deleting it removes them too, and the next
+ingestion that meets the term asks again.
 
 **Why not a graph database.** A second store would break one-transaction hard
 delete, needs its own backup and access story, and is not available on Supabase. The
@@ -927,7 +938,7 @@ erDiagram
     uuid id PK
     uuid workspace_id
     uuid document_id "cascades"
-    text kind "role, employer, technology, skill, category, requirement"
+    text kind "document, role, employer, technology, skill, category, requirement"
     text canonical_name
     jsonb properties
   }

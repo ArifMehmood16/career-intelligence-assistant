@@ -1529,7 +1529,7 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       description. *Done 2026-09-29: `DocumentChunker`, `validate_chunk_plan`,
       `retrieval_text` and `HermeticStructuredCompleter`. Not yet called by
       ingestion — that is 18.10 — and not run against a live model.*
-- [ ] **18.5** Knowledge graph. Asserted edges from validated chunks cite them;
+- [x] **18.5** Knowledge graph. Asserted edges from validated chunks cite them;
       inferred edges — one batched taxonomy call per ingestion for new technology
       terms, plus the chunker's canonical spellings as `ALIAS_OF` — cite nothing and
       are flagged. Domain experience calculator takes the union of parsed date
@@ -1537,7 +1537,10 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       analysis's `as_of` date; overlapping and undated roles are covered by unit
       tests. Graph
       queries are recursive CTEs of depth ≤ 2. Tests prove an inferred edge never
-      appears as evidence or as an exact match.
+      appears as evidence or as an exact match. *Done 2026-09-29:
+      `domain/experience.py`, `domain/knowledge_graph.py`, `TermTaxonomist` and
+      `SqlKnowledgeGraphRepository`. Not yet called by ingestion (18.10) and not run
+      against a live model.*
 - [ ] **18.6** Hybrid search. `career_assistant.hybrid_search()` with dense,
       lexical (`ts_rank` over an OR query, generic words removed) and exact-term legs
       fused by weighted RRF with ties broken on chunk id; a `HybridSearchPort` with

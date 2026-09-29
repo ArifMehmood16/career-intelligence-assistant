@@ -29,6 +29,36 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 143 — The knowledge graph and the experience calculator (PLAN 18.5)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.5
+- Prompt intent: continue with the next Phase 18 item.
+- Suggestion: a pure graph builder from validated chunks; years with a term as a
+  month-granular union of role dates; one batched taxonomy call for new terms; a
+  graph repository in the unit of work with a recursive CTE for related terms.
+- Outcome: accepted, with three choices the design left open. The design lists
+  `MENTIONS` without its source, so a skills line or project with no role is a
+  `MENTIONS` edge from a per-document `document` node; it cites its chunk and adds
+  no years. Technology nodes are keyed by the verified surface form, and the
+  chunker's canonical spelling hangs off it by an inferred `ALIAS_OF`, so a
+  canonical spelling alone is never an exact match. A failed taxonomy call (bad
+  reply, refusal, transient error, oversized input) stores the graph without
+  inferred edges instead of failing ingestion; an unavailable or not-permitted
+  provider still raises. `docs/architecture-v2.md` §7 records all three. The
+  human has not yet reviewed them.
+- Reason: inferred edges only widen a search, so losing them costs recall, never
+  correctness; keeping the verified spelling as the node keeps the exact-term rule
+  in the data rather than in every query. The months are counted with the end
+  month included, which reproduces the design's "Mar 2021 – Dec 2024 is 3.8 years".
+- Human validation: TBD. Observed: every new test failed first on an assertion
+  (for example `assert 0 == 46`, `assert set() == {...}`, `ProviderUnavailableError:
+  no hermetic fixture for TaxonomyResponse`); three guard tests passed against the
+  stubs and are kept as regression tests. `make test` gave 676 passed, 3 skipped,
+  79 deselected, coverage 85.12%; 124 frontend tests passed; integration gave 78
+  passed on local Homebrew PostgreSQL 17.10.
+
 ### 142 — The model-defined chunker and its hermetic fixture (PLAN 18.4)
 
 - Date: 2026-09-29
