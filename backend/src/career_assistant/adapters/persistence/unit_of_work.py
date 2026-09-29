@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_repos import (
@@ -31,6 +31,7 @@ from career_assistant.adapters.persistence.models import (
     ProviderCallAccountingRow,
     ProviderSettingsRow,
     QuestionRow,
+    RoleRow,
     ScoreExplanationRow,
     SpanRow,
     WorkspaceRow,
@@ -58,6 +59,7 @@ from career_assistant.application.ports.persistence import (
     RoleRepository,
     StoredDocument,
     WorkspaceRepository,
+    WorkspaceSummary,
 )
 from career_assistant.application.ports.search import RetrievalTraceRepository
 from career_assistant.application.ports.types import CallRecord
@@ -109,6 +111,31 @@ class SqlWorkspaceRepository:
         if row is None:
             return PipelineVersion.V1
         return PipelineVersion(row.pipeline_version)
+
+    def summaries(self) -> tuple[WorkspaceSummary, ...]:
+        """Every workspace with its role count, oldest first (for MCP setup)."""
+        roles = (
+            select(func.count(RoleRow.id))
+            .where(RoleRow.workspace_id == WorkspaceRow.id)
+            .scalar_subquery()
+        )
+        has_cv = (
+            select(DocumentRow.id)
+            .where(
+                DocumentRow.workspace_id == WorkspaceRow.id,
+                DocumentRow.kind == DocumentKind.CV.value,
+                DocumentRow.is_active.is_(True),
+            )
+            .exists()
+        )
+        rows = self._session.execute(
+            select(WorkspaceRow.id, roles, has_cv).order_by(
+                WorkspaceRow.created_at, WorkspaceRow.id
+            )
+        ).all()
+        return tuple(
+            WorkspaceSummary(str(row[0]), int(row[1]), bool(row[2])) for row in rows
+        )
 
     def set_pipeline_version(self, workspace_id: str, version: PipelineVersion) -> None:
         self.ensure(workspace_id)

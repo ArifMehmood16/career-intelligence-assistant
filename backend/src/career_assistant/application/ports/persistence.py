@@ -104,8 +104,17 @@ class HistoryMessage:
     left_machine: bool | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class WorkspaceSummary:
+    workspace_id: str
+    roles: int
+    has_cv: bool
+
+
 class WorkspaceRepository(Protocol):
     def ensure(self, workspace_id: str) -> None: ...
+
+    def summaries(self) -> tuple[WorkspaceSummary, ...]: ...
 
     def pipeline_version(self, workspace_id: str) -> PipelineVersion: ...
 
