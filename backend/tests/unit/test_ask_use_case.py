@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
+from career_assistant.api.sse import format_ask_sse
 from career_assistant.application.ask.service import (
     AskEvent,
     AskRequest,
@@ -538,3 +539,66 @@ def test_with_tool_calling_an_open_question_uses_the_agent() -> None:
         message for message in store.messages if message.author == "assistant"
     )
     assert stored.citations == ("cv-dbt",)
+
+
+def _agent_script() -> HermeticToolCaller:
+    return HermeticToolCaller(
+        script=[
+            ToolCallingResult(
+                content="",
+                tool_calls=(ToolCall("c1", "get_chunk", {"chunk_id": "cv-dbt"}),),
+                provider_id="hermetic",
+                model_tag="rules-v1",
+            ),
+            ToolCallingResult(
+                content=_agent_answer(), provider_id="hermetic", model_tag="rules-v1"
+            ),
+        ]
+    )
+
+
+def test_the_stream_sends_the_agents_tool_steps_before_the_citations() -> None:
+    completion = _TrackingCompletion()
+    completion.tool_calling = True
+    service, _, _ = _service(completion=completion, tool_calling=_agent_script())
+
+    events = list(service.stream(_open_request()))
+
+    types = [event.type for event in events]
+    assert types.index("tools") < types.index("citations")
+    tools = next(event for event in events if event.type == "tools")
+    assert tools.tool_steps is not None
+    assert [(s.name, s.found, s.failed) for s in tools.tool_steps] == [
+        ("get_chunk", 1, False)
+    ]
+    frame = format_ask_sse(tools)
+    assert frame.startswith("event: tools\n")
+    assert json.loads(frame.split("data: ", 1)[1]) == {
+        "steps": [
+            {
+                "name": "get_chunk",
+                "arguments": {"chunk_id": "cv-dbt"},
+                "found": 1,
+                "failed": False,
+            }
+        ]
+    }
+
+
+def test_a_router_answer_sends_no_tool_steps() -> None:
+    service, _, _ = _service()
+
+    events = list(
+        service.stream(
+            AskRequest(
+                workspace_id="ws-1",
+                conversation_id="conv-1",
+                client_request_id="cr-gaps-2",
+                content="What gaps should I close first?",
+                role_id="role-1",
+                roles=(_role_view(),),
+            )
+        )
+    )
+
+    assert "tools" not in [event.type for event in events]

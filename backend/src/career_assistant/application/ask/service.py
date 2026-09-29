@@ -18,6 +18,7 @@ from career_assistant.domain.ask import (
     AnswerKind,
     AnswerResult,
     RoleAnalysisView,
+    ToolStep,
     answer_structured,
     validate_citations,
 )
@@ -48,7 +49,7 @@ class AskRequest:
 
 @dataclass(frozen=True, slots=True)
 class AskEvent:
-    type: str  # meta | token | citations | done | error
+    type: str  # meta | tools | token | citations | done | error
     text: str | None = None
     kind: str | None = None
     intent: Intent | None = None
@@ -58,6 +59,7 @@ class AskEvent:
     question_id: str | None = None
     message_id: str | None = None
     citations: tuple[AnswerCitation, ...] | None = None
+    tool_steps: tuple[ToolStep, ...] | None = None
 
 
 class ConversationStore(Protocol):
@@ -209,6 +211,8 @@ class AskService:
             model=model,
             left_machine=left,
         )
+        if result.tool_steps:
+            yield AskEvent(type="tools", tool_steps=result.tool_steps)
         # Stream tokens only; persist the final validated answer after completion.
         for chunk in _chunk_text(result.content):
             yield AskEvent(type="token", text=chunk)

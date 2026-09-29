@@ -19,8 +19,9 @@ from career_assistant.api.schemas import (
     ChatMessageWire,
     CitationWire,
     MessageCreateRequest,
+    ToolStepWire,
 )
-from career_assistant.api.sse import format_ask_sse
+from career_assistant.api.sse import format_ask_sse, tool_steps_payload
 from career_assistant.application.ask.agent import AgentLimits
 from career_assistant.application.ask.memory import (
     InMemoryConversationStore,
@@ -223,6 +224,10 @@ def _assistant_message_wire(
         provider=answer.provider,
         left_machine=answer.left_machine,
         created_at=created.isoformat().replace("+00:00", "Z"),
+        tool_steps=[
+            ToolStepWire.model_validate(step)
+            for step in tool_steps_payload(result.tool_steps)
+        ],
     )
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from career_assistant.domain.pipeline import PipelineVersion
@@ -249,6 +249,13 @@ class CitationWire(ApiModel):
     evidence: EvidenceResponse | None = None
 
 
+class ToolStepWire(ApiModel):
+    name: str
+    arguments: dict[str, str]
+    found: int
+    failed: bool
+
+
 class ChatMessageWire(ApiModel):
     id: str
     conversation_id: str
@@ -260,6 +267,8 @@ class ChatMessageWire(ApiModel):
     provider: str | None
     left_machine: bool
     created_at: str
+    # The agent's tool calls for a fresh answer; not stored, so empty in history.
+    tool_steps: list[ToolStepWire] = Field(default_factory=list)
 
 
 class RankedRoleWire(ApiModel):
