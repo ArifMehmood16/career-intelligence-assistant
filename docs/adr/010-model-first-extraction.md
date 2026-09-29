@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-09-21
 - Plan: 13C.10
+- Superseded in part: [ADR 013](013-chunks-hybrid-search-knowledge-graph.md) (2026-09-29) replaces line and sentence spans with model-defined chunks once PLAN 18.15 retires v1. Verbatim verification stays.
 
 ## Context
 

@@ -1,6 +1,6 @@
 # ADR 013 — Model-defined chunks, hybrid search and a knowledge graph in PostgreSQL
 
-- Status: proposed
+- Status: accepted (PLAN 18.0, 2026-09-29)
 - Date: 2026-09-29
 - Plan: 18.1, 18.3–18.6
 - Design: [architecture-v2.md §5–§7](../architecture-v2.md#5-ingestion-the-model-defines-the-chunks)

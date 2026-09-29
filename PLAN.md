@@ -20,8 +20,8 @@ close 13D.6g. Every open item, in working order, is in
 
 **Phase 18 (2026-09-29):** the v2 architecture — model-defined chunks, hybrid
 search, a knowledge graph, a three-dimension model judge, agentic Ask and an MCP
-server — is designed and waits for review in 18.0. None of it is built. See
-[docs/architecture-v2.md](docs/architecture-v2.md).
+server — was accepted in 18.0 and is being built from 18.1. The running path is
+still v1. See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Product objective and quality priority
 
@@ -99,12 +99,12 @@ Approved for the initial implementation. A change requires an ADR and human appr
 | Store | PostgreSQL 16 + pgvector as the system of record | Original uploads, parsed documents, roles, mappings, drafts, questions, answers and vectors stay transactionally consistent | Dedicated vector DB or split object storage |
 | Persistence | SQLAlchemy 2, Alembic; bounded originals in `bytea` | Explicit schema and migrations; the configured limits keep database-backed files small enough for this portfolio workload | Raw SQL or filesystem uploads |
 | Model integration | Narrow ports with four adapters: hermetic, Ollama, OpenAI, Anthropic | Prove the abstraction, not one vendor. Hermetic is a test fixture so `make test` runs offline; it is never a product default | A single vendor SDK in the application |
-| Extraction | Model-first, with every extracted item carrying a verbatim quote verified against the stored text; local Ollama by default | Deciding what counts as a requirement is a language task. A regex cannot do it, and the 2026-09-21 audit is the evidence | Deterministic parsing as the product default |
+| Extraction | Model-defined chunks over server-numbered lines; every field the product treats as the document's words is verified verbatim; local Ollama by default ([ADR 013](docs/adr/013-chunks-hybrid-search-knowledge-graph.md)) | Deciding what a requirement or a role is, is a language task; the server still owns the text | Deterministic parsing as the product default |
 | Provider selection | Runtime workspace setting; hosted behind an explicit egress gate | The person asking should know where their text went | Deploy-time-only configuration |
 | Credentials | Server configuration only; never accepted or returned by any route | A key in the browser is a key in a log | Bring-your-own-key in the UI |
 | Long work | In-process job queue with a job resource the UI polls | Extraction takes minutes; it is a job, not a request | Celery, RQ |
-| Orchestration | Direct use cases | Visible control flow | LangChain / LlamaIndex |
-| Scoring | Deterministic rubric in domain code | Reproducible and explainable | Model-emitted score |
+| Orchestration | Direct use cases; the bounded agent loop behind Ask is itself a use case ([ADR 015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md)) | Visible control flow and testable budgets | LangChain / LlamaIndex / LangGraph |
+| Scoring | The model judges match, seniority and experience per requirement; domain code aggregates the fit score ([ADR 014](docs/adr/014-model-judges-domain-aggregates.md)) | Language judgement where it belongs; the score stays reproducible and explainable | Model-emitted fit score |
 | Generated prose | Bound to cited spans, validated server-side, hermetic template fallback | A draft a person signs cannot contain invented facts | Prompt instructions alone |
 | Extraction contract | JSON schema validated, spans verified server-side | Blocks fabricated experience | Free-text answers |
 | Local run | Make uses the developer's local PostgreSQL through `DATABASE_URL`; Compose uses its PostgreSQL container | Both paths exercise the same migrations and adapters without silently starting a second database | SQLite or in-memory persistence |
@@ -114,11 +114,9 @@ Approved for the initial implementation. A change requires an ADR and human appr
 Model tags are configuration values, never hard-coded. Tests stay provider
 independent.
 
-Phase 18 proposes changes to the Extraction, Orchestration and Scoring rows
-([ADR 013](docs/adr/013-chunks-hybrid-search-knowledge-graph.md),
-[ADR 014](docs/adr/014-model-judges-domain-aggregates.md),
-[ADR 015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md), all proposed).
-The table changes only when 18.0 accepts them.
+PLAN 18.0 accepted ADRs 013–015 on 2026-09-29 and changed the Extraction,
+Orchestration and Scoring rows. The v1 extraction, assessment and routing path keeps
+running until 18.15 retires it.
 
 ## Global definition of done
 
@@ -1468,18 +1466,19 @@ backup/restore round trip.
 18.15. The design is [docs/architecture-v2.md](docs/architecture-v2.md); the
 decisions are ADRs [013](docs/adr/013-chunks-hybrid-search-knowledge-graph.md),
 [014](docs/adr/014-model-judges-domain-aggregates.md) and
-[015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md), all *proposed*.
+[015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md), accepted in 18.0.
 18.14 reuses the Phase 14 dataset and absorbs 14.2, 14.5 and 14.7 for the v2 path.
 
 Delivery is a strangler: v2 is built beside v1, each analysis records its
 `pipeline_version`, and v1 is deleted only in 18.15. Every task below is a branch,
 TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
 
-- [ ] **18.0** Review the design. The human accepts, amends or rejects ADRs 013–015
+- [x] **18.0** Review the design. The human accepts, amends or rejects ADRs 013–015
       and `docs/architecture-v2.md`. Accepted ADRs change status, the fixed technical
       direction table is updated for Extraction, Scoring and Orchestration, and
       ADRs 004, 009, 010 and 011 get a one-line pointer to what supersedes them. No
-      implementation starts before this box is ticked.
+      implementation starts before this box is ticked. *Accepted by the human on
+      2026-09-29 without amendment ("let's continue" after the design summary).*
 - [ ] **18.1** Provider foundations. Structured output is enforced by each API:
       Ollama moves to `/api/chat` with `format` set to the schema and `num_ctx` set
       explicitly; OpenAI sends `strict: true`; Anthropic uses `output_config.format`.

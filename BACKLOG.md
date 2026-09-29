@@ -28,8 +28,8 @@ product and threat-model decision.
   blocker.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
-- Phase 18 (architecture v2) is designed, not built. **18.0, the design review, is
-  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+- Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29. **18.1 is the next
+  item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -39,9 +39,7 @@ architecture before 13D.6g. Take 18.0, then the
 section. 13D.6g stays the v1 release gate and stays unchecked; its measurement
 becomes the v1 baseline in 18.14.
 
-- [ ] **18.0 — review the v2 design.** Accept, amend or reject ADRs 013–015 and
-      `docs/architecture-v2.md` (PLAN 18.0). No Phase 18 implementation starts
-      until this is ticked.
+- [x] **18.0 — review the v2 design.** Accepted without amendment on 2026-09-29.
 
 **Recorded override:** the human asked to settle named-tool evidence before
 13D.6g. 13D.6g stays the release gate and stays unchecked.

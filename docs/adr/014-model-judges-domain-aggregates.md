@@ -1,6 +1,6 @@
 # ADR 014 — The model judges three dimensions; the domain aggregates the score
 
-- Status: proposed
+- Status: accepted (PLAN 18.0, 2026-09-29)
 - Date: 2026-09-29
 - Plan: 18.7–18.9
 - Design: [architecture-v2.md §8–§9](../architecture-v2.md#8-the-matching-workflow-and-the-model-judge)

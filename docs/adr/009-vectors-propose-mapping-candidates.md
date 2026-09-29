@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-21
+- Superseded: [ADR 013](013-chunks-hybrid-search-knowledge-graph.md) (2026-09-29) replaces "no chunk index" with chunks and hybrid search once PLAN 18.15 retires v1.
 
 ## Context
 

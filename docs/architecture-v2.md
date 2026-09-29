@@ -1,13 +1,15 @@
 # Architecture v2 — hybrid retrieval, a model judge, agents and MCP
 
-> **Status (2026-09-29): designed, not built.** This is the target architecture for
-> [PLAN.md Phase 18](../PLAN.md#phase-18--architecture-v2-hybrid-retrieval-model-judgement-agents-and-mcp).
-> The running product is still the v1 path the [README](../README.md) describes.
+> **Status (2026-09-29): accepted, being built.** This is the target architecture for
+> [PLAN.md Phase 18](../PLAN.md#phase-18--architecture-v2-hybrid-retrieval-model-judgement-agents-and-mcp);
+> building starts with 18.1. The running product is still the v1 path the
+> [README](../README.md) describes.
 > Nothing on this page is measured; every threshold and weight below is a starting
 > value that Phase 18.14 calibrates on development data. The decisions are recorded
 > in [ADR 013](adr/013-chunks-hybrid-search-knowledge-graph.md),
 > [ADR 014](adr/014-model-judges-domain-aggregates.md) and
-> [ADR 015](adr/015-agents-and-mcp-over-one-tool-registry.md), all *proposed*.
+> [ADR 015](adr/015-agents-and-mcp-over-one-tool-registry.md), accepted in PLAN 18.0 on
+> 2026-09-29.
 
 ## Contents
 

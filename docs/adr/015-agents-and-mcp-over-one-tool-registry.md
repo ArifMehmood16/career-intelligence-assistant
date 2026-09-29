@@ -1,6 +1,6 @@
 # ADR 015 — A bounded agent and an MCP server over one tool registry
 
-- Status: proposed
+- Status: accepted (PLAN 18.0, 2026-09-29)
 - Date: 2026-09-29
 - Plan: 18.11–18.12
 - Design: [architecture-v2.md §10–§11](../architecture-v2.md#10-agentic-ask)

@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-09-22
 - Plan: 13D.2
+- Superseded in part: [ADR 014](014-model-judges-domain-aggregates.md) (2026-09-29) replaces the assessor contract and the skills-line amendment once PLAN 18.15 retires v1. The letter policy stays.
 
 ## Context
 
