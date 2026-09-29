@@ -25,3 +25,25 @@ class EgressNotPermittedError(ProviderError):
 
 class ProviderTransientError(ProviderError):
     """Retryable upstream failure (429/5xx after local classification)."""
+
+
+class StructuredOutputError(Exception):
+    """The model replied, but not with a usable contract object."""
+
+    def __init__(self, message: str, *, contract_version: str) -> None:
+        super().__init__(message)
+        self.contract_version = contract_version
+
+
+class StructuredOutputInvalidError(StructuredOutputError):
+    """Still invalid after one repair call. Carries a count, never the reply."""
+
+    def __init__(
+        self, message: str, *, contract_version: str, error_count: int
+    ) -> None:
+        super().__init__(message, contract_version=contract_version)
+        self.error_count = error_count
+
+
+class StructuredOutputTruncatedError(StructuredOutputError):
+    """Cut by the output limit. The caller splits the work instead of repairing."""
