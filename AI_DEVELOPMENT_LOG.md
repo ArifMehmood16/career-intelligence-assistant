@@ -64,11 +64,16 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
     passed, including the new cancellation, task store, worker progress and HTTP
     progress tests.
   - Frontend: `tsc --noEmit` and eslint clean. 143 vitest tests passed.
-  - The red runs observed were the domain, tracker, judge-callback, matcher,
-    v2-analysis, cancellation, similarity, header and component tests. The
-    integration tests for the task store, worker progress and HTTP progress, and
-    the roles-list component test, were written alongside the code and were not
-    run red first.
+  - Behavioural red runs were observed for three things. The cancellation
+    integration test failed 3 of 4 cases on the old code. The similarity test
+    reported "did not raise". The role header test failed on the missing progress.
+  - Other tests failed first for a missing module or parameter, not a behavioural
+    reason. The domain, tracker, component and copy tests failed on the missing
+    module; the judge, matcher and v2-analysis tests failed on the missing keyword
+    argument.
+  - Written alongside the code and not run red first: the integration tests for the
+    task store, worker progress and HTTP progress, the roles-list component test and
+    the client mapping test.
   - Hermetic providers only. No live model and no real document were used, so the
     estimate's accuracy is not measured.
 
