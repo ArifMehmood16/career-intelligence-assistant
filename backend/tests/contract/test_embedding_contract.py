@@ -102,3 +102,18 @@ def test_oversized_embedding_input_rejected() -> None:
     adapter = HermeticEmbeddingAdapter()
     with pytest.raises(ProviderInputTooLargeError):
         adapter.embed(EmbeddingRequest(texts=("x" * 50,), max_chars_per_text=10))
+
+
+@pytest.mark.parametrize("input_type", ["query", "document"])
+def test_every_embedder_accepts_an_input_type(
+    embedder: object, input_type: str
+) -> None:
+    result = embedder.embed(  # type: ignore[attr-defined]
+        EmbeddingRequest(
+            texts=("alpha", "beta"),
+            max_chars_per_text=1000,
+            input_type=input_type,  # type: ignore[arg-type]
+        )
+    )
+
+    assert len(result.vectors) == 2

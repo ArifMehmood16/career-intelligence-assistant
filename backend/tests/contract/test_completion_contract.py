@@ -254,3 +254,18 @@ def test_a_truncated_reply_reports_finish_reason_length(provider: str) -> None:
     )
 
     assert result.finish_reason == "length"
+
+
+def test_every_completer_accepts_sampling_settings(completer: object) -> None:
+    result = completer.complete(  # type: ignore[attr-defined]
+        CompletionRequest(
+            system="Extract requirements.",
+            user="- SQL\n- Python",
+            max_output_tokens=200,
+            json_schema=REQUIREMENTS_SCHEMA,
+            temperature=0.0,
+            seed=7,
+        )
+    )
+
+    assert json.loads(result.text)["requirements"]
