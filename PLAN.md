@@ -18,6 +18,11 @@ batched, and a duplicated CV span id is rejected. Those correctives do not
 close 13D.6g. Every open item, in working order, is in
 [BACKLOG.md](BACKLOG.md).
 
+**Phase 18 (2026-09-29):** the v2 architecture — model-defined chunks, hybrid
+search, a knowledge graph, a three-dimension model judge, agentic Ask and an MCP
+server — is designed and waits for review in 18.0. None of it is built. See
+[docs/architecture-v2.md](docs/architecture-v2.md).
+
 ## Product objective and quality priority
 
 Rank job roles for one candidate using their CV, uploaded cover letters and the
@@ -108,6 +113,12 @@ Approved for the initial implementation. A change requires an ADR and human appr
 
 Model tags are configuration values, never hard-coded. Tests stay provider
 independent.
+
+Phase 18 proposes changes to the Extraction, Orchestration and Scoring rows
+([ADR 013](docs/adr/013-chunks-hybrid-search-knowledge-graph.md),
+[ADR 014](docs/adr/014-model-judges-domain-aggregates.md),
+[ADR 015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md), all proposed).
+The table changes only when 18.0 accepts them.
 
 ## Global definition of done
 
@@ -1447,6 +1458,136 @@ backup/restore round trip.
       of truth and no orphaned upload, question, answer, citation or draft path.
 
 **Exit gate:** ready to show.
+
+---
+
+## Phase 18 — Architecture v2: hybrid retrieval, model judgement, agents and MCP
+
+**Recorded override (2026-09-29):** the human asked for the v2 architecture before
+13D.6g closes. 13D.6g stays open and unticked, and v1 remains the running path until
+18.15. The design is [docs/architecture-v2.md](docs/architecture-v2.md); the
+decisions are ADRs [013](docs/adr/013-chunks-hybrid-search-knowledge-graph.md),
+[014](docs/adr/014-model-judges-domain-aggregates.md) and
+[015](docs/adr/015-agents-and-mcp-over-one-tool-registry.md), all *proposed*.
+18.14 reuses the Phase 14 dataset and absorbs 14.2, 14.5 and 14.7 for the v2 path.
+
+Delivery is a strangler: v2 is built beside v1, each analysis records its
+`pipeline_version`, and v1 is deleted only in 18.15. Every task below is a branch,
+TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
+
+- [ ] **18.0** Review the design. The human accepts, amends or rejects ADRs 013–015
+      and `docs/architecture-v2.md`. Accepted ADRs change status, the fixed technical
+      direction table is updated for Extraction, Scoring and Orchestration, and
+      ADRs 004, 009, 010 and 011 get a one-line pointer to what supersedes them. No
+      implementation starts before this box is ticked.
+- [ ] **18.1** Provider foundations. Structured output is enforced by each API:
+      Ollama moves to `/api/chat` with `format` set to the schema and `num_ctx` set
+      explicitly; OpenAI sends `strict: true`; Anthropic uses `output_config.format`.
+      Capability descriptors read context window and output limits from a per-model
+      configuration table and gain `supports_tool_calling`, `supports_prompt_caching`,
+      `supports_temperature` and `supports_seed`. Each adapter adapts the Pydantic
+      schema to its API (OpenAI strict mode, Anthropic's supported subset) while
+      full validation still runs on the response. Truncation is detected from the
+      finish reason on every adapter. `EmbeddingRequest` gains `input_type`; the
+      Ollama adapter applies nomic prefixes and sets `num_ctx` on embedding calls.
+      The contract suite covers all of it for all four adapters with recorded
+      fixtures and no network.
+- [ ] **18.2** LLM contracts. Pydantic models in `application/contracts/` for the
+      chunking, taxonomy, judge and agent-answer payloads are the single source of
+      each JSON schema. A validation error renders as the text of a repair request.
+      A `StructuredCompletionPort` returns validated objects. Unit tests cover schema
+      generation, a valid payload, each invalid shape and the repair message.
+- [ ] **18.3** Chunk store and migration. Tables `chunks`, `chunk_embeddings`,
+      `requirement_items`, `kg_nodes`, `kg_edges`, `match_verdicts`,
+      `verdict_evidence` and `retrieval_traces`; generated `tsvector` column and GIN
+      indexes on `fts` and `tech_terms`; a B-tree on `chunk_embeddings (workspace_id,
+      model_key)`; pgvector created in the `extensions` schema; row-level security
+      enabled with no policies; graph rows and analyses cascade from the documents
+      they came from. Integration tests run the migrations on local PostgreSQL 16 and
+      on Supabase's Postgres 17 image, and the hard-delete test enumerates every new
+      table and proves nothing survives a document delete.
+- [ ] **18.4** LLM chunker. Server line numbering; one call per document within the
+      budget, one per server-detected section otherwise; validation for coverage
+      (no ignore list), shape, size, role references, verbatim fields, stated years
+      and levels, dates and enums; one repair call; ingestion
+      incomplete on a second failure; `contact` chunks never embedded or indexed.
+      Contextual header built for retrieval only. A hermetic chunker fixture keeps
+      `make test` offline. Tests include a dropped line, an overlapping range, an
+      invented technology, a wrapped PDF line and an injection line in a job
+      description.
+- [ ] **18.5** Knowledge graph. Asserted edges from validated chunks cite them;
+      inferred edges — one batched taxonomy call per ingestion for new technology
+      terms, plus the chunker's canonical spellings as `ALIAS_OF` — cite nothing and
+      are flagged. Domain experience calculator takes the union of parsed date
+      intervals, labelled as an upper bound, with "present" resolved to the
+      analysis's `as_of` date; overlapping and undated roles are covered by unit
+      tests. Graph
+      queries are recursive CTEs of depth ≤ 2. Tests prove an inferred edge never
+      appears as evidence or as an exact match.
+- [ ] **18.6** Hybrid search. `career_assistant.hybrid_search()` with dense,
+      lexical (`ts_rank` over an OR query, generic words removed) and exact-term legs
+      fused by weighted RRF with ties broken on chunk id; a `HybridSearchPort` with
+      the SQL adapter and an in-memory fake that pass one contract suite; the trace
+      stored per search. Tests show each leg finding what the others miss
+      (paraphrase, stemmed words, `C#` / `C++`), workspace isolation, the
+      active-CV rule and cover-letter eligibility.
+- [ ] **18.7** Model judge. Packet builder with graph facts and exact-term results;
+      batch size from the capability descriptor; stable-first prompt layout; the
+      server rules and caps in ADR 014; one repair call; verdict cache keyed by input
+      hash, including the model digest where exposed and the `as_of` date;
+      analysis incomplete on a second failure. The existing job-description injection
+      fixture is extended to the judge. Hermetic judge fixture for default tests.
+- [ ] **18.8** Corrective retrieval. `retrieval_feedback` with `rewrite_query`; one
+      rewrite per requirement and a per-analysis cap; merged candidates; both rounds
+      in the trace. Tests cover the cap, a rewrite that finds nothing, and a rewrite
+      that finds the evidence.
+- [ ] **18.9** Scoring v2. `scoring-rubric-v2` in `config/scoring_rubric.toml`;
+      pure domain aggregation with 3 as full credit, recency, must-have gate and
+      bands; keyword coverage (exact, alias-only, missing) reported beside the
+      score; gap plan ordered by score delta with the dimension that would move it.
+      Unit tests without a database or a model, including an incomplete analysis
+      publishing nothing.
+- [ ] **18.10** Pipeline v2 wiring. The analysis worker runs v2 when the workspace's
+      `pipeline_version` is `v2`; v1 is untouched. API additions for dimension
+      scores, verdict evidence, retrieval trace and keyword coverage are a public API
+      change and stop for approval before `docs/api-contract.md` changes.
+      `docs/production-wiring.md` gains the v2 routes.
+- [ ] **18.11** Tool registry and agentic Ask. Registry with the tools in
+      architecture-v2 §11; `ToolCallingPort` with four adapters and one contract
+      suite; the bounded loop; validated structured answer with same-turn citations;
+      router fast path kept; deterministic fallback when tool calling is unsupported.
+      Tests include budget exhaustion, a guessed chunk id, a paraphrased quote and an
+      injection probe. `docs/threat-model.md` updated.
+- [ ] **18.12** MCP server. `career-assistant-mcp` over stdio, read-only tools from
+      the registry with output schemas and `readOnlyHint`; `MCP_ENABLED` and
+      `MCP_WORKSPACE_ID` read from the server configuration file, never the launching
+      environment, and off by default; the egress notice in every tool description
+      and result. SDK support verified for the 2026-07-28 specification with
+      2025-11-25 compatibility before pinning. Tests drive it
+      with an in-process MCP client. The architecture guard forbids `mcp` in
+      `domain/` and `application/`. README and threat model updated.
+- [ ] **18.13** Frontend. Fit shows the three dimension scores with quotes and a
+      retrieval-trace drawer; a keyword-coverage panel flags alias-only matches
+      an applicant-tracking system may miss; Ask shows the agent's tool steps.
+      `docs/frontend-brief.md` gains the Lovable prompts; component tests cover
+      loading, empty, incomplete and error states.
+- [ ] **18.14** Evaluation. Chunk-level evidence labels added to the synthetic
+      dataset; the experiments in architecture-v2 §16, including per-leg ablations,
+      the long-context baseline and judge agreement and stability; v1 as the
+      baseline; thresholds recorded before held-out runs; results with dates,
+      versions and providers in `docs/evaluation.md`. Failures are reported.
+- [ ] **18.15** Retire v1. Only if 18.14 shows v2 at least matching v1 on the
+      labelled set: delete the span classifier, reflow heuristics, work-verb gates,
+      abstain cutoff, adjudicator and relatedness adapter; replace the rules
+      extractors with the hermetic chunker; drop the v1 tables in a migration; update
+      README, features, ADR statuses and this plan. If v2 does not match v1, record
+      why and stop.
+
+**Exit gate:** v2 is the running path; every chunk, quote and citation resolves to
+stored text; replay of saved verdicts is exact; the ablation, judge-agreement and
+provider tables in `docs/evaluation.md` hold observed numbers, including the rows
+where v2 or retrieval did not help; and a reviewer can ask the same cited question
+from the web app and from an MCP client.
 
 ---
 
