@@ -19,6 +19,7 @@ from career_assistant.application.judge.prompt import JudgeLimits
 from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import Candidate, RequirementPacket
+from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.search import SearchHit
 
 AS_OF = date(2026, 9, 1)
@@ -236,3 +237,63 @@ def test_an_incomplete_requirement_is_not_searched_again() -> None:
 
     assert outcome.incomplete == ("r1",)
     assert len(search.queries) == 1
+
+
+@dataclass
+class RecordingProgress:
+    events: list[tuple[object, ...]] = field(default_factory=list)
+
+    def enter(self, key: TaskKey) -> None:
+        self.events.append(("enter", key.value))
+
+    def count(self, key: TaskKey, done: int, total: int) -> None:
+        self.events.append((key.value, done, total))
+
+    def skip(self, key: TaskKey) -> None:
+        self.events.append(("skip", key.value))
+
+
+def test_progress_counts_searches_judgements_and_rechecks() -> None:
+    progress = RecordingProgress()
+    structured = ScriptedStructured(
+        [
+            _reply(
+                _verdict("r1", sufficient=False),
+                _verdict("r2", sufficient=False),
+                _verdict("r3", sufficient=False),
+            )
+        ]
+    )
+
+    _matcher(structured, FakeSearch(), max_rewrites=2).match(
+        [_requirement("r1"), _requirement("r2"), _requirement("r3")],
+        FACTS,
+        as_of=AS_OF,
+        progress=progress,
+    )
+
+    assert progress.events == [
+        ("enter", "search"),
+        ("search", 0, 3),
+        ("search", 1, 3),
+        ("search", 2, 3),
+        ("search", 3, 3),
+        ("enter", "judge"),
+        ("judge", 0, 3),
+        ("judge", 3, 3),
+        ("enter", "recheck"),
+        ("recheck", 0, 2),
+        ("recheck", 1, 2),
+        ("recheck", 2, 2),
+    ]
+
+
+def test_progress_skips_the_recheck_when_the_evidence_was_enough() -> None:
+    progress = RecordingProgress()
+    structured = ScriptedStructured([_reply(_verdict("r1", sufficient=True))])
+
+    _matcher(structured, FakeSearch()).match(
+        [_requirement("r1")], FACTS, as_of=AS_OF, progress=progress
+    )
+
+    assert progress.events[-1] == ("skip", "recheck")

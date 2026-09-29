@@ -14,9 +14,11 @@ from datetime import date
 from typing import Protocol
 
 from career_assistant.application.judge.service import RequirementJudge
+from career_assistant.application.ports.progress import NO_PROGRESS, AnalysisProgress
 from career_assistant.application.ports.verdicts import VerdictRecord
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import Candidate, RequirementPacket
+from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.search import SearchHit
 
 
@@ -61,36 +63,51 @@ class EvidenceMatcher:
         facts: CandidateFacts,
         *,
         as_of: date,
+        progress: AnalysisProgress = NO_PROGRESS,
     ) -> MatchOutcome:
+        total = len(requirements)
+        progress.enter(TaskKey.SEARCH)
+        progress.count(TaskKey.SEARCH, 0, total)
         packets: list[RequirementPacket] = []
         traces: dict[str, tuple[SearchRound, ...]] = {}
-        for requirement in requirements:
+        for done, requirement in enumerate(requirements, start=1):
             found = self._search.find(requirement, requirement.statement)
             packets.append(replace(requirement, candidates=found.candidates))
             traces[requirement.requirement_id] = (
                 SearchRound(0, requirement.statement, found.hits),
             )
-        judged = self._judge.judge(packets, facts, as_of=as_of)
+            progress.count(TaskKey.SEARCH, done, total)
+        progress.enter(TaskKey.JUDGE)
+        judged = self._judge.judge(
+            packets,
+            facts,
+            as_of=as_of,
+            on_judged=lambda handled: progress.count(TaskKey.JUDGE, handled, total),
+        )
         verdicts = dict(judged.verdicts)
-        rewrites = 0
-        for packet in packets:
-            if rewrites == self._max_rewrites:
-                break
-            record = verdicts.get(packet.requirement_id)
-            query = _rewrite_query(record)
-            if query is None:
-                continue
-            rewrites += 1
+        # Requirement order decides who gets the analysis's bounded rewrites.
+        wanted = [
+            (packet, query)
+            for packet in packets
+            if (query := _rewrite_query(verdicts.get(packet.requirement_id)))
+        ][: self._max_rewrites]
+        if wanted:
+            progress.enter(TaskKey.RECHECK)
+            progress.count(TaskKey.RECHECK, 0, len(wanted))
+        else:
+            progress.skip(TaskKey.RECHECK)
+        for done, (packet, query) in enumerate(wanted, start=1):
             found = self._search.find(packet, query)
             traces[packet.requirement_id] += (SearchRound(1, query, found.hits),)
             corrected = self._rejudge(packet, found, facts, as_of=as_of)
             if corrected is not None:
                 verdicts[packet.requirement_id] = corrected
+            progress.count(TaskKey.RECHECK, done, len(wanted))
         return MatchOutcome(
             verdicts=verdicts,
             incomplete=judged.incomplete,
             traces=traces,
-            rewrites=rewrites,
+            rewrites=len(wanted),
         )
 
     def _rejudge(
