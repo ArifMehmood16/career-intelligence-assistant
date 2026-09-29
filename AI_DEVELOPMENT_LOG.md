@@ -29,6 +29,39 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 141 — The v2 schema, and a cloud PostgreSQL runner for it (PLAN 18.3)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.3
+- Prompt intent: continue Phase 18 in TDD fashion.
+- Suggestion: one migration for the eight v2 tables with the cascades, checks and
+  indexes the design names; pgvector moved into an `extensions` schema; row-level
+  security with no policies on every table; a CI job for PostgreSQL 16 and for
+  Supabase's Postgres image.
+- Outcome: changed
+- Reason: three things changed while it ran. Setting the search path for every
+  migration in `migrations/env.py` put the baseline tables into the new
+  `extensions` schema on a rebuilt database, so the search path is now set inside
+  the new revision only, and its downgrade moves pgvector back to `public`, where
+  older revisions expect it. Foreign keys alone could not honour "every analysis
+  that read the document": a verdict's rationale may paraphrase the CV without
+  citing a chunk, so the unit of work deletes the workspace's v2 verdicts when a CV
+  or cover letter is deleted; chunks, vectors, graph rows, quotes and traces still
+  cascade in the database. And the Supabase image could not be pulled — Docker
+  Hub, ghcr.io and public ECR are all refused from this session — so that row is a
+  CI job whose first run is its verification, and 18.3 stays unticked until then.
+- Human validation: TBD. Observed: the device VM has no PostgreSQL and cannot
+  install one, so integration tests ran in the session's cloud container against
+  PostgreSQL 16.13 with pgvector 0.6.0, on a fresh database, with the working tree
+  copied from the device before each run. The new tests failed first because the
+  tables did not exist, and the CV-delete test failed again until the unit of work
+  deleted verdicts. Final run: 69 integration tests passed, including the existing
+  migration upgrade-and-downgrade test; the hermetic suite gave 597 passed,
+  3 skipped, 70 deselected. The cloud role was a superuser, because the migrations
+  create and move the extension; a developer database needs the migration role to
+  own pgvector, which `docs/running-locally.md` now says.
+
 ### 140 — Pydantic contracts and a structured completion port (PLAN 18.2)
 
 - Date: 2026-09-29

@@ -836,7 +836,10 @@ New tables sit beside the v1 tables until v1 is retired (18.15). Every table car
 `workspace_id` with `ON DELETE CASCADE`. Deleting a document deletes its chunks and
 embeddings, the graph nodes and edges it produced, and every analysis that read it —
 verdicts, quotes and traces — in the same transaction, and the hard-delete test
-enumerates every table.
+enumerates every table. Chunks, vectors, graph rows, quotes and traces cascade in the
+database; because a verdict's rationale may paraphrase any evidence document, the
+unit of work deletes the workspace's verdicts when a CV or cover letter goes, and
+re-analysis recomputes them.
 
 ```mermaid
 erDiagram

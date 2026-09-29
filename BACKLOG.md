@@ -29,7 +29,7 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done. **18.3 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done and 18.3 waits only on its Supabase CI run. **18.4 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -123,7 +123,8 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
       per-model limits, truncation, embedding input type.
 - [x] **18.2 — LLM contracts:** Pydantic schemas and the repair message.
 - [ ] **18.3 — chunk store and migration**, proven on local PostgreSQL and on
-      Supabase's Postgres image, with the extended hard-delete test.
+      Supabase's Postgres image, with the extended hard-delete test. *Implemented;
+      the Supabase CI row has not run yet (open a pull request to run it).*
 - [ ] **18.4 — LLM chunker** with coverage and verbatim validation.
 - [ ] **18.5 — knowledge graph** and the experience calculator.
 - [ ] **18.6 — hybrid search:** `hybrid_search()` and its contract suite.

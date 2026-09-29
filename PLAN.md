@@ -1511,7 +1511,11 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       enabled with no policies; graph rows and analyses cascade from the documents
       they came from. Integration tests run the migrations on local PostgreSQL 16 and
       on Supabase's Postgres 17 image, and the hard-delete test enumerates every new
-      table and proves nothing survives a document delete.
+      table and proves nothing survives a document delete. *Implemented
+      2026-09-29: migration d3a18c0f2b61; 69 integration tests passed on PostgreSQL
+      16.13 with pgvector 0.6.0. The Supabase Postgres 17 row is a CI job that has
+      not run yet — container registries are not reachable from the session that
+      wrote it — so this box stays open until that run passes.*
 - [ ] **18.4** LLM chunker. Server line numbering; one call per document within the
       budget, one per server-detected section otherwise; validation for coverage
       (no ignore list), shape, size, role references, verbatim fields, stated years
