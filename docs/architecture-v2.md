@@ -724,6 +724,22 @@ The **gap plan** keeps its v1 principle — ordered by how much the score would 
 and gains the dimension that would move it: "evidence exists but is one level
 junior" is a different action from "no evidence at all".
 
+As built (PLAN 18.9, `domain/scoring_v2.py`):
+
+- The rubric is a `[v2]` table in `config/scoring_rubric.toml`. v1's keys and
+  version are read unchanged.
+- Each dimension is capped at 3 before weighting. The formula above, read
+  literally, would let a match of 4 make up for experience of 2 inside one
+  requirement; the cap is what makes "a 4 earns no bonus" hold there too.
+- A verdict is missing, and scores 0, when its match is 1 or less. The server's
+  rules make that the same thing as a `missing` label.
+- Components are ordered by requirement id, so the same verdicts give the same
+  numbers whatever order they arrive in.
+- The gap plan gives each requirement one entry: its biggest single lift. That
+  is raising one dimension to 3 or, for dated evidence past two years, recency
+  to 1.0. A missing requirement is lifted as if its new evidence were recent,
+  as v1 does. An incomplete analysis has no gap plan.
+
 ## 10. Agentic Ask
 
 v1 routes every question with regular expressions. v2 keeps that router as a fast

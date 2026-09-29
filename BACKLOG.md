@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, and 18.4–18.8 are done. **18.9 is
-  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.9 are done. **18.10 is
+  the next item**; its API addition stops for approval. See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -131,7 +131,7 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 - [x] **18.6 — hybrid search:** `hybrid_search()` and its contract suite.
 - [x] **18.7 — model judge** with server rules and the verdict cache.
 - [x] **18.8 — corrective retrieval**, one bounded rewrite.
-- [ ] **18.9 — scoring v2** and keyword coverage.
+- [x] **18.9 — scoring v2** and keyword coverage.
 - [ ] **18.10 — pipeline v2 wiring**; the API addition stops for approval.
 - [ ] **18.11 — tool registry and agentic Ask.**
 - [ ] **18.12 — MCP server**, stdio, off by default.

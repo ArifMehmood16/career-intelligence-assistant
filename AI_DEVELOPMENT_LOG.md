@@ -29,6 +29,31 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 148 — Scoring v2, keyword coverage and the gap plan (PLAN 18.9)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.9
+- Prompt intent: continue with the next phase work items.
+- Suggestion: pure domain aggregation over `JudgedVerdict`, with the rubric as a
+  `[v2]` table in the existing rubric file so v1 reads it unchanged.
+- Outcome: changed in one place. §9's formula, read literally, lets a match of 4
+  make up for a low experience score inside one requirement. Each dimension is
+  now capped at 3 before weighting, which matches the design's "a 4 earns no
+  bonus". This is an interpretation for the human to confirm. The gap plan lists
+  one entry per requirement, its biggest single lift, recency included.
+- Reason: the fit score stays domain code the model never produces. An
+  incomplete analysis publishes no score, band, components or gap plan.
+- Human validation: TBD. Observed:
+  - 13 of 16 tests failed against stubs. The rubric-loader test passed because
+    the loader was already written, and two passed vacuously.
+  - One test's assumption about component order was corrected to look
+    components up by id. They are ordered by requirement id on purpose.
+  - All 16 then passed, and v1's scoring tests still pass.
+  - `make lint` clean. `make test`: 785 passed, 3 skipped, 96 deselected,
+    coverage 86.04%, and 124 frontend tests passed.
+  - No persistence changed.
+
 ### 147 — Corrective retrieval, one bounded rewrite (PLAN 18.8)
 
 - Date: 2026-09-29

@@ -1567,12 +1567,14 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       that finds the evidence. *Done 2026-09-29: `EvidenceMatcher` in
       `application/judge/matching.py`. The cap is a constructor argument until
       18.10 reads `JUDGE_MAX_REWRITES` from configuration.*
-- [ ] **18.9** Scoring v2. `scoring-rubric-v2` in `config/scoring_rubric.toml`;
+- [x] **18.9** Scoring v2. `scoring-rubric-v2` in `config/scoring_rubric.toml`;
       pure domain aggregation with 3 as full credit, recency, must-have gate and
       bands; keyword coverage (exact, alias-only, missing) reported beside the
       score; gap plan ordered by score delta with the dimension that would move it.
       Unit tests without a database or a model, including an incomplete analysis
-      publishing nothing.
+      publishing nothing. *Done 2026-09-29: `domain/scoring_v2.py` and a `[v2]`
+      table in the rubric file. Each dimension is capped at 3 before weighting
+      (architecture-v2 §9).*
 - [ ] **18.10** Pipeline v2 wiring. The analysis worker runs v2 when the workspace's
       `pipeline_version` is `v2`; v1 is untouched. API additions for dimension
       scores, verdict evidence, retrieval trace and keyword coverage are a public API
