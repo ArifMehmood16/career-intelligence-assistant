@@ -29,6 +29,50 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 153 — Pipeline v2 frontend (PLAN 18.13)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.13
+- Prompt intent: continue with 18.13 after the MCP server.
+- Suggestion:
+  - A v2 Fit view built from `GET /api/roles/{id}/verdicts`: three dimension
+    scores with the judge's anchors and reasons, verbatim evidence, server
+    adjustments, keyword coverage beside the score, and a trace drawer loaded on
+    demand.
+  - Ask shows the agent's tool steps.
+  - The Lovable prompt and component tests.
+- Outcome: built as proposed. It needed three additive API fields, each documented
+  in `docs/api-contract.md`:
+  - `Role.analysisPipeline`, so the web app knows to read a v2 role from the
+    verdicts route rather than inferring it from a 409;
+  - a `tools` event on the answer stream;
+  - `ChatMessage.toolSteps`.
+  Other changes along the way:
+  - A v2 role's Gaps tab shows the verdicts' gap plan, because the v1 gap plan
+    is empty for it.
+  - The api-contract said judge scores run 0–3; the contract model and the judge
+    anchors are 0–4, so the doc was corrected.
+  - The 18.11a progress bar used an inline style, which the frontend brief rules
+    out. It now uses an SVG rect, like the fit breakdown's bars.
+  - The gallery was given its own sample data instead of importing a test
+    fixture.
+- Reason: reading the pipeline from the role is explicit, and a v1 role then sends
+  no request that is bound to fail. Tool steps are not persisted, which would need a
+  migration; the page keeps them for the session, and the limitation is recorded.
+- Human validation: TBD. Observed:
+  - Backend: ruff, format and mypy clean. 885 unit tests passed, coverage 85.15%. On
+    PostgreSQL 16.13 with pgvector 0.6.0, 141 integration tests passed.
+  - Frontend: `tsc --noEmit` and eslint clean. 174 vitest tests passed.
+  - Behavioural red runs were observed for three things. The role-pipeline route
+    test hit a KeyError on the missing field. The agent-steps and stream-tools
+    tests failed on the missing attribute and event. The verdicts client tests
+    failed on the missing functions and the unhandled tools event.
+  - The component tests were first run against missing modules. The copy helper
+    and gallery tests were written with the code.
+  - The views were not checked in a browser against a live v2 analysis, and no
+    live model or real document was used.
+
 ### 152 — MCP server (PLAN 18.12)
 
 - Date: 2026-09-29

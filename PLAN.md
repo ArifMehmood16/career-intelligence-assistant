@@ -1622,11 +1622,18 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       PostgreSQL. Hermetic data only. The tools are still the 18.11 handlers: word
       overlap rather than `hybrid_search()`, no years, and v1 analyses only
       ([docs/mcp.md](docs/mcp.md)).*
-- [ ] **18.13** Frontend. Fit shows the three dimension scores with quotes and a
+- [x] **18.13** Frontend. Fit shows the three dimension scores with quotes and a
       retrieval-trace drawer; a keyword-coverage panel flags alias-only matches
       an applicant-tracking system may miss; Ask shows the agent's tool steps.
       `docs/frontend-brief.md` gains the Lovable prompts; component tests cover
-      loading, empty, incomplete and error states.
+      loading, empty, incomplete and error states. *Done 2026-09-29, with three
+      additive API fields: `Role.analysisPipeline` tells the web app to read a v2
+      role from the verdicts route, and the answer stream's `tools` event and
+      `ChatMessage.toolSteps` carry the agent's tool calls. Steps are not stored.
+      A v2 role's Gaps tab reads the verdicts' gap plan. Its Prepare and Letter
+      tabs, fit summary and ranking reasons still read v1 data and are empty.
+      Component tests and hermetic data only; no live model, and no real
+      document viewed in the browser.*
 - [ ] **18.14** Evaluation. Chunk-level evidence labels added to the synthetic
       dataset; the experiments in architecture-v2 §16, including per-leg ablations,
       the long-context baseline and judge agreement and stability; v1 as the

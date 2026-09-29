@@ -153,6 +153,7 @@ Role {
   updatedAt: string;                          // additive
   fitSummary: string | null;                  // additive; GET /roles/{id} once ready, otherwise null
   activeJob: AnalysisJob | null;              // additive; the queued or running job, with progress
+  analysisPipeline: "v1" | "v2" | null;       // additive; which pipeline produced the published analysis
 }
 
 RoleCreated { role: Role; jobId: string }
@@ -371,7 +372,7 @@ Verdict {
   provider; model;
 }
 
-DimensionScore { score: 0 | 1 | 2 | 3; rationale: string }
+DimensionScore { score: 0 | 1 | 2 | 3 | 4; rationale: string }   // the judge's anchors; 3 is "as stated"
 
 RetrievalTrace {
   requirementId;
@@ -390,8 +391,10 @@ never chunk text. A v2 role's `counts` on
 `GET /api/roles/{id}` count these verdict labels, and its `fitScore` is the v2 score.
 The v1 routes above do not fail on a v2 analysis, but they carry no v2 data:
 requirements is empty, the breakdown rows are zero and the v1 gap plan has
-`currentScore: 0` and no items. Read these v2 routes instead. The TypeScript types
-arrive with the frontend work in PLAN 18.13.
+`currentScore: 0` and no items. Read these v2 routes instead: `Role.analysisPipeline`
+says which pipeline produced a role's analysis, and the web app reads a `"v2"` role's
+Fit and Gaps tabs from here (PLAN 18.13). The TypeScript types are in
+`frontend/src/types/index.ts`.
 
 ---
 
@@ -527,9 +530,11 @@ ChatMessage {
   provider: string | null;
   leftMachine: boolean;
   createdAt: string;
+  toolSteps: ToolStep[];   // additive; the agent's tool calls for a fresh answer; [] in history
 }
 
 Citation { id; label; evidence: Evidence }
+ToolStep { name; arguments: Record<string, string>; found: number; failed: boolean }
 ```
 
 `frontend/src/types/index.ts` is the canonical TypeScript statement of this contract,
@@ -546,11 +551,16 @@ Event sequence:
 
 ```text
 event: meta      data: { "questionId": "...", "messageId": "...", "intent": "gaps", "provider": "ollama", "model": "...", "leftMachine": false }
+event: tools     data: { "steps": [ ToolStep, ... ] } (only when the agent answered)
 event: token     data: { "text": "..." }            (repeated)
 event: citations data: { "citations": [ ... ] }     (after the text, once)
 event: done      data: { "kind": "answer" | "insufficient" }
 event: error     data: { "code": "provider_failed", "message": "..." }
 ```
+
+Tool steps arrive before the text, because the agent called the tools before it
+answered. Each argument is shown as a string of at most 120 characters. Steps are not
+stored: history messages carry `toolSteps: []`.
 
 Citations arrive **after** the text because they are validated against stored spans
 once the answer is complete. An answer whose citations do not all resolve is reduced

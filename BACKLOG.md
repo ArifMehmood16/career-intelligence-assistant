@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, and 18.4–18.12 and 18.11a are done.
-  18.12 is done. **18.13 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.13 and 18.11a are done.
+  18.12 and 18.13 are done. **18.14 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -142,10 +142,10 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
       the 18.11 handlers: wiring `search_evidence` to `hybrid_search()`,
       `skill_experience` to the graph and v2 verdicts into `get_role_analysis` is
       open, and serves the in-app agent and MCP alike.
-- [ ] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
-      For a v2 role the v1 read routes (requirements, breakdown, gap plan, interview
-      pack, fit summary, ranking reasons) return empty or zeroed data; the fit view
-      must read `GET /api/roles/{id}/verdicts` instead (log 149).
+- [x] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
+      A v2 role's Fit and Gaps tabs read the verdicts. Its Prepare and Letter tabs,
+      fit summary and ranking reasons still read v1 data and are empty; that work
+      is open (log 153).
 - [ ] **18.14 — evaluation:** ablations, long-context baseline, judge agreement.
 - [ ] **18.15 — retire v1**, only if 18.14 supports it.
 

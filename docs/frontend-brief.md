@@ -327,6 +327,65 @@ nothing unused.
 
 
 
+## Prompt 6 — Pipeline v2 fit, traces and agent steps (PLAN 18.13)
+
+Paste only after the v2 routes exist in `docs/api-contract.md`. It adds views; it
+changes none of the earlier ones.
+
+```text
+Continue the existing project. Do not restyle or rewrite earlier screens.
+Data only through src/api/client.ts. Semantic tokens only, no hex, no inline styles.
+
+A role now has analysisPipeline: "v1" | "v2" | null. When it is "v2", the Fit and
+Gaps tabs read getRoleVerdicts(roleId) instead of the v1 routes, and the v1
+requirement, breakdown and gap-plan requests are not sent.
+
+VERDICTS PANEL (Fit tab, v2)
+Top: fit score in mono "71 / 100 · Partial match". If gated is true, one muted line:
+"A must-have scored low on match, so the band is capped at partial." One small line
+saying the score is arithmetic over the verdicts (show rubricVersion) and whether a
+hosted model judged it (leftMachine).
+Keyword coverage section with three groups side by side (stacked below 640px):
+"In your CV as written", "Only under another name", "Not found". Terms as small
+mono chips. Under the middle group, when it is not empty: "An applicant-tracking
+system may miss these." Coverage is shown beside the score, never inside it.
+One card per verdict: the requirement statement as the heading, the advert quote
+below it, a Must-have badge, and the verdict with the existing StatusMark glyph and
+word. Then three rows, Match, Seniority and Experience, each with a four-segment
+meter, "3 / 4", the anchor words for that score and the judge's reason in muted text.
+A null dimension shows "The advert states no level." or "The advert states no years."
+Then the verbatim evidence quotes as blockquotes, the unmet conditions as a list, a
+warning line when contradiction is true, and each server adjustment in plain words.
+Footer: model and provider in mono, and a "Show retrieval trace" button.
+States: loading skeleton, error with Retry, "no finished v2 analysis" for a 409
+analysis_incomplete (never shown as an error or a score), and "No requirements were
+found in this job description." for an empty list.
+
+TRACE DRAWER
+Opens from the card; loads getVerdictTrace(roleId, requirementId) only then. One table
+per round: round 0 is the requirement as the query; round 1 is labelled as the judge's
+rewrite in its own words. Columns: chunk id, fused score, dense, lexical and exact
+ranks (an em dash when a leg did not return the chunk), and "Cited" when the verdict
+quotes that chunk. Loading, error with Retry.
+
+GAPS TAB (v2)
+The verdicts' gapPlan in order: the requirement statement, the dimension to raise with
+"now 2 / 4", and the points closing it would add. Empty: "No gaps".
+
+ASK
+Under an assistant answer that carries toolSteps, a collapsed "Found using N tool
+calls" disclosure listing each call in plain words ("Searched your documents"), its
+arguments in mono and how many passages came back. Steps arrive on the stream's
+tools event and are not stored, so keep them for the session.
+
+Add each new state to /dev/states from props alone.
+```
+
+**Check:** a v1 role's Fit tab is unchanged; a v2 role sends no v1 fit requests; a 409
+reads as "no finished v2 analysis"; every score shows its number and its words.
+
+---
+
 ## After the last prompt
 
 Export to GitHub, then port into `frontend/` against the handover checklist in the

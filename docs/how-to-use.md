@@ -16,14 +16,21 @@
    although one already in flight finishes first.
 4. **Open the role** and work the tabs:
    - **Fit** — summary, score breakdown, and every scoreable requirement as met /
-     partial / missing with cited evidence.
+     partial / missing with cited evidence. For a role analysed on pipeline v2, Fit
+     shows each requirement's match, seniority and experience scores (0–4, with the
+     words the judge was given and its reason), the quotes behind them, keyword
+     coverage with terms found only under another name flagged, and a retrieval trace
+     per requirement. Gaps then lists which score to raise and what closing it would
+     add.
    - **Gaps** — ordered by score impact; draft a CV bullet only when a cited claim
      already supports it.
    - **Prepare** — interview probes, lead-with evidence, thin areas.
    - **Letter** — generate a grounded cover letter; citations appear as `[1]`, `[2]`
      with the full source passage in the right-hand glossary.
 5. **Ask** questions about gaps, fit or anything in your documents; citation chips open
-   the source span.
+   the source span. When the answer model can call tools, an open question is
+   answered by the agent, and "Found using N tool calls" under the answer shows what
+   it searched.
 6. **Settings** — choose the answer and index providers. Hosted providers are offered
    only when egress is enabled on the server, and choosing one requires acknowledging
    that document text may leave the machine.

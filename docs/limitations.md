@@ -21,6 +21,12 @@ Written down rather than papered over:
 - No authentication or multi-tenancy. Workspace scoping is enforced and tested, but
   the identity behind it is a cookie. Required before any untrusted user touches it.
 
+- A role analysed on pipeline v2 shows its fit and gaps from the verdicts, but its
+  Prepare and Letter tabs, its fit summary and the ranking reasons still read the v1
+  analysis, which it does not have, so they are empty. Pipeline v1 is the default.
+- The agent's tool steps in Ask are shown for answers given in the current session;
+  they are not stored, so a reloaded conversation does not show them.
+
 ## With more time
 
 In order, from [BACKLOG.md](../BACKLOG.md): review and build the v2 architecture
