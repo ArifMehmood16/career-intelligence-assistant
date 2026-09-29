@@ -37,8 +37,8 @@ Provider resolvers:
   drives the chunker, taxonomist and judge through `V2JobRunner`, wrapped in
   `AccountingCompletion`; hermetic uses `HermeticStructuredCompleter`. Chunks are
   embedded through `build_embedding_port`, and hybrid search runs on
-  `SqlSessionHybridSearch`. Retrieval covers CV chunks only; cover letters are
-  not searched yet. A `v1` workspace (the default) keeps the resolvers above.
+  `SqlSessionHybridSearch`. Only the active CV and the advert are indexed, and
+  retrieval covers CV chunks only; cover letters are not part of a v2 analysis yet. A `v1` workspace (the default) keeps the resolvers above.
 - `list_provider_catalogue` / `apply_provider_choice` — catalogue and egress
   acknowledgement only; no document text leaves the process
 

@@ -288,6 +288,75 @@ dropped unless the span still resolves in this workspace.
 
 ---
 
+## Role verdicts (pipeline v2)
+
+Additive (PLAN 18.10, [architecture v2](architecture-v2.md)). These routes read an
+analysis that ran on pipeline `v2`; see `GET /api/settings/pipeline` below.
+
+```http
+GET /api/roles/{id}/verdicts                            → RoleVerdicts
+GET /api/roles/{id}/verdicts/{requirementId}/trace      → RetrievalTrace
+```
+
+- `404 role_not_found` — no role with that id in this workspace.
+- `409 analysis_incomplete` — the role has no succeeded v2 analysis (it is still
+  running, it failed, or it ran on v1).
+- `404 requirement_not_found` — the trace route's `requirementId` names no verdict in
+  the role's current v2 analysis.
+
+```ts
+RoleVerdicts {
+  roleId; analysisId;
+  fitScore: number;          // computed by domain code, never by the model
+  band: string;
+  gated: boolean;            // a must-have's match score is at or below the rubric
+                             // gate, so the band cannot be "strong"
+  rubricVersion: string;     // "scoring-rubric-v2"
+  leftMachine: boolean;      // true if any call in this analysis used a hosted provider
+  verdicts: Verdict[];
+  keywordCoverage: { exact: string[]; alias: string[]; missing: string[] };
+  gapPlan: { requirementId; dimension: "match" | "seniority" | "experience";
+             current: number; delta: number }[];   // ordered by delta descending
+}
+
+Verdict {
+  requirementId; quote; statement; mustHave: boolean;
+  verdict: "met" | "partial" | "missing";
+  requirementScore: number | null;
+  match: DimensionScore;
+  seniority: DimensionScore | null;
+  experience: DimensionScore | null;
+  unmetConditions: string[];
+  contradiction: boolean;
+  adjustments: string[];     // server rules applied to the judge's proposal (ADR 014)
+  evidence: { chunkId; documentId; quote }[];   // quote is verbatim from the chunk
+  provider; model;
+}
+
+DimensionScore { score: 0 | 1 | 2 | 3; rationale: string }
+
+RetrievalTrace {
+  requirementId;
+  rounds: { round: 0 | 1; queryText: string;
+            hits: { chunkId; fusedScore: number; denseRank: number | null;
+                    lexicalRank: number | null; exactRank: number | null }[] }[];
+}
+```
+
+Every evidence quote passed the server's verbatim check against a stored chunk before
+it was saved. Each `rationale`, and a round-1 `queryText`, is the judge's own
+phrasing ([ADR 014](adr/014-model-judges-domain-aggregates.md)): it explains a score
+and is never evidence, and the browser renders it as escaped text. Round 1 exists only
+when the judge asked for one corrective rewrite. Traces carry chunk ids and ranks,
+never chunk text. A v2 role's `counts` on
+`GET /api/roles/{id}` count these verdict labels, and its `fitScore` is the v2 score.
+The v1 routes above do not fail on a v2 analysis, but they carry no v2 data:
+requirements is empty, the breakdown rows are zero and the v1 gap plan has
+`currentScore: 0` and no items. Read these v2 routes instead. The TypeScript types
+arrive with the frontend work in PLAN 18.13.
+
+---
+
 ## Generated drafts
 
 ```http
@@ -508,6 +577,19 @@ extraction and bullet phrasing actually call. `indexProviderId` stays independen
 Answer and draft `provider` / `model` / `leftMachine` come from that completion
 port, not a hard-coded hermetic tag. Call accounting records those identifiers and
 token counts only — never question, CV or prompt text.
+
+```http
+GET /api/settings/pipeline → PipelineSetting
+PUT /api/settings/pipeline → PipelineSetting
+```
+
+```ts
+PipelineSetting { pipelineVersion: "v1" | "v2" }   // v1 when never set
+```
+
+The setting chooses the matching pipeline for the workspace's next analysis. Existing
+analyses are not re-run; use `POST /api/roles/{id}/reanalyse`. The job records the
+pipeline it ran on.
 
 **No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
 masked, not a boolean per key beyond `available`. A redaction test asserts that the

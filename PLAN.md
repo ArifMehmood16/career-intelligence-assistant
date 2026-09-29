@@ -1575,11 +1575,15 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       publishing nothing. *Done 2026-09-29: `domain/scoring_v2.py` and a `[v2]`
       table in the rubric file. Each dimension is capped at 3 before weighting
       (architecture-v2 §9).*
-- [ ] **18.10** Pipeline v2 wiring. The analysis worker runs v2 when the workspace's
+- [x] **18.10** Pipeline v2 wiring. The analysis worker runs v2 when the workspace's
       `pipeline_version` is `v2`; v1 is untouched. API additions for dimension
       scores, verdict evidence, retrieval trace and keyword coverage are a public API
       change and stop for approval before `docs/api-contract.md` changes.
-      `docs/production-wiring.md` gains the v2 routes.
+      `docs/production-wiring.md` gains the v2 routes. *Done 2026-09-29: the human
+      approved the API change before it was built. `GET/PUT /api/settings/pipeline`,
+      `V2JobRunner`, and `GET /api/roles/{id}/verdicts` and `.../trace`, proven with
+      the hermetic providers on PostgreSQL. Only the CV and the advert are indexed;
+      cover letters are not part of a v2 analysis yet. Not run against a live model.*
 - [ ] **18.11** Tool registry and agentic Ask. Registry with the tools in
       architecture-v2 §11; `ToolCallingPort` with four adapters and one contract
       suite; the bounded loop; validated structured answer with same-turn citations;

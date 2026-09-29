@@ -29,6 +29,58 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 149 — Pipeline v2 wiring and the verdict and trace routes (PLAN 18.10)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.10
+- Prompt intent: continue with the next phase work items. Asked whether to build
+  the API additions, the human chose "Build the wiring and the API additions; I
+  approve the API change now".
+- Suggestion: a per-workspace `pipeline_version` setting and migration; a chunk
+  store and a `DocumentIndexer` that chunks, graphs and embeds a document once per
+  chunking prompt version; `HybridCandidateSearch` over `hybrid_search`;
+  `RoleAnalysisV2` to judge, rewrite, score and build keyword coverage and the gap
+  plan; `SqlV2AnalysisRepository` to publish verdicts, evidence, traces and a score
+  row in one unit of work; `V2JobRunner`, selected by the worker from the
+  workspace setting (strategy); `GET /api/roles/{id}/verdicts` and
+  `.../verdicts/{requirementId}/trace` behind a `V2ResultReader` port with a
+  `NoV2Results` null object.
+- Outcome: changed in three places.
+  - The worker has no session factory, so hybrid search runs on the unit of work's
+    session (`SqlSessionHybridSearch`) rather than opening its own.
+  - A v2 role's summary counts on `GET /api/roles/{id}` were zeros, because they
+    came from v1 mappings. They now count v2 verdict labels.
+  - Two claims in the first contract draft were wrong and were corrected against
+    the code. `gated` is a must-have's match score at or below the rubric gate,
+    not "scored 0". An oversized embedding input is refused, not truncated.
+- Reason: the fit score, band and gap plan stay domain arithmetic. An incomplete
+  judge run or chunk plan fails the job with `assessment_incomplete` or
+  `extraction_incomplete` and publishes no score. Only the active CV and the
+  advert are indexed; cover letters stay out of v2 matching, consistent with the
+  recorded narrative-only scope decision. The judge's rationales and rewrite query
+  are returned as explanation, as ADR 014 and architecture-v2 §9 show them, and
+  never as evidence.
+- Human validation: TBD. Observed:
+  - Red runs kept for this entry: the v2 worker test failed because the job ran on
+    `v1`, and the verdict-route tests failed with 404 and `validation_failed` from
+    the unmatched route. The red output of the earlier slices was not kept, so it
+    is not restated here.
+  - Some tests passed before the code they guard: two chunk-store scoping tests and
+    the requirement-id stability test passed against stubs; the v1 worker test and
+    the three "v1 routes do not fail on a v2 analysis" tests pass as regression
+    guards. The failure-path and route-shape tests were added after the behaviour
+    and checked by mutation: removing the publishable guard fails the judge case,
+    and removing the trace sort fails the round-order test.
+  - A fixup commit folded the `docs/production-wiring.md` rows into the first
+    commit so it builds; the branch had not been pushed.
+  - `make lint` clean. `make test`: 804 passed, 3 skipped, 123 deselected,
+    coverage 84.91%, and 124 frontend tests passed. `make test-integration`: 122
+    passed.
+  - Hermetic providers only; no live model and no real document was used.
+  - Open for the human: the three 18.5 graph choices and the 18.9 per-dimension
+    cap still await confirmation, and 18.3's Supabase CI row has not run.
+
 ### 148 — Scoring v2, keyword coverage and the gap plan (PLAN 18.9)
 
 - Date: 2026-09-29

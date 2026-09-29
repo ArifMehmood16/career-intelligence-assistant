@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, and 18.4–18.9 are done. **18.10 is
-  the next item**; its API addition stops for approval. See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.10 are done. **18.11 is
+  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -132,10 +132,13 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 - [x] **18.7 — model judge** with server rules and the verdict cache.
 - [x] **18.8 — corrective retrieval**, one bounded rewrite.
 - [x] **18.9 — scoring v2** and keyword coverage.
-- [ ] **18.10 — pipeline v2 wiring**; the API addition stops for approval.
+- [x] **18.10 — pipeline v2 wiring** and the approved verdict and trace routes.
 - [ ] **18.11 — tool registry and agentic Ask.**
 - [ ] **18.12 — MCP server**, stdio, off by default.
 - [ ] **18.13 — frontend** for dimension scores, traces, coverage and agent steps.
+      For a v2 role the v1 read routes (requirements, breakdown, gap plan, interview
+      pack, fit summary, ranking reasons) return empty or zeroed data; the fit view
+      must read `GET /api/roles/{id}/verdicts` instead (log 149).
 - [ ] **18.14 — evaluation:** ablations, long-context baseline, judge agreement.
 - [ ] **18.15 — retire v1**, only if 18.14 supports it.
 

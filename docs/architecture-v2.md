@@ -648,8 +648,9 @@ As built (PLAN 18.8, `application/judge/matching.py`):
   incomplete, because it already passed the server's rules.
 - A requirement incomplete in round 0 is not searched again.
 - The search behind it is a narrow `CandidateSearch` port returning hits for the
-  trace and candidates for the judge. 18.10 implements it over `hybrid_search`
-  and the chunk store.
+  trace and candidates for the judge. `HybridCandidateSearch`
+  (`application/judge/candidate_search.py`) implements it over `hybrid_search` and
+  the chunk store (PLAN 18.10).
 
 ### Reproducibility
 
@@ -1089,6 +1090,29 @@ will say exactly that.
 
 Delivery is a strangler: v1 and v2 run side by side, every analysis records its
 `pipeline_version`, and v1 is deleted in one task only after the evaluation says so.
+
+As built (PLAN 18.10):
+
+- `PUT /api/settings/pipeline` stores `v1` or `v2` on the workspace; unset is `v1`.
+  `SqlAnalysisWorker.complete` reads it for each job and hands a `v2` job to
+  `V2JobRunner` (`adapters/persistence/v2_worker.py`). The job row records the
+  pipeline it ran on. A `v1` job runs exactly as before.
+- `RoleAnalysisV2` (`application/analysis/v2.py`) indexes the CV and the advert through
+  `DocumentIndexer` once per chunking prompt version, then judges, rewrites, scores
+  and builds keyword coverage and the gap plan. Model calls run outside any
+  transaction; the verdicts, evidence, traces and score row are published in one
+  unit of work.
+- The workspace's answer provider drives the chunker, taxonomist and judge; its index
+  provider embeds. The rewrite cap is `JUDGE_MAX_REWRITES` and the embedding input
+  cap is `EMBEDDING_MAX_CHARS_PER_TEXT`.
+- Only the active CV and the advert are indexed, and candidate search covers CV
+  chunks only. Cover letters are not part of a v2 analysis yet, so ADR 011's letter
+  policy is still unimplemented on v2.
+- Requirement ids are UUIDv5 of the advert chunk id and the requirement's position,
+  so a re-analysis of the same advert keeps its ids.
+- `GET /api/roles/{id}/verdicts` and `.../verdicts/{requirementId}/trace` read the
+  published analysis; the v1 routes return empty or zeroed data for a v2 role rather
+  than failing.
 
 ## 18. Where each technique lives
 
