@@ -19,10 +19,12 @@ from career_assistant.application.judge.matching import EvidenceMatcher, MatchOu
 from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.chunks import StoredChunk
 from career_assistant.application.ports.embedding import EmbeddingPort
+from career_assistant.application.ports.progress import NO_PROGRESS, AnalysisProgress
 from career_assistant.application.ports.search import HybridSearchPort
 from career_assistant.domain.candidate_facts import candidate_facts
 from career_assistant.domain.chunking import TechTermProposal
 from career_assistant.domain.judging import RequirementPacket
+from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.recency import DateRange
 from career_assistant.domain.scoring_v2 import (
     FitScoreV2,
@@ -90,9 +92,13 @@ class RoleAnalysisV2:
         self._rubric = rubric
         self._limits = limits
 
-    def run(self, documents: V2Documents) -> V2Analysis:
+    def run(
+        self, documents: V2Documents, *, progress: AnalysisProgress = NO_PROGRESS
+    ) -> V2Analysis:
         ws, as_of = documents.workspace_id, documents.as_of
+        progress.enter(TaskKey.READ_CV)
         cv = self._indexer.index(ws, documents.cv)
+        progress.enter(TaskKey.READ_ADVERT)
         advert = self._indexer.index(ws, documents.advert)
         requirements = _requirements(advert.chunks)
         facts = candidate_facts(
@@ -110,7 +116,10 @@ class RoleAnalysisV2:
         matcher = EvidenceMatcher(
             search, self._judge, max_rewrites=self._limits.max_rewrites
         )
-        match = matcher.match([r.packet for r in requirements], facts, as_of=as_of)
+        match = matcher.match(
+            [r.packet for r in requirements], facts, as_of=as_of, progress=progress
+        )
+        progress.enter(TaskKey.SCORE)
         items = _to_score(requirements, match, _chunk_dates(cv.chunks))
         rubric, incomplete = self._rubric, match.incomplete
         return V2Analysis(

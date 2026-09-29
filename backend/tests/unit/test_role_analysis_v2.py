@@ -12,6 +12,7 @@ from pathlib import Path
 from tests.support.in_memory_index import InMemoryIndexStore
 from tests.support.in_memory_verdicts import InMemoryVerdictCache
 from tests.support.index_backed_search import IndexBackedSearch
+from tests.support.recording_progress import RecordingProgress
 from tests.support.refusing_structured import RefusingJudge
 
 from career_assistant.adapters.providers.hermetic.embedding import (
@@ -120,3 +121,18 @@ def test_a_refusing_judge_leaves_the_analysis_unscored() -> None:
     assert not analysis.fit.publishable
     assert analysis.fit.score is None
     assert analysis.gaps == ()
+
+
+def test_progress_walks_the_v2_tasks_in_order() -> None:
+    progress = RecordingProgress()
+
+    analysis = _analysis(HermeticStructuredCompleter()).run(
+        _documents(), progress=progress
+    )
+
+    entered = progress.entered
+    assert entered[:4] == ["read_cv", "read_advert", "search", "judge"]
+    assert entered[-1] == "score"
+    assert ("skip", "recheck") in progress.events or "recheck" in entered
+    total = len(analysis.requirements)
+    assert ("judge", total, total) in progress.events
