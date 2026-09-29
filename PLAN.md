@@ -1551,16 +1551,16 @@ TDD at behaviour boundaries, hermetic by default, with the AGENTS.md checkpoint.
       e2c7a4b9d150, `SqlHybridSearch`, `SqlRetrievalTraceRepository`, and the
       contract suite in `tests/contract/test_hybrid_search_contract.py`. Nothing
       calls it yet (18.10); the leg weights are the design's 1.0 until 18.14.*
-- [ ] **18.7** Model judge. Packet builder with graph facts and exact-term results;
+- [x] **18.7** Model judge. Packet builder with graph facts and exact-term results;
       batch size from the capability descriptor; stable-first prompt layout; the
       server rules and caps in ADR 014; one repair call; verdict cache keyed by input
       hash, including the model digest where exposed and the `as_of` date;
       analysis incomplete on a second failure. The existing job-description injection
       fixture is extended to the judge. Hermetic judge fixture for default tests.
-      *Implemented 2026-09-29 (`domain/judging.py`, `domain/candidate_facts.py`,
-      `application/judge/`), except the digest source: `ModelIdentity` carries a
-      digest into the key, but no adapter reports one. Open until the human
-      decides how Ollama's digest is read.*
+      *Done 2026-09-29: `domain/judging.py`, `domain/candidate_facts.py` and
+      `application/judge/`. The digest is an optional `CapabilityDescriptor` field
+      that Ollama fills from `/api/tags`; the human chose that over a new port.
+      Nothing calls the judge yet (18.10).*
 - [ ] **18.8** Corrective retrieval. `retrieval_feedback` with `rewrite_query`; one
       rewrite per requirement and a per-analysis cap; merged candidates; both rounds
       in the trace. Tests cover the cap, a rewrite that finds nothing, and a rewrite

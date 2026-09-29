@@ -625,7 +625,8 @@ As built (PLAN 18.7), the rules live in `domain/judging.py` and the use case in
 - The cache key leaves out the requirement id, so an unchanged re-extraction
   reuses its verdict. A verdict is cached only when the model that answered is
   the configured one, so a fallback's answer is never replayed as the primary's.
-  The key takes a model digest, but no adapter reports one yet (`BACKLOG.md`).
+  The digest comes from the capability descriptor (§12), so a re-pulled Ollama
+  tag misses the cache.
 
 ### Corrective retrieval (the bounded agentic step)
 
@@ -844,7 +845,11 @@ tool calls or a final message out). The capability descriptor gains
 `supports_tool_calling`, `supports_prompt_caching`, `supports_temperature` and
 `supports_seed`, and its
 context window and output limits come from a per-model table in configuration rather
-than constants in the adapter.
+than constants in the adapter. It also carries an optional `model_digest` (PLAN
+18.7). The factory gives the Ollama adapter a lookup over `/api/tags`, and every
+other provider reports none. The adapter keeps a digest once it finds one and
+tries again after a failure. A failure reports no digest, which costs a verdict
+cache miss, never a wrong reuse.
 
 ### Embeddings know whether they are embedding a query or a document
 

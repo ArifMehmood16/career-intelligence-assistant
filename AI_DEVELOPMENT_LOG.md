@@ -29,6 +29,43 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 146 — The model digest, and transport errors as provider errors (PLAN 18.7)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.7, closing the digest source left open in entry 145
+- Prompt intent: the human chose an optional `model_digest` on
+  `CapabilityDescriptor`, filled by the Ollama adapter. Options offered were a new
+  narrow port, the descriptor field, deferring to 18.10, or dropping the digest.
+- Suggestion: look the digest up over `/api/tags` inside the `capabilities`
+  property.
+- Outcome: changed.
+  - Doing I/O in the property would have broken every contract test that builds
+    Ollama directly, and would have made reading a descriptor able to fail.
+  - Instead the adapter takes an optional `digest_lookup` that only the factory
+    supplies. It keeps a digest once it finds one and tries again after a
+    failure.
+  - A refused connection or a timeout left `HttpxTransport` as a raw httpx
+    exception, which no use case catches. It is now fixed, as its own `fix`
+    commit with a regression test: a timeout is transient and any other
+    transport failure means the provider is unavailable. That is a small
+    behaviour change for every provider: the retry policy now retries timeouts,
+    and a refused connection is `ProviderUnavailableError` rather than an
+    internal error.
+  - Two catalogue-wiring tests now record an empty `/api/tags` reply.
+- Reason: a failed lookup reports no digest, which costs a cache miss, never a
+  wrong reuse. A re-pulled tag with new weights now misses the cache.
+- Human validation: the digest design was chosen by the human. The rest is TBD.
+  Observed:
+  - The transport tests failed on raw `httpx.ConnectError` and `ReadTimeout`,
+    then passed.
+  - The digest tests failed on assertions (five; four passed vacuously against a
+    stub that returned `None`), then passed.
+  - The judge test failed with `cached is True` for new weights, then passed.
+  - `make lint` clean. `make test`: 762 passed, 3 skipped, 96 deselected,
+    coverage 85.74%, and 124 frontend tests passed.
+  - Integration: 95 passed.
+
 ### 145 — The model judge and the server's rules (PLAN 18.7)
 
 - Date: 2026-09-29

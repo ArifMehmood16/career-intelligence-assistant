@@ -29,8 +29,8 @@ product and threat-model decision.
 - Phase 16 supports one truthful startup path and one small end-to-end journey.
 - Phase 17 is one consolidated release review rather than five separate tasks.
 - Phase 18 (architecture v2) was accepted in 18.0 on 2026-09-29; 18.1 and 18.2 are
-  done, 18.3 waits only on its Supabase CI run, 18.4–18.6 are done, and 18.7 waits
-  on the model-digest decision. **18.8 is the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
+  done, 18.3 waits only on its Supabase CI run, and 18.4–18.7 are done. **18.8 is
+  the next item.** See [docs/architecture-v2.md](docs/architecture-v2.md).
 
 ## Now — release path
 
@@ -129,10 +129,7 @@ In working order. Each line is one branch; acceptance criteria are in `PLAN.md`.
 - [x] **18.4 — LLM chunker** with coverage and verbatim validation.
 - [x] **18.5 — knowledge graph** and the experience calculator.
 - [x] **18.6 — hybrid search:** `hybrid_search()` and its contract suite.
-- [ ] **18.7 — model judge** with server rules and the verdict cache.
-      *Implemented except the digest source: the key includes a model digest,
-      but no adapter reports one yet. Reading Ollama's digest needs a port
-      method or a new narrow port — decision needed.*
+- [x] **18.7 — model judge** with server rules and the verdict cache.
 - [ ] **18.8 — corrective retrieval**, one bounded rewrite.
 - [ ] **18.9 — scoring v2** and keyword coverage.
 - [ ] **18.10 — pipeline v2 wiring**; the API addition stops for approval.
