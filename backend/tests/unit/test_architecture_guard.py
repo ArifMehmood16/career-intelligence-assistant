@@ -18,6 +18,9 @@ FORBIDDEN = {
     "openai",
     "anthropic",
     "ollama",
+    # The MCP SDK stays in its driving adapter (ADR 015).
+    "mcp",
+    "mcp_types",
 }
 
 GUARDED = ("domain", "application")
