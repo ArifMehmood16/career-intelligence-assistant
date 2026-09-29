@@ -24,6 +24,7 @@ _REQUIRED: dict[str, frozenset[str]] = {
             "counts",
             "status",
             "updatedAt",
+            "activeJob",
         }
     ),
     "Requirement": frozenset({"id", "roleId", "text", "type", "status", "evidence"}),
@@ -53,8 +54,30 @@ _REQUIRED: dict[str, frozenset[str]] = {
         }
     ),
     "AnalysisJob": frozenset(
-        {"id", "kind", "state", "stage", "startedAt", "finishedAt", "error"}
+        {
+            "id",
+            "kind",
+            "state",
+            "stage",
+            "startedAt",
+            "finishedAt",
+            "error",
+            "progress",
+        }
     ),
+    "JobProgress": frozenset(
+        {
+            "tasksDone",
+            "tasksTotal",
+            "fraction",
+            "currentTask",
+            "elapsedSeconds",
+            "remainingSeconds",
+            "queuePosition",
+            "tasks",
+        }
+    ),
+    "AnalysisTask": frozenset({"key", "state", "unitsDone", "unitsTotal"}),
     "GapPlan": frozenset({"roleId", "currentScore", "items"}),
     "GapItem": frozenset(
         {
@@ -123,6 +146,8 @@ _SHARED: dict[str, str] = {
     "Provider": "ProviderResponse",
     "ProviderChoice": "ProviderChoiceResponse",
     "AnalysisJob": "AnalysisJobResponse",
+    "JobProgress": "JobProgressWire",
+    "AnalysisTask": "JobTaskWire",
     "GapPlan": "GapPlanWire",
     "GapItem": "GapItemWire",
     "DraftProvenance": "DraftProvenanceWire",
