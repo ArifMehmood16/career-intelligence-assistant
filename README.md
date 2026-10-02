@@ -6,13 +6,11 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-09-29):** the running path is v1 — model-first extraction and
-> structured evidence assessment on a local Ollama model (Phase 13D). Its
-> verification gate, 13D.6g, is open, and no accuracy claim is made beyond the dated
-> rows in [docs/evaluation.md](docs/evaluation.md). The v2 architecture — hybrid
-> search, a model judge, agents and MCP — was accepted on 2026-09-29 and is being
-> built in [Phase 18](PLAN.md#phase-18--architecture-v2-hybrid-retrieval-model-judgement-agents-and-mcp).
-> This is a **personal tool for local use**, not a multi-user hosted product.
+> **Status (2026-10-02):** one chunk/search/judge analysis with provider-specific
+> execution budgets, batched calls, bounded parallel work and visible call/time
+> estimates. The v1 analysis and selector are retired. Current model quality and
+> end-to-end latency still need the measured release checks in [PLAN.md](PLAN.md).
+> This is a private, single-user local tool.
 
 ![Fit tab with score breakdown and requirements](docs/images/fit.jpg)
 
@@ -25,8 +23,7 @@ real document.** The model reads, classifies and judges; the server checks every
 quote and citation against the stored text; domain code computes the score. When the
 evidence is missing, the product says so rather than filling the gap.
 
-- How v1 does it today: [docs/architecture.md](docs/architecture.md)
-- What v2 changes, and why: [docs/architecture-v2.md](docs/architecture-v2.md)
+- How it works: [docs/architecture.md](docs/architecture.md)
 
 ## What it does
 
@@ -46,9 +43,7 @@ step-by-step use and screenshots are in [docs/how-to-use.md](docs/how-to-use.md)
 
 ## Architecture
 
-The target system, accepted in PLAN 18.0 and being built. Today's running path is
-the v1 subset of it: no hybrid search, knowledge graph, agent or MCP server yet
-([docs/architecture.md](docs/architecture.md)).
+One evidence-bound modular monolith with parallel I/O and separate CPU parsing.
 
 ```mermaid
 flowchart LR
@@ -113,7 +108,7 @@ Every command, the database topology, Compose and logging:
 | Topic | Read |
 |---|---|
 | **Product** | [Features](docs/features.md) · [How to use it](docs/how-to-use.md) · [Known limitations and what's next](docs/limitations.md) |
-| **Architecture** | [v1, running](docs/architecture.md) · [v2, being built](docs/architecture-v2.md) · [Decisions (ADRs)](docs/adr/) · [Model providers and the egress gate](docs/model-providers.md) · [Route wiring](docs/production-wiring.md) · [API contract](docs/api-contract.md) |
+| **Architecture** | [Architecture](docs/architecture.md) · [Decisions (ADRs)](docs/adr/) · [Model providers and the egress gate](docs/model-providers.md) · [Route wiring](docs/production-wiring.md) · [API contract](docs/api-contract.md) |
 | **Running it** | [Running locally](docs/running-locally.md) · [MCP server](docs/mcp.md) · [Productionisation](docs/productionisation.md) |
 | **Trust and quality** | [Evaluation](docs/evaluation.md) · [Privacy position](docs/privacy.md) · [Threat model](docs/threat-model.md) · [Engineering standards and AI use](docs/engineering-standards.md) |
 | **Working on it** | [AGENTS.md](AGENTS.md) (protocol for coding agents; [CLAUDE.md](CLAUDE.md) imports it) · [PLAN.md](PLAN.md) (tasks and gates) · [BACKLOG.md](BACKLOG.md) (open work, in order) · [AI_DEVELOPMENT_LOG.md](AI_DEVELOPMENT_LOG.md) · [Engineering journal](docs/engineering-journal.md) |
