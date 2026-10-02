@@ -46,8 +46,15 @@ restart Codex if the newly installed skills do not appear.
 
 ## Suggested first change
 
-Use PLAN 19.4's current-analysis measurement slice, building on the implemented
-19.2–19.3 work. Start with this chat prompt:
+Update 2026-10-02: the human requested implementation of this slice while retaining
+deferred checks. Its [spec, plan and tasks](../specs/001-synthetic-analysis-benchmark/spec.md)
+now exist and `make benchmark` is implemented. Use the existing artifacts rather
+than creating another spec for the same change. Tests/lint/benchmark execution remain
+pending; commands and scope are in [Evaluation](evaluation.md#current-analysis-benchmark-plan-194).
+The prompts below document how that bounded feature was chosen.
+
+The first feature targeted PLAN 19.4's current-analysis measurement slice, building
+on the implemented 19.2–19.3 work. Its planning prompt was:
 
 ```text
 $speckit-specify Add a reproducible synthetic benchmark for the existing career
@@ -58,7 +65,7 @@ public APIs and privacy controls. No pipeline rewrite, real CVs or hosted calls
 by default. Keep tests, lint and benchmark execution pending until I request them.
 ```
 
-Continue with separate chat messages:
+The corresponding planning steps use these skills:
 
 ```text
 $speckit-clarify

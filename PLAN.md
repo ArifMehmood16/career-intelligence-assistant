@@ -5,18 +5,22 @@ build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
 Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
 evaluation rows.
 
-**Checkpoint:** 19.1–19.3 implementation is committed for review. The human asked
-to defer tests/lint and stop after documentation, commits and push. Their final
-verification, migrations and 19.4 measurements remain open; no release gate is
-claimed passed.
+**Checkpoint:** 19.1–19.3 implementation is committed for review. On 2026-10-02
+the human authorized synthetic benchmark implementation under 19.4 while keeping
+checks deferred. That overrides task ordering only for this bounded slice; earlier
+verification, migration preservation and measured release gates remain open.
+A reported retirement-migration constraint-name failure was repaired in code;
+the repair and benchmark have not been executed or verified.
 
 ## Using Spec Kit for the existing project
 
 GitHub Spec Kit v1.0.13 is adopted as a planning layer; see
 [docs/spec-kit.md](docs/spec-kit.md). Each feature spec elaborates one bounded change
 and links to this plan. Its plan/tasks do not replace this roadmap or close a gate.
-The suggested first slice is the synthetic measurement work in 19.4. Adoption does
-not execute that slice, apply migrations or resume deferred tests/lint.
+The first scoped change is
+[synthetic analysis benchmarking](specs/001-synthetic-analysis-benchmark/spec.md).
+Its implementation is present; tests/lint, benchmark runs and migrations remain
+pending. Specification quality review proves no application behavior.
 
 ## Approved direction
 
@@ -88,6 +92,12 @@ full lint/unit checks and PostgreSQL integration checks pass or state their conc
 external blocker. Document verification and measured latency separately.
 
 ## 19.4 — prove the current product
+
+Measurement tooling checkpoint: `make benchmark` drives the current analysis with
+named synthetic fixtures, cold/warm application caches, physical request accounting
+and attribution. Explicit live mode reuses provider factories and the egress gate.
+This is fixture retrieval; PostgreSQL/browser latency and frozen-label quality
+evaluation are separate work. No benchmark result is claimed before execution.
 
 - [ ] Run one synthetic end-to-end browser journey: upload CV, add role, wait, inspect
       fit and source citation, prepare, draft and ask. Fix broken current features.

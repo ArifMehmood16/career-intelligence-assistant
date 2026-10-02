@@ -13,33 +13,33 @@ implementation is present; validation stays pending until explicitly resumed.
 
 ## Phase 2 — User Story 1: offline cold/warm measurement
 
-- [ ] T003 [US1] Author cold/warm, cache, failure and privacy regressions in
+- [x] T003 [US1] Author cold/warm, cache, failure and privacy regressions in
   `backend/tests/unit/test_analysis_benchmark.py`; do not execute them (FR-001–004,006–008).
-- [ ] T004 [US1] Load named shipped pairs with contained paths and SHA-256 fingerprints
+- [x] T004 [US1] Load named shipped pairs with contained paths and SHA-256 fingerprints
   in `backend/src/career_assistant/ops/benchmark_cases.py` (FR-001,004).
-- [ ] T005 [US1] Implement a locked probe and measured fixture cache/index boundaries
+- [x] T005 [US1] Implement a locked probe and measured fixture cache/index boundaries
   in `backend/src/career_assistant/ops/benchmark_probe.py` and `benchmark_runtime.py`
   (FR-002,003). Observation status is `succeeded`, `failed`, or `skipped`;
   failed/skipped scores are null, skipped elapsed time is null.
-- [ ] T006 [US1] Drive the current analysis with fresh cold caches and retained warm
+- [x] T006 [US1] Drive the current analysis with fresh cold caches and retained warm
   caches in `backend/src/career_assistant/ops/benchmark_runtime.py` (FR-002,008).
-- [ ] T007 [US1] Emit `analysis-benchmark-v1` JSON, per-case summaries, attribution,
+- [x] T007 [US1] Emit `analysis-benchmark-v1` JSON, per-case summaries, attribution,
   safe exit codes and exclusive output files in `backend/src/career_assistant/ops/benchmark.py`
   (FR-004,006,007). Repetitions are an integer in [1, 20].
 
 ## Phase 3 — User Story 2: explicit provider measurements
 
-- [ ] T008 [US2] Measure each physical transport request, including retries/failures
+- [x] T008 [US2] Measure each physical transport request, including retries/failures
   and separate metadata calls in `backend/src/career_assistant/ops/benchmark_probe.py`
   (FR-003). Preserve progress/accounting task context as a distinct measure.
-- [ ] T009 [US2] Reuse factories, require live opt-in and disable fallback in
+- [x] T009 [US2] Reuse factories, require live opt-in and disable fallback in
   `backend/src/career_assistant/ops/benchmark_runtime.py` and `benchmark.py`; author
   transport/egress regression coverage in `backend/tests/unit/test_analysis_benchmark.py`
   (FR-005,006,008).
 
 ## Phase 4 — Documentation and checkpoint
 
-- [ ] T010 Add the offline-safe Make target and update `Makefile`,
+- [x] T010 Add the offline-safe Make target and update `Makefile`,
   `docs/evaluation.md`, `docs/running-locally.md`, `docs/threat-model.md`,
   `PLAN.md`, `BACKLOG.md`, `AI_DEVELOPMENT_LOG.md` and `docs/engineering-journal.md`.
 

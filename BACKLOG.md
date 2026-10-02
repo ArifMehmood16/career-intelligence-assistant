@@ -7,6 +7,9 @@ measurements remain in docs/evaluation.md.
 
 Implementation for 19.1–19.3 is present. Final verification was deferred by the
 human; unchecked items include those checks, not another implementation track.
+The human also authorized the bounded [19.4 benchmark implementation](specs/001-synthetic-analysis-benchmark/spec.md)
+ahead of those checks. The runner and a reported retirement-migration naming repair
+are authored; tests/lint, benchmark execution and migration verification stay pending.
 
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.

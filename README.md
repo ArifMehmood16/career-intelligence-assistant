@@ -12,6 +12,9 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > end-to-end latency still need the measured release checks in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 
+The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
+measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).
+
 ![Fit tab with score breakdown and requirements](docs/images/fit.jpg)
 
 ## How it works

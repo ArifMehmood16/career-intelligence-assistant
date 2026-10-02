@@ -37,13 +37,21 @@ concurrency in `config/models.toml`; restart after editing model configuration.
 bounds hosted calls. `PARSING_WORKERS` and `PARSING_TIMEOUT_SECONDS` configure the
 separate spawned PDF/DOCX parser pool. Plain text avoids process startup.
 
-The retired v1 evaluation command has been removed. Rebuilding the current
-quality/latency evaluator is tracked in PLAN 19.4.
+The retired v1 evaluation command has been removed. `make benchmark` implements
+current cold/warm application timing with synthetic fixture retrieval; it defaults
+offline and needs no database or key. `BENCHMARK_ARGS` passes named cases, repeat
+count, report destination or explicit live-provider selections. Execution is still
+deferred. See [measurement scope and commands](evaluation.md#current-analysis-benchmark-plan-194).
+Frozen-label quality evaluation remains open in PLAN 19.4.
 
 The new forward migrations add call-progress fields and retire legacy derived
 analysis storage. They preserve original uploads and current chunk/verdict results;
-old analyses must be rerun. Migrations were defined in this change and have not been
-applied to a personal database. Verification is deferred to the human's final checks.
+old analyses must be rerun. A user-reported attempt to run the retirement revision
+failed because a check-constraint name was prefixed twice. The revision now uses
+Alembic `op.f()` for complete names in both directions. This code repair has not been
+executed by the agent; the human may retry `make db-migrate`. Disposable PostgreSQL
+preservation checks and final verification remain pending; a successful personal
+migration is not claimed.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on

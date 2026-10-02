@@ -44,6 +44,13 @@ pending the human's checks.
 - Logs/audit: allowlisted ids, counts, durations and codes only; no document, prompt,
   question/answer, model response, embedding, HTTP bodies or credentials. Progress
   persists call counts, not payloads. API keys never appear in route responses.
+- Benchmark/model: an offline-default command reads only named shipped synthetic
+  fixtures, with contained fixture paths and fingerprints. Explicit live opt-in
+  reuses existing provider builders and hosted egress enforcement, with fallback
+  disabled. Fixture storage is isolated from production, and no database URL or
+  personal upload store is read. Report output allowlists metadata/counts/timing;
+  transport observers retain neither URLs, headers nor bodies, and failures expose
+  safe codes. Exclusive report creation prevents overwriting an existing file.
 
 ## Residual risks and limits
 

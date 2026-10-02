@@ -18,6 +18,33 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Synthetic benchmark implementation, execution deferred
+
+- Date: 2026-10-02
+- Commands run: `git fetch origin` (restricted DNS failure, elevated read-only retry
+  succeeded); `git switch -c feat/phase-19-synthetic-benchmark`; Spec Kit template
+  resolver, `setup-plan.sh --json`, `setup-tasks.sh --json` and
+  `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks`;
+  `backend/.venv/bin/ruff format` on the new benchmark modules/test/support files;
+  Git source/diff inspection and local commits.
+- Observed result: feature artifacts resolve and source files are present/formatted.
+  The CLI drives the current application with explicit fixture retrieval, cold/warm
+  caches and content-free physical request accounting. These are implementation
+  observations, not test results or latency measurements.
+- Decisions made: human explicitly retained deferred checks and authorized this
+  slice ahead of earlier gates. Source baseline is the consolidated/adoption branch
+  at `c603f33`; main is behind that dependency work. Offline operation reads no
+  provider settings. Live operation reuses existing factories, egress and execution
+  profiles. Fixture retrieval is labelled and excludes SQL/browser timing.
+- User-reported defect: retirement SQL doubled check-constraint names. Code now
+  uses `op.f()` for full names in both directions; SQL-compilation regression
+  coverage is authored. Repair commit `f32f244`; no personal database action taken.
+- Verification: no tests/lint/typecheck, benchmark/model calls, migrations, browser
+  or security scans. Deferred tasks and all root release gates remain unchecked.
+- Carried forward: focused and full checks, synthetic benchmark execution, observed
+  results in evaluation.md, disposable migration preservation/deletion checks and
+  frozen current-architecture quality/ranking evaluation.
+
 ## Phase 19 — Existing-project Spec Kit adoption
 
 - Date: 2026-10-02

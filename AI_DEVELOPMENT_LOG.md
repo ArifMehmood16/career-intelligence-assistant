@@ -29,6 +29,45 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 160 — Synthetic cold/warm analysis benchmark implementation
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: bounded 19.4 timing/accounting slice; 19.1 naming prerequisite is entry 159
+- Prompt intent: continue the development plan, with explicit instruction to keep
+  checks deferred and implement the synthetic benchmark.
+- Suggestion: reuse the running analysis and explicit existing fixture index/search
+  adapters, measure cold/warm application caches, and distinguish physical HTTP
+  attempts from structured/embedding operations and progress accounting.
+- Outcome: implemented for review. Spec Kit spec/plan/research/data/CLI/run-guide/tasks
+  link to the root milestone. The CLI accepts named synthetic pairs, freezes the
+  analysis date, fingerprints inputs/configuration, and records elapsed duration,
+  provider/model/digest/prompt/contract/rubric attribution, execution limits and
+  document/vector/verdict cache reuse. Retry/failure and metadata requests are counted
+  at a transport decorator without retaining payloads.
+- Reason: the human authorized this slice ahead of earlier verification gates.
+  The current consolidated implementation/adoption branch is the dependency base,
+  rather than restoring obsolete main or treating installed skills as finished work.
+- Changed: offline defaults read no provider settings and cannot dispatch HTTP;
+  live selections require explicit opt-in and existing factories/egress gate, with
+  fallback disabled. Failed/incomplete observations retain safe accounting, publish
+  no score and skip the warm run; output files are exclusively created before work.
+- Rejected: v1 evaluation reuse, arbitrary personal document inputs, production
+  persistence changes, hidden paid calls, resetting vendor caches, quality claims
+  from rule fixtures, or treating fixture retrieval timing as SQL/browser latency.
+- Human validation: pending. `git fetch origin` succeeded after the restricted
+  attempt could not resolve GitHub; task branch created from `c603f33`. Spec Kit
+  template/setup/prerequisite scripts resolved the feature artifacts. Source and
+  diffs were manually inspected for scope/privacy. `ruff format` formatted only
+  the new benchmark source/test files; no lint, typecheck, pytest, benchmark,
+  browser journey, security scan or migration ran. No TDD red/green evidence or
+  measured improvement is claimed. Authored regressions cover reuse, incomplete
+  publication, retry/failure accounting, privacy, fixture paths, thread counting,
+  opt-in/egress and output preservation. Migration repair commit: `f32f244`.
+- Carried forward: generated verification tasks T011–T012, full earlier gates,
+  disposable SQL preservation/deletion tests, current frozen-label model quality
+  and ranking measurements, startup/browser proof. No release checkbox closed.
+
 ### 159 — Repair retirement migration constraint naming
 
 - Date: 2026-10-02
