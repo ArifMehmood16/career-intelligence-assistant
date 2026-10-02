@@ -100,9 +100,10 @@ counts requirements handled, including failed calls.
 For the reported slow gpt-5-mini run, local `PROVIDER_TIMEOUT_SECONDS` is now 180
 (tracked default remains 60); `PROVIDER_MAX_RETRIES` remains 2. Restart the API
 with `make run-api` to load configuration, then start a new analysis in the UI.
-A sequence of three timed-out requests can wait about nine minutes. This is an
-unverified mitigation for the observed timing pattern, not a successful-analysis
-claim. Details are in [Model providers](model-providers.md#rate-limits).
+A sequence of three timed-out requests can wait about nine minutes. The human
+subsequently completed an analysis, confirmed as a ready publication by read-only
+HTTP. The earlier timeout diagnosis remains inferred, with regression and measured
+release checks open. Details are in [Model providers](model-providers.md#rate-limits).
 
 When an analysis fails, the status endpoint can still return HTTP 200: inspect the
 job's `state` and `error`. A preceding OpenAI `provider.request_failed` event now
@@ -115,7 +116,15 @@ The 2026-10-02 advert-schema repair preserves empty arrays rather than forcing
 nullable types into optional nested collections. After updating, restart the API
 or let its development reloader finish, then start a new analysis. A failed job
 does not resume after an account or code fix. Synthetic request acceptance was
-observed; complete analysis and regression verification remain pending.
+observed; a later human analysis completed. Regression and reproducible synthetic
+release verification remain pending.
+
+If the overall score and match counts appear but detailed Fit/Gaps reports that
+verdicts cannot be displayed, update the frontend and refresh the role page or use
+Retry. The 2026-10-02 repair accepts the domain's existing `recency` gap category
+and displays its current factor as a percentage. Previously it rejected the whole
+detail response while the separately loaded summary remained visible. An already
+published result needs no new analysis for this display repair.
 
 - `make run-api` writes INFO events to stderr (`request`, `cv.uploaded`,
   `role.created`, worker stages, batch diagnostics). Lines carry ids, counts,

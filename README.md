@@ -8,8 +8,11 @@ cover letter draft — with every claim traceable to the span of text it came fr
 
 > **Status (2026-10-02):** one chunk/search/judge analysis with provider-specific
 > execution budgets, batched calls, bounded parallel work and visible call/time
-> estimates. The v1 analysis and selector are retired. Current model quality and
-> end-to-end latency still need the measured release checks in [PLAN.md](PLAN.md).
+> estimates. The v1 analysis and selector are retired. OpenAI request-schema and
+> failure-diagnostic repairs are implemented; the frontend now accepts published
+> recency gaps in the detailed Fit/Gaps view. A completed analysis and live response
+> validation were observed. Tests/lint remain deferred, and current model quality
+> and end-to-end latency still need the release checks in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
@@ -32,13 +35,13 @@ evidence is missing, the product says so rather than filling the gap.
 
 | Feature | What it gives you |
 |---|---|
-| **Fit analysis** | A prose summary of the strongest match and biggest gap, every requirement as met, partial or missing with the quoted CV text that justifies it, and a score broken into must-haves, desirables and recency |
+| **Fit analysis** | Every requirement as met, partial or missing, with match, experience and seniority judgments, quoted CV evidence, retrieval traces and a domain-computed score |
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |
 | **Cover letter** | A paragraph draft grounded in matched evidence, with numbered citations and a glossary of source passages. Refuses when too little is matched, and says why |
 | **Ranking and compare** | Roles ordered by fit with the deciding requirements named, and two roles side by side. Incomplete analyses are kept out of the ranking |
-| **Ask** | Questions answered by the configured model from the stored mapping, with citation chips that open the source text |
+| **Ask** | Questions answered by the configured model from the validated analysis, with source citations and the tools used during the current session |
 | **Provider choice** | Local or hosted models, chosen in the UI, behind an egress gate, with every answer recording what produced it |
 
 The rules that keep each one honest are in [docs/features.md](docs/features.md);

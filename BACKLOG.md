@@ -14,7 +14,9 @@ are authored; tests/lint, benchmark execution and migration verification stay pe
 The reported OpenAI failure is scoped in the
 [19.2 request repair](specs/002-openai-request-errors/spec.md): advert format
 conversion and content-free rejection diagnostics. Synthetic request acceptance
-is observed; regression and complete-analysis verification are still open.
+is observed; the human later completed an analysis and read-only HTTP confirmed
+its ready publication. Regression and reproducible synthetic release verification
+are still open.
 
 The later scoring failure is scoped in
 [19.2 incomplete-judging diagnostics](specs/003-judge-failure-diagnostics/spec.md).
@@ -30,15 +32,21 @@ validation and synthetic gallery diagnosis were observed; regression suites stay
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.
 
+The complete Phase 18/19 delivery is collected on `feat/phase-19-analysis-delivery`
+for a human-reviewed PR. Older task branches can be removed only after their
+commits are preserved on that published branch. No release gate is closed by
+committing, publishing or cleaning up branches.
+
 ## Now — verify one working architecture
 
-- [ ] [19.1](PLAN.md#191--retire-the-competing-analysis) — retire v1 code, selector,
-      legacy result reads and storage; one frontend path.
-- [ ] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) — one-call
-      document reading, provider-specific batching, batched corrective judging and
-      embeddings, cache reuse.
-- [ ] [19.3](PLAN.md#193--bounded-concurrency-and-useful-progress) — bounded threads,
-      spawned parsing workers, estimated remaining time and physical API calls.
+- [ ] [19.1](PLAN.md#191--retire-the-competing-analysis) — verify v1 retirement,
+      current result projections, migration preservation/deletion and Fit/Gaps
+      display regressions.
+- [ ] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) — verify
+      one-call reading, provider budgets/batching, repairs, cache reuse and the
+      OpenAI schema/failure-diagnostic regressions.
+- [ ] [19.3](PLAN.md#193--bounded-concurrency-and-useful-progress) — verify bounded
+      threads, spawned parsing, cancellation and remaining time/call accounting.
 - [ ] [19.4](PLAN.md#194--prove-the-current-product) — disposable migration check,
       browser smoke, frozen-label quality/latency evaluation, release/security gate.
 

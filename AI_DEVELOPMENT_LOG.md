@@ -29,6 +29,34 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 164 — Reconcile and publish the Phase 18/19 delivery
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested delivery housekeeping for 19.1–19.4
+- Prompt intent: commit the work, create a PR, update docs/README/plan and remove
+  redundant branches.
+- Outcome: documentation reconciled for publication. README describes the current
+  verdict view and Ask tool steps; PLAN/BACKLOG separate implemented work, observed
+  diagnosis and pending release checks. Running/provider docs acknowledge the later
+  completed analysis and explain the recency display repair. Limitations clarify
+  that hosted model inputs leave through the egress gate while applications/messages
+  are never sent by the product.
+- Reason: the human explicitly authorized publication and redundant-branch cleanup.
+  Remote history was fetched; all existing PRs are merged, with no open review to
+  supersede. The accumulated Phase 18/19 work is unmerged, so the delivery branch is
+  renamed feat/phase-19-analysis-delivery rather than resetting to obsolete main.
+- Human validation: pending. Git status/history, worktrees, remote refs and GitHub
+  PR inventory inspected; changed documentation diff reviewed against source and
+  prior observations. No tests, lint, typecheck, benchmark, migration, model call or
+  security scan performed. This task changes documentation and Git references.
+- Rejected: marking release gates passed, merging without human review, changing
+  local provider configuration, rewriting pushed history or deleting unique work.
+- Publication/cleanup: pending the documentation commit and draft PR. Remove
+  superseded refs only after ancestry is proved and the delivery head is published.
+- Carried forward: explicitly resume deferred checks, then execute the synthetic
+  migration/browser/quality/latency release work in PLAN 19.4.
+
 ### 163 — Accept published recency gaps in Fit and Gaps
 
 - Date: 2026-10-02

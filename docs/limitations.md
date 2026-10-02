@@ -14,8 +14,9 @@ Written down rather than papered over:
   pretended here.
 - The Settings screen still lists the hermetic test fixture as a provider (see
   [BACKLOG.md](../BACKLOG.md)).
-- Generated drafts are drafts. The product does not edit your CV, and does not send
-  anything anywhere.
+- Generated drafts are drafts. The product does not edit your CV or submit
+  applications, email or messages. Enabled hosted providers receive analysis and
+  generation inputs through the [egress gate](model-providers.md).
 - No employer-side use. This is a candidate tool; screening applicants with it would
   need bias evaluation and a fairness review that is not in scope.
 - No authentication or multi-tenancy. Workspace scoping is enforced and tested, but

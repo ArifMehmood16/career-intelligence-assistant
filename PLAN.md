@@ -5,7 +5,10 @@ build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
 Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
 evaluation rows.
 
-**Checkpoint:** 19.1–19.3 implementation is committed for review. On 2026-10-02
+**Checkpoint:** Phase 18 foundations, the 19.1–19.3 consolidation and subsequent
+provider/display repairs are committed together for review on
+`feat/phase-19-analysis-delivery`. Publication is authorized; merging remains a
+human decision. Tests/lint remain explicitly deferred. On 2026-10-02
 the human authorized synthetic benchmark implementation under 19.4 while keeping
 checks deferred. That overrides task ordering only for this bounded slice; earlier
 verification, migration preservation and measured release gates remain open.
@@ -25,12 +28,15 @@ pending. Specification quality review proves no application behavior.
 The human-requested [OpenAI analysis repair](specs/002-openai-request-errors/spec.md)
 addresses a reproduced advert-format rejection under 19.2. The repaired converter
 received HTTP 200 with a tiny synthetic request; safe rejection diagnostics are
-implemented. Full analysis, tests/lint and the measured release gate remain pending.
+implemented. The human later reported a complete analysis, confirmed as a ready
+publication by read-only HTTP. Regression suites and the measured release gate
+remain pending.
 
 The subsequent [incomplete-judging diagnosis](specs/003-judge-failure-diagnostics/spec.md)
 adds content-free timeout/judge diagnostics under 19.2. Read-only timings suggest
 three exhausted 60-second judge attempts; the local ignored limit is now 180 seconds.
-This is an unverified mitigation; no complete-analysis or release gate is closed.
+The later completed analysis does not prove that timeout was the original cause;
+regression and release gates remain open.
 
 The human subsequently reported a completed analysis; read-only HTTP confirms a
 ready role and published verdicts. The [19.1 recency display repair](specs/004-recency-gap-display/spec.md)
@@ -38,6 +44,11 @@ aligns the frontend with the domain's existing fourth gap category, which the
 client previously rejected. The same live result now passes client validation
 through API and web proxy; synthetic gallery rendering was inspected. Suites and
 release/quality gates remain pending; no reanalysis or scoring change is needed.
+
+Next checkpoint, when checks are explicitly resumed: run the focused regressions
+and full lint/hermetic checks, verify migrations and deletion on disposable
+PostgreSQL, then execute the synthetic browser and quality/latency release work
+below. Successful diagnosis does not tick milestone acceptance boxes.
 
 ## Approved direction
 

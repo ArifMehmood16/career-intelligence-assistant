@@ -78,8 +78,10 @@ Non-streaming reasoning-model calls may need a larger local limit. The reported
 and no successful judge response in accounting; timeouts are the leading diagnosis,
 not confirmed by the old logs. The local limit was raised to 180 seconds using the
 existing ignored configuration; tracked defaults and two retries are unchanged.
-Restart the API to load it. Three exhausted attempts can now wait about nine minutes;
-this mitigation does not establish complete-analysis success or improve model speed.
+Restart the API to load it. Three exhausted attempts can now wait about nine minutes.
+The human subsequently completed an analysis, and read-only HTTP confirmed a ready
+publication. That observation does not prove the earlier timeout diagnosis or
+replace regression, synthetic quality and latency checks.
 
 Transport failures emit `provider.transport_failed` with a fixed category and,
 for timeouts, the connect/read/write/pool phase and configured limit. No URL,

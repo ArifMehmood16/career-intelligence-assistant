@@ -18,6 +18,24 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19 — Delivery documentation and publication
+
+- Date: 2026-10-02
+- Commands run: Git status/history/ref and worktree inspection; `git fetch origin
+  --prune`; `gh pr list --state all`; branch rename to
+  feat/phase-19-analysis-delivery; source/document reads and documentation diff review.
+- Observed result: Phase 18/19 work is unmerged, there are no open PRs and only the
+  active checkout uses a branch. README, PLAN/BACKLOG and troubleshooting/limitations
+  docs now distinguish the later successful analysis and recency diagnosis from
+  pending regression and measured release work.
+- Decisions made: preserve accumulated commit history in one delivery PR; keep it
+  draft while checks are deferred. Publication/branch cleanup is explicitly
+  authorized; merging remains the human's decision.
+- Verification: documentation/source review only; no tests/lint/typecheck,
+  benchmark, migration, model call or security scan. No root gate closed.
+- Carried forward: publish the documentation commit, create/attach the draft PR,
+  prove branch ancestry before cleanup, then explicitly resume release checks.
+
 ## Phase 19.1 — Recency gap display repair
 
 - Date: 2026-10-02
