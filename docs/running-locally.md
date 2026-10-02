@@ -91,6 +91,19 @@ work. A failed reanalysis keeps the last valid analysis visible.
 
 ## Observability
 
+`assessment_incomplete` at scoring means some required judgments were unavailable
+or failed server checks; it is not a low fit score. Inspect preceding
+`provider.transport_failed`, `judge.call_failed`, `judge.verdicts_rejected` and
+`judge.incomplete` events for fixed categories and counts. The judge progress task
+counts requirements handled, including failed calls.
+
+For the reported slow gpt-5-mini run, local `PROVIDER_TIMEOUT_SECONDS` is now 180
+(tracked default remains 60); `PROVIDER_MAX_RETRIES` remains 2. Restart the API
+with `make run-api` to load configuration, then start a new analysis in the UI.
+A sequence of three timed-out requests can wait about nine minutes. This is an
+unverified mitigation for the observed timing pattern, not a successful-analysis
+claim. Details are in [Model providers](model-providers.md#rate-limits).
+
 When an analysis fails, the status endpoint can still return HTTP 200: inspect the
 job's `state` and `error`. A preceding OpenAI `provider.request_failed` event now
 identifies completion/embedding/tool calling, configured model, HTTP status and a

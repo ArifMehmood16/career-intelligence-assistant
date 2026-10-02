@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import replace
 from datetime import date
 from typing import Any
@@ -16,7 +17,10 @@ from career_assistant.application.judge.prompt import JudgeLimits
 from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.errors import (
     EgressNotPermittedError,
+    ProviderInputTooLargeError,
     ProviderRefusedError,
+    ProviderTransientError,
+    StructuredOutputError,
     StructuredOutputInvalidError,
     StructuredOutputTruncatedError,
 )
@@ -27,6 +31,7 @@ AS_OF = date(2026, 9, 1)
 FACTS = CandidateFacts(terms=(), roles=())
 MODEL = ModelIdentity("scripted", "scripted-v1")
 TEXT = "Built hybrid retrieval over pgvector."
+_PRIVATE_MESSAGE = "private-provider-message"
 
 
 def _packet(requirement_id: str) -> RequirementPacket:
@@ -70,6 +75,85 @@ def _judge(
         MODEL,
         limits or JudgeLimits(),
     )
+
+
+@pytest.mark.parametrize("phase", ["initial", "repair"])
+@pytest.mark.parametrize(
+    ("error", "category"),
+    [
+        (ProviderTransientError(_PRIVATE_MESSAGE), "transient"),
+        (ProviderRefusedError(_PRIVATE_MESSAGE), "refused"),
+        (ProviderInputTooLargeError(_PRIVATE_MESSAGE), "input_too_large"),
+        (
+            StructuredOutputInvalidError(
+                _PRIVATE_MESSAGE, contract_version="judge-v1", error_count=2
+            ),
+            "invalid_output",
+        ),
+        (
+            StructuredOutputTruncatedError(
+                _PRIVATE_MESSAGE, contract_version="judge-v1"
+            ),
+            "truncated",
+        ),
+        (
+            StructuredOutputError(_PRIVATE_MESSAGE, contract_version="judge-v1"),
+            "structured_output",
+        ),
+    ],
+)
+def test_unanswered_judge_logs_safe_category_and_phase(
+    caplog: pytest.LogCaptureFixture,
+    phase: str,
+    error: Exception,
+    category: str,
+) -> None:
+    structured = ScriptedStructured([error])
+    if phase == "repair":
+        structured.replies.insert(0, _reply(_verdict("r1", verdict="missing")))
+    with caplog.at_level(logging.INFO):
+        outcome = _judge(structured).judge([_packet("r1")], FACTS, as_of=AS_OF)
+
+    assert outcome.incomplete == ("r1",)
+    assert outcome.verdicts == {}
+    assert "judge.call_failed" in caplog.text
+    assert f"phase={phase}" in caplog.text
+    assert f"error_category={category}" in caplog.text
+    assert "requirement_count=1" in caplog.text
+    assert "incomplete_count=1" in caplog.text
+    for hidden in (_PRIVATE_MESSAGE, TEXT, "r1", "Vector databases"):
+        assert hidden not in caplog.text
+
+
+def test_invalid_judgments_log_counts_before_and_after_repair(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    wrong = _verdict(
+        "r1",
+        match={
+            "score": 3,
+            "rationale": "private-rationale",
+            "evidence": [{"chunk_id": "private-chunk-id", "quote": "private-quote"}],
+        },
+    )
+    structured = ScriptedStructured([_reply(wrong), _reply(wrong)])
+    with caplog.at_level(logging.INFO):
+        outcome = _judge(structured).judge([_packet("r1")], FACTS, as_of=AS_OF)
+
+    assert outcome.incomplete == ("r1",)
+    rejected = [
+        r.getMessage()
+        for r in caplog.records
+        if "judge.verdicts_rejected" in r.getMessage()
+    ]
+    assert len(rejected) == 2
+    assert "phase=initial" in rejected[0]
+    assert "phase=repair" in rejected[1]
+    for message in rejected:
+        assert "accepted_count=0" in message
+        assert "rejected_count=1" in message
+    for hidden in ("private-rationale", "private-chunk-id", "private-quote", TEXT):
+        assert hidden not in caplog.text
 
 
 def test_valid_verdicts_are_accepted_from_one_call() -> None:

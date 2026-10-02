@@ -27,6 +27,11 @@ addresses a reproduced advert-format rejection under 19.2. The repaired converte
 received HTTP 200 with a tiny synthetic request; safe rejection diagnostics are
 implemented. Full analysis, tests/lint and the measured release gate remain pending.
 
+The subsequent [incomplete-judging diagnosis](specs/003-judge-failure-diagnostics/spec.md)
+adds content-free timeout/judge diagnostics under 19.2. Read-only timings suggest
+three exhausted 60-second judge attempts; the local ignored limit is now 180 seconds.
+This is an unverified mitigation; no complete-analysis or release gate is closed.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer

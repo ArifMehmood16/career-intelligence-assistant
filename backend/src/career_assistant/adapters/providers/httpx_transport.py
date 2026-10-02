@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 
 import httpx
@@ -10,6 +11,15 @@ from career_assistant.adapters.providers.http_transport import HttpResponse
 from career_assistant.application.ports.errors import (
     ProviderTransientError,
     ProviderUnavailableError,
+)
+from career_assistant.logconfig import log_failure
+
+_log = logging.getLogger(__name__)
+_TIMEOUT_PHASES = (
+    (httpx.ConnectTimeout, "connect"),
+    (httpx.ReadTimeout, "read"),
+    (httpx.WriteTimeout, "write"),
+    (httpx.PoolTimeout, "pool"),
 )
 
 
@@ -42,9 +52,29 @@ class HttpxTransport:
                 headers=dict(response.headers),
             )
         except httpx.TimeoutException as exc:
+            log_failure(
+                _log,
+                "provider.transport_failed",
+                error_category="timeout",
+                timeout_phase=_timeout_phase(exc),
+                timeout_seconds=timeout_seconds,
+            )
             raise ProviderTransientError("provider request timed out") from exc
         except httpx.TransportError as exc:
+            log_failure(
+                _log,
+                "provider.transport_failed",
+                error_category="transport_error",
+                timeout_seconds=timeout_seconds,
+            )
             raise ProviderUnavailableError("provider could not be reached") from exc
         finally:
             if self._owns_client and self._client is None:
                 client.close()
+
+
+def _timeout_phase(error: httpx.TimeoutException) -> str:
+    for error_type, phase in _TIMEOUT_PHASES:
+        if isinstance(error, error_type):
+            return phase
+    return "unknown"

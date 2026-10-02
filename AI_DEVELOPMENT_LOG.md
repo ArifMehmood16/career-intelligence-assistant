@@ -29,6 +29,40 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 162 — Explain incomplete judging and mitigate suspected timeouts
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.2 debugging; verification remains under 19.4
+- Prompt intent: diagnose assessment_incomplete at scoring in the running app.
+- Suggestion: inspect content-free progress/accounting, add safe diagnostics at
+  transport and judge catches, and increase the existing local timeout.
+- Outcome: implemented for review. Job progress shows cached CV, successful advert
+  reading/search for 18 requirements and three physical judge attempts. Read-only
+  accounting contains successful advert/embedding calls but no judge response;
+  roughly three minutes from embedding to failure matches 60 seconds/two retries.
+  Timeouts are a strong inference, not a confirmed cause from the old logs.
+- Changed: transport logs fixed failure category and timeout phase/limit; judge
+  logs initial/repair failure categories, validation rejection counts and aggregate
+  incompleteness. No exception message/cause, URL, validation problem, prompt,
+  document, requirement identifier or response is logged. Authored regression
+  cases cover timeout phases, hostile strings, all caught judge categories and
+  invalid repairs. Local ignored timeout now loads 180 seconds with two retries;
+  defaults stay unchanged. A restart is required and longer waits are possible.
+- Reason: existing timeout translation and judge handling hid the failed call's
+  cause. Publishing no score for incomplete judgments remains correct. The human
+  requested continued debugging and retained the test/lint deferral.
+- Rejected: claiming timeouts proven, switching model/effort, weakening server
+  validation, inventing judgments, changing retry behavior or rerunning personal
+  documents. No hosted development request or database mutation was made.
+- Human validation: pending. Read-only local job HTTP/SQL metadata, non-secret
+  settings inspection, Spec Kit prerequisites, source/diff review and formatting
+  performed. No red/green run, tests/lint/typecheck/security scan, benchmark or
+  complete analysis executed. No release gate closed. Dependency base is aae9b24;
+  main comparison includes prior consolidation work outside this bounded change.
+- Carried forward: API restart and human retry; inspect preceding safe timeout/judge
+  events if it fails; deferred regressions and complete synthetic analysis.
+
 ### 161 — Repair OpenAI advert schema rejection and expose safe diagnostics
 
 - Date: 2026-10-02

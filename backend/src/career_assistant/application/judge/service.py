@@ -9,6 +9,7 @@ is unavailable or not permitted is not a verdict at all, so that error propagate
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -33,6 +34,7 @@ from career_assistant.application.ports.errors import (
     ProviderRefusedError,
     ProviderTransientError,
     StructuredOutputError,
+    StructuredOutputInvalidError,
     StructuredOutputTruncatedError,
 )
 from career_assistant.application.ports.progress import plan_calls
@@ -50,6 +52,16 @@ from career_assistant.domain.judging import (
     ProposedVerdict,
     RequirementPacket,
     check_verdicts,
+)
+from career_assistant.logconfig import log_event, log_failure
+
+_log = logging.getLogger(__name__)
+_FAILURE_CATEGORIES = (
+    (StructuredOutputTruncatedError, "truncated"),
+    (ProviderInputTooLargeError, "input_too_large"),
+    (StructuredOutputInvalidError, "invalid_output"),
+    (ProviderRefusedError, "refused"),
+    (ProviderTransientError, "transient"),
 )
 
 # Truncation is handled first, by splitting the batch.
@@ -141,6 +153,16 @@ class RequirementJudge:
         incomplete = tuple(
             p.requirement_id for p in packets if p.requirement_id not in records
         )
+        if incomplete:
+            log_failure(
+                _log,
+                "judge.incomplete",
+                provider_id=self._model.provider_id,
+                model_tag=self._model.model_tag,
+                requirement_count=len(packets),
+                accepted_count=len(records),
+                incomplete_count=len(incomplete),
+            )
         return JudgeOutcome(verdicts=records, incomplete=incomplete)
 
     def _judge_parallel(
@@ -174,11 +196,14 @@ class RequirementJudge:
         user = judge_user(context.facts, batch, as_of=context.as_of)
         try:
             result = self._call(user)
-        except StructuredOutputTruncatedError, ProviderInputTooLargeError:
+        except (StructuredOutputTruncatedError, ProviderInputTooLargeError) as exc:
+            self._call_failed(exc, "initial", len(batch))
             return self._split(batch, context)
-        except _UNANSWERED:
+        except _UNANSWERED as exc:
+            self._call_failed(exc, "initial", len(batch))
             return {}
         records, problems = self._accept(batch, result, context)
+        self._rejected("initial", len(batch), len(records), len(problems))
         failed = [p for p in batch if p.requirement_id in problems]
         if failed:
             records.update(self._repair(failed, problems, context))
@@ -217,10 +242,45 @@ class RequirementJudge:
         plan_calls(model=1)
         try:
             result = self._call(user)
-        except _UNANSWERED:
+        except _UNANSWERED as exc:
+            self._call_failed(exc, "repair", len(failed))
             return {}
-        records, _ = self._accept(failed, result, context)
+        records, remaining = self._accept(failed, result, context)
+        self._rejected("repair", len(failed), len(records), len(remaining))
         return records
+
+    def _call_failed(
+        self, error: Exception, phase: str, requirement_count: int
+    ) -> None:
+        category = "structured_output"
+        for error_type, name in _FAILURE_CATEGORIES:
+            if isinstance(error, error_type):
+                category = name
+                break
+        log_failure(
+            _log,
+            "judge.call_failed",
+            provider_id=self._model.provider_id,
+            model_tag=self._model.model_tag,
+            phase=phase,
+            requirement_count=requirement_count,
+            error_category=category,
+        )
+
+    def _rejected(
+        self, phase: str, requirement_count: int, accepted: int, rejected: int
+    ) -> None:
+        if rejected:
+            log_event(
+                _log,
+                "judge.verdicts_rejected",
+                provider_id=self._model.provider_id,
+                model_tag=self._model.model_tag,
+                phase=phase,
+                requirement_count=requirement_count,
+                accepted_count=accepted,
+                rejected_count=rejected,
+            )
 
     def _accept(
         self,

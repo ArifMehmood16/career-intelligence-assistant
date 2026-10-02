@@ -16,6 +16,11 @@ The reported OpenAI failure is scoped in the
 conversion and content-free rejection diagnostics. Synthetic request acceptance
 is observed; regression and complete-analysis verification are still open.
 
+The later scoring failure is scoped in
+[19.2 incomplete-judging diagnostics](specs/003-judge-failure-diagnostics/spec.md).
+Safe timeout/judge events are authored; the local timeout mitigation still needs
+a restarted API and successful analysis. Tests/lint remain deferred.
+
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.
 

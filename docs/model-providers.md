@@ -72,6 +72,25 @@ the server by someone who has accepted what it means.
 
 ## Rate limits
 
+`PROVIDER_TIMEOUT_SECONDS` controls the HTTP timeout (default 60 seconds).
+Non-streaming reasoning-model calls may need a larger local limit. The reported
+2026-10-02 incomplete analysis had three judge attempts over roughly three minutes
+and no successful judge response in accounting; timeouts are the leading diagnosis,
+not confirmed by the old logs. The local limit was raised to 180 seconds using the
+existing ignored configuration; tracked defaults and two retries are unchanged.
+Restart the API to load it. Three exhausted attempts can now wait about nine minutes;
+this mitigation does not establish complete-analysis success or improve model speed.
+
+Transport failures emit `provider.transport_failed` with a fixed category and,
+for timeouts, the connect/read/write/pool phase and configured limit. No URL,
+exception message, request body or credentials are logged. `judge.call_failed`
+identifies initial/repair phase, provider/model, batch count and a fixed failure
+category. `judge.verdicts_rejected` records counts before/after bounded repair;
+`judge.incomplete` records accepted/incomplete totals. No validation problem text,
+requirement identifiers, quotes or model replies are retained by these diagnostics.
+Handled progress units do not imply accepted judgments. Incomplete judging still
+publishes no score.
+
 Rejected OpenAI completion, embedding and tool requests emit
 `provider.request_failed` with provider/model, operation, HTTP status, a fixed error
 category and allowlisted vendor code/parameter. Unknown values become `unknown`;

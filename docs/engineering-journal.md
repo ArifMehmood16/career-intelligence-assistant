@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.2 — Incomplete judge diagnostics
+
+- Date: 2026-10-02
+- Commands run: branch creation from aae9b24; Spec Kit template/setup/prerequisite
+  scripts; read-only local job HTTP and successful-call accounting SQL reads;
+  non-secret ProviderSettings inspection; targeted `ruff format`; source/diff
+  review and local commit. Official OpenAI reasoning/model documentation fetched.
+- Observed result: 18 requirements searched/handled, three physical judge calls,
+  no successful judge accounting row. Embedding completed 16:06:47 UTC and the
+  job failed 16:09:49 UTC. Configured limit was 60 seconds/two retries. The local
+  ignored configuration now loads 180 seconds/two retries; no default change.
+- Decisions made: suspected timeout mitigation plus fixed transport/judge log
+  categories and numeric counts; retain incomplete-publication safeguard, current
+  model and retry behavior. Do not print exception messages or validation details.
+- Verification: regressions authored, not run. Tests/lint/typecheck/security,
+  benchmark and complete analysis remain deferred. No personal model dispatch,
+  DB mutation or release/quality claim. Main includes inherited consolidation;
+  bounded source diff reviewed against aae9b24. No Sonar scan performed.
+- Carried forward: restart API to load settings, human retry and preceding safe
+  diagnostic events if failure persists. Timeout cause remains inferred.
+
 ## Phase 19.2 — OpenAI advert format repair
 
 - Date: 2026-10-02
