@@ -48,7 +48,8 @@ and merge; publication and branch cleanup close no release gate.
 - [ ] [19.3](PLAN.md#193--bounded-concurrency-and-useful-progress) — verify bounded
       threads, spawned parsing, cancellation and remaining time/call accounting.
 - [ ] [19.4](PLAN.md#194--prove-the-current-product) — disposable migration check,
-      browser smoke, frozen-label quality/latency evaluation, release/security gate.
+      browser smoke, frozen-label quality/latency evaluation, release/security gate;
+      triage PR #42's failed creation CI and cover updated PR heads in the workflow.
 
 ## Later
 

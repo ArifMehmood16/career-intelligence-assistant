@@ -9,8 +9,11 @@ evaluation rows.
 provider/display repairs are published in [draft PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
 on `feat/phase-19-analysis-delivery`. Superseded branches are removed with their
 history preserved there; `main` remains unchanged pending human review and merge.
-Local tests/lint remain explicitly deferred. GitHub automatically started the
-configured PR CI; no passing result is claimed at this checkpoint. On 2026-10-02
+Local tests/lint remain explicitly deferred. [PR creation CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37036694170)
+failed at lint/typecheck and both integration steps; hermetic tests were skipped.
+Its head was `1c9a4e6`. The workflow currently triggers only on `opened`, so later
+commits have no attached checks. Failure triage and CI coverage of updated PR heads
+remain release work; no passing result is claimed. On 2026-10-02
 the human authorized synthetic benchmark implementation under 19.4 while keeping
 checks deferred. That overrides task ordering only for this bounded slice; earlier
 verification, migration preservation and measured release gates remain open.
@@ -137,7 +140,9 @@ evaluation are separate work. No benchmark result is claimed before execution.
       development data only. Hosted measurements need enabled keys and synthetic
       data; no paid or live quality claims from fixture tests.
 - [ ] Verify the retirement/progress migration on disposable PostgreSQL and run the
-      Supabase image CI row. Complete privacy/deletion and dependency/security checks.
+      Supabase image CI row. Triage the failed PR creation run and enable CI on PR
+      updates/reopening so the reviewed head is checked. Complete privacy/deletion
+      and dependency/security checks.
 - [ ] Prove one startup/deployment path. Repair Docker configuration or remove its
       supported claim; add one Playwright smoke journey. Keep deployment private
       until authentication exists.

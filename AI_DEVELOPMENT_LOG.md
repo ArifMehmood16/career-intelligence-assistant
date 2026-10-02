@@ -52,6 +52,12 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   security scan performed locally. `git diff --check` passed. This task changes
   documentation and Git references. Opening the PR automatically started the
   configured GitHub CI jobs; their first observed snapshot was in progress.
+  The completed run on `1c9a4e6` failed lint/typecheck and both integration steps,
+  with hermetic tests skipped. Later heads have no attached checks because CI
+  triggers only on PR opened; triage and trigger coverage are recorded under 19.4.
+  No CI logs analyzed or reruns requested. Final whole-branch whitespace review
+  found one inherited trailing blank line in candidate_spans.py; it is removed
+  without changing behavior.
 - Rejected: marking release gates passed, merging without human review, changing
   local provider configuration, rewriting pushed history or deleting unique work.
 - Publication: commit `1c9a4e6` reconciles the delivery docs; pushed the delivery

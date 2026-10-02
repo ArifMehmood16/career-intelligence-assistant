@@ -41,7 +41,13 @@ Nothing predicted, nothing rounded up.
 - Verification: documentation/source review and whitespace/ancestry inspection;
   no local tests/lint/typecheck, benchmark, migration, model call or security scan.
   GitHub CI started automatically on PR creation; the first observed snapshot was
-  in progress. No root gate closed and main was not merged.
+  in progress. `gh run list`/`gh run view` subsequently confirmed the creation run
+  on `1c9a4e6` failed lint/typecheck and both integration steps; hermetic tests were
+  skipped. Later heads have no attached checks because the workflow only triggers
+  on opened. Root PLAN/BACKLOG now record failure triage and trigger coverage.
+  Whole-branch whitespace inspection found an inherited trailing blank line in
+  candidate_spans.py; removal changes no behavior. No root gate closed and main
+  was not merged.
 - Carried forward: explicitly resume local checks, review CI results and execute
   the disposable migration/browser/quality/latency release work before release.
 
