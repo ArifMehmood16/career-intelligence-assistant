@@ -248,7 +248,7 @@ def _cited(packet: RequirementPacket, verdict: ProposedVerdict) -> list[Candidat
 
 
 def _bare_tool(packet: RequirementPacket, cited: Sequence[Candidate]) -> bool:
-    """v1's rule for a bare tool name (log entry 136), kept as one server rule."""
+    """A named tool without years or seniority can be supported by a skills chunk."""
     if packet.years_expected is not None or packet.seniority_expected is not None:
         return False
     if not packet.terms:

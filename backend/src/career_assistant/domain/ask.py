@@ -9,6 +9,7 @@ from career_assistant.domain.intents import Intent
 from career_assistant.domain.mapping import MappingStatus, RequirementMapping
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
+from career_assistant.domain.scoring_v2 import Gap
 
 
 class AnswerKind(StrEnum):
@@ -50,6 +51,7 @@ class RoleAnalysisView:
     requirements: tuple[Requirement, ...]
     mappings: tuple[RequirementMapping, ...]
     span_texts: dict[str, str]
+    gaps: tuple[Gap, ...] = ()
 
 
 def validate_citations(

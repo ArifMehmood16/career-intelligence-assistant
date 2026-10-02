@@ -14,7 +14,7 @@ from career_assistant.domain.progress import TaskKey
 
 pytestmark = pytest.mark.integration
 
-_V1_KEYS = ["prepare", "read_advert", "read_cv", "match", "score"]
+_KEYS = ["prepare", "read_cv", "read_advert", "search", "judge", "recheck", "score"]
 
 
 def _add_role(app: SqlApp, title: str) -> tuple[str, str]:
@@ -41,12 +41,12 @@ def test_a_queued_job_lists_its_planned_tasks_and_its_place_in_the_queue(
     progress = _job(app, second)["progress"]
 
     assert progress["tasksDone"] == 0
-    assert progress["tasksTotal"] == 5
+    assert progress["tasksTotal"] == 7
     assert progress["currentTask"] is None
     assert progress["elapsedSeconds"] is None
     assert progress["queuePosition"] == 1
     assert progress["remainingSeconds"] is None, "no finished analysis to go on"
-    assert [t["key"] for t in progress["tasks"]] == _V1_KEYS
+    assert [t["key"] for t in progress["tasks"]] == _KEYS
     assert {t["state"] for t in progress["tasks"]} == {"pending"}
     assert _job(app, first)["progress"]["queuePosition"] == 0
 
@@ -59,24 +59,24 @@ def test_a_running_job_reports_the_task_it_is_on(
     job = app.worker.claim_next()
     assert job is not None
     progress = sql_progress(
-        app.uow_factory, job, PipelineVersion.V1, lambda: datetime.now(UTC)
+        app.uow_factory, job, PipelineVersion.V2, lambda: datetime.now(UTC)
     )
     progress.enter(TaskKey.PREPARE)
     progress.enter(TaskKey.READ_ADVERT)
 
     body = _job(app, job_id)["progress"]
 
-    assert (body["tasksDone"], body["tasksTotal"]) == (1, 5)
+    assert (body["tasksDone"], body["tasksTotal"]) == (1, 7)
     assert body["currentTask"] == "read_advert"
     assert body["elapsedSeconds"] >= 0
     assert body["queuePosition"] is None
-    assert [t["state"] for t in body["tasks"]][:3] == ["done", "running", "pending"]
+    assert [t["state"] for t in body["tasks"]][:3] == ["done", "pending", "running"]
     role = app.client.get(f"/api/roles/{role_id}").json()
     assert role["activeJob"]["id"] == job_id
     assert role["activeJob"]["progress"]["currentTask"] == "read_advert"
 
 
-def test_after_one_analysis_the_next_gets_a_time_estimate(
+def test_an_undiscovered_optional_stage_does_not_fabricate_a_time_estimate(
     session_factory: sessionmaker[Session],
 ) -> None:
     app = sql_app(session_factory)
@@ -86,9 +86,10 @@ def test_after_one_analysis_the_next_gets_a_time_estimate(
     finished = _job(app, first_job)["progress"]
     queued = _job(app, second)["progress"]
 
-    assert (finished["tasksDone"], finished["remainingSeconds"]) == (5, 0)
-    assert isinstance(queued["remainingSeconds"], int)
-    assert queued["remainingSeconds"] >= 0
+    assert (finished["tasksDone"], finished["remainingSeconds"]) == (7, 0)
+    # A skipped corrective stage has no measured duration; queued jobs have not
+    # discovered whether they need it. Stage planning resolves that uncertainty.
+    assert queued["remainingSeconds"] is None
 
 
 def test_the_roles_list_carries_each_active_job_and_nothing_for_ready_roles(
@@ -104,4 +105,4 @@ def test_the_roles_list_carries_each_active_job_and_nothing_for_ready_roles(
     active = listed[waiting_role]["activeJob"]
     assert active["id"] == waiting_job
     assert active["state"] == "queued"
-    assert active["progress"]["tasksTotal"] == 5
+    assert active["progress"]["tasksTotal"] == 7

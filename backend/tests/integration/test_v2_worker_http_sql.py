@@ -7,7 +7,7 @@ import uuid
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.v2_http import analyse, sql_app
+from tests.support.v2_http import analyse, queue_role, sql_app
 
 from career_assistant.adapters.persistence.models import AnalysisJobRow
 from career_assistant.api.deps import WORKSPACE_COOKIE
@@ -29,7 +29,6 @@ def test_a_v2_workspace_is_analysed_and_scored_by_the_v2_pipeline(
 ) -> None:
     app = sql_app(session_factory)
     client = app.client
-    client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
 
     role_id, job_id = analyse(app)
 
@@ -47,7 +46,7 @@ def test_a_v2_workspace_is_analysed_and_scored_by_the_v2_pipeline(
     assert role["fitScore"] == round(result.score)
 
 
-def test_a_default_workspace_still_runs_v1(
+def test_a_default_workspace_runs_the_current_analysis(
     session_factory: sessionmaker[Session],
 ) -> None:
     app = sql_app(session_factory)
@@ -55,6 +54,6 @@ def test_a_default_workspace_still_runs_v1(
     role_id, job_id = analyse(app)
 
     assert app.client.get(f"/api/jobs/{job_id}").json()["state"] == "succeeded"
-    assert _job_pipeline(session_factory, job_id) == "v1"
+    assert _job_pipeline(session_factory, job_id) == "v2"
     with app.uow_factory() as uow:
-        assert uow.v2.result(app.client.cookies[WORKSPACE_COOKIE], role_id) is None
+        assert uow.v2.result(app.client.cookies[WORKSPACE_COOKIE], role_id) is not None

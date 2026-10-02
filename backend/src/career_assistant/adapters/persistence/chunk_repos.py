@@ -15,6 +15,8 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from career_assistant.adapters.persistence.models import SpanRow
+from career_assistant.application.roles.analysis import chunk_span
 from career_assistant.adapters.persistence.models_v2 import ChunkEmbeddingRow, ChunkRow
 from career_assistant.application.ports.chunks import (
     ChunkProvenance,
@@ -65,7 +67,17 @@ class SqlChunkRepository:
         rows = [_row(ws, doc, chunk, provenance) for chunk in chunks]
         self._session.add_all(rows)
         self._session.flush()
-        return tuple(_stored(row) for row in rows)
+        stored = tuple(_stored(row) for row in rows)
+        for item in stored:
+            span = chunk_span(item)
+            if self._session.get(SpanRow, uuid.UUID(span.id)) is None:
+                self._session.add(SpanRow(
+                    id=uuid.UUID(span.id), workspace_id=ws, document_id=doc,
+                    page_number=span.page_number, start_offset=span.start_offset,
+                    end_offset=span.end_offset, text=span.text,
+                ))
+        self._session.flush()
+        return stored
 
     def load_chunks(
         self, workspace_id: str, chunk_ids: Sequence[str]

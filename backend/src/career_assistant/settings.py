@@ -99,16 +99,13 @@ class ProviderSettings(BaseSettings):
     provider_timeout_seconds: float = 60.0
     provider_max_retries: int = 2
     provider_breaker_failure_threshold: int = 5
+    # Burst cap for hosted completion and embedding. The rate limit itself is
+    # read from the provider's response headers, not from this number.
+    hosted_max_in_flight: int = Field(default=4, ge=1)
+    analysis_max_concurrent_jobs: int = Field(default=2, ge=1, le=16)
     provider_allow_local_fallback: bool = False
     track_token_usage: bool = True
 
-    llm_max_output_tokens: int = Field(default=2000, ge=1)
-    # One assessment response covers at most this many requirements, and only
-    # as many as max output tokens divided by the per-requirement reserve.
-    assessment_batch_max_requirements: int = Field(default=4, ge=1)
-    assessment_output_tokens_per_requirement: int = Field(default=256, ge=1)
-    # Claim classification batches so a real CV is not truncated by one response.
-    claim_batch_max_spans: int = Field(default=12, ge=1)
     # v2: corrective searches allowed per analysis, and the longest chunk text
     # sent to the embedding model.
     judge_max_rewrites: int = Field(default=5, ge=0)
@@ -156,6 +153,8 @@ class LimitSettings(BaseSettings):
     max_upload_bytes: int = Field(default=10_485_760, ge=1)
     max_document_pages: int = Field(default=40, ge=1)
     max_document_chars: int = Field(default=400_000, ge=1)
+    parsing_workers: int = Field(default=2, ge=1, le=8)
+    parsing_timeout_seconds: float = Field(default=60.0, gt=0)
     max_question_chars: int = Field(default=4000, ge=1)
     max_context_chars: int = Field(default=24_000, ge=1)
     max_excerpt_chars: int = Field(default=600, ge=1)

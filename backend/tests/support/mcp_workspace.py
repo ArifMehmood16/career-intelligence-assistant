@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from career_assistant.adapters.providers.hermetic.analysis import analyse_hermetic
 from career_assistant.application.documents.cv import (
     InMemoryCvStore,
     admission_limits_from,
@@ -40,7 +41,7 @@ def analysed_workspace(*titles: str) -> Workspace:
         filename="cv.txt",
         limits=admission_limits_from(LimitSettings(_env_file=None)),
     )
-    roles = InMemoryRoleStore(cv_store=cv)
+    roles = InMemoryRoleStore(cv_store=cv, analyser=analyse_hermetic)
     ids = tuple(
         roles.create_role(
             workspace_id=WORKSPACE, title=title, company="Acme", description=JD

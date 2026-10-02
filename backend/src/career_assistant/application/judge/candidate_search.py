@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from career_assistant.application.judge.matching import CandidateSearchResult
 from career_assistant.application.ports.chunks import EmbeddingModel, StoredChunk
 from career_assistant.application.ports.embedding import EmbeddingPort
+from career_assistant.application.ports.progress import plan_calls
 from career_assistant.application.ports.search import HybridQuery, HybridSearchPort
 from career_assistant.application.ports.types import EmbeddingRequest
 from career_assistant.domain.chunking import RoleProposal
@@ -44,9 +45,19 @@ class HybridCandidateSearch:
     def find(
         self, requirement: RequirementPacket, query_text: str
     ) -> CandidateSearchResult:
+        return self.find_all([(requirement, query_text)])[0]
+
+    def find_all(
+        self, items: Sequence[tuple[RequirementPacket, str]]
+    ) -> tuple[CandidateSearchResult, ...]:
+        """One embedding request for every query, then one search each."""
+        plan_calls()
+        if not items:
+            return ()
+        plan_calls(embedding=1)
         embedded = self._embedding.embed(
             EmbeddingRequest(
-                texts=(query_text,),
+                texts=tuple(text for _, text in items),
                 max_chars_per_text=self._max_chars,
                 input_type="query",
             )
@@ -54,13 +65,25 @@ class HybridCandidateSearch:
         stored_under = EmbeddingModel(
             embedded.provider_id, embedded.model_tag, embedded.dimensions, "document"
         )
+        return tuple(
+            self._from_vector(requirement, text, vector, stored_under.key)
+            for (requirement, text), vector in zip(items, embedded.vectors, strict=True)
+        )
+
+    def _from_vector(
+        self,
+        requirement: RequirementPacket,
+        query_text: str,
+        vector: tuple[float, ...],
+        model_key: str,
+    ) -> CandidateSearchResult:
         found = self._search.search(
             HybridQuery(
                 workspace_id=self._workspace_id,
                 text=query_text,
-                embedding=embedded.vectors[0],
+                embedding=vector,
                 terms=query_terms(requirement.terms),
-                embedding_model_key=stored_under.key,
+                embedding_model_key=model_key,
                 sources=(DocumentKind.CV,),
             )
         )

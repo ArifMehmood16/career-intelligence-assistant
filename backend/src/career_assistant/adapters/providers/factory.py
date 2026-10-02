@@ -3,43 +3,26 @@
 from __future__ import annotations
 
 import logging
-from functools import cache, partial
+from collections.abc import Callable
+from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 
-from career_assistant.adapters.providers.anthropic.completion import (
-    AnthropicCompletionAdapter,
-)
-from career_assistant.adapters.providers.hermetic.completion import (
-    HermeticCompletionAdapter,
-)
-from career_assistant.adapters.providers.hermetic.embedding import (
-    HermeticEmbeddingAdapter,
-)
+from career_assistant.adapters.providers.anthropic import builders as anthropic
+from career_assistant.adapters.providers.construction import ProviderConstruction
+from career_assistant.adapters.providers.hermetic import builders as hermetic
 from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.adapters.providers.httpx_transport import HttpxTransport
-from career_assistant.adapters.providers.ollama.completion import (
-    OllamaCompletionAdapter,
-)
-from career_assistant.adapters.providers.ollama.digest import ollama_model_digest
-from career_assistant.adapters.providers.ollama.embedding import OllamaEmbeddingAdapter
-from career_assistant.adapters.providers.openai.completion import (
-    OpenAICompletionAdapter,
-)
-from career_assistant.adapters.providers.openai.embedding import OpenAIEmbeddingAdapter
+from career_assistant.adapters.providers.ollama import builders as ollama
+from career_assistant.adapters.providers.openai import builders as openai
 from career_assistant.adapters.providers.resilience import (
     CircuitBreaker,
     ResiliencePolicy,
-)
-from career_assistant.adapters.providers.tool_calling import (
-    AnthropicToolCaller,
-    OllamaToolCaller,
-    OpenAIToolCaller,
 )
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.errors import ProviderUnavailableError
 from career_assistant.application.ports.tool_calling import (
-    HermeticToolCaller,
     ToolCallingPort,
     ToolCallingRequest,
     ToolCallingResult,
@@ -65,6 +48,43 @@ from career_assistant.settings import ProviderSettings
 
 _log = logging.getLogger(__name__)
 _CATALOGUE_PATH = Path(__file__).resolve().parents[5] / "config" / "models.toml"
+
+
+@dataclass(frozen=True, slots=True)
+class _ProviderBuilders:
+    completion: Callable[[ProviderConstruction], CompletionPort]
+    embedding: Callable[[ProviderConstruction], EmbeddingPort]
+    tool_calling: Callable[[ProviderConstruction], ToolCallingPort]
+    hosted_permission: Callable[[HostedEgressPolicy], str] | None = None
+
+
+_BUILDERS: dict[str, _ProviderBuilders] = {
+    "hermetic": _ProviderBuilders(
+        hermetic.completion, hermetic.embedding, hermetic.tool_calling
+    ),
+    "ollama": _ProviderBuilders(
+        ollama.completion, ollama.embedding, ollama.tool_calling
+    ),
+    "openai": _ProviderBuilders(
+        openai.completion,
+        openai.embedding,
+        openai.tool_calling,
+        HostedEgressPolicy.assert_openai_constructible,
+    ),
+    "anthropic": _ProviderBuilders(
+        anthropic.completion,
+        anthropic.embedding,
+        anthropic.tool_calling,
+        HostedEgressPolicy.assert_anthropic_constructible,
+    ),
+}
+
+
+def _builders(provider_id: str, kind: str) -> _ProviderBuilders:
+    registered = _BUILDERS.get(provider_id)
+    if registered is None:
+        raise ProviderUnavailableError(f"unknown {kind} provider {provider_id!r}")
+    return registered
 
 
 @cache
@@ -100,7 +120,6 @@ def build_completion_port(
     policy = egress or build_egress_policy(settings)
     http = transport or HttpxTransport()
     resilience = build_resilience(settings)
-    hermetic = HermeticCompletionAdapter()
     selected = provider_id or settings.completion_provider
     primary = _completion_for(
         selected,
@@ -111,10 +130,19 @@ def build_completion_port(
         model_tag=model_tag,
         catalogue=catalogue or default_model_catalogue(),
     )
-    if selected in {"openai", "anthropic"}:
+    if _builders(selected, "completion").hosted_permission is not None:
         wrapped = CompletingWithOptionalFallback(
             primary=primary,
-            local=hermetic,
+            local=_BUILDERS["hermetic"].completion(
+                ProviderConstruction(
+                    settings,
+                    policy,
+                    http,
+                    resilience,
+                    None,
+                    catalogue or default_model_catalogue(),
+                )
+            ),
             policy=FallbackPolicy(
                 allow_local_fallback=settings.provider_allow_local_fallback
             ),
@@ -174,53 +202,15 @@ def _completion_for(
     model_tag: str | None,
     catalogue: ModelCatalogue,
 ) -> CompletionPort:
-    if provider_id == "hermetic":
-        return HermeticCompletionAdapter()
-    if provider_id == "ollama":
-        tag = model_tag or settings.ollama_completion_model or "qwen2.5:7b"
-        return OllamaCompletionAdapter(
-            base_url=settings.ollama_base_url,
-            model_tag=tag,
-            transport=transport,
-            resilience=resilience,
-            profile=catalogue.profile("ollama", tag),
-            digest_lookup=partial(
-                ollama_model_digest,
-                transport,
-                base_url=settings.ollama_base_url,
-                model_tag=tag,
-                timeout_seconds=resilience.timeout_seconds,
-            ),
+    builders = _builders(provider_id, "completion")
+    port = builders.completion(
+        ProviderConstruction(
+            settings, egress, transport, resilience, model_tag, catalogue
         )
-    if provider_id == "openai":
-        key = egress.assert_openai_constructible()
-        tag = model_tag or settings.openai_completion_model
-        return _CallTimeEgressCompletion(
-            OpenAICompletionAdapter(
-                api_key=key,
-                model_tag=tag,
-                transport=transport,
-                resilience=resilience,
-                profile=catalogue.profile("openai", tag),
-            ),
-            settings=settings,
-            hosted_kind="openai",
-        )
-    if provider_id == "anthropic":
-        key = egress.assert_anthropic_constructible()
-        tag = model_tag or settings.anthropic_completion_model
-        return _CallTimeEgressCompletion(
-            AnthropicCompletionAdapter(
-                api_key=key,
-                model_tag=tag,
-                transport=transport,
-                resilience=resilience,
-                profile=catalogue.profile("anthropic", tag),
-            ),
-            settings=settings,
-            hosted_kind="anthropic",
-        )
-    raise ProviderUnavailableError(f"unknown completion provider {provider_id!r}")
+    )
+    if builders.hosted_permission is not None:
+        return _CallTimeEgressCompletion(port, settings=settings, hosted_kind=provider_id)
+    return port
 
 
 def _embedding_for(
@@ -233,37 +223,15 @@ def _embedding_for(
     model_tag: str | None,
     catalogue: ModelCatalogue,
 ) -> EmbeddingPort:
-    if provider_id == "hermetic":
-        return HermeticEmbeddingAdapter()
-    if provider_id == "ollama":
-        tag = model_tag or settings.ollama_embedding_model or "nomic-embed-text"
-        return OllamaEmbeddingAdapter(
-            base_url=settings.ollama_base_url,
-            model_tag=tag,
-            transport=transport,
-            resilience=resilience,
-            profile=catalogue.profile("ollama", tag),
+    builders = _builders(provider_id, "embedding")
+    port = builders.embedding(
+        ProviderConstruction(
+            settings, egress, transport, resilience, model_tag, catalogue
         )
-    if provider_id == "openai":
-        key = egress.assert_openai_constructible()
-        tag = model_tag or settings.openai_embedding_model
-        return _CallTimeEgressEmbedding(
-            OpenAIEmbeddingAdapter(
-                api_key=key,
-                model_tag=tag,
-                transport=transport,
-                resilience=resilience,
-                profile=catalogue.profile("openai", tag),
-            ),
-            settings=settings,
-            hosted_kind="openai",
-        )
-    if provider_id == "anthropic":
-        raise ProviderUnavailableError(
-            "anthropic does not provide embeddings; configure an independent "
-            "embedding provider"
-        )
-    raise ProviderUnavailableError(f"unknown embedding provider {provider_id!r}")
+    )
+    if builders.hosted_permission is not None:
+        return _CallTimeEgressEmbedding(port, settings=settings, hosted_kind=provider_id)
+    return port
 
 
 class _CallTimeEgressCompletion:
@@ -343,7 +311,7 @@ def build_tool_calling_port(
         model_tag=model_tag,
         catalogue=catalogue or default_model_catalogue(),
     )
-    if selected in {"openai", "anthropic"}:
+    if _builders(selected, "tool_calling").hosted_permission is not None:
         return _CallTimeEgressToolCaller(
             caller, settings=settings, hosted_kind=selected
         )
@@ -367,36 +335,11 @@ def _tool_caller_for(
     model_tag: str | None,
     catalogue: ModelCatalogue,
 ) -> ToolCallingPort:
-    if provider_id == "hermetic":
-        return HermeticToolCaller()
-    if provider_id == "ollama":
-        tag = model_tag or settings.ollama_completion_model or "qwen2.5:7b"
-        return OllamaToolCaller(
-            base_url=settings.ollama_base_url,
-            model_tag=tag,
-            transport=transport,
-            resilience=resilience,
-            profile=catalogue.profile("ollama", tag),
+    return _builders(provider_id, "tool_calling").tool_calling(
+        ProviderConstruction(
+            settings, egress, transport, resilience, model_tag, catalogue
         )
-    if provider_id == "openai":
-        tag = model_tag or settings.openai_completion_model
-        return OpenAIToolCaller(
-            api_key=egress.assert_openai_constructible(),
-            model_tag=tag,
-            transport=transport,
-            resilience=resilience,
-            profile=catalogue.profile("openai", tag),
-        )
-    if provider_id == "anthropic":
-        tag = model_tag or settings.anthropic_completion_model
-        return AnthropicToolCaller(
-            api_key=egress.assert_anthropic_constructible(),
-            model_tag=tag,
-            transport=transport,
-            resilience=resilience,
-            profile=catalogue.profile("anthropic", tag),
-        )
-    raise ProviderUnavailableError(f"unknown tool-calling provider {provider_id!r}")
+    )
 
 
 class _CallTimeEgressToolCaller:
@@ -424,10 +367,9 @@ class _CallTimeEgressToolCaller:
 
 def _assert_hosted_call_permitted(settings: ProviderSettings, hosted_kind: str) -> None:
     policy = build_egress_policy(settings)
-    if hosted_kind == "openai":
-        policy.assert_openai_constructible()
-        return
-    policy.assert_anthropic_constructible()
+    permit = _builders(hosted_kind, "completion").hosted_permission
+    if permit is not None:
+        permit(policy)
 
 
 def _secret_or_none(value: object) -> str | None:

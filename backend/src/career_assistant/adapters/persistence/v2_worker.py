@@ -1,6 +1,6 @@
 """The v2 analysis job: index, judge, score, publish (ADR 013, PLAN 18.10).
 
-The worker hands a job here when its workspace chose v2. Model calls run outside
+The worker runs every role analysis here. Model calls run outside
 any transaction; each write opens its own unit of work. An analysis the judge
 could not complete, or a document the chunker could not validate, fails the job
 with a safe code and publishes no score.
@@ -37,7 +37,6 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JUDGE_PROMPT_VERSION, JudgeLimits
@@ -217,7 +216,6 @@ class V2JobRunner:
         return RoleAnalysisV2(
             indexer=DocumentIndexer(
                 chunker=DocumentChunker(providers.structured),
-                taxonomist=TermTaxonomist(providers.structured),
                 embedding=providers.embedding,
                 store=SqlDocumentIndexStore(self._uow_factory),
                 max_chars_per_text=limits.max_chars_per_text,

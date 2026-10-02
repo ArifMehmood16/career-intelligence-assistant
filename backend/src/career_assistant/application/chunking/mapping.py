@@ -7,8 +7,8 @@ from collections.abc import Sequence
 from career_assistant.application.contracts.base import TechTerm
 from career_assistant.application.contracts.chunking import (
     AtomicRequirement,
-    CoverLetterChunk,
     CvChunk,
+    DocumentChunk,
     JobChunk,
 )
 from career_assistant.domain.chunking import (
@@ -18,14 +18,12 @@ from career_assistant.domain.chunking import (
     TechTermProposal,
 )
 
-ContractChunk = CvChunk | CoverLetterChunk | JobChunk
 
-
-def proposals_from(chunks: Sequence[ContractChunk]) -> tuple[ProposedChunk, ...]:
+def proposals_from_chunks(chunks: Sequence[DocumentChunk]) -> tuple[ProposedChunk, ...]:
     return tuple(_proposal(chunk) for chunk in chunks)
 
 
-def _proposal(chunk: ContractChunk) -> ProposedChunk:
+def _proposal(chunk: DocumentChunk) -> ProposedChunk:
     role = chunk.role if isinstance(chunk, CvChunk) else None
     return ProposedChunk(
         first_line=chunk.first_line,
@@ -44,8 +42,10 @@ def _proposal(chunk: ContractChunk) -> ProposedChunk:
         ),
         role_ref=chunk.role_ref if isinstance(chunk, CvChunk) else None,
         atomic_requirements=tuple(
-            _requirement(item) for item in getattr(chunk, "atomic_requirements", [])
-        ),
+            _requirement(item) for item in chunk.atomic_requirements
+        )
+        if isinstance(chunk, JobChunk)
+        else (),
     )
 
 
@@ -62,5 +62,6 @@ def _requirement(item: AtomicRequirement) -> AtomicRequirementProposal:
 
 def _terms(terms: list[TechTerm]) -> tuple[TechTermProposal, ...]:
     return tuple(
-        TechTermProposal(surface=t.surface, canonical=t.canonical) for t in terms
+        TechTermProposal(surface=term.surface, canonical=term.canonical)
+        for term in terms
     )

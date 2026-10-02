@@ -11,7 +11,7 @@ from career_assistant.adapters.providers.hermetic.embedding import (
 from career_assistant.adapters.providers.hermetic.structured import (
     HermeticStructuredCompleter,
 )
-from career_assistant.application.contracts.chunking import JobChunkingResponse
+from career_assistant.application.contracts.chunking import JobChunkResponse
 from career_assistant.application.ports.errors import JobCancelled
 from career_assistant.application.ports.structured import StructuredRequest
 from career_assistant.application.ports.types import (
@@ -60,7 +60,7 @@ def test_a_structured_call_is_not_sent_once_cancelled() -> None:
     switch = _Switch()
     port = CancellableStructured(inner, switch)
     request = StructuredRequest(
-        contract=JobChunkingResponse,
+        contract=JobChunkResponse,
         system="s",
         user="<document>\nL1: Requirements\nL2: - Python\n</document>",
         max_output_tokens=100,

@@ -112,3 +112,27 @@ def test_the_query_is_embedded_as_a_query_and_matched_to_document_vectors() -> N
     assert query.terms == ("python",)
     assert query.sources == (DocumentKind.CV,)
     assert query.workspace_id == WS
+
+
+def test_several_queries_share_one_embedding_request() -> None:
+    finder, search, embedding, _ = _world()
+    second = RequirementPacket(
+        requirement_id="r2",
+        quote="Has shipped a retrieval service",
+        statement="Has shipped a retrieval service",
+        must_have=True,
+        terms=("retrieval",),
+        candidates=(),
+    )
+
+    found = finder.find_all(
+        [(REQUIREMENT, "Python data platform"), (second, "retrieval service")]
+    )
+
+    assert len(found) == 2
+    assert len(embedding.requests) == 1
+    assert embedding.requests[0].texts == ("Python data platform", "retrieval service")
+    assert [query.text for query in search.queries] == [
+        "Python data platform",
+        "retrieval service",
+    ]

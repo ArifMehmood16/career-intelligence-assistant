@@ -1,9 +1,6 @@
-"""Chunking contracts: the model groups server-numbered lines (ADR 013).
+"""One structured document response with ranges and extraction fields (ADR 013).
 
-A chunk is a line range; its text is always the stored text. Fields the product
-treats as the document's words (technology surface forms, skills, titles, dates,
-quotes) are checked verbatim by the server after parsing. Kinds are closed per
-document type, so a cover-letter aspiration can never arrive as CV experience.
+The server checks coverage and every quoted field against stored text.
 """
 
 from __future__ import annotations
@@ -19,6 +16,7 @@ from career_assistant.application.contracts.base import (
     TechTerm,
     VersionedContract,
 )
+from career_assistant.application.contracts.taxonomy import TermRelations
 
 CvChunkKind = Literal[
     "role_heading",
@@ -48,11 +46,14 @@ class RoleFields(Contract):
     )
 
 
-class _Chunk(Contract):
+class _Bounds(Contract):
     first_line: int = Field(ge=1, description="First line number of the chunk.")
     last_line: int = Field(
         ge=1, description="Last line number of the chunk, inclusive."
     )
+
+
+class ChunkFields(Contract):
     context: str | None = Field(
         default=None,
         max_length=300,
@@ -62,22 +63,6 @@ class _Chunk(Contract):
         default_factory=list, description="Skills named in the chunk, as written."
     )
     tech_terms: list[TechTerm] = Field(default_factory=list)
-
-
-class CvChunk(_Chunk):
-    kind: CvChunkKind
-    role: RoleFields | None = Field(
-        default=None, description="Only on role_heading chunks."
-    )
-    role_ref: int | None = Field(
-        default=None,
-        ge=1,
-        description="First line of the role_heading this chunk belongs to.",
-    )
-
-
-class CoverLetterChunk(_Chunk):
-    kind: CoverLetterChunkKind
 
 
 class AtomicRequirement(Contract):
@@ -95,24 +80,38 @@ class AtomicRequirement(Contract):
     tech_terms: list[TechTerm] = Field(default_factory=list)
 
 
-class JobChunk(_Chunk):
+class CvChunk(_Bounds, ChunkFields):
+    kind: CvChunkKind
+    role: RoleFields | None = Field(default=None, description="Only on role_heading.")
+    role_ref: int | None = Field(default=None, ge=1)
+
+
+class CoverLetterChunk(_Bounds, ChunkFields):
+    kind: CoverLetterChunkKind
+
+
+class JobChunk(_Bounds, ChunkFields):
     kind: JobChunkKind
-    atomic_requirements: list[AtomicRequirement] = Field(
-        default_factory=list,
-        description="Only on requirement and responsibility chunks.",
-    )
+    atomic_requirements: list[AtomicRequirement] = Field(default_factory=list)
 
 
-class CvChunkingResponse(VersionedContract):
-    contract_version = "cv-chunking-v1"
+class CvChunkResponse(VersionedContract):
+    contract_version = "cv-chunks-v2"
     chunks: list[CvChunk] = Field(min_length=1)
+    taxonomy: list[TermRelations] = Field(default_factory=list)
 
 
-class CoverLetterChunkingResponse(VersionedContract):
-    contract_version = "cover-letter-chunking-v1"
+class CoverLetterChunkResponse(VersionedContract):
+    contract_version = "cover-letter-chunks-v2"
     chunks: list[CoverLetterChunk] = Field(min_length=1)
+    taxonomy: list[TermRelations] = Field(default_factory=list)
 
 
-class JobChunkingResponse(VersionedContract):
-    contract_version = "job-chunking-v1"
+class JobChunkResponse(VersionedContract):
+    contract_version = "job-chunks-v2"
     chunks: list[JobChunk] = Field(min_length=1)
+    taxonomy: list[TermRelations] = Field(default_factory=list)
+
+
+DocumentChunk = CvChunk | CoverLetterChunk | JobChunk
+DocumentChunkResponse = CvChunkResponse | CoverLetterChunkResponse | JobChunkResponse

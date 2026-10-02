@@ -14,9 +14,6 @@ from career_assistant.adapters.persistence.engine import (
     create_db_engine,
     create_session_factory,
 )
-from career_assistant.adapters.persistence.pipeline_store import (
-    SqlPipelineVersionStore,
-)
 from career_assistant.adapters.persistence.provider_settings_store import (
     SqlProviderSettingsStore,
 )
@@ -39,7 +36,6 @@ class SqlStores:
     supporting: SqlSupportingDocumentStore
     conversations: SqlConversationStore
     provider_choices: SqlProviderSettingsStore
-    pipeline: SqlPipelineVersionStore
     v2_results: SqlV2ResultReader
     analysis_worker: SqlAnalysisWorker
 
@@ -73,7 +69,9 @@ def build_sql_stores(
         ),
         conversations=SqlConversationStore(uow_factory),
         provider_choices=SqlProviderSettingsStore(uow_factory),
-        pipeline=SqlPipelineVersionStore(uow_factory),
         v2_results=SqlV2ResultReader(uow_factory),
-        analysis_worker=SqlAnalysisWorker(uow_factory, providers=providers),
+        analysis_worker=SqlAnalysisWorker(
+            uow_factory, providers=providers,
+            max_concurrent=providers.analysis_max_concurrent_jobs if providers is not None else 1,
+        ),
     )

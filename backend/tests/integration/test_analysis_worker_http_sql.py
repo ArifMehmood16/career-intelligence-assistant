@@ -6,9 +6,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.scripted_extraction import span_id_extraction_transport
+from tests.support.structured_transport import StructuredTransport
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
@@ -17,11 +17,15 @@ from career_assistant.adapters.persistence.provider_settings_store import (
 )
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
-from career_assistant.application.ports.extraction import (
-    RequirementExtractionPort,
-    RequirementExtractionResult,
+from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
+from career_assistant.adapters.providers.hermetic.structured import (
+    HermeticStructuredCompleter,
 )
-from career_assistant.domain.documents import DocumentKind
+from career_assistant.application.contracts.chunking import JobChunkResponse
+from career_assistant.application.ports.structured import (
+    StructuredRequest,
+    StructuredResult,
+)
 from career_assistant.domain.jobs import JobState, mark_running
 from career_assistant.main import create_app
 from career_assistant.settings import ProviderSettings
@@ -38,15 +42,13 @@ _JD = """Requirements
 """
 
 
-class _BoomRequirements(RequirementExtractionPort):
-    def extract(
-        self,
-        *,
-        document_id: str,
-        document_kind: DocumentKind,
-        normalised_text: str,
-    ) -> RequirementExtractionResult:
-        raise RuntimeError("extractor exploded")
+class _BoomStructured(HermeticStructuredCompleter):
+    def complete_structured[T: BaseModel](
+        self, request: StructuredRequest[T]
+    ) -> StructuredResult[T]:
+        if request.contract is JobChunkResponse:
+            raise RuntimeError("scripted document failure")
+        return super().complete_structured(request)
 
 
 def _uow_factory(session_factory: sessionmaker[Session]):
@@ -68,6 +70,7 @@ def _sql_app(
         create_app(
             cv_store=cv_store,
             role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
+            v2_results=SqlV2ResultReader(uow_factory),
         )
     )
     return client, resolved_worker
@@ -95,7 +98,7 @@ def test_post_role_returns_analysing_and_queued_before_worker_runs(
     assert listed.status_code == 200
     assert listed.json()[0]["status"] == "analysing"
 
-    requirements = client.get(f"/api/roles/{body['role']['id']}/requirements")
+    requirements = client.get(f"/api/roles/{body['role']['id']}/verdicts")
     assert requirements.status_code == 409
 
     job = client.get(f"/api/jobs/{body['jobId']}")
@@ -132,16 +135,21 @@ def test_worker_runs_queued_through_running_to_succeeded(
     role = client.get(f"/api/roles/{role_id}").json()
     assert role["status"] == "ready"
     assert role["fitScore"] > 0
-    requirements = client.get(f"/api/roles/{role_id}/requirements")
+    requirements = client.get(f"/api/roles/{role_id}/verdicts")
     assert requirements.status_code == 200
-    assert requirements.json()
+    assert requirements.json()["verdicts"]
 
 
 def test_worker_failure_marks_failed_without_partial_results(
     session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     uow_factory = _uow_factory(session_factory)
-    worker = SqlAnalysisWorker(uow_factory, requirement_extractor=_BoomRequirements())
+    monkeypatch.setattr(
+        "career_assistant.adapters.persistence.analysis_worker.build_structured_port",
+        lambda *_args, **_kwargs: _BoomStructured(),
+    )
+    worker = SqlAnalysisWorker(uow_factory)
     client, _ = _sql_app(session_factory, worker=worker)
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
     created = client.post(
@@ -158,13 +166,13 @@ def test_worker_failure_marks_failed_without_partial_results(
     assert job["state"] == "failed"
     error = job["error"]
     if isinstance(error, dict):
-        assert error["code"] == "extracting_requirements_failed"
+        assert error["code"] == "mapping_failed"
     else:
-        assert "extracting_requirements_failed" in (error or "")
+        assert "mapping_failed" in (error or "")
     assert client.get(f"/api/roles/{role_id}").json()["status"] == "failed"
-    assert client.get(f"/api/roles/{role_id}/requirements").status_code == 409
+    assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 409
     with uow_factory() as uow:
-        assert uow.analysis.list_mappings(client.cookies["workspace"], role_id) == ()
+        assert uow.v2.result(client.cookies["workspace"], role_id) is None
 
 
 def test_reanalyse_returns_analysing_and_queued_before_worker_runs(
@@ -187,7 +195,7 @@ def test_reanalyse_returns_analysing_and_queued_before_worker_runs(
     assert client.get(f"/api/roles/{role_id}").json()["fitScore"] == 0
     job = client.get(f"/api/jobs/{reanalysed.json()['jobId']}")
     assert job.json()["state"] == "queued"
-    assert client.get(f"/api/roles/{role_id}/requirements").status_code == 409
+    assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 409
 
 
 def test_cv_replace_enqueues_jobs_and_never_leaves_ready_with_stale_score(
@@ -218,7 +226,7 @@ def test_cv_replace_enqueues_jobs_and_never_leaves_ready_with_stale_score(
     assert role["status"] == "analysing"
     assert role["fitScore"] == 0
     assert client.get(f"/api/jobs/{job_ids[0]}").json()["state"] == "queued"
-    assert client.get(f"/api/roles/{role_id}/requirements").status_code == 409
+    assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 409
 
     worker.drain()
     ready = client.get(f"/api/roles/{role_id}").json()
@@ -244,7 +252,7 @@ def test_cv_delete_marks_roles_failed(
     assert client.get("/api/cv").json() is None
     role = client.get(f"/api/roles/{role_id}").json()
     assert role["status"] == "failed"
-    assert client.get(f"/api/roles/{role_id}/requirements").status_code == 409
+    assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 409
 
 
 def test_startup_recovers_queued_and_stale_running_jobs(
@@ -293,7 +301,7 @@ def test_startup_recovers_queued_and_stale_running_jobs(
 def test_worker_extraction_calls_the_selected_scripted_provider(
     session_factory: sessionmaker[Session],
 ) -> None:
-    transport = span_id_extraction_transport()
+    transport = StructuredTransport()
     settings = ProviderSettings(
         completion_provider="hermetic",
         embedding_provider="hermetic",
@@ -311,6 +319,7 @@ def test_worker_extraction_calls_the_selected_scripted_provider(
             cv_store=cv_store,
             role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
             provider_choice_store=SqlProviderSettingsStore(uow_factory),
+            v2_results=SqlV2ResultReader(uow_factory),
         )
     )
     uploaded = client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})

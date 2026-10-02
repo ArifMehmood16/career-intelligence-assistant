@@ -1,9 +1,10 @@
-"""Split a document into sections that each fit one chunking call (PLAN 18.4).
+"""Split a document into sections that each fit one structure call (PLAN 18.4).
 
-A document that fits the provider's budget is one call. Otherwise it is cut at
-server-detected headings — a short line that ends in a colon, is written in
+A document that fits the provider's input window is one call. Otherwise it is cut
+at server-detected headings — a short line that ends in a colon, is written in
 capitals or starts with '#' — packing whole blocks into each section, and a single
-block that is still too big is cut into windows. Line numbers stay global.
+block that is still too big is cut into windows. Line numbers stay global. The
+structure reply is small, so the output cap does not decide the cut.
 """
 
 from __future__ import annotations
@@ -13,9 +14,9 @@ from dataclasses import dataclass
 
 from career_assistant.domain.lines import NumberedLine
 
-# Starting estimates, not measurements; 18.14 revisits them with observed usage.
+# Starting estimate, not a measurement. The structure reply is ranges and kinds,
+# so only the input window sizes a section.
 PROMPT_OVERHEAD_TOKENS = 1_200
-OUTPUT_TOKENS_PER_LINE = 40
 _HEADING_MAX_CHARS = 60
 _BULLETS = ("-", "*", "•", "–")
 
@@ -25,15 +26,13 @@ Section = tuple[NumberedLine, ...]
 @dataclass(frozen=True, slots=True)
 class ChunkingBudget:
     max_input_tokens: int
-    max_output_tokens: int
 
     def fits(self, lines: Sequence[NumberedLine]) -> bool:
-        input_tokens = PROMPT_OVERHEAD_TOKENS + sum(_input_tokens(n) for n in lines)
-        output_tokens = OUTPUT_TOKENS_PER_LINE * len(lines)
-        return (
-            input_tokens <= self.max_input_tokens
-            and output_tokens <= self.max_output_tokens
-        )
+        return section_input_tokens(lines) <= self.max_input_tokens
+
+
+def section_input_tokens(lines: Sequence[NumberedLine]) -> int:
+    return PROMPT_OVERHEAD_TOKENS + sum(len(line.text) // 4 + 4 for line in lines)
 
 
 def plan_sections(
@@ -86,8 +85,3 @@ def _windows(block: Section, budget: ChunkingBudget) -> list[Section]:
     if current:
         windows.append(tuple(current))
     return windows
-
-
-def _input_tokens(line: NumberedLine) -> int:
-    # Roughly four characters a token, plus the "L123: " prefix.
-    return len(line.text) // 4 + 4

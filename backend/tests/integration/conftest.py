@@ -53,14 +53,12 @@ def session_factory(migrated_engine: Engine) -> Iterator[sessionmaker[Session]]:
         conn.execute(
             text(
                 f"TRUNCATE TABLE "
-                f"{APP_SCHEMA}.mapping_spans, {APP_SCHEMA}.mappings, "
                 f"{APP_SCHEMA}.draft_citations, {APP_SCHEMA}.answer_citations, "
-                f"{APP_SCHEMA}.score_explanations, {APP_SCHEMA}.requirements, "
-                f"{APP_SCHEMA}.generated_drafts, {APP_SCHEMA}.embeddings, "
-                f"{APP_SCHEMA}.claim_spans, {APP_SCHEMA}.answers, "
+                f"{APP_SCHEMA}.score_explanations, "
+                f"{APP_SCHEMA}.generated_drafts, "
+                f"{APP_SCHEMA}.answers, "
                 f"{APP_SCHEMA}.analysis_jobs, {APP_SCHEMA}.spans, "
                 f"{APP_SCHEMA}.roles, {APP_SCHEMA}.questions, "
-                f"{APP_SCHEMA}.claims, "
                 f"{APP_SCHEMA}.provider_settings, "
                 f"{APP_SCHEMA}.provider_call_accounting, "
                 f"{APP_SCHEMA}.documents, {APP_SCHEMA}.conversations, "

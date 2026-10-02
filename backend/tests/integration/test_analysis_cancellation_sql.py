@@ -15,8 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import BaseModel, SecretStr
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.scripted_extraction import span_id_extraction_transport
-from tests.support.scripted_transport import ScriptedTransport
+from tests.support.structured_transport import StructuredTransport
 from tests.support.v2_http import queue_role, sql_app
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
@@ -101,7 +100,7 @@ class _DeletingTransport:
     """Scripted chat completions; the first one triggers the delete."""
 
     on_first: Callable[[], object]
-    inner: ScriptedTransport = field(default_factory=span_id_extraction_transport)
+    inner: StructuredTransport = field(default_factory=StructuredTransport)
     completions: int = 0
 
     def request(
@@ -127,7 +126,7 @@ class _DeletingTransport:
 
 
 @_DELETES
-def test_v1_makes_no_model_call_after_the_delete(
+def test_hosted_analysis_makes_no_model_call_after_the_delete(
     session_factory: sessionmaker[Session], delete: Delete
 ) -> None:
     ids: dict[str, str] = {}
@@ -222,7 +221,6 @@ def test_v2_makes_no_model_call_after_the_delete(
     session_factory: sessionmaker[Session], delete: Delete
 ) -> None:
     app = sql_app(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
     role_id, job_id = queue_role(app)
     structured = _DeletingStructured(lambda: delete(app.client, role_id))
     embedding = _CountingEmbedding()

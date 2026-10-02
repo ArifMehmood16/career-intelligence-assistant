@@ -39,9 +39,11 @@ def _resilience() -> ResiliencePolicy:
                 model_tag="nomic-test",
                 transport=ScriptedTransport(
                     {
-                        "/api/embeddings": HttpResponse(
+                        "/api/embed": HttpResponse(
                             200,
-                            json.dumps({"embedding": [0.1, 0.2, 0.3]}).encode(),
+                            json.dumps(
+                                {"embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]}
+                            ).encode(),
                             {},
                         )
                     }

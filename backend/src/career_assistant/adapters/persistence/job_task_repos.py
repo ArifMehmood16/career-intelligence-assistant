@@ -102,6 +102,10 @@ def _to_row(
         state=task.state.value,
         units_done=task.units_done,
         units_total=task.units_total,
+        model_calls_done=task.model_calls_done,
+        model_calls_total=task.model_calls_total,
+        embedding_calls_done=task.embedding_calls_done,
+        embedding_calls_total=task.embedding_calls_total,
         started_at=task.started_at,
         finished_at=task.finished_at,
     )
@@ -113,6 +117,10 @@ def _to_task(row: AnalysisJobTaskRow) -> JobTask:
         state=TaskState(row.state),
         units_done=row.units_done,
         units_total=row.units_total,
+        model_calls_done=row.model_calls_done,
+        model_calls_total=row.model_calls_total,
+        embedding_calls_done=row.embedding_calls_done,
+        embedding_calls_total=row.embedding_calls_total,
         started_at=row.started_at,
         finished_at=row.finished_at,
     )

@@ -9,6 +9,7 @@ is unavailable or not permitted is not a verdict at all, so that error propagate
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
@@ -23,6 +24,7 @@ from career_assistant.application.judge.prompt import (
     JUDGE_SYSTEM,
     JudgeLimits,
     judge_batches,
+    judge_output_limit,
     judge_user,
     render_facts,
 )
@@ -33,12 +35,14 @@ from career_assistant.application.ports.errors import (
     StructuredOutputError,
     StructuredOutputTruncatedError,
 )
+from career_assistant.application.ports.progress import plan_calls
 from career_assistant.application.ports.structured import (
     StructuredCompletionPort,
     StructuredRequest,
     StructuredResult,
 )
 from career_assistant.application.ports.verdicts import VerdictCache, VerdictRecord
+from career_assistant.application.providers.fanout import map_in_order
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import (
     ProposedQuote,
@@ -88,6 +92,14 @@ class RequirementJudge:
         self._model = model
         self._limits = limits
 
+    @property
+    def hosted(self) -> bool:
+        return self._structured.capabilities.leaves_machine
+
+    @property
+    def concurrency(self) -> int:
+        return self._structured.capabilities.execution.completion_concurrency
+
     def judge(
         self,
         packets: Sequence[RequirementPacket],
@@ -115,16 +127,46 @@ class RequirementJudge:
         handled = len(packets) - len(pending)
         report(handled)
         prefix = len(render_facts(facts, as_of=as_of))
-        for batch in judge_batches(
+        batches = judge_batches(
             pending, capabilities, self._limits, prefix_chars=prefix
-        ):
-            records.update(self._judge_batch(batch, context))
-            handled += len(batch)
-            report(handled)
+        )
+        plan_calls(model=len(batches))
+        if self.concurrency > 1 and len(batches) > 1:
+            records.update(self._judge_parallel(batches, context, handled, report))
+        else:
+            for batch in batches:
+                records.update(self._judge_batch(batch, context))
+                handled += len(batch)
+                report(handled)
         incomplete = tuple(
             p.requirement_id for p in packets if p.requirement_id not in records
         )
         return JudgeOutcome(verdicts=records, incomplete=incomplete)
+
+    def _judge_parallel(
+        self,
+        batches: Sequence[Sequence[RequirementPacket]],
+        context: _Context,
+        handled: int,
+        report: Callable[[int], None],
+    ) -> dict[str, VerdictRecord]:
+        """Independent batches share no verdicts. A repair stays inside its batch."""
+        state = {"handled": handled}
+        lock = threading.Lock()
+
+        def one(batch: Sequence[RequirementPacket]) -> dict[str, VerdictRecord]:
+            judged = self._judge_batch(batch, context)
+            with lock:
+                state["handled"] += len(batch)
+                report(state["handled"])
+            return judged
+
+        merged: dict[str, VerdictRecord] = {}
+        for part in map_in_order(
+            batches, one, parallel=True, max_workers=self.concurrency
+        ):
+            merged.update(part)
+        return merged
 
     def _judge_batch(
         self, batch: Sequence[RequirementPacket], context: _Context
@@ -132,7 +174,7 @@ class RequirementJudge:
         user = judge_user(context.facts, batch, as_of=context.as_of)
         try:
             result = self._call(user)
-        except StructuredOutputTruncatedError:
+        except StructuredOutputTruncatedError, ProviderInputTooLargeError:
             return self._split(batch, context)
         except _UNANSWERED:
             return {}
@@ -148,6 +190,7 @@ class RequirementJudge:
         if len(batch) == 1:
             return {}
         half = len(batch) // 2
+        plan_calls(model=2)
         return {
             **self._judge_batch(batch[:half], context),
             **self._judge_batch(batch[half:], context),
@@ -171,6 +214,7 @@ class RequirementJudge:
                 _REPAIR_CLOSING,
             ]
         )
+        plan_calls(model=1)
         try:
             result = self._call(user)
         except _UNANSWERED:
@@ -211,7 +255,13 @@ class RequirementJudge:
             system=JUDGE_SYSTEM,
             user=user,
             max_output_tokens=min(
-                capabilities.max_output_tokens, self._limits.max_output_tokens
+                judge_output_limit(capabilities, self._limits),
+                max(
+                    1,
+                    capabilities.context_window_tokens
+                    - (len(JUDGE_SYSTEM) + len(user) + 3)
+                    // self._limits.chars_per_token,
+                ),
             ),
             temperature=0.0 if capabilities.supports_temperature else None,
             seed=0 if capabilities.supports_seed else None,

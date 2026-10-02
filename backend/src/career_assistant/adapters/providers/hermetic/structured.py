@@ -6,7 +6,6 @@ it; a contract with no builder is refused rather than answered with a guess.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -19,12 +18,11 @@ from career_assistant.adapters.providers.hermetic.chunking_rules import (
 )
 from career_assistant.adapters.providers.hermetic.judging_rules import judge_verdicts
 from career_assistant.application.contracts.chunking import (
-    CoverLetterChunkingResponse,
-    CvChunkingResponse,
-    JobChunkingResponse,
+    CoverLetterChunkResponse,
+    CvChunkResponse,
+    JobChunkResponse,
 )
 from career_assistant.application.contracts.judge import JudgeResponse
-from career_assistant.application.contracts.taxonomy import TaxonomyResponse
 from career_assistant.application.ports.errors import ProviderUnavailableError
 from career_assistant.application.ports.structured import (
     StructuredRequest,
@@ -33,21 +31,10 @@ from career_assistant.application.ports.structured import (
 from career_assistant.application.ports.types import CapabilityDescriptor
 
 Builder = Callable[[str], dict[str, Any]]
-_TERMS = re.compile(r"<terms>\n(.*?)\n</terms>", re.DOTALL)
-
-
-def taxonomy(user: str) -> dict[str, Any]:
-    """No general knowledge offline: every term, with no relations."""
-    match = _TERMS.search(user)
-    terms = [t for t in (match.group(1).split("\n") if match else []) if t.strip()]
-    return {"terms": [{"term": term} for term in terms]}
-
-
 DEFAULT_BUILDERS: Mapping[type[BaseModel], Builder] = {
-    CvChunkingResponse: cv_chunks,
-    CoverLetterChunkingResponse: letter_chunks,
-    JobChunkingResponse: job_chunks,
-    TaxonomyResponse: taxonomy,
+    CvChunkResponse: cv_chunks,
+    CoverLetterChunkResponse: letter_chunks,
+    JobChunkResponse: job_chunks,
     JudgeResponse: judge_verdicts,
 }
 

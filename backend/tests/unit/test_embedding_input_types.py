@@ -69,15 +69,15 @@ def _embed(
 def test_the_configured_prefix_is_applied_for_the_input_type(
     input_type: str | None, expected: str
 ) -> None:
-    transport = RecordingTransport({"embedding": [0.1, 0.2, 0.3]})
+    transport = RecordingTransport({"embeddings": [[0.1, 0.2, 0.3]]})
 
     _embed(transport, input_type)
 
-    assert transport.last.body["prompt"] == expected
+    assert transport.last.body["input"] == [expected]
 
 
 def test_a_model_with_no_prefixes_is_embedded_unchanged() -> None:
-    transport = RecordingTransport({"embedding": [0.1, 0.2, 0.3]})
+    transport = RecordingTransport({"embeddings": [[0.1, 0.2, 0.3]]})
 
     _embed(
         transport,
@@ -85,12 +85,29 @@ def test_a_model_with_no_prefixes_is_embedded_unchanged() -> None:
         ModelProfile(context_window_tokens=8_192, max_output_tokens=0),
     )
 
-    assert transport.last.body["prompt"] == "Built hybrid retrieval."
+    assert transport.last.body["input"] == ["Built hybrid retrieval."]
 
 
 def test_the_embedding_context_window_is_sent_explicitly() -> None:
-    transport = RecordingTransport({"embedding": [0.1, 0.2, 0.3]})
+    transport = RecordingTransport({"embeddings": [[0.1, 0.2, 0.3]]})
 
     _embed(transport, "document")
 
     assert transport.last.body["options"] == {"num_ctx": 2_048}
+
+
+def test_multiple_inputs_use_one_call_without_silent_truncation() -> None:
+    transport = RecordingTransport({"embeddings": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]})
+    result = _adapter(transport).embed(
+        EmbeddingRequest(
+            texts=("First", "Second"), max_chars_per_text=1000, input_type="document"
+        )
+    )
+    assert len(transport.requests) == 1
+    assert transport.last.url.endswith("/api/embed")
+    assert transport.last.body["input"] == [
+        "search_document: First",
+        "search_document: Second",
+    ]
+    assert transport.last.body["truncate"] is False
+    assert len(result.vectors) == 2

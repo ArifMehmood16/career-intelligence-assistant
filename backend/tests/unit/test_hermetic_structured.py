@@ -21,7 +21,6 @@ from career_assistant.application.chunking.service import (
     DocumentChunker,
 )
 from career_assistant.application.contracts.agent import AgentAnswer
-from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JudgeLimits
 from career_assistant.application.judge.service import RequirementJudge
@@ -114,14 +113,11 @@ def test_the_fixture_is_deterministic() -> None:
     assert _chunk(DocumentKind.CV, text) == _chunk(DocumentKind.CV, text)
 
 
-def test_the_taxonomy_fixture_answers_every_term_with_no_relations() -> None:
-    outcome = TermTaxonomist(HermeticStructuredCompleter()).relate(
-        ["pgvector", "python"]
-    )
-
-    assert outcome.failure is None
-    assert outcome.edges == ()
+def test_the_combined_fixture_returns_no_inferred_relations() -> None:
+    outcome = _chunk(DocumentKind.CV, "Jane Doe\nSKILLS\nPython, pgvector\n")
+    assert outcome.inferred_edges == ()
     assert outcome.provider_id == "hermetic"
+    assert outcome.calls == 1
 
 
 def test_a_contract_with_no_fixture_is_refused() -> None:

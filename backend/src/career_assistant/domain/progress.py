@@ -23,7 +23,6 @@ class TaskKey(StrEnum):
     PREPARE = "prepare"
     READ_ADVERT = "read_advert"
     READ_CV = "read_cv"
-    MATCH = "match"
     SEARCH = "search"
     JUDGE = "judge"
     RECHECK = "recheck"
@@ -39,13 +38,6 @@ class TaskState(StrEnum):
 
 
 _PLANS: Mapping[PipelineVersion, tuple[TaskKey, ...]] = {
-    PipelineVersion.V1: (
-        TaskKey.PREPARE,
-        TaskKey.READ_ADVERT,
-        TaskKey.READ_CV,
-        TaskKey.MATCH,
-        TaskKey.SCORE,
-    ),
     PipelineVersion.V2: (
         TaskKey.PREPARE,
         TaskKey.READ_CV,
@@ -71,6 +63,10 @@ class JobTask:
     units_total: int | None = None
     started_at: datetime | None = None
     finished_at: datetime | None = None
+    model_calls_done: int = 0
+    model_calls_total: int | None = None
+    embedding_calls_done: int = 0
+    embedding_calls_total: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +89,11 @@ class ProgressView:
     elapsed_seconds: float | None
     remaining_seconds: float | None
     queue_position: int | None
+    model_calls_done: int
+    model_calls_remaining: int
+    embedding_calls_done: int
+    embedding_calls_remaining: int
+    call_estimate_complete: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,9 +202,11 @@ def settle(tasks: Sequence[JobTask], job_state: JobState) -> tuple[JobTask, ...]
 def summarise(tasks: Sequence[JobTask]) -> ProgressSummary:
     done = sum(1 for task in tasks if task.state in (TaskState.DONE, TaskState.SKIPPED))
     current = next((t for t in tasks if t.state is TaskState.RUNNING), None)
-    share = 0.0
-    if current is not None and current.units_total:
-        share = current.units_done / current.units_total
+    share = sum(
+        task.units_done / task.units_total
+        for task in tasks
+        if task.state is TaskState.RUNNING and task.units_total
+    )
     total = len(tasks)
     return ProgressSummary(
         tasks_done=done,
@@ -220,13 +223,28 @@ def estimate_remaining(
     baselines: Mapping[TaskKey, TaskBaseline],
 ) -> float | None:
     """Seconds left, or None while any unfinished model task has no measure."""
-    total = 0.0
+    sequential = 0.0
+    parallel_reads: list[float] = []
     for task in tasks:
         left = _task_remaining(task, now, baselines.get(task.key))
         if left is None:
             return None
-        total += left
-    return total
+        if task.key in (TaskKey.READ_CV, TaskKey.READ_ADVERT):
+            parallel_reads.append(left)
+        else:
+            sequential += left
+    concurrent_reads = (
+        sum(
+            task.state is TaskState.RUNNING
+            for task in tasks
+            if task.key in (TaskKey.READ_CV, TaskKey.READ_ADVERT)
+        )
+        > 1
+    )
+    reads = (
+        max(parallel_reads, default=0.0) if concurrent_reads else sum(parallel_reads)
+    )
+    return sequential + reads
 
 
 def progress_view(
@@ -251,6 +269,20 @@ def progress_view(
         elapsed_seconds=_elapsed(started_at, finished_at, now),
         remaining_seconds=_job_remaining(state, settled, now, baselines, ahead),
         queue_position=len(ahead) if state is JobState.QUEUED else None,
+        model_calls_done=sum(t.model_calls_done for t in settled),
+        model_calls_remaining=_calls_remaining(settled, "model")
+        if state in (JobState.QUEUED, JobState.RUNNING)
+        else 0,
+        embedding_calls_done=sum(t.embedding_calls_done for t in settled),
+        embedding_calls_remaining=_calls_remaining(settled, "embedding")
+        if state in (JobState.QUEUED, JobState.RUNNING)
+        else 0,
+        call_estimate_complete=all(
+            t.state in _SETTLED
+            or t.key in QUICK_TASKS
+            or (t.model_calls_total is not None and t.embedding_calls_total is not None)
+            for t in settled
+        ),
     )
 
 
@@ -316,6 +348,8 @@ def _task_remaining(
 
 
 def _expected(task: JobTask, baseline: TaskBaseline | None) -> float | None:
+    if task.model_calls_total == 0 and task.embedding_calls_total == 0:
+        return 0.0
     if baseline is None:
         return 0.0 if task.key in QUICK_TASKS else None
     if task.units_total is not None and baseline.seconds_per_unit is not None:
@@ -337,3 +371,57 @@ def _put(tasks: Sequence[JobTask], changed: JobTask) -> tuple[JobTask, ...]:
 def _check_units(done: int, total: int | None) -> None:
     if done < 0 or (total is not None and not 0 <= done <= total):
         raise ValueError(f"units done {done} is outside 0..{total}")
+
+
+def plan_calls(
+    tasks: Sequence[JobTask], key: TaskKey, *, model: int = 0, embedding: int = 0
+) -> tuple[JobTask, ...]:
+    """Add planned requests; discoveries and repairs can extend this estimate."""
+    if model < 0 or embedding < 0:
+        raise ValueError("planned calls cannot be negative")
+    task = _find(tasks, key)
+    return _put(
+        tasks,
+        replace(
+            task,
+            model_calls_total=(task.model_calls_total or task.model_calls_done) + model,
+            embedding_calls_total=(
+                task.embedding_calls_total or task.embedding_calls_done
+            )
+            + embedding,
+        ),
+    )
+
+
+def call_finished(
+    tasks: Sequence[JobTask], key: TaskKey, *, operation: str
+) -> tuple[JobTask, ...]:
+    """Count a physical attempt, including a failed attempt."""
+    task = _find(tasks, key)
+    if operation == "model":
+        done = task.model_calls_done + 1
+        changed = replace(
+            task,
+            model_calls_done=done,
+            model_calls_total=max(done, task.model_calls_total or 0),
+        )
+    elif operation == "embedding":
+        done = task.embedding_calls_done + 1
+        changed = replace(
+            task,
+            embedding_calls_done=done,
+            embedding_calls_total=max(done, task.embedding_calls_total or 0),
+        )
+    else:
+        raise ValueError("unknown call operation")
+    return _put(tasks, changed)
+
+
+def _calls_remaining(tasks: Sequence[JobTask], operation: str) -> int:
+    return sum(
+        max(0, (t.model_calls_total or 0) - t.model_calls_done)
+        if operation == "model"
+        else max(0, (t.embedding_calls_total or 0) - t.embedding_calls_done)
+        for t in tasks
+        if t.state not in _SETTLED
+    )

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, Request, status
 
+from career_assistant.adapters.providers.hermetic.analysis import analyse_hermetic
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.schemas import (
@@ -26,14 +25,10 @@ from career_assistant.application.roles.store import (
     RoleOperationRejected,
     RoleView,
 )
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.generation import build_fit_summary
 from career_assistant.domain.progress import ProgressView
 
 router = APIRouter(tags=["roles"])
-_RUBRIC = load_scoring_rubric(
-    Path(__file__).resolve().parents[4] / "config" / "scoring_rubric.toml"
-)
 
 
 def _cv_store(request: Request) -> CvStore:
@@ -47,7 +42,9 @@ def _cv_store(request: Request) -> CvStore:
 def _role_store(request: Request) -> InMemoryRoleStore:
     store = getattr(request.app.state, "role_store", None)
     if store is None:
-        store = InMemoryRoleStore(cv_store=_cv_store(request))
+        store = InMemoryRoleStore(
+            cv_store=_cv_store(request), analyser=analyse_hermetic
+        )
         request.app.state.role_store = store
     return store
 
@@ -78,7 +75,10 @@ def _fit_summary_for(
     except RoleOperationRejected:
         return None
     return build_fit_summary(
-        bundle.requirements, bundle.mappings, bundle.claims, _RUBRIC
+        bundle.requirements,
+        bundle.mappings,
+        explanation=bundle.explanation,
+        gaps=bundle.gaps,
     ).text
 
 
@@ -115,12 +115,21 @@ def _progress_wire(view: ProgressView) -> JobProgressWire:
         elapsed_seconds=_whole_seconds(view.elapsed_seconds),
         remaining_seconds=_whole_seconds(view.remaining_seconds),
         queue_position=view.queue_position,
+        model_calls_done=view.model_calls_done,
+        model_calls_remaining=view.model_calls_remaining,
+        embedding_calls_done=view.embedding_calls_done,
+        embedding_calls_remaining=view.embedding_calls_remaining,
+        call_estimate_complete=view.call_estimate_complete,
         tasks=[
             JobTaskWire(
                 key=task.key.value,
                 state=task.state.value,
                 units_done=task.units_done,
                 units_total=task.units_total,
+                model_calls_done=task.model_calls_done,
+                model_calls_total=task.model_calls_total,
+                embedding_calls_done=task.embedding_calls_done,
+                embedding_calls_total=task.embedding_calls_total,
             )
             for task in view.tasks
         ],

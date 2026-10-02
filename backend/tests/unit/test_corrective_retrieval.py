@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
@@ -55,12 +56,19 @@ class FakeSearch:
 
     finds: dict[str, CandidateSearchResult] = field(default_factory=dict)
     queries: list[tuple[str, str]] = field(default_factory=list)
+    batches: list[tuple[str, ...]] = field(default_factory=list)
 
     def find(
         self, requirement: RequirementPacket, query_text: str
     ) -> CandidateSearchResult:
         self.queries.append((requirement.requirement_id, query_text))
         return self.finds.get(query_text, _found(SKILLS))
+
+    def find_all(
+        self, items: Sequence[tuple[RequirementPacket, str]]
+    ) -> tuple[CandidateSearchResult, ...]:
+        self.batches.append(tuple(text for _, text in items))
+        return tuple(self.find(requirement, text) for requirement, text in items)
 
 
 def _verdict(
@@ -209,6 +217,12 @@ def test_the_analysis_cap_bounds_the_rewrites_in_requirement_order() -> None:
     assert rewrites == ["r1 delivery", "r2 delivery"]
     assert len(outcome.traces["r3"]) == 1
     assert outcome.rewrites == 2
+    assert search.batches[0] == (
+        "Has run vector search in production.",
+        "Has run vector search in production.",
+        "Has run vector search in production.",
+    )
+    assert search.batches[1] == ("r1 delivery", "r2 delivery")
 
 
 def test_a_failed_re_judgement_keeps_the_validated_first_verdict() -> None:
@@ -266,6 +280,7 @@ def test_progress_counts_searches_judgements_and_rechecks() -> None:
         ("search", 3, 3),
         ("enter", "judge"),
         ("judge", 0, 3),
+        ("plan_calls", "judge", 1, 0),
         ("judge", 3, 3),
         ("enter", "recheck"),
         ("recheck", 0, 2),
@@ -283,3 +298,22 @@ def test_progress_skips_the_recheck_when_the_evidence_was_enough() -> None:
     )
 
     assert progress.events[-1] == ("skip", "recheck")
+
+
+def test_corrective_requirements_with_new_evidence_share_one_rejudge_call() -> None:
+    search = FakeSearch(
+        finds={"r1 delivery": _found(DELIVERY), "r2 delivery": _found(DELIVERY)}
+    )
+    structured = ScriptedStructured(
+        [
+            _reply(_verdict("r1", sufficient=False), _verdict("r2", sufficient=False)),
+            _reply(_met("r1"), _met("r2")),
+        ]
+    )
+    outcome = _matcher(structured, search).match(
+        [_requirement("r1"), _requirement("r2")], FACTS, as_of=AS_OF
+    )
+    assert len(structured.requests) == 2
+    assert all(record.verdict.verdict == "met" for record in outcome.verdicts.values())
+    assert '<requirement id="r1">' in structured.requests[1].user
+    assert '<requirement id="r2">' in structured.requests[1].user

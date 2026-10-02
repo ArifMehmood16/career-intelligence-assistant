@@ -6,5 +6,4 @@ from enum import StrEnum
 
 
 class PipelineVersion(StrEnum):
-    V1 = "v1"
     V2 = "v2"

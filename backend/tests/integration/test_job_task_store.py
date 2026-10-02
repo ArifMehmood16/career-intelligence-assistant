@@ -25,8 +25,10 @@ from career_assistant.domain.progress import (
     TaskSample,
     TaskState,
     advance,
+    call_finished,
     enter,
     finish,
+    plan_calls,
     plan_for,
     skip,
 )
@@ -104,6 +106,8 @@ def test_task_rows_round_trip_in_plan_order(uow: SqlUnitOfWork) -> None:
     ws = str(uuid.uuid4())
     tasks = enter(plan_for(PipelineVersion.V2), TaskKey.PREPARE, at=_at(0))
     tasks = enter(tasks, TaskKey.READ_CV, at=_at(2))
+    tasks = plan_calls(tasks, TaskKey.READ_CV, model=2, embedding=1)
+    tasks = call_finished(tasks, TaskKey.READ_CV, operation="model")
     with uow:
         uow.workspaces.ensure(ws)
         job_id = _job(uow, ws)
@@ -143,14 +147,14 @@ def test_tasks_for_several_jobs_come_back_keyed_by_job(uow: SqlUnitOfWork) -> No
         uow.workspaces.ensure(ws)
         first, second, idle = _job(uow, ws), _job(uow, ws), _job(uow, ws)
         uow.job_tasks.put(ws, first, plan_for(PipelineVersion.V2))
-        uow.job_tasks.put(ws, second, plan_for(PipelineVersion.V1))
+        uow.job_tasks.put(ws, second, plan_for(PipelineVersion.V2))
         uow.commit()
 
     with uow:
         found = uow.job_tasks.for_jobs(ws, (first, second, idle))
     assert found == {
         first: plan_for(PipelineVersion.V2),
-        second: plan_for(PipelineVersion.V1),
+        second: plan_for(PipelineVersion.V2),
     }
 
 
@@ -182,7 +186,6 @@ def test_samples_come_from_recent_successful_jobs_of_the_same_pipeline(
         newer = _job(uow, ws, finished=200)
         newest = _job(uow, ws, finished=300)
         failed = _job(uow, ws, finished=400, failed=True)
-        v1 = _job(uow, ws, pipeline=PipelineVersion.V1, finished=500)
         elsewhere = _job(uow, other, finished=600)
         running = _job(uow, ws)
         for job_id, seconds in [
@@ -195,7 +198,6 @@ def test_samples_come_from_recent_successful_jobs_of_the_same_pipeline(
             uow.job_tasks.put(
                 other if job_id == elsewhere else ws, job_id, _done_v2(seconds, 10)
             )
-        uow.job_tasks.put(ws, v1, plan_for(PipelineVersion.V1))
         uow.job_tasks.put(
             ws, running, enter(plan_for(PipelineVersion.V2), TaskKey.PREPARE, at=T0)
         )

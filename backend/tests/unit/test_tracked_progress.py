@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import UTC, datetime, timedelta
 
 from career_assistant.application.analysis.progress import TrackedProgress
@@ -47,7 +49,7 @@ def test_the_final_tasks_finish_the_running_one_without_sending() -> None:
     sent: list[tuple[JobTask, ...]] = []
     clock = _Clock()
     progress = TrackedProgress(
-        plan_for(PipelineVersion.V1), clock=clock, sink=sent.append
+        plan_for(PipelineVersion.V2), clock=clock, sink=sent.append
     )
     progress.enter(TaskKey.SCORE)
 
@@ -56,3 +58,63 @@ def test_the_final_tasks_finish_the_running_one_without_sending() -> None:
     assert len(sent) == 1, "the caller writes the final tasks with its own commit"
     assert final[-1].state is TaskState.DONE
     assert final[-1].finished_at == clock.now
+
+
+def test_overlapping_counts_reach_the_sink_one_at_a_time() -> None:
+    gate = threading.Lock()
+    seen: list[int] = []
+
+    def sink(tasks: tuple[JobTask, ...]) -> None:
+        assert gate.acquire(blocking=False)
+        try:
+            time.sleep(0.01)
+            judge = next(task for task in tasks if task.key is TaskKey.JUDGE)
+            seen.append(judge.units_done)
+        finally:
+            gate.release()
+
+    progress = TrackedProgress(plan_for(PipelineVersion.V2), clock=_Clock(), sink=sink)
+    progress.enter(TaskKey.JUDGE)
+    threads = [
+        threading.Thread(target=progress.count, args=(TaskKey.JUDGE, done, 4))
+        for done in (1, 2, 3, 4)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert sorted(seen) == [0, 1, 2, 3, 4]
+
+
+def test_independent_starts_and_finishes_keep_other_stage_running() -> None:
+    progress = TrackedProgress(
+        plan_for(PipelineVersion.V2), clock=_Clock(), sink=lambda _: None
+    )
+    progress.start(TaskKey.READ_CV)
+    progress.start(TaskKey.READ_ADVERT)
+    progress.finish(TaskKey.READ_CV)
+    states = {task.key: task.state for task in progress.tasks}
+    assert states[TaskKey.READ_CV] is TaskState.DONE
+    assert states[TaskKey.READ_ADVERT] is TaskState.RUNNING
+
+
+def test_concurrent_physical_call_counts_are_not_lost() -> None:
+    progress = TrackedProgress(
+        plan_for(PipelineVersion.V2), clock=_Clock(), sink=lambda _: None
+    )
+    progress.plan_calls(TaskKey.JUDGE, model=20)
+    threads = [
+        threading.Thread(
+            target=progress.call_finished,
+            args=(TaskKey.JUDGE,),
+            kwargs={"operation": "model"},
+        )
+        for _ in range(20)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    judge = next(task for task in progress.tasks if task.key is TaskKey.JUDGE)
+    assert (judge.model_calls_done, judge.model_calls_total) == (20, 20)

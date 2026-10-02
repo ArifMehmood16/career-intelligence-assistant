@@ -15,7 +15,6 @@ from career_assistant.adapters.persistence.analysis_repos import (
 )
 from career_assistant.adapters.persistence.chunk_repos import SqlChunkRepository
 from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
-from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRepository
 from career_assistant.adapters.persistence.graph_repos import (
     SqlKnowledgeGraphRepository,
 )
@@ -25,9 +24,7 @@ from career_assistant.adapters.persistence.models import (
     AnswerRow,
     ConversationRow,
     DocumentRow,
-    EmbeddingRow,
     GeneratedDraftRow,
-    MappingRow,
     ProviderCallAccountingRow,
     ProviderSettingsRow,
     QuestionRow,
@@ -65,7 +62,6 @@ from career_assistant.application.ports.search import RetrievalTraceRepository
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Page, Span
-from career_assistant.domain.pipeline import PipelineVersion
 
 # Documents whose chunks a v2 verdict may cite as evidence.
 _EVIDENCE_KINDS = frozenset({"cv", "cover_letter"})
@@ -101,16 +97,9 @@ class SqlWorkspaceRepository:
 
     def ensure(self, workspace_id: str) -> None:
         wid = _as_uuid(workspace_id)
-        existing = self._session.get(WorkspaceRow, wid)
-        if existing is None:
+        if self._session.get(WorkspaceRow, wid) is None:
             self._session.add(WorkspaceRow(id=wid))
             self._session.flush()
-
-    def pipeline_version(self, workspace_id: str) -> PipelineVersion:
-        row = self._session.get(WorkspaceRow, _as_uuid(workspace_id))
-        if row is None:
-            return PipelineVersion.V1
-        return PipelineVersion(row.pipeline_version)
 
     def summaries(self) -> tuple[WorkspaceSummary, ...]:
         """Every workspace with its role count, oldest first (for MCP setup)."""
@@ -136,13 +125,6 @@ class SqlWorkspaceRepository:
         return tuple(
             WorkspaceSummary(str(row[0]), int(row[1]), bool(row[2])) for row in rows
         )
-
-    def set_pipeline_version(self, workspace_id: str, version: PipelineVersion) -> None:
-        self.ensure(workspace_id)
-        row = self._session.get(WorkspaceRow, _as_uuid(workspace_id))
-        if row is not None:
-            row.pipeline_version = version.value
-            self._session.flush()
 
 
 class SqlDocumentRepository:
@@ -290,9 +272,6 @@ class SqlDocumentRepository:
         )
         if row is None:
             return
-        self._session.execute(
-            delete(EmbeddingRow).where(EmbeddingRow.workspace_id == row.workspace_id)
-        )
         if row.kind in _EVIDENCE_KINDS:
             # A v2 verdict's rationale may paraphrase any evidence document it read.
             # Chunks, vectors, graph rows, quotes and traces cascade in the
@@ -311,10 +290,6 @@ class SqlDocumentRepository:
         wid = _as_uuid(workspace_id)
         # Soft-invalidate analysis that depended on the previous CV; hard-delete
         # generated drafts (they quote CV-derived text and were never filtered).
-        for mapping in self._session.scalars(
-            select(MappingRow).where(MappingRow.workspace_id == wid)
-        ).all():
-            mapping.invalidated = True
         for score in self._session.scalars(
             select(ScoreExplanationRow).where(ScoreExplanationRow.workspace_id == wid)
         ).all():
@@ -617,7 +592,6 @@ class SqlUnitOfWork:
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
         self.drafts: DraftRepository
-        self.embeddings: SqlEmbeddingRepository
         self.graph: KnowledgeGraphRepository
         self.traces: RetrievalTraceRepository
         self.job_tasks: SqlJobTaskRepository
@@ -635,7 +609,6 @@ class SqlUnitOfWork:
             self._session, self.roles, self.jobs
         )
         self.drafts = SqlDraftRepository(self._session)
-        self.embeddings = SqlEmbeddingRepository(self._session)
         self.graph = SqlKnowledgeGraphRepository(self._session)
         self.chunks = SqlChunkRepository(self._session)
         self.v2 = SqlV2AnalysisRepository(self._session, self.roles, self.jobs)

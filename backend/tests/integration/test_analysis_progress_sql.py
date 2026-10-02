@@ -1,4 +1,4 @@
-"""The worker records every task of a v1 or v2 analysis as it runs."""
+"""The worker records every task of the consolidated analysis as it runs."""
 
 from __future__ import annotations
 
@@ -37,32 +37,10 @@ def _tasks(app: SqlApp, job_id: str) -> tuple[JobTask, ...]:
         return uow.job_tasks.for_job(workspace, job_id)
 
 
-def test_a_v1_analysis_finishes_every_task_in_order(
-    session_factory: sessionmaker[Session],
-) -> None:
-    app = sql_app(session_factory)
-
-    _role_id, job_id = analyse(app)
-
-    tasks = _tasks(app, job_id)
-    assert [t.key for t in tasks] == [
-        TaskKey.PREPARE,
-        TaskKey.READ_ADVERT,
-        TaskKey.READ_CV,
-        TaskKey.MATCH,
-        TaskKey.SCORE,
-    ]
-    assert all(t.state is TaskState.DONE for t in tasks)
-    assert all(t.started_at and t.finished_at for t in tasks)
-    starts = [t.started_at for t in tasks]
-    assert starts == sorted(starts)  # type: ignore[type-var]
-
-
 def test_a_v2_analysis_counts_its_requirements(
     session_factory: sessionmaker[Session],
 ) -> None:
     app = sql_app(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
 
     role_id, job_id = analyse(app)
 
@@ -91,7 +69,6 @@ def test_an_unscored_v2_analysis_stops_on_the_task_it_failed_in(
     session_factory: sessionmaker[Session],
 ) -> None:
     app = sql_app(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
     _role_id, job_id = queue_role(app)
     job = app.worker.claim_next()
     assert job is not None

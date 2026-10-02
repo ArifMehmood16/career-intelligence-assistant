@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from career_assistant.adapters.providers.hermetic.structured import (
     HermeticStructuredCompleter,
 )
-from career_assistant.application.contracts.chunking import CvChunkingResponse
+from career_assistant.application.contracts.chunking import CvChunkResponse
 from career_assistant.application.contracts.judge import JudgeResponse
 from career_assistant.application.ports.errors import (
     ProviderRefusedError,
@@ -51,7 +51,7 @@ class InvalidCvChunker:
     def complete_structured[T: BaseModel](
         self, request: StructuredRequest[T]
     ) -> StructuredResult[T]:
-        if request.contract is CvChunkingResponse:
+        if request.contract is CvChunkResponse:
             raise StructuredOutputInvalidError(
                 "invalid", contract_version="scripted", error_count=1
             )

@@ -4,6 +4,13 @@ from __future__ import annotations
 
 import json
 
+from career_assistant.adapters.providers.execution import execution_profile
+from career_assistant.adapters.providers.call_gate import (
+    HostedCallGate,
+    RateLimitNote,
+    estimate_tokens,
+    run_hosted,
+)
 from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
@@ -37,6 +44,7 @@ class OpenAIEmbeddingAdapter:
         dimensions: int = 1536,
         base_url: str = "https://api.openai.com/v1",
         profile: ModelProfile | None = None,
+        gate: HostedCallGate | None = None,
     ) -> None:
         self._api_key = api_key
         self._model_tag = model_tag
@@ -45,11 +53,13 @@ class OpenAIEmbeddingAdapter:
         self._dimensions = dimensions
         self._profile = profile or _DEFAULT_PROFILE
         self._base_url = base_url.rstrip("/")
+        self._gate = gate
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
         return CapabilityDescriptor(
             provider_id=self.provider_id,
+            model_tag=self._model_tag,
             supports_completion=False,
             supports_embedding=True,
             supports_structured_output=False,
@@ -57,6 +67,7 @@ class OpenAIEmbeddingAdapter:
             max_output_tokens=0,
             embedding_dimensions=self._dimensions,
             leaves_machine=True,
+            execution=execution_profile(self._profile),
             supports_tool_calling=self._profile.supports_tool_calling,
             supports_prompt_caching=self._profile.supports_prompt_caching,
             supports_temperature=self._profile.supports_temperature,
@@ -68,7 +79,7 @@ class OpenAIEmbeddingAdapter:
             if len(text) > request.max_chars_per_text:
                 raise ProviderInputTooLargeError("openai embedding input too large")
 
-        def _call() -> EmbeddingResult:
+        def _call(note: RateLimitNote) -> EmbeddingResult:
             response = self._transport.request(
                 "POST",
                 f"{self._base_url}/embeddings",
@@ -82,7 +93,9 @@ class OpenAIEmbeddingAdapter:
                 },
                 timeout_seconds=self._resilience.timeout_seconds,
             )
-            classify_http_status(response.status_code)
+            if response.status_code >= 400:
+                note(response.headers)
+            classify_http_status(response.status_code, response.headers)
             data = json.loads(response.body.decode("utf-8"))
             items = data.get("data")
             if not isinstance(items, list):
@@ -92,15 +105,23 @@ class OpenAIEmbeddingAdapter:
             )
             dims = len(vectors[0]) if vectors else self._dimensions
             usage = data.get("usage") or {}
+            input_tokens = usage.get("total_tokens")
+            used = input_tokens if isinstance(input_tokens, int) else None
+            note(response.headers, used_tokens=used)
             return EmbeddingResult(
                 vectors=vectors,
                 provider_id=self.provider_id,
                 model_tag=self._model_tag,
                 dimensions=dims,
                 left_machine=True,
-                input_tokens=usage.get("total_tokens")
-                if isinstance(usage.get("total_tokens"), int)
-                else None,
+                input_tokens=used,
             )
 
-        return self._resilience.run(_call)
+        return run_hosted(
+            self._gate,
+            provider_id=self.provider_id,
+            model_tag=self._model_tag,
+            estimated_tokens=estimate_tokens(sum(len(text) for text in request.texts)),
+            resilience=self._resilience,
+            operation=_call,
+        )

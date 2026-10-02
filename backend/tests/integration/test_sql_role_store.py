@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,11 +13,12 @@ from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWor
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
 from career_assistant.application.documents.cv import (
     admission_limits_from,
     upload_pasted_cv,
 )
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
+from career_assistant.application.judge.prompt import JUDGE_PROMPT_VERSION
 from career_assistant.domain.generation import (
     CoverLetterDraft,
     CoverLetterRefusal,
@@ -106,8 +106,8 @@ def test_sql_role_store_create_list_get_and_analysis(
     assert bundle.attribution is not None
     assert bundle.attribution.provider == "hermetic"
     assert bundle.attribution.model == "rules-v1"
-    assert bundle.attribution.prompt_version == ""
-    assert bundle.attribution.rubric_version == "scoring-rubric-v1"
+    assert bundle.attribution.prompt_version == JUDGE_PROMPT_VERSION
+    assert bundle.attribution.rubric_version == "scoring-rubric-v2"
     assert bundle.attribution.left_machine is False
     assert bundle.attribution.failure_status is None
 
@@ -139,16 +139,16 @@ def test_restart_reads_saved_fit_gaps_prepare_and_letter(
     first = role_store.ranked(workspace_id)
     saved = role_store.require_analysis(workspace_id, role.id)
 
-    def _must_not_map(*_args: object, **_kwargs: object) -> tuple[object, ...]:
-        raise AssertionError("a restart must not map requirements again")
+    def _must_not_judge(*_args: object, **_kwargs: object) -> tuple[object, ...]:
+        raise AssertionError("a restart must reuse published verdicts")
 
     monkeypatch.setattr(
-        "career_assistant.application.analysis.relatedness.map_role_requirements",
-        _must_not_map,
+        "career_assistant.application.judge.service.RequirementJudge.judge",
+        _must_not_judge,
     )
     monkeypatch.setattr(
-        "career_assistant.adapters.persistence.analysis_worker.map_role_requirements",
-        _must_not_map,
+        "career_assistant.application.chunking.service.DocumentChunker.chunk",
+        _must_not_judge,
     )
     restarted = SqlRoleStore(
         cv_store=SqlCvStore(uow_factory),
@@ -160,11 +160,10 @@ def test_restart_reads_saved_fit_gaps_prepare_and_letter(
     ] == [(view.id, view.fit_score, rank) for view, rank, _tied, _because in second]
     bundle = restarted.require_analysis(workspace_id, role.id)
     assert bundle.explanation.score == saved.explanation.score
-    rubric = load_scoring_rubric(
-        Path(__file__).resolve().parents[3] / "config" / "scoring_rubric.toml"
-    )
-    fit = build_fit_summary(bundle.requirements, bundle.mappings, bundle.claims, rubric)
-    gaps = build_gap_plan(bundle.requirements, bundle.mappings, bundle.claims, rubric)
+    fit = build_fit_summary(bundle.requirements, bundle.mappings,
+        explanation=bundle.explanation, gaps=bundle.gaps)
+    gaps = build_gap_plan(bundle.requirements, bundle.mappings,
+        explanation=bundle.explanation, gaps=bundle.gaps)
     pack = build_interview_pack(bundle.requirements, bundle.mappings, bundle.claims)
     letter = draft_cover_letter(
         role_title="Analytics Engineer",
@@ -266,7 +265,13 @@ def test_role_http_delete_and_reanalyse_via_sql_stores(
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     worker = SqlAnalysisWorker(uow_factory)
-    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+    client = TestClient(
+        create_app(
+            cv_store=cv_store,
+            role_store=role_store,
+            v2_results=SqlV2ResultReader(uow_factory),
+        )
+    )
 
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
     created = client.post(
@@ -286,7 +291,7 @@ def test_role_http_delete_and_reanalyse_via_sql_stores(
     assert reanalysed.json()["jobId"]
     worker.drain()
     assert client.get(f"/api/roles/{role_id}").json()["status"] == "ready"
-    assert client.get(f"/api/roles/{role_id}/requirements").status_code == 200
+    assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 200
 
     deleted = client.delete(f"/api/roles/{role_id}")
     assert deleted.status_code == 204
@@ -300,7 +305,13 @@ def test_role_http_routes_persist_via_sql_stores(
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     worker = SqlAnalysisWorker(uow_factory)
-    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+    client = TestClient(
+        create_app(
+            cv_store=cv_store,
+            role_store=role_store,
+            v2_results=SqlV2ResultReader(uow_factory),
+        )
+    )
 
     assert (
         client.post(
@@ -330,9 +341,9 @@ def test_role_http_routes_persist_via_sql_stores(
     assert job.json()["state"] == "succeeded"
     assert client.get(f"/api/roles/{role_id}").json()["status"] == "ready"
 
-    requirements = client.get(f"/api/roles/{role_id}/requirements")
-    assert requirements.status_code == 200
-    assert requirements.json()
+    verdicts = client.get(f"/api/roles/{role_id}/verdicts")
+    assert verdicts.status_code == 200
+    assert verdicts.json()["verdicts"]
 
 
 def test_cover_letter_and_bullets_persist_across_store_instances(
@@ -342,7 +353,13 @@ def test_cover_letter_and_bullets_persist_across_store_instances(
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     worker = SqlAnalysisWorker(uow_factory)
-    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+    client = TestClient(
+        create_app(
+            cv_store=cv_store,
+            role_store=role_store,
+            v2_results=SqlV2ResultReader(uow_factory),
+        )
+    )
 
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
     role_id = client.post(
@@ -406,7 +423,13 @@ def test_sql_role_store_persists_failed_template_fallback_verdict(
     cv_store = SqlCvStore(uow_factory)
     role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
     worker = SqlAnalysisWorker(uow_factory)
-    client = TestClient(create_app(cv_store=cv_store, role_store=role_store))
+    client = TestClient(
+        create_app(
+            cv_store=cv_store,
+            role_store=role_store,
+            v2_results=SqlV2ResultReader(uow_factory),
+        )
+    )
     client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
     role_id = client.post(
         "/api/roles",

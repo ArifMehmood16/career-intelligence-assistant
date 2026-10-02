@@ -6,7 +6,9 @@ import json
 from collections.abc import Callable
 from typing import Any
 
+from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.adapters.providers.local_gate import local_call_slot
 from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
     classify_http_status,
@@ -22,10 +24,7 @@ from career_assistant.application.ports.types import (
     ModelProfile,
 )
 
-_MAX_INPUT_CHARS = 100_000
-
-
-# The v1 constants, used when no catalogue profile is passed (tests, old callers).
+# Conservative standalone defaults; production supplies the model catalogue row.
 _DEFAULT_PROFILE = ModelProfile(context_window_tokens=32_768, max_output_tokens=4_096)
 
 
@@ -61,6 +60,7 @@ class OllamaCompletionAdapter:
             max_output_tokens=self._profile.max_output_tokens,
             embedding_dimensions=None,
             leaves_machine=False,
+            execution=execution_profile(self._profile),
             supports_tool_calling=self._profile.supports_tool_calling,
             supports_prompt_caching=self._profile.supports_prompt_caching,
             supports_temperature=self._profile.supports_temperature,
@@ -76,7 +76,9 @@ class OllamaCompletionAdapter:
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
         total = len(request.system) + len(request.user)
-        if total > _MAX_INPUT_CHARS:
+        if (
+            total + 3
+        ) // 4 + request.max_output_tokens > self._profile.context_window_tokens:
             raise ProviderInputTooLargeError("ollama input too large")
 
         payload: dict[str, object] = {
@@ -101,7 +103,7 @@ class OllamaCompletionAdapter:
                 json_body=payload,
                 timeout_seconds=self._resilience.timeout_seconds,
             )
-            classify_http_status(response.status_code)
+            classify_http_status(response.status_code, response.headers)
             data = json.loads(response.body.decode("utf-8"))
             message = data.get("message") or {}
             text = str(message.get("content", "")) if isinstance(message, dict) else ""
@@ -117,7 +119,13 @@ class OllamaCompletionAdapter:
                 finish_reason=_str_or_none(data.get("done_reason")),
             )
 
-        return self._resilience.run(_call)
+        with local_call_slot(
+            self.provider_id,
+            self._model_tag,
+            operation="completion",
+            max_in_flight=self._profile.completion_concurrency,
+        ):
+            return self._resilience.run(_call)
 
     def _options(self, request: CompletionRequest) -> dict[str, object]:
         # num_ctx is explicit: without it Ollama uses its server default and cuts a

@@ -28,7 +28,7 @@ def ollama_model_digest(
             f"{base_url.rstrip('/')}/api/tags",
             timeout_seconds=timeout_seconds,
         )
-        classify_http_status(response.status_code)
+        classify_http_status(response.status_code, response.headers)
         data = json.loads(response.body.decode("utf-8"))
     except ProviderError, ValueError:
         return None

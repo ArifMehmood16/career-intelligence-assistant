@@ -30,7 +30,6 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JudgeLimits
@@ -67,7 +66,6 @@ def _analysis(structured: StructuredCompletionPort) -> RoleAnalysisV2:
     return RoleAnalysisV2(
         indexer=DocumentIndexer(
             chunker=DocumentChunker(structured),
-            taxonomist=TermTaxonomist(structured),
             embedding=embedding,
             store=store,
             max_chars_per_text=8_000,
@@ -131,7 +129,11 @@ def test_progress_walks_the_v2_tasks_in_order() -> None:
     )
 
     entered = progress.entered
-    assert entered[:4] == ["read_cv", "read_advert", "search", "judge"]
+    assert entered[:2] == ["search", "judge"]
+    assert ("start", "read_cv") in progress.events
+    assert ("finish", "read_cv") in progress.events
+    assert ("start", "read_advert") in progress.events
+    assert ("finish", "read_advert") in progress.events
     assert entered[-1] == "score"
     assert ("skip", "recheck") in progress.events or "recheck" in entered
     total = len(analysis.requirements)

@@ -9,6 +9,7 @@ from datetime import UTC
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import StreamingResponse
 
+from career_assistant.adapters.providers.hermetic.analysis import analyse_hermetic
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.provider_runtime import (
@@ -47,7 +48,7 @@ from career_assistant.application.roles.store import (
 )
 from career_assistant.domain.ask import AnswerResult, RoleAnalysisView
 from career_assistant.domain.prompts import RetrievedSpan
-from career_assistant.settings import LimitSettings, ProviderSettings
+from career_assistant.settings import LimitSettings
 
 router = APIRouter(tags=["ask"])
 
@@ -63,7 +64,9 @@ def _cv_store(request: Request) -> CvStore:
 def _role_store(request: Request) -> InMemoryRoleStore:
     store = getattr(request.app.state, "role_store", None)
     if store is None:
-        store = InMemoryRoleStore(cv_store=_cv_store(request))
+        store = InMemoryRoleStore(
+            cv_store=_cv_store(request), analyser=analyse_hermetic
+        )
         request.app.state.role_store = store
     return store
 
@@ -132,12 +135,6 @@ def _ask_service(
     workspace_id: str,
     roles: tuple[RoleAnalysisView, ...],
 ) -> AskService:
-    providers = getattr(request.app.state, "providers", None)
-    output_limit = (
-        providers.llm_max_output_tokens
-        if isinstance(providers, ProviderSettings)
-        else 2000
-    )
     limits = getattr(request.app.state, "limits", None)
     if not isinstance(limits, LimitSettings):
         limits = LimitSettings(_env_file=None)
@@ -152,7 +149,7 @@ def _ask_service(
         completion=completion,
         known_span_ids=_known_span_ids(request, workspace_id, roles),
         id_factory=lambda _prefix: str(uuid.uuid4()),
-        output_token_limit=output_limit,
+        output_token_limit=min(8_000, completion.capabilities.max_output_tokens),
         max_question_chars=limits.max_question_chars,
         max_context_chars=limits.max_context_chars,
         tool_calling=tools,

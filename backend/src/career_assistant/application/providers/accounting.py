@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import threading
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
+
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
+from career_assistant.application.ports.progress import plan_calls, record_call
 from career_assistant.application.ports.types import (
     CallRecord,
     CapabilityDescriptor,
@@ -17,13 +24,16 @@ from career_assistant.application.ports.types import (
 class CallAccountant:
     def __init__(self) -> None:
         self._records: list[CallRecord] = []
+        self._lock = threading.Lock()
 
     def record(self, entry: CallRecord) -> None:
-        self._records.append(entry)
+        with self._lock:
+            self._records.append(entry)
 
     @property
     def records(self) -> tuple[CallRecord, ...]:
-        return tuple(self._records)
+        with self._lock:
+            return tuple(self._records)
 
 
 class AccountingCompletion:
@@ -47,7 +57,8 @@ class AccountingCompletion:
         return self._inner.capabilities
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
-        result = self._inner.complete(request)
+        with accounting_operation("model"):
+            result = self._inner.complete(request)
         self._accountant.record(
             CallRecord(
                 provider_id=result.provider_id,
@@ -89,7 +100,8 @@ class AccountingEmbedding:
         return self._inner.capabilities
 
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
-        result = self._inner.embed(request)
+        with accounting_operation("embedding"):
+            result = self._inner.embed(request)
         self._accountant.record(
             CallRecord(
                 provider_id=result.provider_id,
@@ -108,3 +120,44 @@ class AccountingEmbedding:
             )
         )
         return result
+
+
+@dataclass
+class _Attempts:
+    operation: str
+    counted: int = 0
+
+
+_attempts: ContextVar[_Attempts | None] = ContextVar("provider_attempts", default=None)
+
+
+@contextmanager
+def accounting_operation(operation: str) -> Iterator[None]:
+    """Account for physical attempts, with one logical attempt for test adapters."""
+    attempts = _Attempts(operation)
+    token = _attempts.set(attempts)
+    completed = False
+    try:
+        yield
+        completed = True
+    finally:
+        _attempts.reset(token)
+        if completed and attempts.counted == 0:
+            record_call(operation)
+
+
+@contextmanager
+def provider_attempt(*, retry: bool = False) -> Iterator[None]:
+    """Used inside resilience so a transport retry is also a counted request."""
+    attempts = _attempts.get()
+    if attempts is not None and retry:
+        if attempts.operation == "model":
+            plan_calls(model=1)
+        else:
+            plan_calls(embedding=1)
+    try:
+        yield
+    finally:
+        if attempts is not None:
+            attempts.counted += 1
+            record_call(attempts.operation)

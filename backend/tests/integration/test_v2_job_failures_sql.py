@@ -71,7 +71,6 @@ def test_an_incomplete_v2_analysis_publishes_no_score(
     code: str,
 ) -> None:
     app = sql_app(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
     role_id, job_id = queue_role(app)
 
     finished = _run(app, structured)

@@ -10,7 +10,6 @@ from pydantic import Field
 from career_assistant.application.contracts.base import (
     Contract,
     NonEmpty,
-    VersionedContract,
 )
 
 
@@ -25,8 +24,3 @@ class TermRelations(Contract):
     aliases: list[NonEmpty] = Field(
         default_factory=list, description="Other common spellings."
     )
-
-
-class TaxonomyResponse(VersionedContract):
-    contract_version = "taxonomy-v1"
-    terms: list[TermRelations]

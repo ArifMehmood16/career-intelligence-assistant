@@ -34,7 +34,6 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JudgeLimits
@@ -128,7 +127,6 @@ def _run(
     analysis = RoleAnalysisV2(
         indexer=DocumentIndexer(
             chunker=DocumentChunker(structured),
-            taxonomist=TermTaxonomist(structured),
             embedding=embedding,
             store=SqlDocumentIndexStore(lambda: SqlUnitOfWork(session_factory)),
             max_chars_per_text=8_000,

@@ -16,7 +16,6 @@ _LABELS = {"met", "partial", "missing"}
 
 def _v2_role(session_factory: sessionmaker[Session]) -> tuple[SqlApp, str]:
     app = sql_app(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v2"})
     role_id, _ = analyse(app)
     return app, role_id
 
@@ -87,9 +86,9 @@ def test_an_unknown_requirement_has_no_trace(
     assert response.json()["error"]["code"] == "requirement_not_found"
 
 
-def test_a_v1_role_has_no_verdicts(session_factory: sessionmaker[Session]) -> None:
+def test_a_queued_role_has_no_verdicts(session_factory: sessionmaker[Session]) -> None:
     app = sql_app(session_factory)
-    role_id, _ = analyse(app)
+    role_id, _ = queue_role(app)
 
     response = app.client.get(f"/api/roles/{role_id}/verdicts")
 
@@ -109,21 +108,20 @@ def test_an_unknown_role_has_no_verdicts(
 
 
 @pytest.mark.parametrize("route", ["requirements", "breakdown", "gap-plan"])
-def test_v1_routes_do_not_fail_on_a_v2_analysis(
+def test_analysis_views_read_the_current_publication(
     session_factory: sessionmaker[Session], route: str
 ) -> None:
     app, role_id = _v2_role(session_factory)
 
     response = app.client.get(f"/api/roles/{role_id}/{route}")
 
-    assert response.status_code < 500, response.text
+    assert response.status_code == 200, response.text
 
 
 def test_a_role_says_which_pipeline_its_analysis_ran_on(
     session_factory: sessionmaker[Session],
 ) -> None:
     app, v2_role = _v2_role(session_factory)
-    app.client.put("/api/settings/pipeline", json={"pipelineVersion": "v1"})
     created = app.client.post(
         "/api/roles",
         json={"title": "Waiting", "company": "Acme", "description": "Python"},
@@ -136,4 +134,4 @@ def test_a_role_says_which_pipeline_its_analysis_ran_on(
 
     listed = {r["id"]: r for r in app.client.get("/api/roles").json()}
     assert listed[v2_role]["analysisPipeline"] == "v2"
-    assert listed[created["role"]["id"]]["analysisPipeline"] == "v1"
+    assert listed[created["role"]["id"]]["analysisPipeline"] == "v2"

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from career_assistant.application.ports.types import ModelProfile
+from career_assistant.application.providers.execution import ExecutionProfile
 
 _FIELD_TYPES: dict[str, type] = {
     field.name: type(getattr(ModelProfile(0, 0), field.name))
@@ -66,4 +67,20 @@ def _profile_from(values: Mapping[str, Any], *, provider_id: str) -> ModelProfil
             raise ModelCatalogueError(
                 f"{provider_id!r} field {name!r} has the wrong type"
             )
-    return ModelProfile(**values)
+    profile = ModelProfile(**values)
+    try:
+        ExecutionProfile(
+            completion_concurrency=profile.completion_concurrency,
+            embedding_concurrency=profile.embedding_concurrency,
+            document_output_tokens=profile.document_output_tokens,
+            judge_output_tokens=profile.judge_output_tokens,
+            tokens_per_verdict=profile.tokens_per_verdict,
+            max_document_split_depth=profile.max_document_split_depth,
+        )
+    except ValueError as error:
+        raise ModelCatalogueError(
+            f"invalid execution policy for {provider_id!r}"
+        ) from error
+    if profile.context_window_tokens <= 0 or profile.max_output_tokens < 0:
+        raise ModelCatalogueError(f"invalid model limits for {provider_id!r}")
+    return profile

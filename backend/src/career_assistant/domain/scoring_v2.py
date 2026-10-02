@@ -178,7 +178,7 @@ _Lift = tuple[Dimension, Mapping[Dimension, int], float, float]
 def _lifts(component: RequirementScore) -> list[_Lift]:
     scores = component.dimension_scores
     missing = scores[Dimension.MATCH] <= 1
-    # A missing requirement has no evidence to date; v1 lifts it as recent.
+    # A missing requirement has no evidence to date; its hypothetical lift is recent.
     recency = 1.0 if missing else component.recency_factor
     lifts: list[_Lift] = [
         (

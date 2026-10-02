@@ -14,7 +14,11 @@ from datetime import date
 from typing import Protocol
 
 from career_assistant.application.judge.service import RequirementJudge
-from career_assistant.application.ports.progress import NO_PROGRESS, AnalysisProgress
+from career_assistant.application.ports.progress import (
+    NO_PROGRESS,
+    AnalysisProgress,
+    progress_scope,
+)
 from career_assistant.application.ports.verdicts import VerdictRecord
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import Candidate, RequirementPacket
@@ -32,6 +36,10 @@ class CandidateSearch(Protocol):
     def find(
         self, requirement: RequirementPacket, query_text: str
     ) -> CandidateSearchResult: ...
+
+    def find_all(
+        self, items: Sequence[tuple[RequirementPacket, str]]
+    ) -> tuple[CandidateSearchResult, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,20 +78,26 @@ class EvidenceMatcher:
         progress.count(TaskKey.SEARCH, 0, total)
         packets: list[RequirementPacket] = []
         traces: dict[str, tuple[SearchRound, ...]] = {}
-        for done, requirement in enumerate(requirements, start=1):
-            found = self._search.find(requirement, requirement.statement)
-            packets.append(replace(requirement, candidates=found.candidates))
+        with progress_scope(progress, TaskKey.SEARCH):
+            found = self._search.find_all(
+                [(requirement, requirement.statement) for requirement in requirements]
+            )
+        for done, (requirement, result) in enumerate(
+            zip(requirements, found, strict=True), start=1
+        ):
+            packets.append(replace(requirement, candidates=result.candidates))
             traces[requirement.requirement_id] = (
-                SearchRound(0, requirement.statement, found.hits),
+                SearchRound(0, requirement.statement, result.hits),
             )
             progress.count(TaskKey.SEARCH, done, total)
         progress.enter(TaskKey.JUDGE)
-        judged = self._judge.judge(
-            packets,
-            facts,
-            as_of=as_of,
-            on_judged=lambda handled: progress.count(TaskKey.JUDGE, handled, total),
-        )
+        with progress_scope(progress, TaskKey.JUDGE):
+            judged = self._judge.judge(
+                packets,
+                facts,
+                as_of=as_of,
+                on_judged=lambda handled: progress.count(TaskKey.JUDGE, handled, total),
+            )
         verdicts = dict(judged.verdicts)
         # Requirement order decides who gets the analysis's bounded rewrites.
         wanted = [
@@ -94,15 +108,12 @@ class EvidenceMatcher:
         if wanted:
             progress.enter(TaskKey.RECHECK)
             progress.count(TaskKey.RECHECK, 0, len(wanted))
+            with progress_scope(progress, TaskKey.RECHECK):
+                self._rewrite(
+                    wanted, facts, traces, verdicts, as_of=as_of, progress=progress
+                )
         else:
             progress.skip(TaskKey.RECHECK)
-        for done, (packet, query) in enumerate(wanted, start=1):
-            found = self._search.find(packet, query)
-            traces[packet.requirement_id] += (SearchRound(1, query, found.hits),)
-            corrected = self._rejudge(packet, found, facts, as_of=as_of)
-            if corrected is not None:
-                verdicts[packet.requirement_id] = corrected
-            progress.count(TaskKey.RECHECK, done, len(wanted))
         return MatchOutcome(
             verdicts=verdicts,
             incomplete=judged.incomplete,
@@ -110,22 +121,64 @@ class EvidenceMatcher:
             rewrites=len(wanted),
         )
 
-    def _rejudge(
+    def _rewrite(
         self,
-        packet: RequirementPacket,
-        found: CandidateSearchResult,
+        wanted: Sequence[tuple[RequirementPacket, str]],
+        facts: CandidateFacts,
+        traces: dict[str, tuple[SearchRound, ...]],
+        verdicts: dict[str, VerdictRecord],
+        *,
+        as_of: date,
+        progress: AnalysisProgress,
+    ) -> None:
+        found = self._search.find_all(wanted)
+        prepared: list[tuple[RequirementPacket, CandidateSearchResult]] = []
+        for (packet, query), result in zip(wanted, found, strict=True):
+            traces[packet.requirement_id] += (SearchRound(1, query, result.hits),)
+            prepared.append((packet, result))
+        outcomes = self._rejudge_all(prepared, facts, as_of=as_of, progress=progress)
+        for requirement_id, corrected in outcomes:
+            if corrected is not None:
+                verdicts[requirement_id] = corrected
+
+    def _rejudge_all(
+        self,
+        prepared: Sequence[tuple[RequirementPacket, CandidateSearchResult]],
         facts: CandidateFacts,
         *,
         as_of: date,
-    ) -> VerdictRecord | None:
-        """The first verdict stands when nothing new is found or this one fails."""
-        seen = {c.chunk_id for c in packet.candidates}
-        new = tuple(c for c in found.candidates if c.chunk_id not in seen)
-        if not new:
-            return None
-        merged = replace(packet, candidates=packet.candidates + new)
-        outcome = self._judge.judge([merged], facts, as_of=as_of)
-        return outcome.verdicts.get(packet.requirement_id)
+        progress: AnalysisProgress,
+    ) -> list[tuple[str, VerdictRecord | None]]:
+        # Requirements with new evidence share the model's normal batch planner.
+        changed: list[RequirementPacket] = []
+        for packet, result in prepared:
+            seen = {candidate.chunk_id for candidate in packet.candidates}
+            new = tuple(
+                candidate
+                for candidate in result.candidates
+                if candidate.chunk_id not in seen
+            )
+            if new:
+                changed.append(replace(packet, candidates=packet.candidates + new))
+        total = len(prepared)
+        skipped = total - len(changed)
+        for handled in range(1, skipped + 1):
+            progress.count(TaskKey.RECHECK, handled, total)
+        if not changed:
+            return []
+        outcome = self._judge.judge(
+            changed,
+            facts,
+            as_of=as_of,
+            on_judged=lambda handled: progress.count(
+                TaskKey.RECHECK, skipped + handled, total
+            ),
+        )
+        # A failed rejudge preserves the original validated verdict.
+        return [
+            (packet.requirement_id, outcome.verdicts.get(packet.requirement_id))
+            for packet in changed
+        ]
 
 
 def _rewrite_query(record: VerdictRecord | None) -> str | None:

@@ -1,6 +1,6 @@
 """SQLAlchemy models for the v2 pipeline (ADR 013, ADR 014, PLAN 18.3).
 
-They share the v1 metadata, so one Alembic history owns both. Every row carries
+They share the application metadata and its Alembic history. Every row carries
 workspace_id and cascades from what it was derived from: chunks and graph rows
 from their document, embeddings, evidence and traces from their chunk, verdicts
 from their analysis and requirement.

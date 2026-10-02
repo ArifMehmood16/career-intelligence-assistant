@@ -1,4 +1,4 @@
-version = "model-catalogue-v1"
+version = "model-catalogue-v2"
 
 # Limits and capabilities per model tag, read by the provider factory and
 # reported through each adapter's capability descriptor (PLAN 18.1).
@@ -11,6 +11,10 @@ version = "model-catalogue-v1"
 # not measurements. Add a row when you configure a new model tag.
 
 [defaults.ollama]
+completion_concurrency = 1
+embedding_concurrency = 1
+document_output_tokens = 8192
+judge_output_tokens = 8192
 context_window_tokens = 8192
 max_output_tokens = 4096
 native_structured_output = true
@@ -20,6 +24,10 @@ supports_temperature = true
 supports_seed = true
 
 [defaults.openai]
+completion_concurrency = 4
+embedding_concurrency = 4
+document_output_tokens = 0
+judge_output_tokens = 0
 context_window_tokens = 8192
 max_output_tokens = 4096
 native_structured_output = false
@@ -29,6 +37,10 @@ supports_temperature = false
 supports_seed = false
 
 [defaults.anthropic]
+completion_concurrency = 4
+embedding_concurrency = 4
+document_output_tokens = 0
+judge_output_tokens = 0
 context_window_tokens = 200000
 max_output_tokens = 4096
 native_structured_output = false
@@ -71,3 +83,17 @@ native_structured_output = false
 context_window_tokens = 200000
 max_output_tokens = 64000
 native_structured_output = true
+
+# https://developers.openai.com/api/docs/models/gpt-5-mini (checked 2026-10-02)
+# Output includes reasoning tokens. These operational caps remain configurable;
+# set either cap to 0 to allow the full published model ceiling.
+[models.openai."gpt-5-mini"]
+context_window_tokens = 400000
+max_output_tokens = 128000
+document_output_tokens = 32768
+judge_output_tokens = 32768
+native_structured_output = true
+supports_tool_calling = true
+supports_prompt_caching = true
+supports_temperature = false
+supports_seed = false

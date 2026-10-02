@@ -1,4 +1,4 @@
-"""A SQL-backed app and worker for driving a v1 or v2 analysis over HTTP."""
+"""A SQL-backed app and worker for the current analysis over HTTP."""
 
 from __future__ import annotations
 
@@ -11,9 +11,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
-from career_assistant.adapters.persistence.pipeline_store import (
-    SqlPipelineVersionStore,
-)
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
@@ -40,7 +37,6 @@ def sql_app(session_factory: sessionmaker[Session]) -> SqlApp:
         create_app(
             cv_store=cv_store,
             role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
-            pipeline_store=SqlPipelineVersionStore(uow_factory),
             v2_results=SqlV2ResultReader(uow_factory),
         )
     )

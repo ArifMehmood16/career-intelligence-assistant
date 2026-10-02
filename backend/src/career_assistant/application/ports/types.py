@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from career_assistant.application.providers.execution import ExecutionProfile
+
 
 @dataclass(frozen=True, slots=True)
 class CapabilityDescriptor:
@@ -23,7 +25,9 @@ class CapabilityDescriptor:
     supports_temperature: bool = False
     supports_seed: bool = False
     # The weights behind the tag, where the provider exposes it (Ollama does).
+    model_tag: str | None = None
     model_digest: str | None = None
+    execution: ExecutionProfile = field(default_factory=ExecutionProfile)
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +44,12 @@ class ModelProfile:
     native_structured_output: bool = False
     embedding_query_prefix: str = ""
     embedding_document_prefix: str = ""
+    completion_concurrency: int = 1
+    embedding_concurrency: int = 1
+    document_output_tokens: int = 0
+    judge_output_tokens: int = 0
+    tokens_per_verdict: int = 400
+    max_document_split_depth: int = 4
 
 
 @dataclass(frozen=True, slots=True)

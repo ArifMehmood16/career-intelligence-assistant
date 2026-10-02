@@ -28,6 +28,7 @@ class StoredVerdict:
     evidence: tuple[StoredEvidence, ...]
     provider_id: str
     model_tag: str
+    source_chunk_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)

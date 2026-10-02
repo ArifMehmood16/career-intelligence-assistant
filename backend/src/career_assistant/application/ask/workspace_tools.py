@@ -14,7 +14,7 @@ from career_assistant.application.ask.views import role_analysis_view
 from career_assistant.application.documents.cv import CvStore
 from career_assistant.application.documents.supporting import SupportingDocumentStore
 from career_assistant.application.intake.workspace_spans import retrieval_pool
-from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
+from career_assistant.application.roles.analysis import AnalysisBundle
 from career_assistant.application.roles.store import RoleOperationRejected, RoleView
 from career_assistant.domain.ask import RoleAnalysisView
 from career_assistant.domain.documents import Page, Span

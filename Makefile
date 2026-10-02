@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint typecheck test test-integration test-evaluation test-e2e security verify run run-api run-web run-docker down logs db-check db-migrate db-create
+.PHONY: help config setup lock format lint typecheck test test-integration test-e2e security verify run run-api run-web run-docker down logs db-check db-migrate db-create
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -30,7 +30,6 @@ help:
 	@echo "  make typecheck          Backend mypy and frontend tsc --noEmit"
 	@echo "  make test               Hermetic backend and frontend unit tests"
 	@echo "  make test-integration   Postgres/pgvector tests (PLAN phase 4)"
-	@echo "  make test-evaluation    Fixture extraction and mapping baseline (PLAN phase 14)"
 	@echo "  make test-e2e           Playwright walkthrough (PLAN phase 16)"
 	@echo "  make security           Bandit, pip-audit, bun audit, Gitleaks, Trivy"
 	@echo "  make verify             lint + test + security"
@@ -84,9 +83,6 @@ test:
 test-integration:
 	# Narrow Postgres suite; refuses to run when TEST_DATABASE_URL == DATABASE_URL.
 	cd backend && .venv/bin/pytest -m integration -q --no-cov
-
-test-evaluation:
-	cd backend && .venv/bin/pytest tests/evaluation -q --no-cov
 
 test-e2e:
 	@test -d e2e/node_modules || (echo "Run: cd e2e && bun install" && exit 1)

@@ -62,8 +62,8 @@ Respond with the JSON object only."""
 
 @dataclass(frozen=True, slots=True)
 class JudgeLimits:
-    max_output_tokens: int = 8_000
-    tokens_per_verdict: int = 400
+    max_output_tokens: int | None = None
+    tokens_per_verdict: int | None = None
     chars_per_token: int = 4
 
 
@@ -97,16 +97,16 @@ def judge_batches(
     A packet larger than the window goes alone; the provider then refuses it and
     that requirement is incomplete, never silently dropped.
     """
-    output = min(capabilities.max_output_tokens, limits.max_output_tokens)
-    per_call = max(1, output // limits.tokens_per_verdict)
-    budget = (capabilities.context_window_tokens - output) * limits.chars_per_token - (
-        len(JUDGE_SYSTEM) + prefix_chars
-    )
+    output = judge_output_limit(capabilities, limits)
+    per_verdict = verdict_output_reserve(capabilities, limits)
+    per_call = max(1, output // per_verdict)
+    fixed = (len(JUDGE_SYSTEM) + prefix_chars + 3) // limits.chars_per_token
+    budget = capabilities.context_window_tokens - fixed
     batches: list[tuple[RequirementPacket, ...]] = []
     current: list[RequirementPacket] = []
     used = 0
     for packet in packets:
-        size = len(_packet(packet)) + 2
+        size = (len(_packet(packet)) + 5) // limits.chars_per_token + per_verdict
         if current and (len(current) == per_call or used + size > budget):
             batches.append(tuple(current))
             current, used = [], 0
@@ -115,6 +115,17 @@ def judge_batches(
     if current:
         batches.append(tuple(current))
     return batches
+
+
+def judge_output_limit(capabilities: CapabilityDescriptor, limits: JudgeLimits) -> int:
+    output = capabilities.execution.judge_output_limit(capabilities.max_output_tokens)
+    return min(output, limits.max_output_tokens or output)
+
+
+def verdict_output_reserve(
+    capabilities: CapabilityDescriptor, limits: JudgeLimits
+) -> int:
+    return limits.tokens_per_verdict or capabilities.execution.tokens_per_verdict
 
 
 def _term(term: TermFact) -> str:

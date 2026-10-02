@@ -5,7 +5,6 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from career_assistant.domain.pipeline import PipelineVersion
 
 
 class ApiModel(BaseModel):
@@ -92,6 +91,10 @@ class JobTaskWire(ApiModel):
     state: str
     units_done: int
     units_total: int | None
+    model_calls_done: int = 0
+    model_calls_total: int | None = None
+    embedding_calls_done: int = 0
+    embedding_calls_total: int | None = None
 
 
 class JobProgressWire(ApiModel):
@@ -105,6 +108,11 @@ class JobProgressWire(ApiModel):
     remaining_seconds: int | None
     queue_position: int | None
     tasks: list[JobTaskWire]
+    model_calls_done: int = 0
+    model_calls_remaining: int = 0
+    embedding_calls_done: int = 0
+    embedding_calls_remaining: int = 0
+    call_estimate_complete: bool = False
 
 
 class AnalysisJobResponse(ApiModel):
@@ -315,10 +323,6 @@ class ProviderChoiceResponse(ApiModel):
     answer_model: str
     index_provider_id: str
     index_model: str
-
-
-class PipelineSetting(ApiModel):
-    pipeline_version: PipelineVersion
 
 
 class DimensionScoreWire(ApiModel):

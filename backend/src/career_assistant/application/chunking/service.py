@@ -1,40 +1,48 @@
-"""Chunk a stored document with a model, verified by the server (PLAN 18.4).
+"""Extract complete document chunks in one call and validate every cited field.
 
-One structured call per section; a plan that breaks a structural rule goes back to
-the model once with the problems listed; a reply cut by the output limit splits its
-section in half. Anything else that fails is an incomplete ingestion: no chunks are
-kept and the error carries codes and counts, never document text.
+Input limits split before the call. Actual truncation triggers bounded splits;
+invalid coverage gets one repair. Independent initial calls overlap according to
+adapter policy, while validation preserves global role-heading references.
 """
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from career_assistant.application.chunking.mapping import proposals_from
+from career_assistant.application.chunking.mapping import proposals_from_chunks
 from career_assistant.application.chunking.prompts import (
     CHUNKING_PROMPT_VERSION,
-    chunking_system,
-    chunking_user,
+    document_system,
+    document_user,
     repair_user,
 )
 from career_assistant.application.chunking.sections import (
     ChunkingBudget,
     plan_sections,
+    section_input_tokens,
 )
 from career_assistant.application.contracts.chunking import (
-    CoverLetterChunkingResponse,
-    CvChunkingResponse,
-    JobChunkingResponse,
+    CoverLetterChunkResponse,
+    CvChunkResponse,
+    DocumentChunkResponse,
+    JobChunkResponse,
 )
+from career_assistant.application.contracts.taxonomy import TermRelations
+from career_assistant.application.graph.taxonomy import edges_from_relations
 from career_assistant.application.ports.errors import (
+    ProviderInputTooLargeError,
     StructuredOutputInvalidError,
     StructuredOutputTruncatedError,
 )
+from career_assistant.application.ports.progress import plan_calls
 from career_assistant.application.ports.structured import (
     StructuredCompletionPort,
     StructuredRequest,
+    StructuredResult,
 )
+from career_assistant.application.providers.fanout import map_in_order
 from career_assistant.domain.chunking import (
     DEFAULT_CHUNK_LIMITS,
     Chunk,
@@ -43,18 +51,15 @@ from career_assistant.domain.chunking import (
     validate_chunk_plan,
 )
 from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.knowledge_graph import GraphEdge
 from career_assistant.domain.lines import NumberedLine, number_lines
 
-ChunkingResponse = (
-    CvChunkingResponse | CoverLetterChunkingResponse | JobChunkingResponse
-)
-
-_CONTRACTS: dict[DocumentKind, type[ChunkingResponse]] = {
-    DocumentKind.CV: CvChunkingResponse,
-    DocumentKind.COVER_LETTER: CoverLetterChunkingResponse,
-    DocumentKind.JOB_DESCRIPTION: JobChunkingResponse,
+_CONTRACTS: dict[DocumentKind, type[DocumentChunkResponse]] = {
+    DocumentKind.CV: CvChunkResponse,
+    DocumentKind.COVER_LETTER: CoverLetterChunkResponse,
+    DocumentKind.JOB_DESCRIPTION: JobChunkResponse,
 }
-DEFAULT_MAX_OUTPUT_TOKENS = 8_000
+_LIMIT_ERRORS = (StructuredOutputTruncatedError, ProviderInputTooLargeError)
 
 
 class ChunkingIncompleteError(Exception):
@@ -85,6 +90,7 @@ class ChunkingOutcome:
     left_machine: bool
     prompt_version: str
     contract_version: str
+    inferred_edges: tuple[GraphEdge, ...] = ()
 
 
 @dataclass
@@ -92,6 +98,7 @@ class _Run:
     request: ChunkingRequest
     total_lines: int
     chunks: list[Chunk] = field(default_factory=list)
+    taxonomy: list[TermRelations] = field(default_factory=list)
     calls: int = 0
     repairs: int = 0
     dropped_fields: int = 0
@@ -114,19 +121,45 @@ class DocumentChunker:
         structured: StructuredCompletionPort,
         *,
         limits: ChunkLimits = DEFAULT_CHUNK_LIMITS,
-        max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS,
+        max_output_tokens: int | None = None,
     ) -> None:
         self._structured = structured
         self._limits = limits
         self._max_output_tokens = max_output_tokens
+        self._lock = threading.Lock()
+
+    @property
+    def hosted(self) -> bool:
+        return self._structured.capabilities.leaves_machine
+
+    @property
+    def concurrency(self) -> int:
+        return self._structured.capabilities.execution.completion_concurrency
 
     def chunk(self, request: ChunkingRequest) -> ChunkingOutcome:
         lines = number_lines(request.text)
         if not lines:
             raise ChunkingIncompleteError("empty_document")
         run = _Run(request=request, total_lines=len(lines))
-        for section in plan_sections(lines, self._budget()):
-            self._chunk_section(run, section)
+        caps = self._structured.capabilities
+        # Reserve a reply window without sacrificing all input to a large output cap.
+        reserve = min(
+            self._output_limit(), max(1, caps.context_window_tokens // 4), 512
+        )
+        budget = ChunkingBudget(caps.context_window_tokens - reserve)
+        sections = plan_sections(lines, budget)
+        if any(not budget.fits(section) for section in sections):
+            raise ChunkingIncompleteError("chunking_input_too_large")
+        prepared = [(section, self._user(run, section)) for section in sections]
+        plan_calls(model=len(prepared))
+        replies = map_in_order(
+            prepared,
+            lambda item: self._first_reply(run, item[0], item[1]),
+            parallel=self.concurrency > 1,
+            max_workers=self.concurrency,
+        )
+        for (section, user), reply in zip(prepared, replies, strict=True):
+            self._accept(run, section, user, reply, depth=0)
         return ChunkingOutcome(
             chunks=tuple(run.chunks),
             calls=run.calls,
@@ -137,83 +170,151 @@ class DocumentChunker:
             left_machine=run.left_machine,
             prompt_version=CHUNKING_PROMPT_VERSION,
             contract_version=_CONTRACTS[request.kind].contract_version,
+            inferred_edges=self._inferred_edges(run),
         )
 
-    def _budget(self) -> ChunkingBudget:
-        caps = self._structured.capabilities
-        output = self._output_tokens()
-        return ChunkingBudget(
-            max_input_tokens=caps.context_window_tokens - output,
-            max_output_tokens=output,
-        )
-
-    def _output_tokens(self) -> int:
-        model_limit = self._structured.capabilities.max_output_tokens
-        return min(model_limit, self._max_output_tokens)
-
-    def _chunk_section(self, run: _Run, section: Sequence[NumberedLine]) -> None:
-        try:
-            plan = self._plan(run, section)
-        except StructuredOutputTruncatedError as error:
-            if len(section) < 2:
-                raise ChunkingIncompleteError("chunking_truncated") from error
-            half = len(section) // 2
-            self._chunk_section(run, section[:half])
-            self._chunk_section(run, section[half:])
-            return
-        run.accept(plan)
-
-    def _plan(self, run: _Run, section: Sequence[NumberedLine]) -> ChunkPlan:
-        user = chunking_user(
+    def _user(self, run: _Run, section: Sequence[NumberedLine]) -> str:
+        return document_user(
             run.request.kind,
             section,
             total_lines=run.total_lines,
             advert_title=run.request.advert_title,
         )
-        reply = self._call(run, user)
+
+    def _first_reply(
+        self, run: _Run, section: Sequence[NumberedLine], user: str
+    ) -> (
+        DocumentChunkResponse
+        | StructuredOutputTruncatedError
+        | ProviderInputTooLargeError
+    ):
+        try:
+            return self._call(run, section, user)
+        except _LIMIT_ERRORS as error:
+            return error
+
+    def _accept(
+        self,
+        run: _Run,
+        section: Sequence[NumberedLine],
+        user: str,
+        reply: DocumentChunkResponse
+        | StructuredOutputTruncatedError
+        | ProviderInputTooLargeError,
+        *,
+        depth: int,
+    ) -> None:
+        if isinstance(reply, _LIMIT_ERRORS):
+            self._split(run, section, depth=depth, error=reply)
+            return
         plan = self._validate(run, section, reply)
         if not plan.problems:
-            return plan
+            run.accept(plan)
+            run.taxonomy.extend(reply.taxonomy)
+            return
         run.repairs += 1
-        previous = reply.model_dump_json(exclude_none=True)
-        reply = self._call(run, repair_user(user, previous, plan.problems))
-        plan = self._validate(run, section, reply)
+        plan_calls(model=1)
+        repaired = self._first_reply(
+            run,
+            section,
+            repair_user(user, reply.model_dump_json(exclude_none=True), plan.problems),
+        )
+        if isinstance(repaired, _LIMIT_ERRORS):
+            self._split(run, section, depth=depth, error=repaired)
+            return
+        plan = self._validate(run, section, repaired)
         if plan.problems:
             raise ChunkingIncompleteError(
                 "chunking_incomplete", problem_count=len(plan.problems)
             )
-        return plan
+        run.accept(plan)
+        run.taxonomy.extend(repaired.taxonomy)
 
-    def _call(self, run: _Run, user: str) -> ChunkingResponse:
-        contract = _CONTRACTS[run.request.kind]
+    def _split(
+        self,
+        run: _Run,
+        section: Sequence[NumberedLine],
+        *,
+        depth: int,
+        error: StructuredOutputTruncatedError | ProviderInputTooLargeError,
+    ) -> None:
+        if (
+            len(section) < 2
+            or depth >= self._structured.capabilities.execution.max_document_split_depth
+        ):
+            raise ChunkingIncompleteError("chunking_truncated") from error
+        half = len(section) // 2
+        plan_calls(model=2)
+        for part in (section[:half], section[half:]):
+            user = self._user(run, part)
+            reply = self._first_reply(run, part, user)
+            self._accept(run, part, user, reply, depth=depth + 1)
+
+    def _call(
+        self, run: _Run, section: Sequence[NumberedLine], user: str
+    ) -> DocumentChunkResponse:
+        caps = self._structured.capabilities
+        available = caps.context_window_tokens - section_input_tokens(section)
+        # Repairs contain the previous response too, so include their extra text.
+        available -= max(0, (len(user) - len(self._user(run, section)) + 3) // 4)
+        if available <= 0:
+            raise ProviderInputTooLargeError("chunking input exceeds model context")
+        result = None
         try:
             result = self._structured.complete_structured(
                 StructuredRequest(
-                    contract=contract,
-                    system=chunking_system(run.request.kind),
+                    contract=_CONTRACTS[run.request.kind],
+                    system=document_system(run.request.kind),
                     user=user,
-                    max_output_tokens=self._output_tokens(),
-                    temperature=0.0,
-                    seed=0,
+                    max_output_tokens=min(self._output_limit(), available),
+                    temperature=0.0 if caps.supports_temperature else None,
+                    seed=0 if caps.supports_seed else None,
                 )
             )
+            return result.value
         except StructuredOutputInvalidError as error:
             raise ChunkingIncompleteError("chunking_invalid_output") from error
         finally:
+            self._record(run, result)
+
+    def _output_limit(self) -> int:
+        caps = self._structured.capabilities
+        limit = caps.execution.document_output_limit(caps.max_output_tokens)
+        return min(limit, self._max_output_tokens or limit)
+
+    def _record(
+        self, run: _Run, result: StructuredResult[DocumentChunkResponse] | None
+    ) -> None:
+        with self._lock:
             run.calls += 1
-        run.provider_id = result.provider_id
-        run.model_tag = result.model_tag
-        run.left_machine = run.left_machine or result.left_machine
-        return result.value
+            if result is not None:
+                run.provider_id = result.provider_id
+                run.model_tag = result.model_tag
+                run.left_machine = run.left_machine or result.left_machine
+
+    def _inferred_edges(self, run: _Run) -> tuple[GraphEdge, ...]:
+        terms = [
+            term.canonical
+            for chunk in run.chunks
+            for term in (
+                *chunk.tech_terms,
+                *(
+                    term
+                    for requirement in chunk.atomic_requirements
+                    for term in requirement.tech_terms
+                ),
+            )
+        ]
+        return edges_from_relations(terms, run.taxonomy)
 
     def _validate(
-        self, run: _Run, section: Sequence[NumberedLine], reply: ChunkingResponse
+        self, run: _Run, section: Sequence[NumberedLine], reply: DocumentChunkResponse
     ) -> ChunkPlan:
         return validate_chunk_plan(
             run.request.kind,
             section,
             run.request.text,
-            proposals_from(reply.chunks),
+            proposals_from_chunks(reply.chunks),
             limits=self._limits,
             advert_title=run.request.advert_title,
             known_role_headings=run.headings,

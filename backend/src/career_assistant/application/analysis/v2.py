@@ -13,14 +13,22 @@ from dataclasses import dataclass
 from datetime import date
 
 from career_assistant.application.chunking.service import ChunkingRequest
-from career_assistant.application.indexing.service import DocumentIndexer
+from career_assistant.application.indexing.service import (
+    DocumentIndexer,
+    IndexedDocument,
+)
 from career_assistant.application.judge.candidate_search import HybridCandidateSearch
 from career_assistant.application.judge.matching import EvidenceMatcher, MatchOutcome
 from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.chunks import StoredChunk
 from career_assistant.application.ports.embedding import EmbeddingPort
-from career_assistant.application.ports.progress import NO_PROGRESS, AnalysisProgress
+from career_assistant.application.ports.progress import (
+    NO_PROGRESS,
+    AnalysisProgress,
+    progress_scope,
+)
 from career_assistant.application.ports.search import HybridSearchPort
+from career_assistant.application.providers.fanout import map_in_order
 from career_assistant.domain.candidate_facts import candidate_facts
 from career_assistant.domain.chunking import TechTermProposal
 from career_assistant.domain.judging import RequirementPacket
@@ -96,10 +104,7 @@ class RoleAnalysisV2:
         self, documents: V2Documents, *, progress: AnalysisProgress = NO_PROGRESS
     ) -> V2Analysis:
         ws, as_of = documents.workspace_id, documents.as_of
-        progress.enter(TaskKey.READ_CV)
-        cv = self._indexer.index(ws, documents.cv)
-        progress.enter(TaskKey.READ_ADVERT)
-        advert = self._indexer.index(ws, documents.advert)
+        cv, advert = self._index(ws, documents, progress)
         requirements = _requirements(advert.chunks)
         facts = candidate_facts(
             [s.chunk for s in cv.chunks],
@@ -132,6 +137,30 @@ class RoleAnalysisV2:
             or advert.left_machine
             or any(record.left_machine for record in match.verdicts.values()),
         )
+
+    def _index(
+        self,
+        workspace_id: str,
+        documents: V2Documents,
+        progress: AnalysisProgress,
+    ) -> tuple[IndexedDocument, IndexedDocument]:
+        progress.finish(TaskKey.PREPARE)
+
+        def index(item: tuple[TaskKey, ChunkingRequest]) -> IndexedDocument:
+            key, request = item
+            progress.start(key)
+            with progress_scope(progress, key):
+                indexed = self._indexer.index(workspace_id, request)
+            progress.finish(key)
+            return indexed
+
+        indexed = map_in_order(
+            ((TaskKey.READ_CV, documents.cv), (TaskKey.READ_ADVERT, documents.advert)),
+            index,
+            parallel=True,
+            max_workers=self._indexer.concurrency,
+        )
+        return indexed[0], indexed[1]
 
 
 def _requirements(advert: Sequence[StoredChunk]) -> tuple[AnalysedRequirement, ...]:

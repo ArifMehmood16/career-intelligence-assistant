@@ -167,7 +167,7 @@ def test_the_input_budget_splits_a_batch_the_window_cannot_hold() -> None:
 
     batches = judge_batches(packets, small, JudgeLimits(), prefix_chars=0)
 
-    assert [len(b) for b in batches] == [2, 2]
+    assert [len(b) for b in batches] == [3, 1]
 
 
 def test_a_packet_larger_than_the_window_is_sent_alone() -> None:
@@ -177,3 +177,21 @@ def test_a_packet_larger_than_the_window_is_sent_alone() -> None:
     batches = judge_batches(packets, CAPABILITIES, JudgeLimits(), prefix_chars=0)
 
     assert [[p.requirement_id for p in b] for b in batches] == [["r1"], ["big"]]
+
+
+def test_a_large_model_uses_one_call_for_all_verdicts_that_fit() -> None:
+    packets = [replace(PACKET, requirement_id=f"r{i}") for i in range(50)]
+    large = replace(
+        CAPABILITIES, context_window_tokens=200_000, max_output_tokens=64_000
+    )
+    batches = judge_batches(packets, large, JudgeLimits(), prefix_chars=0)
+    assert [len(batch) for batch in batches] == [50]
+
+
+def test_the_response_reserve_grows_with_the_batch_not_the_model_maximum() -> None:
+    packets = [replace(PACKET, requirement_id=f"r{i}") for i in range(5)]
+    large_output = replace(
+        CAPABILITIES, context_window_tokens=8_000, max_output_tokens=8_000
+    )
+    batches = judge_batches(packets, large_output, JudgeLimits(), prefix_chars=0)
+    assert [len(batch) for batch in batches] == [5]

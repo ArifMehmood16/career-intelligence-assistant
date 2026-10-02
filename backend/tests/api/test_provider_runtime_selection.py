@@ -6,7 +6,7 @@ import json
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from tests.support.scripted_extraction import span_id_extraction_transport
+from tests.support.structured_transport import StructuredTransport
 from tests.support.scripted_transport import ScriptedTransport
 
 from career_assistant.adapters.providers.http_transport import HttpResponse
@@ -132,11 +132,11 @@ def test_rejected_hosted_choice_makes_no_network_attempt() -> None:
     assert transport.calls == []
 
 
-def _scripted_openai_extraction() -> ScriptedTransport:
-    return span_id_extraction_transport()
+def _scripted_openai_extraction() -> StructuredTransport:
+    return StructuredTransport()
 
 
-def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
+def test_role_creation_uses_the_current_hermetic_api_fixture() -> None:
     transport = _scripted_openai_extraction()
     app = create_app(providers=_openai_settings())
     app.state.http_transport = transport
@@ -160,8 +160,9 @@ def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
         json={"title": "AE", "company": "Acme", "description": _JD},
     )
     assert created_role.status_code == 202
-    assert transport.calls
-    assert any("/chat/completions" in url for _method, url in transport.calls)
+    # The API fixture analyses deterministically; the SQL worker test covers
+    # selected hosted analysis. This route must not invoke an extra extractor.
+    assert transport.calls == []
     role_id = created_role.json()["role"]["id"]
     requirements = client.get(f"/api/roles/{role_id}/requirements")
     assert requirements.status_code == 200
@@ -169,7 +170,9 @@ def test_requirement_extraction_calls_the_selected_scripted_provider() -> None:
 
 
 def test_bullet_phrasing_calls_the_selected_scripted_provider() -> None:
-    transport = _scripted_openai_extraction()
+    transport = _scripted_openai_answer(
+        "- Owned dbt models in production for the warehouse."
+    )
     app = create_app(providers=_openai_settings())
     app.state.http_transport = transport
     client = TestClient(app)

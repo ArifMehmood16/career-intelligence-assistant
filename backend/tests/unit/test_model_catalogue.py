@@ -139,3 +139,41 @@ def test_native_structured_output_is_a_per_model_flag() -> None:
         is True
     )
     assert catalogue.profile("openai", "gpt-4o-mini").native_structured_output is True
+
+
+def test_provider_operational_defaults_are_independent() -> None:
+    catalogue = load_model_catalogue(_REPO_CATALOGUE)
+    local = catalogue.profile("ollama", "qwen2.5:7b")
+    openai = catalogue.profile("openai", "gpt-4o-mini")
+    anthropic = catalogue.profile("anthropic", "claude-sonnet-4-5")
+    assert (local.completion_concurrency, local.embedding_concurrency) == (1, 1)
+    assert (openai.completion_concurrency, anthropic.completion_concurrency) == (4, 4)
+    assert local.document_output_tokens == 8192
+    assert openai.document_output_tokens == anthropic.document_output_tokens == 0
+
+
+@pytest.mark.parametrize(
+    "field", ["completion_concurrency", "embedding_concurrency", "tokens_per_verdict"]
+)
+def test_nonpositive_execution_limits_are_rejected(tmp_path: Path, field: str) -> None:
+    path = tmp_path / "models.toml"
+    path.write_text(
+        f'version = "test"\n[defaults.ollama]\ncontext_window_tokens=8192\n'
+        f"max_output_tokens=4096\n{field}=0\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ModelCatalogueError):
+        load_model_catalogue(path).profile("ollama", "any")
+
+
+def test_model_rows_can_enable_local_parallelism_without_a_global_switch(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "models.toml"
+    path.write_text(
+        _CATALOGUE + '\n[models.ollama."parallel-local"]\ncompletion_concurrency=2\n'
+        "embedding_concurrency=3\n",
+        encoding="utf-8",
+    )
+    profile = load_model_catalogue(path).profile("ollama", "parallel-local")
+    assert (profile.completion_concurrency, profile.embedding_concurrency) == (2, 3)

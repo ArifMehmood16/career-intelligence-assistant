@@ -24,7 +24,26 @@ class EgressNotPermittedError(ProviderError):
 
 
 class ProviderTransientError(ProviderError):
-    """Retryable upstream failure (429/5xx after local classification)."""
+    """Retryable upstream failure (429/5xx after local classification).
+
+    A 429 sets `rate_limited`. `retry_after_seconds` is the vendor's wait, already
+    capped, or None when the response did not say — a spend cap is that case, and
+    it must not be retried in a loop.
+    """
+
+    retry_after_seconds: float | None
+    rate_limited: bool
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        retry_after_seconds: float | None = None,
+        rate_limited: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+        self.rate_limited = rate_limited
 
 
 class JobCancelled(Exception):
@@ -54,4 +73,14 @@ class StructuredOutputInvalidError(StructuredOutputError):
 
 
 class StructuredOutputTruncatedError(StructuredOutputError):
-    """Cut by the output limit. The caller splits the work instead of repairing."""
+    """Cut by the output limit. The caller retries a smaller remainder, once."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        contract_version: str,
+        output_tokens: int | None = None,
+    ) -> None:
+        super().__init__(message, contract_version=contract_version)
+        self.output_tokens = output_tokens

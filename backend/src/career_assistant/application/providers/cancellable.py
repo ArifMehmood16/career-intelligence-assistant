@@ -7,7 +7,9 @@ interrupted from here: it finishes or times out, and the worker discards it.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from pydantic import BaseModel
 
@@ -30,6 +32,26 @@ from career_assistant.application.ports.types import (
 CancellationCheck = Callable[[], None]
 
 
+_check: ContextVar[CancellationCheck | None] = ContextVar(
+    "provider_cancellation_check", default=None
+)
+
+
+@contextmanager
+def cancellation_scope(check: CancellationCheck) -> Iterator[None]:
+    token = _check.set(check)
+    try:
+        yield
+    finally:
+        _check.reset(token)
+
+
+def check_provider_cancelled() -> None:
+    check = _check.get()
+    if check is not None:
+        check()
+
+
 class CancellableCompletion:
     def __init__(self, inner: CompletionPort, check: CancellationCheck) -> None:
         self._inner = inner
@@ -41,7 +63,8 @@ class CancellableCompletion:
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
         self._check()
-        return self._inner.complete(request)
+        with cancellation_scope(self._check):
+            return self._inner.complete(request)
 
 
 class CancellableStructured:
@@ -59,7 +82,8 @@ class CancellableStructured:
         self, request: StructuredRequest[T]
     ) -> StructuredResult[T]:
         self._check()
-        return self._inner.complete_structured(request)
+        with cancellation_scope(self._check):
+            return self._inner.complete_structured(request)
 
 
 class CancellableEmbedding:
@@ -73,4 +97,5 @@ class CancellableEmbedding:
 
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
         self._check()
-        return self._inner.embed(request)
+        with cancellation_scope(self._check):
+            return self._inner.embed(request)

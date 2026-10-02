@@ -2,8 +2,7 @@
 
 A publication writes the requirement items, one verdict per requirement with its
 evidence and retrieval trace, and the role's score row, in the caller's
-transaction. The score row's payload keeps v2 scores under their own keys, so
-v1 readers of the same row see no v1 components rather than misread ones.
+transaction. All consumers reuse this publication and its score components.
 """
 
 from __future__ import annotations
@@ -360,6 +359,7 @@ def _stored(
         ),
         provider_id=row.provider,
         model_tag=row.model_tag,
+        source_chunk_id=str(item.chunk_id),
     )
 
 

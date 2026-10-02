@@ -7,15 +7,10 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
 
-from career_assistant.domain.attribution import AnalysisAttribution
-from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import AnalysisJob, RoleStatus
-from career_assistant.domain.mapping import RequirementMapping
 from career_assistant.domain.pipeline import PipelineVersion
-from career_assistant.domain.requirements import Requirement
-from career_assistant.domain.scoring import ScoreExplanation
 
 
 class ParseStatus(StrEnum):
@@ -115,12 +110,6 @@ class WorkspaceRepository(Protocol):
     def ensure(self, workspace_id: str) -> None: ...
 
     def summaries(self) -> tuple[WorkspaceSummary, ...]: ...
-
-    def pipeline_version(self, workspace_id: str) -> PipelineVersion: ...
-
-    def set_pipeline_version(
-        self, workspace_id: str, version: PipelineVersion
-    ) -> None: ...
 
 
 class DocumentRepository(Protocol):
@@ -255,21 +244,6 @@ class AnalysisJobRepository(Protocol):
 
 
 class AnalysisResultRepository(Protocol):
-    def publish(
-        self,
-        *,
-        workspace_id: str,
-        role_id: str,
-        analysis_version: int,
-        cv_document_id: str,
-        requirements: tuple[Requirement, ...],
-        claims: tuple[Claim, ...],
-        mappings: tuple[RequirementMapping, ...],
-        explanation: ScoreExplanation,
-        job: AnalysisJob,
-        attribution: AnalysisAttribution | None = None,
-    ) -> None: ...
-
     def fail_job(
         self,
         *,
@@ -277,10 +251,6 @@ class AnalysisResultRepository(Protocol):
         role_id: str,
         job: AnalysisJob,
     ) -> None: ...
-
-    def list_mappings(
-        self, workspace_id: str, role_id: str
-    ) -> tuple[RequirementMapping, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)

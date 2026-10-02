@@ -1,4 +1,4 @@
-"""Checks a running analysis makes before it writes (v1 and v2 workers)."""
+"""Checks the current analysis makes before it writes."""
 
 from __future__ import annotations
 

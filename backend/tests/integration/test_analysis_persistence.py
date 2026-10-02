@@ -1,42 +1,42 @@
-"""Phase 8 — PostgreSQL-backed analysis jobs and transactional publish."""
+"""Job transaction behavior on the sole chunk/verdict analysis."""
 
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy.orm import Session, sessionmaker
 from tests.integration.conftest import make_document
+from tests.integration.test_v2_analysis_persistence import (
+    ATTRIBUTION,
+    RUBRIC,
+    _NoCache,
+    _publish,
+    _run,
+    _world,
+)
+from tests.integration.test_v2_analysis_persistence import (
+    NOW as ANALYSIS_NOW,
+)
 
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
-from career_assistant.domain.assessment import PROMPT_VERSION
-from career_assistant.domain.attribution import RUBRIC_VERSION, AnalysisAttribution
-from career_assistant.domain.claims import Claim
+from career_assistant.adapters.persistence.v2_analysis_repos import V2Publication
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.jobs import (
     JobError,
     JobKind,
-    JobStage,
     JobState,
     RoleStatus,
     mark_failed,
     mark_running,
-    mark_stage,
     mark_succeeded,
     new_role_analysis_job,
 )
-from career_assistant.domain.mapping import (
-    MappingReason,
-    MappingStatus,
-    RequirementMapping,
-)
-from career_assistant.domain.requirements import Requirement
-from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 
 pytestmark = pytest.mark.integration
-
 NOW = datetime(2026, 9, 18, 16, 0, tzinfo=UTC)
 
 
@@ -98,440 +98,112 @@ def test_enqueue_persists_queued_job_and_analysing_role(uow: SqlUnitOfWork) -> N
         assert role.status is RoleStatus.ANALYSING
 
 
-def test_publish_analysis_is_visible_only_after_commit(uow: SqlUnitOfWork) -> None:
-    workspace_id, role_id, _, cv_id, jd_span_id, cv_span_id = _seed_workspace_with_role(
-        uow
-    )
-    job_id = str(uuid.uuid4())
-    req = Requirement(
-        id=str(uuid.uuid4()),
-        text="Production dbt experience",
-        competency="dbt",
-        seniority_signal=None,
-        must_have=True,
-        source_span_id=jd_span_id,
-        extraction_confidence=0.9,
-        is_vague=False,
-    )
-    claim = Claim(
-        id=str(uuid.uuid4()),
-        competency="dbt",
-        context="Owned dbt models in production.",
-        duration_signal="2y",
-        recency_signal="recent",
-        source_span_ids=(cv_span_id,),
-        extraction_confidence=0.9,
-    )
-    mapping = RequirementMapping(
-        requirement_id=req.id,
-        status=MappingStatus.MET,
-        reason_code=MappingReason.MATCHED,
-        justifying_span_ids=claim.source_span_ids,
-        justifying_claim_ids=(claim.id,),
-    )
-    explanation = ScoreExplanation(
-        score=100.0,
-        band="strong",
-        components=(
-            ScoreComponent(
-                requirement_id=req.id,
-                must_have=True,
-                status=MappingStatus.MET,
-                weight=3.0,
-                status_factor=1.0,
-                recency_factor=1.0,
-                contribution=3.0,
-            ),
-        ),
-        denominator=3.0,
-        numerator=3.0,
-    )
-
-    terminal = mark_succeeded(
-        mark_stage(
-            mark_running(
-                new_role_analysis_job(
-                    job_id=job_id,
-                    workspace_id=workspace_id,
-                    role_id=role_id,
-                    created_at=NOW,
-                ),
-                at=NOW,
-            ),
-            JobStage.SCORING,
-        ),
-        at=NOW + timedelta(seconds=5),
-    )
-
-    with uow:
-        uow.jobs.enqueue(
-            new_role_analysis_job(
-                job_id=job_id,
-                workspace_id=workspace_id,
-                role_id=role_id,
-                created_at=NOW,
-            )
-        )
-        uow.analysis.publish(
-            workspace_id=workspace_id,
-            role_id=role_id,
-            analysis_version=1,
-            cv_document_id=cv_id,
-            requirements=(req,),
-            claims=(claim,),
-            mappings=(mapping,),
-            explanation=explanation,
-            job=terminal,
-        )
-        other = SqlUnitOfWork(uow._session_factory)  # noqa: SLF001
-        with other:
-            assert other.analysis.list_mappings(workspace_id, role_id) == ()
-        uow.commit()
-
-    with uow:
-        assert uow.roles.get(workspace_id, role_id).status is RoleStatus.READY
-        assert uow.jobs.get(workspace_id, job_id).state is JobState.SUCCEEDED
-        mappings = uow.analysis.list_mappings(workspace_id, role_id)
-        assert len(mappings) == 1
-        assert mappings[0].status is MappingStatus.MET
-
-
-def test_reload_keeps_claim_detail_requirement_conditions_and_assessment(
-    uow: SqlUnitOfWork,
+def test_current_publication_is_visible_only_after_commit(
+    uow: SqlUnitOfWork, session_factory: sessionmaker[Session]
 ) -> None:
-    """PLAN 13D.5 — a restart reads the saved analysis, including a non-match.
-
-    An introductory course must not come back as meeting production leadership,
-    and the stored employer, dates, confidence and seniority must not be replaced.
-    """
-    workspace_id, role_id, _, cv_id, jd_span_id, cv_span_id = _seed_workspace_with_role(
-        uow
-    )
-    job_id = str(uuid.uuid4())
-    requirement = Requirement(
-        id=str(uuid.uuid4()),
-        text="Five years leading production Python systems",
-        competency="python",
-        seniority_signal="lead",
-        must_have=True,
-        source_span_id=jd_span_id,
-        extraction_confidence=0.42,
-        is_vague=False,
-    )
-    claim = Claim(
-        id=str(uuid.uuid4()),
-        competency="python",
-        context="Completed an introductory Python course.",
-        duration_signal="course",
-        recency_signal="recent",
-        source_span_ids=(cv_span_id,),
-        extraction_confidence=0.42,
-        employer="Northwind",
-        title="Student",
-        scope="one classroom",
-        technologies=("Python",),
-        outcome="finished the exercises",
-        period_start=date(2024, 1, 1),
-        period_end=date(2024, 3, 1),
-    )
-    mapping = RequirementMapping(
-        requirement_id=requirement.id,
-        status=MappingStatus.MISSING,
-        reason_code=MappingReason.ASSESSMENT_INCOMPLETE,
-        justifying_span_ids=(),
-        justifying_claim_ids=(),
-    )
-    explanation = ScoreExplanation(
-        score=0.0,
-        band="limited",
-        components=(
-            ScoreComponent(
-                requirement_id=requirement.id,
-                must_have=True,
-                status=MappingStatus.MISSING,
-                weight=3.0,
-                status_factor=0.0,
-                recency_factor=1.0,
-                contribution=0.0,
-            ),
-        ),
-        denominator=3.0,
-        numerator=0.0,
-    )
-    terminal = mark_succeeded(
-        mark_stage(
-            mark_running(
-                new_role_analysis_job(
-                    job_id=job_id,
-                    workspace_id=workspace_id,
-                    role_id=role_id,
-                    created_at=NOW,
-                ),
-                at=NOW,
-            ),
-            JobStage.SCORING,
-        ),
-        at=NOW + timedelta(seconds=2),
-    )
+    world = _world(uow)
+    analysis = _run(session_factory, world, _NoCache())
     with uow:
-        uow.jobs.enqueue(
-            new_role_analysis_job(
-                job_id=job_id,
-                workspace_id=workspace_id,
-                role_id=role_id,
-                created_at=NOW,
+        job = uow.jobs.get(world.workspace, world.job)
+        assert job is not None
+        uow.v2.publish(
+            V2Publication(
+                workspace_id=world.workspace,
+                role_id=world.role,
+                analysis_version=1,
+                job=mark_succeeded(mark_running(job, at=ANALYSIS_NOW), at=ANALYSIS_NOW),
+                analysis=analysis,
+                rubric_version=RUBRIC.version,
+                attribution=ATTRIBUTION,
             )
         )
-        uow.analysis.publish(
-            workspace_id=workspace_id,
-            role_id=role_id,
-            analysis_version=1,
-            cv_document_id=cv_id,
-            requirements=(requirement,),
-            claims=(claim,),
-            mappings=(mapping,),
-            explanation=explanation,
-            job=terminal,
-            attribution=AnalysisAttribution(
-                provider="ollama",
-                model="llama3.1",
-                prompt_version=PROMPT_VERSION,
-                rubric_version=RUBRIC_VERSION,
-                left_machine=False,
-                failure_status="assessment_incomplete",
-            ),
-        )
+        with SqlUnitOfWork(session_factory) as reader:
+            assert reader.v2.result(world.workspace, world.role) is None
         uow.commit()
+    with uow:
+        result = uow.v2.result(world.workspace, world.role)
+        assert result is not None
+        assert result.score == analysis.fit.score
+        assert uow.jobs.get(world.workspace, world.job).state is JobState.SUCCEEDED
 
-    def uow_factory() -> SqlUnitOfWork:
-        return SqlUnitOfWork(uow._session_factory)  # noqa: SLF001
 
-    role_store = SqlRoleStore(
-        cv_store=SqlCvStore(uow_factory),
-        uow_factory=uow_factory,
+def test_reloaded_views_use_the_published_current_score_and_evidence(
+    uow: SqlUnitOfWork, session_factory: sessionmaker[Session]
+) -> None:
+    world = _world(uow)
+    analysis = _run(session_factory, world, _NoCache())
+    _publish(uow, world, analysis)
+
+    def factory() -> SqlUnitOfWork:
+        return SqlUnitOfWork(session_factory)
+
+    store = SqlRoleStore(cv_store=SqlCvStore(factory), uow_factory=factory)
+    bundle = store.require_analysis(world.workspace, world.role)
+    assert bundle.explanation.score == analysis.fit.score
+    assert len(bundle.requirements) == len(analysis.requirements)
+    assert {mapping.requirement_id for mapping in bundle.mappings} == {
+        requirement.packet.requirement_id for requirement in analysis.requirements
+    }
+    assert all(
+        span.document_id == world.documents.cv.document_id
+        for span in bundle.cv_claim_spans
     )
-    bundle = role_store.require_analysis(workspace_id, role_id)
-    loaded_requirement = bundle.requirements[0]
-    loaded_claim = bundle.claims[0]
-    assert loaded_requirement.seniority_signal == "lead"
-    assert loaded_requirement.extraction_confidence == 0.42
-    assert loaded_claim.employer == "Northwind"
-    assert loaded_claim.title == "Student"
-    assert loaded_claim.scope == "one classroom"
-    assert loaded_claim.technologies == ("Python",)
-    assert loaded_claim.outcome == "finished the exercises"
-    assert loaded_claim.extraction_confidence == 0.42
-    assert loaded_claim.period_start == date(2024, 1, 1)
-    assert loaded_claim.period_end == date(2024, 3, 1)
-    assert bundle.mappings[0].status is MappingStatus.MISSING
-    assert bundle.mappings[0].reason_code is MappingReason.ASSESSMENT_INCOMPLETE
-    assert bundle.explanation.score == 0.0
     assert bundle.attribution is not None
-    assert bundle.attribution.provider == "ollama"
-    assert bundle.attribution.model == "llama3.1"
-    assert bundle.attribution.prompt_version == PROMPT_VERSION
-    assert bundle.attribution.rubric_version == RUBRIC_VERSION
-    assert bundle.attribution.left_machine is False
-    assert bundle.attribution.failure_status == "assessment_incomplete"
+    assert bundle.attribution.provider == ATTRIBUTION.provider
+    assert bundle.attribution.model == ATTRIBUTION.model
 
 
-def test_failed_job_discards_partials_and_leaves_role_failed(
-    uow: SqlUnitOfWork,
-) -> None:
-    workspace_id, role_id, _, _, _, _ = _seed_workspace_with_role(uow)
-    job_id = str(uuid.uuid4())
-    failed = mark_failed(
-        mark_stage(
-            mark_running(
-                new_role_analysis_job(
-                    job_id=job_id,
-                    workspace_id=workspace_id,
-                    role_id=role_id,
-                    created_at=NOW,
-                ),
-                at=NOW,
-            ),
-            JobStage.EXTRACTING_CLAIMS,
-        ),
-        at=NOW + timedelta(seconds=1),
-        error=JobError(
-            code="extracting_claims_failed",
-            message="Analysis failed during this stage.",
-        ),
-    )
+def test_failed_job_leaves_no_publishable_result(uow: SqlUnitOfWork) -> None:
+    world = _world(uow)
     with uow:
-        uow.jobs.enqueue(
-            new_role_analysis_job(
-                job_id=job_id,
-                workspace_id=workspace_id,
-                role_id=role_id,
-                created_at=NOW,
-            )
+        job = uow.jobs.get(world.workspace, world.job)
+        assert job is not None
+        failed = mark_failed(
+            mark_running(job, at=NOW),
+            at=NOW,
+            error=JobError("chunking_incomplete", "Analysis failed."),
         )
         uow.analysis.fail_job(
-            workspace_id=workspace_id,
-            role_id=role_id,
-            job=failed,
+            workspace_id=world.workspace, role_id=world.role, job=failed
         )
         uow.commit()
-
     with uow:
-        assert uow.roles.get(workspace_id, role_id).status is RoleStatus.FAILED
-        assert uow.jobs.get(workspace_id, job_id).state is JobState.FAILED
-        assert uow.analysis.list_mappings(workspace_id, role_id) == ()
+        assert uow.roles.get(world.workspace, world.role).status is RoleStatus.FAILED
+        assert uow.jobs.get(world.workspace, world.job).state is JobState.FAILED
+        assert uow.v2.result(world.workspace, world.role) is None
 
 
-def test_failed_reanalysis_restores_the_previous_published_score(
-    uow: SqlUnitOfWork,
+def test_failed_reanalysis_restores_the_previous_published_current_score(
+    uow: SqlUnitOfWork, session_factory: sessionmaker[Session]
 ) -> None:
-    """PLAN 13D.6e — a failed new version must not hide the last valid score."""
-    workspace_id, role_id, _, cv_id, jd_span_id, cv_span_id = _seed_workspace_with_role(
-        uow
-    )
-    req = Requirement(
-        id=str(uuid.uuid4()),
-        text="Production dbt experience",
-        competency="dbt",
-        seniority_signal=None,
-        must_have=True,
-        source_span_id=jd_span_id,
-        extraction_confidence=0.9,
-        is_vague=False,
-    )
-    claim = Claim(
-        id=str(uuid.uuid4()),
-        competency="dbt",
-        context="Owned dbt models in production.",
-        duration_signal="2y",
-        recency_signal="recent",
-        source_span_ids=(cv_span_id,),
-        extraction_confidence=0.9,
-    )
-    mapping = RequirementMapping(
-        requirement_id=req.id,
-        status=MappingStatus.MET,
-        reason_code=MappingReason.MATCHED,
-        justifying_span_ids=claim.source_span_ids,
-        justifying_claim_ids=(claim.id,),
-    )
-    explanation = ScoreExplanation(
-        score=82.0,
-        band="strong",
-        components=(
-            ScoreComponent(
-                requirement_id=req.id,
-                must_have=True,
-                status=MappingStatus.MET,
-                weight=3.0,
-                status_factor=1.0,
-                recency_factor=1.0,
-                contribution=3.0,
-            ),
-        ),
-        denominator=3.0,
-        numerator=3.0,
-    )
-    first_job = str(uuid.uuid4())
-    with uow:
-        uow.jobs.enqueue(
-            new_role_analysis_job(
-                job_id=first_job,
-                workspace_id=workspace_id,
-                role_id=role_id,
-                created_at=NOW,
-            )
-        )
-        uow.analysis.publish(
-            workspace_id=workspace_id,
-            role_id=role_id,
-            analysis_version=1,
-            cv_document_id=cv_id,
-            requirements=(req,),
-            claims=(claim,),
-            mappings=(mapping,),
-            explanation=explanation,
-            job=mark_succeeded(
-                mark_stage(
-                    mark_running(
-                        new_role_analysis_job(
-                            job_id=first_job,
-                            workspace_id=workspace_id,
-                            role_id=role_id,
-                            created_at=NOW,
-                        ),
-                        at=NOW,
-                    ),
-                    JobStage.SCORING,
-                ),
-                at=NOW + timedelta(seconds=1),
-            ),
-            attribution=AnalysisAttribution(
-                provider="hermetic",
-                model="rules-v1",
-                prompt_version=PROMPT_VERSION,
-                rubric_version=RUBRIC_VERSION,
-                left_machine=False,
-            ),
-        )
-        uow.roles.bump_analysis_version(workspace_id, role_id)
-        uow.commit()
+    world = _world(uow)
+    analysis = _run(session_factory, world, _NoCache())
+    _publish(uow, world, analysis)
 
-    failed_job = str(uuid.uuid4())
-    failed = mark_failed(
-        mark_stage(
-            mark_running(
-                new_role_analysis_job(
-                    job_id=failed_job,
-                    workspace_id=workspace_id,
-                    role_id=role_id,
-                    created_at=NOW + timedelta(seconds=2),
-                ),
-                at=NOW + timedelta(seconds=2),
-            ),
-            JobStage.SCORING,
-        ),
-        at=NOW + timedelta(seconds=3),
-        error=JobError(
-            code="assessment_incomplete",
-            message=(
-                "Analysis did not assess every scoreable requirement. "
-                "This is not a fit score."
-            ),
-        ),
-    )
+    def factory() -> SqlUnitOfWork:
+        return SqlUnitOfWork(session_factory)
+
+    store = SqlRoleStore(cv_store=SqlCvStore(factory), uow_factory=factory)
+    _, new_job = store.reanalyse(world.workspace, world.role)
+    new_job_id = new_job.id
     with uow:
-        uow.jobs.enqueue(
-            new_role_analysis_job(
-                job_id=failed_job,
-                workspace_id=workspace_id,
-                role_id=role_id,
-                created_at=NOW + timedelta(seconds=2),
-            )
+        job = uow.jobs.get(world.workspace, new_job_id)
+        assert job is not None
+        failed = mark_failed(
+            mark_running(job, at=NOW),
+            at=NOW,
+            error=JobError("assessment_incomplete", "Incomplete analysis."),
         )
         uow.analysis.fail_job(
-            workspace_id=workspace_id,
-            role_id=role_id,
-            job=failed,
+            workspace_id=world.workspace, role_id=world.role, job=failed
         )
         uow.commit()
-
-    def uow_factory() -> SqlUnitOfWork:
-        return SqlUnitOfWork(uow._session_factory)  # noqa: SLF001
-
-    role_store = SqlRoleStore(
-        cv_store=SqlCvStore(uow_factory),
-        uow_factory=uow_factory,
-    )
-    view = role_store.get_role(workspace_id, role_id)
-    assert view is not None
-    assert view.status == "ready"
-    assert view.fit_score == 82
+    view = store.get_role(world.workspace, world.role)
+    assert view is not None and view.status == "ready"
+    assert view.fit_score == round(analysis.fit.score)
     with uow:
-        role = uow.roles.get(workspace_id, role_id)
-        assert role is not None
-        assert role.analysis_version == 1
-        assert role.status is RoleStatus.READY
-        assert uow.jobs.get(workspace_id, failed_job).state is JobState.FAILED
+        assert uow.roles.get(world.workspace, world.role).analysis_version == 1
+        assert uow.jobs.get(world.workspace, new_job_id).state is JobState.FAILED
 
 
 def test_duplicate_enqueue_returns_existing_active_job(uow: SqlUnitOfWork) -> None:

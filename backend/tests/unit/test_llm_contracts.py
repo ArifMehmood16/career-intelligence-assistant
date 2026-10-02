@@ -21,15 +21,14 @@ from career_assistant.adapters.providers.schema_dialects import (
 )
 from career_assistant.application.contracts.agent import AgentAnswer
 from career_assistant.application.contracts.chunking import (
-    CoverLetterChunkingResponse,
-    CvChunkingResponse,
-    JobChunkingResponse,
+    CoverLetterChunkResponse,
+    CvChunkResponse,
+    JobChunkResponse,
 )
 from career_assistant.application.contracts.judge import JudgeResponse
-from career_assistant.application.contracts.taxonomy import TaxonomyResponse
 
 _TERM = {"surface": "Postgres", "canonical": "postgresql"}
-_CV = {
+_CV_CHUNKS = {
     "chunks": [
         {"first_line": 1, "last_line": 3, "kind": "contact"},
         {
@@ -43,43 +42,39 @@ _CV = {
                 "seniority_level": "senior",
             },
         },
-        {
-            "first_line": 5,
-            "last_line": 7,
-            "kind": "experience",
-            "role_ref": 4,
-            "context": "Senior Data Engineer at Northwind: retrieval work.",
-            "skills": ["hybrid retrieval"],
-            "tech_terms": [_TERM],
-        },
+        {"first_line": 5, "last_line": 7, "kind": "experience", "role_ref": 4},
     ]
 }
-_LETTER = {
+_CV_CHUNKS["chunks"][2].update(
+    {
+        "context": "Senior Data Engineer at Northwind: retrieval work.",
+        "skills": ["hybrid retrieval"],
+        "tech_terms": [_TERM],
+    }
+)
+_LETTER_CHUNKS = {
     "chunks": [
-        {"first_line": 1, "last_line": 2, "kind": "experience", "tech_terms": [_TERM]},
+        {"first_line": 1, "last_line": 2, "kind": "experience"},
         {"first_line": 3, "last_line": 3, "kind": "aspiration"},
     ]
 }
-_JOB = {
+_LETTER_CHUNKS["chunks"][0]["tech_terms"] = [_TERM]
+_JOB_CHUNKS = {
     "chunks": [
-        {
-            "first_line": 10,
-            "last_line": 10,
-            "kind": "requirement",
-            "atomic_requirements": [
-                {
-                    "quote": "5+ years of Python and AWS",
-                    "statement": "5+ years of Python",
-                    "must_have": True,
-                    "years_expected": 5,
-                    "seniority_expected": None,
-                    "tech_terms": [{"surface": "Python", "canonical": "python"}],
-                }
-            ],
-        },
+        {"first_line": 10, "last_line": 10, "kind": "requirement"},
         {"first_line": 11, "last_line": 11, "kind": "benefit"},
     ]
 }
+_JOB_CHUNKS["chunks"][0]["atomic_requirements"] = [
+    {
+        "quote": "5+ years of Python and AWS",
+        "statement": "5+ years of Python",
+        "must_have": True,
+        "years_expected": 5,
+        "seniority_expected": None,
+        "tech_terms": [{"surface": "Python", "canonical": "python"}],
+    }
+]
 _JUDGE = {
     "verdicts": [
         {
@@ -98,16 +93,6 @@ _JUDGE = {
         }
     ]
 }
-_TAXONOMY = {
-    "terms": [
-        {
-            "term": "pgvector",
-            "is_a": ["vector database"],
-            "extends": ["postgresql"],
-            "aliases": [],
-        }
-    ]
-}
 _ANSWER = {
     "answer": "Your Northwind work is the strongest platform evidence.",
     "citations": [{"chunk_id": "7c2e", "quote": "hybrid retrieval"}],
@@ -115,10 +100,9 @@ _ANSWER = {
 }
 
 _VALID: list[tuple[type[BaseModel], dict[str, Any]]] = [
-    (CvChunkingResponse, _CV),
-    (CoverLetterChunkingResponse, _LETTER),
-    (JobChunkingResponse, _JOB),
-    (TaxonomyResponse, _TAXONOMY),
+    (CvChunkResponse, _CV_CHUNKS),
+    (CoverLetterChunkResponse, _LETTER_CHUNKS),
+    (JobChunkResponse, _JOB_CHUNKS),
     (JudgeResponse, _JUDGE),
     (AgentAnswer, _ANSWER),
 ]
@@ -178,18 +162,28 @@ def test_an_extra_field_is_rejected(
         (JudgeResponse, _JUDGE, ["verdicts", 0, "seniority", "score"], 9),
         (JudgeResponse, _JUDGE, ["verdicts", 0, "match", "evidence", 0, "quote"], ""),
         (JudgeResponse, _JUDGE, ["verdicts"], []),
-        (CvChunkingResponse, _CV, ["chunks", 2, "kind"], "aspiration"),
-        (CvChunkingResponse, _CV, ["chunks", 0, "first_line"], 0),
-        (CvChunkingResponse, _CV, ["chunks", 1, "role", "seniority_level"], "rockstar"),
-        (CvChunkingResponse, _CV, ["chunks", 2, "tech_terms", 0, "surface"], ""),
-        (CoverLetterChunkingResponse, _LETTER, ["chunks", 1, "kind"], "role_heading"),
+        (CvChunkResponse, _CV_CHUNKS, ["chunks", 2, "kind"], "aspiration"),
+        (CvChunkResponse, _CV_CHUNKS, ["chunks", 0, "first_line"], 0),
         (
-            JobChunkingResponse,
-            _JOB,
+            CvChunkResponse,
+            _CV_CHUNKS,
+            ["chunks", 1, "role", "seniority_level"],
+            "rockstar",
+        ),
+        (CvChunkResponse, _CV_CHUNKS, ["chunks", 2, "tech_terms", 0, "surface"], ""),
+        (
+            CoverLetterChunkResponse,
+            _LETTER_CHUNKS,
+            ["chunks", 1, "kind"],
+            "role_heading",
+        ),
+        (
+            JobChunkResponse,
+            _JOB_CHUNKS,
             ["chunks", 0, "atomic_requirements", 0, "years_expected"],
             -2,
         ),
-        (JobChunkingResponse, _JOB, ["chunks", 1, "kind"], "salary"),
+        (JobChunkResponse, _JOB_CHUNKS, ["chunks", 1, "kind"], "salary"),
         (AgentAnswer, _ANSWER, ["support"], "certain"),
         (AgentAnswer, _ANSWER, ["answer"], ""),
     ],
@@ -207,14 +201,14 @@ def test_an_invalid_shape_is_rejected(
 def test_a_missing_required_field_is_rejected() -> None:
     verdict = dict(_JUDGE["verdicts"][0])
     del verdict["retrieval_feedback"]
-    requirement = dict(_JOB["chunks"][0]["atomic_requirements"][0])
+    requirement = dict(_JOB_CHUNKS["chunks"][0]["atomic_requirements"][0])
     del requirement["must_have"]
 
     with pytest.raises(ValidationError):
         JudgeResponse.model_validate({"verdicts": [verdict]})
     with pytest.raises(ValidationError):
-        JobChunkingResponse.model_validate(
-            _with(_JOB, ["chunks", 0, "atomic_requirements"], [requirement])
+        JobChunkResponse.model_validate(
+            _with(_JOB_CHUNKS, ["chunks", 0, "atomic_requirements"], [requirement])
         )
 
 

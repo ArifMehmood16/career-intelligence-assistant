@@ -10,7 +10,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from career_assistant.adapters.providers.call_gate import (
+    HostedCallGate,
+    RateLimitNote,
+    estimate_tokens,
+    run_hosted,
+)
+from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.adapters.providers.local_gate import local_call_slot
 from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
     classify_http_status,
@@ -28,7 +36,6 @@ from career_assistant.application.ports.tool_calling import (
 )
 from career_assistant.application.ports.types import CapabilityDescriptor, ModelProfile
 
-_MAX_INPUT_CHARS = 100_000
 _DEFAULT_PROFILE = ModelProfile(context_window_tokens=8_192, max_output_tokens=2_000)
 
 
@@ -48,11 +55,15 @@ def _int_or_none(value: Any) -> int | None:
     return int(value)
 
 
-def _too_large(request: ToolCallingRequest) -> bool:
+def _too_large(request: ToolCallingRequest, profile: ModelProfile) -> bool:
     size = len(request.system) + sum(
         len(message.content) for message in request.messages
     )
-    return size > _MAX_INPUT_CHARS
+    size += sum(
+        len(json.dumps(tool.parameters)) + len(tool.description)
+        for tool in request.tools
+    )
+    return (size + 3) // 4 + request.max_output_tokens > profile.context_window_tokens
 
 
 def _capabilities(
@@ -67,6 +78,7 @@ def _capabilities(
         max_output_tokens=profile.max_output_tokens,
         embedding_dimensions=None,
         leaves_machine=leaves_machine,
+        execution=execution_profile(profile),
         supports_tool_calling=True,
         supports_prompt_caching=profile.supports_prompt_caching,
         supports_temperature=profile.supports_temperature,
@@ -158,16 +170,25 @@ class OllamaToolCaller:
         return _capabilities(self.provider_id, self._profile, leaves_machine=False)
 
     def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
-        if _too_large(request):
+        if _too_large(request, self._profile):
             raise ProviderInputTooLargeError("ollama input too large")
         body = {
             "model": self._model_tag,
             "stream": False,
             "messages": _messages_ollama(request),
             "tools": _tools_openai(request.tools),
-            "options": {"num_predict": request.max_output_tokens},
+            "options": {
+                "num_predict": request.max_output_tokens,
+                "num_ctx": self._profile.context_window_tokens,
+            },
         }
-        return self._resilience.run(lambda: self._call(body))
+        with local_call_slot(
+            self.provider_id,
+            self._model_tag,
+            operation="completion",
+            max_in_flight=self._profile.completion_concurrency,
+        ):
+            return self._resilience.run(lambda: self._call(body))
 
     def _call(self, body: dict[str, Any]) -> ToolCallingResult:
         response = self._transport.request(
@@ -177,7 +198,7 @@ class OllamaToolCaller:
             json_body=body,
             timeout_seconds=self._resilience.timeout_seconds,
         )
-        classify_http_status(response.status_code)
+        classify_http_status(response.status_code, response.headers)
         data = json.loads(response.body.decode("utf-8"))
         message = data.get("message") or {}
         return ToolCallingResult(
@@ -249,6 +270,7 @@ class OpenAIToolCaller:
         resilience: ResiliencePolicy,
         base_url: str = "https://api.openai.com/v1",
         profile: ModelProfile | None = None,
+        gate: HostedCallGate | None = None,
     ) -> None:
         self._api_key = api_key
         self._model_tag = model_tag
@@ -256,25 +278,33 @@ class OpenAIToolCaller:
         self._resilience = resilience
         self._profile = profile or _DEFAULT_PROFILE
         self._url = f"{base_url.rstrip('/')}/chat/completions"
+        self._gate = gate
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
         return _capabilities(self.provider_id, self._profile, leaves_machine=True)
 
     def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
-        if _too_large(request):
+        if _too_large(request, self._profile):
             raise ProviderInputTooLargeError("openai input too large")
         body: dict[str, Any] = {
             "model": self._model_tag,
             "messages": _messages_openai(request),
             "tools": _tools_openai(request.tools),
-            "max_tokens": request.max_output_tokens,
+            "max_completion_tokens": request.max_output_tokens,
         }
         if not request.tools:
             body.pop("tools")
-        return self._resilience.run(lambda: self._call(body))
+        return run_hosted(
+            self._gate,
+            provider_id=self.provider_id,
+            model_tag=self._model_tag,
+            estimated_tokens=_estimate(request),
+            resilience=self._resilience,
+            operation=lambda note: self._call(body, note),
+        )
 
-    def _call(self, body: dict[str, Any]) -> ToolCallingResult:
+    def _call(self, body: dict[str, Any], note: RateLimitNote) -> ToolCallingResult:
         response = self._transport.request(
             "POST",
             self._url,
@@ -285,13 +315,19 @@ class OpenAIToolCaller:
             json_body=body,
             timeout_seconds=self._resilience.timeout_seconds,
         )
-        classify_http_status(response.status_code)
+        if response.status_code >= 400:
+            note(response.headers)
+        classify_http_status(response.status_code, response.headers)
         data = json.loads(response.body.decode("utf-8"))
         choice = (data.get("choices") or [{}])[0]
         if choice.get("finish_reason") == "content_filter":
             raise ProviderRefusedError("openai refused the request")
         message = choice.get("message") or {}
         usage = data.get("usage") or {}
+        note(
+            response.headers,
+            used_tokens=_used(usage, "prompt_tokens", "completion_tokens"),
+        )
         return ToolCallingResult(
             content=str(message.get("content") or ""),
             tool_calls=_calls_from_openai(message),
@@ -315,6 +351,7 @@ class AnthropicToolCaller:
         resilience: ResiliencePolicy,
         base_url: str = "https://api.anthropic.com/v1",
         profile: ModelProfile | None = None,
+        gate: HostedCallGate | None = None,
     ) -> None:
         self._api_key = api_key
         self._model_tag = model_tag
@@ -322,13 +359,14 @@ class AnthropicToolCaller:
         self._resilience = resilience
         self._profile = profile or _DEFAULT_PROFILE
         self._url = f"{base_url.rstrip('/')}/messages"
+        self._gate = gate
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
         return _capabilities(self.provider_id, self._profile, leaves_machine=True)
 
     def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
-        if _too_large(request):
+        if _too_large(request, self._profile):
             raise ProviderInputTooLargeError("anthropic input too large")
         body: dict[str, Any] = {
             "model": self._model_tag,
@@ -344,9 +382,16 @@ class AnthropicToolCaller:
                 for tool in request.tools
             ],
         }
-        return self._resilience.run(lambda: self._call(body))
+        return run_hosted(
+            self._gate,
+            provider_id=self.provider_id,
+            model_tag=self._model_tag,
+            estimated_tokens=_estimate(request),
+            resilience=self._resilience,
+            operation=lambda note: self._call(body, note),
+        )
 
-    def _call(self, body: dict[str, Any]) -> ToolCallingResult:
+    def _call(self, body: dict[str, Any], note: RateLimitNote) -> ToolCallingResult:
         response = self._transport.request(
             "POST",
             self._url,
@@ -358,7 +403,9 @@ class AnthropicToolCaller:
             json_body=body,
             timeout_seconds=self._resilience.timeout_seconds,
         )
-        classify_http_status(response.status_code)
+        if response.status_code >= 400:
+            note(response.headers)
+        classify_http_status(response.status_code, response.headers)
         data = json.loads(response.body.decode("utf-8"))
         if data.get("stop_reason") == "refusal":
             raise ProviderRefusedError("anthropic refused the request")
@@ -369,6 +416,10 @@ class AnthropicToolCaller:
             if isinstance(block, dict) and block.get("type") == "text"
         )
         usage = data.get("usage") or {}
+        note(
+            response.headers,
+            used_tokens=_used(usage, "input_tokens", "output_tokens"),
+        )
         return ToolCallingResult(
             content=text,
             tool_calls=_calls_from_anthropic(blocks),
@@ -433,3 +484,18 @@ def _calls_from_anthropic(blocks: list[Any]) -> tuple[ToolCall, ...]:
             )
         )
     return tuple(calls)
+
+
+def _estimate(request: ToolCallingRequest) -> int:
+    chars = len(request.system) + sum(
+        len(message.content) for message in request.messages
+    )
+    return estimate_tokens(chars, request.max_output_tokens)
+
+
+def _used(usage: dict[str, Any], left: str, right: str) -> int | None:
+    prompt = _int_or_none(usage.get(left))
+    completion = _int_or_none(usage.get(right))
+    if prompt is None and completion is None:
+        return None
+    return (prompt or 0) + (completion or 0)

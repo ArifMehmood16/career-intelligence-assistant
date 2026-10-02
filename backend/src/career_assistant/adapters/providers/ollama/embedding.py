@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import math
 
+from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
+from career_assistant.adapters.providers.local_gate import local_call_slot
 from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
     classify_http_status,
@@ -48,6 +51,7 @@ class OllamaEmbeddingAdapter:
     def capabilities(self) -> CapabilityDescriptor:
         return CapabilityDescriptor(
             provider_id=self.provider_id,
+            model_tag=self._model_tag,
             supports_completion=False,
             supports_embedding=True,
             supports_structured_output=False,
@@ -55,6 +59,7 @@ class OllamaEmbeddingAdapter:
             max_output_tokens=0,
             embedding_dimensions=self._dimensions,
             leaves_machine=False,
+            execution=execution_profile(self._profile),
             supports_tool_calling=self._profile.supports_tool_calling,
             supports_prompt_caching=self._profile.supports_prompt_caching,
             supports_temperature=self._profile.supports_temperature,
@@ -69,41 +74,70 @@ class OllamaEmbeddingAdapter:
         return text
 
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
-        vectors: list[tuple[float, ...]] = []
         for text in request.texts:
             if len(text) > request.max_chars_per_text:
                 raise ProviderInputTooLargeError("ollama embedding input too large")
+        if not request.texts:
+            return EmbeddingResult(
+                vectors=(),
+                provider_id=self.provider_id,
+                model_tag=self._model_tag,
+                dimensions=self._dimensions,
+                left_machine=False,
+            )
 
-            def _call(
-                current: str = self._prefixed(text, request),
-            ) -> tuple[float, ...]:
-                response = self._transport.request(
-                    "POST",
-                    f"{self._base_url}/api/embeddings",
-                    json_body={
-                        "model": self._model_tag,
-                        "prompt": current,
-                        # Explicit, as for completion: the server default may be
-                        # smaller than the model's own window.
-                        "options": {"num_ctx": self._profile.context_window_tokens},
-                    },
-                    timeout_seconds=self._resilience.timeout_seconds,
-                )
-                classify_http_status(response.status_code)
+        def call() -> EmbeddingResult:
+            response = self._transport.request(
+                "POST",
+                f"{self._base_url}/api/embed",
+                json_body={
+                    "model": self._model_tag,
+                    "input": [self._prefixed(text, request) for text in request.texts],
+                    "truncate": False,
+                    "options": {"num_ctx": self._profile.context_window_tokens},
+                },
+                timeout_seconds=self._resilience.timeout_seconds,
+            )
+            classify_http_status(response.status_code, response.headers)
+            try:
                 data = json.loads(response.body.decode("utf-8"))
-                raw = data.get("embedding")
-                if not isinstance(raw, list):
-                    raise ProviderUnavailableError("ollama returned no embedding")
-                return tuple(float(x) for x in raw)
+                vectors = _parse_vectors(data.get("embeddings"), len(request.texts))
+            except (UnicodeDecodeError, ValueError, TypeError, AttributeError) as exc:
+                raise ProviderUnavailableError(
+                    "ollama returned invalid embeddings"
+                ) from exc
+            tokens = data.get("prompt_eval_count")
+            return EmbeddingResult(
+                vectors=vectors,
+                provider_id=self.provider_id,
+                model_tag=self._model_tag,
+                dimensions=len(vectors[0]),
+                left_machine=False,
+                input_tokens=tokens if isinstance(tokens, int) else None,
+            )
 
-            vectors.append(self._resilience.run(_call))
+        with local_call_slot(
+            self.provider_id,
+            self._model_tag,
+            operation="embedding",
+            max_in_flight=self._profile.embedding_concurrency,
+        ):
+            return self._resilience.run(call)
 
-        dims = len(vectors[0]) if vectors else self._dimensions
-        return EmbeddingResult(
-            vectors=tuple(vectors),
-            provider_id=self.provider_id,
-            model_tag=self._model_tag,
-            dimensions=dims,
-            left_machine=False,
-            input_tokens=None,
-        )
+
+def _parse_vectors(raw: object, count: int) -> tuple[tuple[float, ...], ...]:
+    if not isinstance(raw, list) or len(raw) != count:
+        raise ValueError("embedding count mismatch")
+    vectors: list[tuple[float, ...]] = []
+    for item in raw:
+        if not isinstance(item, list) or not item:
+            raise ValueError("empty embedding")
+        if any(type(value) not in (int, float) for value in item):
+            raise ValueError("non-numeric embedding")
+        vector = tuple(float(value) for value in item)
+        if any(not math.isfinite(value) for value in vector):
+            raise ValueError("non-finite embedding")
+        if vectors and len(vector) != len(vectors[0]):
+            raise ValueError("embedding dimensions mismatch")
+        vectors.append(vector)
+    return tuple(vectors)

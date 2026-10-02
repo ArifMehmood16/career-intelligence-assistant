@@ -21,7 +21,6 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
-from career_assistant.application.graph.taxonomy import TermTaxonomist
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.domain.documents import DocumentKind
 
@@ -45,7 +44,6 @@ def test_an_indexed_cv_is_stored_graphed_embedded_and_reused(
     structured = HermeticStructuredCompleter()
     indexer = DocumentIndexer(
         chunker=DocumentChunker(structured),
-        taxonomist=TermTaxonomist(structured),
         embedding=HermeticEmbeddingAdapter(),
         store=store,
         max_chars_per_text=8_000,

@@ -20,6 +20,7 @@ from career_assistant.application.ports.errors import (
     StructuredOutputInvalidError,
     StructuredOutputTruncatedError,
 )
+from career_assistant.application.ports.progress import plan_calls
 from career_assistant.application.ports.structured import (
     StructuredRequest,
     StructuredResult,
@@ -60,6 +61,7 @@ class StructuredCompleter:
             )
         except ValidationError as error:
             repair_user = _repair_user(request.user, first.result.text, error)
+        plan_calls(model=1)
         second = self._attempt(request, repair_user, schema)
         try:
             value = request.contract.model_validate_json(second.result.text)
@@ -90,6 +92,7 @@ class StructuredCompleter:
             raise StructuredOutputTruncatedError(
                 f"{_version(request)} reply cut by the output limit",
                 contract_version=_version(request),
+                output_tokens=result.output_tokens,
             )
         return _Attempt(result=result, user=user)
 

@@ -33,7 +33,6 @@ class WorkspaceProgress:
         self._tasks = uow.job_tasks.for_jobs(
             workspace_id, [job.id for job in self._live]
         )
-        self._pipeline = uow.workspaces.pipeline_version(workspace_id)
         self._baselines: dict[PipelineVersion, dict[TaskKey, TaskBaseline]] = {}
 
     def active_for_role(self, role_id: str) -> AnalysisJob | None:
@@ -61,8 +60,7 @@ class WorkspaceProgress:
         if job.id in self._tasks:
             return self._tasks[job.id]
         if job.state in LIVE_STATES:
-            # Not started yet: the plan the workspace's pipeline will run.
-            return plan_for(self._pipeline)
+            return plan_for(PipelineVersion.V2)
         return self._uow.job_tasks.for_job(self._workspace_id, job.id)
 
     def _ahead_of(self, job: AnalysisJob) -> list[AnalysisJob]:

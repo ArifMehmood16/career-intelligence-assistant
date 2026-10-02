@@ -12,11 +12,8 @@ from career_assistant.domain.mapping import (
     RequirementMapping,
 )
 from career_assistant.domain.requirements import Requirement
-from career_assistant.domain.scoring import (
-    ScoringRubric,
-    counterfactual_delta,
-    score_fit,
-)
+from career_assistant.domain.scoring import ScoreExplanation
+from career_assistant.domain.scoring_v2 import Gap
 
 
 class GapAction(StrEnum):
@@ -47,24 +44,19 @@ class GapPlan:
 def build_gap_plan(
     requirements: tuple[Requirement, ...] | list[Requirement],
     mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
-    claims: tuple[Claim, ...] | list[Claim],
-    rubric: ScoringRubric,
+    *,
+    explanation: ScoreExplanation,
+    gaps: tuple[Gap, ...] = (),
 ) -> GapPlan:
-    """Order non-met requirements by counterfactual score lift. Pure, no model."""
+    """Order gaps by the lifts already calculated by the current scoring domain."""
     by_id = {r.id: r for r in requirements}
-    baseline = score_fit(requirements, mappings, claims, rubric)
+    by_delta = {gap.requirement_id: gap.delta for gap in gaps}
     items: list[GapItem] = []
     for mapping in mappings:
         if mapping.status is MappingStatus.MET:
             continue
         req = by_id[mapping.requirement_id]
-        delta = counterfactual_delta(
-            requirements,
-            mappings,
-            claims,
-            rubric,
-            requirement_id=req.id,
-        )
+        delta = by_delta.get(req.id, 0.0)
         adjacent = mapping.justifying_claim_ids
         action = _action_for(mapping, req)
         items.append(
@@ -81,7 +73,7 @@ def build_gap_plan(
             )
         )
     items.sort(key=lambda item: (-item.score_delta, item.requirement_id))
-    return GapPlan(current_score=baseline.score, items=tuple(items))
+    return GapPlan(current_score=explanation.score, items=tuple(items))
 
 
 def _action_for(mapping: RequirementMapping, req: Requirement) -> GapAction:
@@ -120,15 +112,15 @@ class FitSummary:
 def build_fit_summary(
     requirements: tuple[Requirement, ...] | list[Requirement],
     mappings: tuple[RequirementMapping, ...] | list[RequirementMapping],
-    claims: tuple[Claim, ...] | list[Claim],
-    rubric: ScoringRubric,
+    *,
+    explanation: ScoreExplanation,
+    gaps: tuple[Gap, ...] = (),
 ) -> FitSummary:
     """Name the strongest match and biggest gap from the scored mapping. Pure."""
     by_id = {req.id: req for req in requirements if req.is_scoreable}
     scoreable = tuple(
         mapping for mapping in mappings if mapping.requirement_id in by_id
     )
-    explanation = score_fit(tuple(by_id.values()), scoreable, claims, rubric)
     met = [
         component
         for component in explanation.components
@@ -142,7 +134,9 @@ def build_fit_summary(
         )
     )
     strongest = met[0].requirement_id if met else None
-    plan = build_gap_plan(tuple(by_id.values()), scoreable, claims, rubric)
+    plan = build_gap_plan(
+        tuple(by_id.values()), scoreable, explanation=explanation, gaps=gaps
+    )
     weakest = plan.items[0].requirement_id if plan.items else None
     return FitSummary(
         text=_fit_summary_text(by_id, strongest, weakest),
