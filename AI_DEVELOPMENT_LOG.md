@@ -29,6 +29,28 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 159 — Repair retirement migration constraint naming
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent
+- Plan task: 19.1 migration prerequisite while implementing the requested 19.4 benchmark
+- Prompt intent: the human supplied the failed retirement-migration traceback during
+  benchmark development; tests/lint remain explicitly deferred.
+- Suggestion: mark existing full-form constraint names with Alembic `op.f()` so
+  SQLAlchemy does not apply `ck_<table>_<constraint_name>` twice.
+- Outcome: implemented for review. Upgrade and downgrade pipeline constraints,
+  plus the downgrade embedding-owner check, now use fixed names.
+- Reason: observed pasted SQL tries to drop
+  `ck_workspaces_ck_workspaces_pipeline_version`, whereas the earlier revision
+  created `ck_workspaces_pipeline_version` with `op.f()`.
+- Changes: retirement revision and a PostgreSQL offline-DDL regression test using
+  the actual application's naming metadata; no data-handling policy changes.
+- Human validation: pending. Source, predecessor migration, naming convention and
+  diff inspected. The human's traceback is the observed failure; no red/green test,
+  lint, offline SQL compilation or database migration was executed in this session.
+  The human may retry `make db-migrate`; disposable preservation/deletion checks
+  remain open. Benchmark work continues under their explicit instruction.
+
 ### 158 — GitHub Spec Kit adoption for the existing project
 
 - Date: 2026-10-02

@@ -45,14 +45,14 @@ def upgrade() -> None:
     for table in ("mapping_spans", "mappings", "claim_spans", "claims", "requirements", "embeddings"):
         op.drop_table(table, schema=APP_SCHEMA)
     op.drop_constraint(
-        'ck_workspaces_pipeline_version',
+        op.f('ck_workspaces_pipeline_version'),
         'workspaces',
         type_='check',
         schema=APP_SCHEMA,
     )
     op.drop_column("workspaces", "pipeline_version", schema=APP_SCHEMA)
     op.drop_constraint(
-        'ck_analysis_jobs_pipeline_version',
+        op.f('ck_analysis_jobs_pipeline_version'),
         'analysis_jobs',
         type_='check',
         schema=APP_SCHEMA,
@@ -71,7 +71,7 @@ def upgrade() -> None:
         schema=APP_SCHEMA,
     )
     op.create_check_constraint(
-        'ck_analysis_jobs_pipeline_version',
+        op.f('ck_analysis_jobs_pipeline_version'),
         'analysis_jobs',
         "pipeline_version = 'v2'",
         schema=APP_SCHEMA,
@@ -80,7 +80,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_constraint(
-        'ck_analysis_jobs_pipeline_version',
+        op.f('ck_analysis_jobs_pipeline_version'),
         'analysis_jobs',
         type_='check',
         schema=APP_SCHEMA,
@@ -92,7 +92,7 @@ def downgrade() -> None:
         schema=APP_SCHEMA,
     )
     op.create_check_constraint(
-        'ck_analysis_jobs_pipeline_version',
+        op.f('ck_analysis_jobs_pipeline_version'),
         'analysis_jobs',
         "pipeline_version IN ('v1', 'v2')",
         schema=APP_SCHEMA,
@@ -103,7 +103,7 @@ def downgrade() -> None:
         schema=APP_SCHEMA,
     )
     op.create_check_constraint(
-        'ck_workspaces_pipeline_version',
+        op.f('ck_workspaces_pipeline_version'),
         'workspaces',
         "pipeline_version IN ('v1', 'v2')",
         schema=APP_SCHEMA,
@@ -306,7 +306,7 @@ def downgrade() -> None:
         sa.Column('embedding', VECTOR(), nullable=False),
         sa.CheckConstraint(
             "owner_kind IN ('requirement', 'claim')",
-            name='ck_embeddings_embedding_owner_kind',
+            name=op.f('ck_embeddings_embedding_owner_kind'),
         ),
         sa.ForeignKeyConstraint(
             ['workspace_id'],
