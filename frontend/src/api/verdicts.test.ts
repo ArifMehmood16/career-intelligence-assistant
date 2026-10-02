@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getRoleVerdicts, getVerdictTrace, postMessageStream } from "./client";
 import { ApiError } from "./client";
-import { VERDICTS } from "./__fixtures__/verdicts";
+import { RECENCY_VERDICTS, VERDICTS } from "./__fixtures__/verdicts";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -21,6 +21,30 @@ function stubFetch(handler: (input: RequestInfo | URL) => Response) {
 }
 
 describe("getRoleVerdicts", () => {
+  it("accepts a published recency gap without dropping verdicts", async () => {
+    stubFetch(() => Response.json(RECENCY_VERDICTS));
+
+    const result = await getRoleVerdicts("role-1");
+
+    expect(result.gapPlan).toEqual(RECENCY_VERDICTS.gapPlan);
+    expect(result.verdicts).toEqual(RECENCY_VERDICTS.verdicts);
+    expect(result.fitScore).toBe(RECENCY_VERDICTS.fitScore);
+  });
+
+  it("still rejects an unknown gap dimension", async () => {
+    stubFetch(() =>
+      Response.json({
+        ...RECENCY_VERDICTS,
+        gapPlan: [{ ...RECENCY_VERDICTS.gapPlan[0], dimension: "unknown" }],
+      }),
+    );
+
+    await expect(getRoleVerdicts("role-1")).rejects.toMatchObject({
+      code: "internal_error",
+      status: 200,
+    });
+  });
+
   it("returns the validated v2 fit", async () => {
     stubFetch((input) => {
       expect(String(input)).toBe("/api/roles/role-1/verdicts");

@@ -29,6 +29,42 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 163 — Accept published recency gaps in Fit and Gaps
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.1 display defect; release verification under 19.4
+- Prompt intent: completed analysis shows the overall score/counts but detailed
+  Fit and Gaps cannot be displayed; find and fix the cause.
+- Suggestion: compare the published response against the actual client schema;
+  align gap categories with the domain and render recency on its proper scale.
+- Outcome: implemented for review. Read-only local HTTP returns a ready role and
+  18 verdicts. Actual Zod validation rejected eight gapPlan.dimension fields;
+  safe identifier inspection confirms recency. The domain already emits recency,
+  while frontend schema/types and API/product docs only named three judge dimensions.
+  This rejects the entire shared detail response; the summary uses another request.
+- Changed: GapDimension adds recency separately from JudgeDimension; strict client
+  enum accepts all four domain values. The gap pane displays recency as percentage
+  weight, with existing 0–4 anchor display retained for judge gaps. Added a synthetic
+  recency fixture, API/unknown-category regressions, both container-pane cases and
+  panel/gallery assertions. API/features docs corrected; root gates remain open.
+- Reason: preserve the authoritative published analysis and meaningful units.
+  No score recomputation, backend/storage change, provider call or user reanalysis.
+- Rejected: dropping valid recency gaps server-side, accepting arbitrary dimension
+  strings, calling recency a fourth judge score, rerunning personal analysis or
+  treating query invalidation as the cause (it already exists).
+- Human validation: pending. Live schema diagnosis before/after repair performed
+  via Bun with only status/path/code/count output, no payload text retained. The same
+  result passes through API and web proxy after repair: 18 verdicts, 9 gaps, 8 recency.
+  Browser inspection of /dev/states shows recency at 60% weight and match at 1 / 4;
+  screenshot is synthetic-only and outside Git. Fixture dialogs were dismissed,
+  without accepting hosted egress. Source/spec/diff review and targeted Prettier
+  formatting performed. No Vitest/pytest/lint/typecheck/security/benchmark run;
+  tests/lint remain explicitly deferred, with no red/green evidence claimed.
+- Carried forward: refresh the existing role page or use Retry to clear its cached
+  failed response; deferred regressions/full release checks. Task branch depends
+  on consolidated 5e67682 rather than obsolete main; no external push or merge.
+
 ### 162 — Explain incomplete judging and mitigate suspected timeouts
 
 - Date: 2026-10-02

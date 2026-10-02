@@ -54,8 +54,10 @@ increases the evidence score by itself.
 
 ## Gaps, CV bullets, preparation and letters
 
-Gaps are ordered by the published domain-calculated lift for match, seniority or
-experience. They show current level and what evidence needs strengthening. Export
+Gaps are ordered by the published domain-calculated lift for match, seniority,
+experience or evidence recency. Judge dimensions show their 0–4 current level;
+recency shows the current percentage weight applied to older or undated evidence.
+They show what evidence needs strengthening. Export
 reads the same stored analysis. No separate model call recalculates the gap plan.
 
 CV bullet drafts use evidence already present in the candidate's current CV. A

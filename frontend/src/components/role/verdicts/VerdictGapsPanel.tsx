@@ -77,8 +77,9 @@ export function VerdictGapsPanel({
                 {statements.get(gap.requirementId) ?? gap.requirementId}
               </span>
               <span className="text-sm text-muted-foreground">
-                {DIMENSION_LABEL[gap.dimension]} · now {gap.current} /{" "}
-                {MAX_SCORE}
+                {gap.dimension === "recency"
+                  ? `Evidence recency · current weight ${Math.round(gap.current * 100)}%`
+                  : `${DIMENSION_LABEL[gap.dimension]} · now ${gap.current} / ${MAX_SCORE}`}
               </span>
             </span>
             <span className="font-mono tabular-nums">

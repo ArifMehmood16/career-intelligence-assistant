@@ -45,5 +45,6 @@ describe("/dev/states gallery", () => {
       }
     }
     expect(missing).toEqual([]);
+    expect(screen.getByText(/Evidence recency.*60%/)).toBeInTheDocument();
   });
 });

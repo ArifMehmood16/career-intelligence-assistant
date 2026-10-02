@@ -19,7 +19,13 @@ is observed; regression and complete-analysis verification are still open.
 The later scoring failure is scoped in
 [19.2 incomplete-judging diagnostics](specs/003-judge-failure-diagnostics/spec.md).
 Safe timeout/judge events are authored; the local timeout mitigation still needs
-a restarted API and successful analysis. Tests/lint remain deferred.
+deferred regression verification. The human has now reported successful analysis,
+and read-only HTTP confirms a ready publication. Tests/lint remain deferred.
+
+The [19.1 recency gap display repair](specs/004-recency-gap-display/spec.md) is
+implemented: valid recency gaps no longer cause the shared Fit/Gaps response to be
+rejected; their current weighting factor displays as a percentage. Live response
+validation and synthetic gallery diagnosis were observed; regression suites stay open.
 
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.

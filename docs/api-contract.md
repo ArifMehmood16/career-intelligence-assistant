@@ -364,8 +364,10 @@ RoleVerdicts {
   leftMachine: boolean;      // true if any call in this analysis used a hosted provider
   verdicts: Verdict[];
   keywordCoverage: { exact: string[]; alias: string[]; missing: string[] };
-  gapPlan: { requirementId; dimension: "match" | "seniority" | "experience";
-             current: number; delta: number }[];   // ordered by delta descending
+  gapPlan: { requirementId; dimension: "match" | "seniority" | "experience" | "recency";
+             current: number; delta: number }[];   // ordered by delta descending;
+                                                  // current: 0–4 judge anchor,
+                                                  // or 0–1 recency weight
 }
 
 Verdict {
@@ -401,6 +403,10 @@ never chunk text. A v2 role's `counts` on
 `GET /api/roles/{id}` count these verdict labels, and its `fitScore` is the v2 score.
 Shared requirement/breakdown/gap/preparation/draft routes project these validated
 results and the published score. They no longer depend on retired analysis tables.
+Recency is a domain-calculated gap category, not a fourth judge dimension. Its
+current weighting factor is displayed as a percentage (0.6 means 60%); other gap
+dimensions display their 0–4 anchors. One valid recency gap must not prevent the
+shared Fit/Gaps response from loading. Unknown dimension strings remain invalid.
 The web app reads Fit/Gaps from verdicts for every ready role. `analysisPipeline`
 remains `"v2"` or null as a compatibility attribution field; it is not a selector.
 The TypeScript types live in `frontend/src/types/index.ts`.

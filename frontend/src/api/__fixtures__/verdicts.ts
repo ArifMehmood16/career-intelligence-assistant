@@ -40,6 +40,14 @@ export const VERDICTS: RoleVerdicts = {
   ],
 };
 
+/** Recency is a domain weighting factor, separate from the judge's anchors. */
+export const RECENCY_VERDICTS: RoleVerdicts = {
+  ...VERDICTS,
+  gapPlan: [
+    { requirementId: "r1", dimension: "recency", current: 0.6, delta: 4.8 },
+  ],
+};
+
 export const TRACE: RetrievalTrace = {
   requirementId: "r1",
   rounds: [

@@ -32,6 +32,13 @@ adds content-free timeout/judge diagnostics under 19.2. Read-only timings sugges
 three exhausted 60-second judge attempts; the local ignored limit is now 180 seconds.
 This is an unverified mitigation; no complete-analysis or release gate is closed.
 
+The human subsequently reported a completed analysis; read-only HTTP confirms a
+ready role and published verdicts. The [19.1 recency display repair](specs/004-recency-gap-display/spec.md)
+aligns the frontend with the domain's existing fourth gap category, which the
+client previously rejected. The same live result now passes client validation
+through API and web proxy; synthetic gallery rendering was inspected. Suites and
+release/quality gates remain pending; no reanalysis or scoring change is needed.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer

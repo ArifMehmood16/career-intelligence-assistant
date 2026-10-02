@@ -18,6 +18,31 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Recency gap display repair
+
+- Date: 2026-10-02
+- Commands run: branch creation from 5e67682; Spec Kit setup/prerequisite scripts;
+  read-only local HTTP response inspection; Bun calls of actual roleVerdictsSchema
+  against API and same-origin web proxy; targeted `bunx --no-install prettier
+  --write`; source/diff review and local commit. Browser DOM/screenshot inspection
+  used the local synthetic /dev/states gallery.
+- Observed result: ready role publishes 18 verdicts. Before repair, eight gap
+  dimension fields fail client validation as invalid_value. Their fixed value is
+  recency, already supported by the domain. After repair both API and proxy HTTP
+  200 responses pass the client schema: 18 verdicts, 9 gaps, 8 recency gaps.
+  The synthetic gallery renders Evidence recency · current weight 60% and a
+  Match · now 1 / 4 gap. A synthetic screenshot is outside Git.
+- Decisions made: preserve judge anchors and server arithmetic; extend only the
+  frontend gap category/type and show recency percentage weight. API/product docs
+  disagreed with domain code and are corrected. Existing layout/tokens reused;
+  no new visual pattern, backend behavior, model call, DB write or dependency.
+- Verification: focused API/container/panel/gallery regressions authored, not run;
+  tests/lint/typecheck/security and release checks remain deferred. Live diagnosis
+  is not a passing release/quality gate. No raw personal content printed or saved.
+  Source privacy/design review performed; no Sonar scan.
+- Carried forward: refresh or Retry the existing publication after frontend reload;
+  no reanalysis needed. Complete deferred checks when authorized.
+
 ## Phase 19.2 — Incomplete judge diagnostics
 
 - Date: 2026-10-02

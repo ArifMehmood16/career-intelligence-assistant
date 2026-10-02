@@ -277,6 +277,9 @@ export interface SupportingDocument {
 export type VerdictLabel = "met" | "partial" | "missing";
 export type JudgeDimension = "match" | "seniority" | "experience";
 
+/** Recency is computed by the domain; it is not another judge score. */
+export type GapDimension = JudgeDimension | "recency";
+
 /** A judge score on the 0–4 anchors, and the judge's own reason for it. */
 export interface DimensionScore {
   score: number;
@@ -316,7 +319,8 @@ export interface KeywordCoverage {
 
 export interface V2Gap {
   requirementId: string;
-  dimension: JudgeDimension;
+  dimension: GapDimension;
+  /** Judge anchor (0–4), or the recency weighting factor (0–1). */
   current: number;
   delta: number;
 }

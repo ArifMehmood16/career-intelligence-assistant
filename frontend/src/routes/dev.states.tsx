@@ -192,8 +192,8 @@ const sampleVerdicts: RoleVerdicts = {
     },
     {
       requirementId: "req-python",
-      dimension: "experience",
-      current: 2,
+      dimension: "recency",
+      current: 0.6,
       delta: 4.1,
     },
   ],

@@ -8,7 +8,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
+import { RECENCY_VERDICTS, TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
 
 import { RoleFitContainer } from "./RoleFitContainer";
 
@@ -40,6 +40,28 @@ function stubRoutes(verdicts: () => Response) {
 }
 
 describe("RoleFitContainer", () => {
+  it("loads fit details when the shared result includes a recency gap", async () => {
+    stubRoutes(() => Response.json(RECENCY_VERDICTS));
+    wrap(<RoleFitContainer roleId="role-1" pane="fit" />);
+
+    expect(
+      await screen.findByRole("article", {
+        name: "Has five or more years of Python.",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/could not be loaded/i)).toBeNull();
+  });
+
+  it("loads recency gap details from the shared result", async () => {
+    stubRoutes(() => Response.json(RECENCY_VERDICTS));
+    wrap(<RoleFitContainer roleId="role-1" pane="gaps" />);
+
+    expect(
+      await screen.findByText(/Evidence recency.*60%/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("+4.8")).toBeInTheDocument();
+  });
+
   it("shows the verdicts and loads a trace only when asked", async () => {
     const calls = stubRoutes(() => Response.json(VERDICTS));
     wrap(<RoleFitContainer roleId="role-1" pane="fit" />);

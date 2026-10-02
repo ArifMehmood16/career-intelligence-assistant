@@ -6,7 +6,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
+import { RECENCY_VERDICTS, TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
 
 import { TraceDrawer } from "./TraceDrawer";
 import { VerdictGapsPanel } from "./VerdictGapsPanel";
@@ -67,8 +67,25 @@ describe("TraceDrawer", () => {
 });
 
 describe("VerdictGapsPanel", () => {
+  it("shows recency as percentage weight rather than a judge anchor", () => {
+    render(
+      <VerdictGapsPanel
+        state="ready"
+        verdicts={RECENCY_VERDICTS}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    const item = screen.getByRole("listitem");
+    expect(item).toHaveTextContent("Evidence recency · current weight 60%");
+    expect(item).toHaveTextContent("+4.8");
+    expect(item).not.toHaveTextContent("/ 4");
+  });
+
   it("orders the gaps by what closing them would add", () => {
-    render(<VerdictGapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />);
+    render(
+      <VerdictGapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />,
+    );
 
     const items = screen.getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Has five or more years of Python.");
@@ -94,7 +111,9 @@ describe("VerdictGapsPanel", () => {
       <VerdictGapsPanel state="loading" verdicts={null} onRetry={vi.fn()} />,
     );
     expect(container.querySelector(".animate-pulse")).toBeTruthy();
-    rerender(<VerdictGapsPanel state="error" verdicts={null} onRetry={vi.fn()} />);
+    rerender(
+      <VerdictGapsPanel state="error" verdicts={null} onRetry={vi.fn()} />,
+    );
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     rerender(
       <VerdictGapsPanel state="incomplete" verdicts={null} onRetry={vi.fn()} />,

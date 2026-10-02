@@ -348,7 +348,7 @@ export const roleVerdictsSchema = z.object({
   gapPlan: z.array(
     z.object({
       requirementId: z.string(),
-      dimension: z.enum(["match", "seniority", "experience"]),
+      dimension: z.enum(["match", "seniority", "experience", "recency"]),
       current: z.number(),
       delta: z.number(),
     }),
