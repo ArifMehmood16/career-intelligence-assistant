@@ -308,7 +308,7 @@ def test_ollama_sends_the_json_schema_as_structured_format() -> None:
         "required": ["requirements"],
     }
     transport = _RecordingTransport(
-        HttpResponse(200, json.dumps({"response": "{}"}).encode(), {})
+        HttpResponse(200, json.dumps({"message": {"content": "{}"}}).encode(), {})
     )
     adapter = OllamaCompletionAdapter(
         base_url="http://ollama.test",

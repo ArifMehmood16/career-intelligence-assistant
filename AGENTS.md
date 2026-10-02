@@ -10,7 +10,10 @@ Instructions the human gives in a session take precedence over this file.
 | Question | Authority |
 |---|---|
 | What are the rules for agents? | `AGENTS.md` (this file) |
-| What does a task require, and when is it done? | `PLAN.md` — tasks, acceptance criteria and exit gates |
+| What does a milestone require, and when is it done? | `PLAN.md` — milestone acceptance and release gates |
+| What does a scoped change require? | `specs/<change>/spec.md`, linked to its root PLAN/BACKLOG item |
+| How is that change designed and executed? | The feature `plan.md` and `tasks.md`; these are not a second roadmap |
+| What constrains Spec Kit plans? | `.specify/memory/constitution.md`, derived from these rules and accepted ADRs |
 | What is still open, and in what order? | `BACKLOG.md` — every open item in one list, each pointing at its `PLAN.md` id |
 | What does the product do? | `docs/features.md`, including "Deliberately not features" |
 | What is the wire format? | `docs/api-contract.md` |
@@ -22,6 +25,25 @@ Instructions the human gives in a session take precedence over this file.
 When a document disagrees with the code, the code is what runs. Say so in your report,
 then either fix the document or raise the defect in `BACKLOG.md`. Never leave the
 disagreement silently in place.
+
+## Spec Kit adoption
+
+GitHub Spec Kit v1.0.13 is installed as repository-local Codex skills. Use
+`$speckit-specify`, clarify when needed, plan, tasks and analyze for one bounded
+change to this existing system. The setup and next steps are in
+[docs/spec-kit.md](docs/spec-kit.md).
+
+Feature specs elaborate the root milestone and must link to its PLAN/BACKLOG item.
+Inspect and reuse existing modules; do not generate a new application, repeat the
+roadmap, restore v1, or treat upstream example setup tasks as work for this codebase.
+Keep completed feature artifacts as historical change records and maintain current
+behavior in the existing product/API/architecture docs. Use the existing manual
+Git workflow; a Git extension is not required.
+
+The human deferred tests/lint until the end. That instruction remains in force until
+changed explicitly: generated validation tasks stay pending, and no template or
+skill may turn deferred verification into a passing gate. Constitution generation
+and planning alone verify no application behavior.
 
 ## Mission
 
@@ -36,27 +58,26 @@ frameworks or services.
 
 ## The invariant
 
-**The model extracts. The domain decides.**
+**The model reads and judges. The server verifies. The domain computes fit.**
 
-- A language model may classify server-issued spans of a job description or CV, may
-  assess retrieved evidence against a requirement's stated criteria, and may phrase an
-  answer.
-- A language model may **not** produce the fit score. The server validates every
-  assessment; a missing or invalid assessment is incomplete, never a match. Domain
-  code calculates the score. A citation proves where text came from and does not
-  prove that the text supports the requirement. See
-  [ADR 011](docs/adr/011-evidence-assessment-contract.md).
-- Every requirement-to-evidence mapping carries the span identifiers that justify it.
-  A mapping with no spans is `missing`, never a guess.
-- An incomplete extraction or assessment is a failed analysis, not a low score. It
-  never publishes a number, a band or a ranking position.
-- If a change would let model output reach the user without passing the span check,
-  stop and raise it. That is an architectural change, not an implementation detail.
-- A provider is chosen, never assumed. The product default is a local Ollama model.
-  The hermetic adapters are the test fixture `make test` selects. The local and
-  hosted adapters are equals behind the same port, and every one of them passes the
-  same contract suite. Any behaviour that only works on one vendor is a bug in the
-  port.
+- The sole running analysis is chunk/search/judge with domain aggregation (ADR 016).
+  Never rebuild the retired classifier/assessor pipeline or selector.
+- Chunks are server-issued line ranges, reconstructed from stored text. Surface
+  fields and evidence quotes must resolve verbatim to stored chunks/spans.
+- The model may judge match, seniority and experience with explicit anchors, and
+  phrase grounded output. It may not emit the fit score. Domain code aggregates
+  validated judgments with the configured rubric.
+- Incomplete chunking or judging fails the analysis and publishes no score/band or
+  ranking position. A citation proves provenance, not semantic support.
+- Fit, gaps, ranking, preparation, drafts, Ask and MCP consume the same validated
+  publication. Shared view value types must not introduce an alternate score path.
+- Ollama, OpenAI and Anthropic have independent provider builders and model profiles.
+  Application code reads injected context/output/concurrency capabilities, never a
+  vendor-name conditional. Hosted egress remains explicitly gated. Hermetic adapters
+  are test fixtures at provider boundaries, executing the same application pipeline.
+- Independent I/O may overlap using bounded threads. CPU-heavy binary parsing uses
+  spawned processes. Do not pass SQL sessions/provider clients into parsing tasks.
+  Progress/accounting/cancellation context must survive thread boundaries.
 
 ## Product scope
 
@@ -79,8 +100,8 @@ are authoritative for product behaviour. Non-negotiable boundaries for this buil
 For every task:
 
 1. Read this file, `BACKLOG.md`, the relevant `PLAN.md` phase and the newest relevant
-   entries at the top of `AI_DEVELOPMENT_LOG.md`. Read `README.md` when the task
-   touches setup, scope or architecture.
+   entries at the top of `AI_DEVELOPMENT_LOG.md`. Read `README.md`, and the page it
+   links for the topic, when the task touches setup, scope or architecture.
 2. Take the first open item in the `BACKLOG.md` "Now" section unless the human names
    another. Do not start a later phase while an earlier exit gate is open, unless the
    human overrides that and `PLAN.md` records the override.
@@ -213,11 +234,10 @@ Patterns already in the codebase. Extend these rather than inventing a parallel 
 |---|---|---|
 | Ports and adapters | `application/ports/`, `adapters/` | Every external system |
 | Strategy | provider adapters, model and rules extractors, relatedness | Behaviour chosen at runtime |
-| Factory | `adapters/providers/factory.py`, `build_sql_stores` | Building adapters from configuration and the egress gate |
+| Factory | `adapters/providers/factory.py`, provider `builders.py`, `build_sql_stores` | Building adapters from configuration and the egress gate |
 | Decorator | `AccountingCompletion`, `AccountingEmbedding` | Cross-cutting concerns without touching the wrapped adapter |
 | Circuit breaker | `adapters/providers/resilience.py` | Provider failure isolation |
 | Repository and unit of work | `adapters/persistence/` | Transactional persistence and one-transaction hard delete |
-| Null object | `NullAdjudicator` | An optional collaborator without `is None` checks |
 | Value object | frozen dataclasses in `domain/` | Immutable domain data |
 | Container and presentational components | `frontend/src/components/` | Fetching separated from rendering |
 
@@ -252,7 +272,7 @@ Name the pattern in the commit body when you introduce or extend one.
 
 ## Test layers
 
-- **Unit:** parsing, span classification contracts, evidence assessment, mapping,
+- **Unit:** parsing, chunk/requirement contracts, evidence judging, retrieval,
   scoring rubric, prompt construction, intent routing.
 - **Contract:** one suite that every completion adapter and every embedding adapter
   must pass, run against recorded fixtures. No live vendor calls in any default run.
@@ -263,11 +283,11 @@ Name the pattern in the commit body when you introduce or extend one.
 - **End-to-end:** one critical journey — upload CV, add a job description, see the
   mapping, ask a gap question, open a citation — with deterministic providers
   (Playwright, `make test-e2e`, PLAN 16.5).
-- **Evaluation:** extraction, assessment and ranking quality against the labelled
-  fixture set (`make test-evaluation`).
-- **Smoke:** a real local Ollama provider, explicitly enabled, never in default runs.
-  From `backend/`:
-  `RUN_LLM_SMOKE=1 .venv/bin/pytest tests/smoke/test_ollama_pilot.py -m smoke --no-cov -s`.
+- **Evaluation:** current chunking, judgement and ranking quality against the
+  labelled fixture set (PLAN 19.4). The retired v1 evaluator and command are removed.
+- **Live evaluation:** explicitly enabled and synthetic-data-only, never in default
+  runs. Current cold/warm latency and quality evaluation are tracked in PLAN 19.4;
+  the retired Ollama classifier smoke entry point has been removed.
 
 Default tests are deterministic, repeatable and independent of paid APIs or public
 network access.
@@ -347,7 +367,10 @@ Update `docs/threat-model.md` when a trust boundary or control changes.
 
 Documentation is part of the change.
 
-- Keep `README.md` commands, status and scope boundaries accurate.
+- Keep `README.md` short: status, what the product does, one diagram, quick start and
+  the documentation index. Detail lives in the page it links (`docs/running-locally.md`,
+  `docs/architecture.md`, `docs/model-providers.md` and the rest). Keep both accurate:
+  commands, status and scope boundaries.
 - Keep `BACKLOG.md` current: add an item when you find open work, remove or tick it
   when its `PLAN.md` box is ticked. Do not restate acceptance criteria there — link
   the `PLAN.md` id.

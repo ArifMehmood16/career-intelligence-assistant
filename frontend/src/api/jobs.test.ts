@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getJob, reanalyseRole } from "./client";
+import { getJob, getRoles, reanalyseRole } from "./client";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -88,5 +88,79 @@ describe("reanalyseRole", () => {
     });
 
     await expect(reanalyseRole("role-1")).resolves.toEqual({ jobId: "job-9" });
+  });
+});
+
+const PROGRESS = {
+  tasksDone: 1,
+  tasksTotal: 7,
+  fraction: 1 / 7,
+  currentTask: "read_advert",
+  elapsedSeconds: 4,
+  remainingSeconds: null,
+  queuePosition: null,
+  modelCallsDone: 1,
+  modelCallsRemaining: 4,
+  embeddingCallsDone: 0,
+  embeddingCallsRemaining: 1,
+  callEstimateComplete: false,
+  tasks: [
+    { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "read_advert", state: "running", unitsDone: 0, unitsTotal: null },
+    { key: "read_cv", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "search", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "judge", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "recheck", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
+  ],
+};
+
+const RUNNING_JOB = {
+  id: "job-3",
+  kind: "role_analysis",
+  state: "running",
+  stage: "extracting_requirements",
+  startedAt: "2026-09-29T12:00:00Z",
+  finishedAt: null,
+  error: null,
+  progress: PROGRESS,
+};
+
+describe("analysis progress on the wire", () => {
+  it("keeps a job's progress snapshot", async () => {
+    stubFetch(() => Response.json(RUNNING_JOB));
+
+    await expect(getJob("job-3")).resolves.toMatchObject({
+      progress: PROGRESS,
+    });
+  });
+
+  it("maps each role's active job, and leaves it out when absent", async () => {
+    const role = {
+      id: "role-1",
+      title: "AE",
+      company: "Acme",
+      fitScore: 0,
+      bandLabel: "Not scored yet",
+      counts: { met: 0, partial: 0, missing: 0 },
+      status: "analysing",
+      updatedAt: "2026-09-29T12:00:00Z",
+    };
+    stubFetch(() =>
+      Response.json([
+        { ...role, activeJob: RUNNING_JOB },
+        { ...role, id: "role-2", status: "ready", activeJob: null },
+        { ...role, id: "role-3", status: "ready" },
+      ]),
+    );
+
+    const [running, ready, older] = await getRoles();
+
+    expect(running?.activeJob).toMatchObject({
+      id: "job-3",
+      progress: PROGRESS,
+    });
+    expect(ready?.activeJob).toBeNull();
+    expect(older).not.toHaveProperty("activeJob");
   });
 });

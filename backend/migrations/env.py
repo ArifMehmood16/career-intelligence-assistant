@@ -12,6 +12,7 @@ from sqlalchemy import engine_from_config, pool
 # Ensure `src` is importable when alembic runs from backend/.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from career_assistant.adapters.persistence import models_v2  # noqa: E402,F401
 from career_assistant.adapters.persistence.models import Base  # noqa: E402
 from career_assistant.settings import DatabaseSettings  # noqa: E402
 

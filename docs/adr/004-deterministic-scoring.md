@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-09-18
+- Superseded in part: [ADR 014](014-model-judges-domain-aggregates.md) (2026-09-29). The fit score stays arithmetic in domain code; the model's per-dimension judgements are its inputs.
 
 ## Context
 

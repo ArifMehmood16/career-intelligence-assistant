@@ -7,9 +7,10 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EvidencePanel } from "@/components/EvidencePanel";
-import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
-import { GapsPanel } from "@/components/role/GapsPanel";
-import type { BulletDraft, GapItem } from "@/types";
+import { VerdictsPanel } from "@/components/role/verdicts/VerdictsPanel";
+import { VerdictGapsPanel } from "@/components/role/verdicts/VerdictGapsPanel";
+import { VERDICTS } from "@/api/__fixtures__/verdicts";
+import type { RoleVerdicts } from "@/types";
 
 afterEach(() => {
   cleanup();
@@ -43,76 +44,29 @@ describe("Phase 13.10 escaped text", () => {
     expect(document.querySelector("script")).toBeNull();
   });
 
-  it("renders gap adjacent claims and bullet drafts as text", () => {
-    const item: GapItem = {
-      requirementId: "req-1",
-      requirementText: scripty,
-      type: "must",
-      status: "partial",
-      reason: "adjacent_claim_only",
-      adjacentEvidence: {
-        spanId: "span-1",
-        documentId: "doc-1",
-        page: 1,
-        paragraph: xss,
-        highlight: xss,
-      },
-      scoreDelta: 4,
-      action: "evidence_it",
-      canDraftBullet: true,
+  it("renders verdict evidence and gap statements as escaped text", () => {
+    const verdicts: RoleVerdicts = {
+      ...VERDICTS,
+      verdicts: VERDICTS.verdicts.map((item) => ({
+        ...item,
+        quote: xss,
+        statement: scripty,
+        match: { ...item.match, rationale: scripty },
+        evidence: [{ chunkId: "c1", documentId: "cv-1", quote: xss }],
+      })),
     };
-    const draft: BulletDraft = {
-      id: "d1",
-      version: 1,
-      createdAt: "2026-09-18T12:00:00Z",
-      requirementId: "req-1",
-      bullets: [
-        {
-          text: `- Shipped ${xss}`,
-          spanIds: ["span-1"],
-          evidence: [
-            {
-              spanId: "span-1",
-              documentId: "doc-1",
-              page: 1,
-              paragraph: xss,
-              highlight: xss,
-            },
-          ],
-        },
-      ],
-      provenance: {
-        provider: "hermetic",
-        model: null,
-        leftMachine: false,
-        generatedAt: "2026-09-18T12:00:00Z",
-        grounded: true,
-        fallback: "template",
-      },
-    };
-
     render(
       <div>
-        <GapsPanel
+        <VerdictsPanel
           state="ready"
-          currentScore={50}
-          items={[item]}
+          verdicts={verdicts}
           onRetry={vi.fn()}
-          onSelectEvidence={vi.fn()}
-          onDraftBullet={vi.fn()}
+          onShowTrace={vi.fn()}
         />
-        <BulletDraftPanel
-          state="ready"
-          draft={draft}
-          onRetry={vi.fn()}
-          onCopy={vi.fn()}
-          onCitation={vi.fn()}
-          onDismiss={vi.fn()}
-        />
+        <VerdictGapsPanel state="ready" verdicts={verdicts} onRetry={vi.fn()} />
       </div>,
     );
-
-    expect(screen.getByText(scripty)).toBeInTheDocument();
+    expect(screen.getAllByText(scripty).length).toBeGreaterThan(0);
     expect(document.querySelector("script")).toBeNull();
     expect(document.querySelector("img")).toBeNull();
     expect(window).not.toHaveProperty("__pwned");

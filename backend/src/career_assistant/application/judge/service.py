@@ -1,0 +1,361 @@
+"""Judge atomic requirements against retrieved evidence (ADR 014, PLAN 18.7).
+
+The model proposes verdicts; `domain.judging` decides which stand. A requirement
+that breaks a server rule goes back once, with the problems listed. A requirement
+still invalid after that, or in a batch the provider could not answer, is
+incomplete — the analysis then publishes no score, never a low one. A provider that
+is unavailable or not permitted is not a verdict at all, so that error propagates.
+"""
+
+from __future__ import annotations
+
+import logging
+import threading
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
+from datetime import date
+
+from career_assistant.application.contracts.judge import (
+    DimensionJudgement,
+    JudgeResponse,
+    RequirementVerdict,
+)
+from career_assistant.application.judge.cache import ModelIdentity, verdict_key
+from career_assistant.application.judge.prompt import (
+    JUDGE_SYSTEM,
+    JudgeLimits,
+    judge_batches,
+    judge_output_limit,
+    judge_user,
+    render_facts,
+)
+from career_assistant.application.ports.errors import (
+    ProviderInputTooLargeError,
+    ProviderRefusedError,
+    ProviderTransientError,
+    StructuredOutputError,
+    StructuredOutputInvalidError,
+    StructuredOutputTruncatedError,
+)
+from career_assistant.application.ports.progress import plan_calls
+from career_assistant.application.ports.structured import (
+    StructuredCompletionPort,
+    StructuredRequest,
+    StructuredResult,
+)
+from career_assistant.application.ports.verdicts import VerdictCache, VerdictRecord
+from career_assistant.application.providers.fanout import map_in_order
+from career_assistant.domain.candidate_facts import CandidateFacts
+from career_assistant.domain.judging import (
+    ProposedQuote,
+    ProposedScore,
+    ProposedVerdict,
+    RequirementPacket,
+    check_verdicts,
+)
+from career_assistant.logconfig import log_event, log_failure
+
+_log = logging.getLogger(__name__)
+_FAILURE_CATEGORIES = (
+    (StructuredOutputTruncatedError, "truncated"),
+    (ProviderInputTooLargeError, "input_too_large"),
+    (StructuredOutputInvalidError, "invalid_output"),
+    (ProviderRefusedError, "refused"),
+    (ProviderTransientError, "transient"),
+)
+
+# Truncation is handled first, by splitting the batch.
+_UNANSWERED = (
+    StructuredOutputError,
+    ProviderRefusedError,
+    ProviderTransientError,
+    ProviderInputTooLargeError,
+)
+_REPAIR_OPENING = "Your previous verdicts broke these rules:"
+_REPAIR_CLOSING = (
+    "Return one verdict for each requirement above, following every rule, "
+    "as the complete JSON object."
+)
+
+
+@dataclass(frozen=True, slots=True)
+class JudgeOutcome:
+    verdicts: Mapping[str, VerdictRecord]
+    incomplete: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _Context:
+    facts: CandidateFacts
+    as_of: date
+    keys: Mapping[str, str]
+
+
+class RequirementJudge:
+    def __init__(
+        self,
+        structured: StructuredCompletionPort,
+        cache: VerdictCache,
+        model: ModelIdentity,
+        limits: JudgeLimits,
+    ) -> None:
+        self._structured = structured
+        self._cache = cache
+        self._model = model
+        self._limits = limits
+
+    @property
+    def hosted(self) -> bool:
+        return self._structured.capabilities.leaves_machine
+
+    @property
+    def concurrency(self) -> int:
+        return self._structured.capabilities.execution.completion_concurrency
+
+    def judge(
+        self,
+        packets: Sequence[RequirementPacket],
+        facts: CandidateFacts,
+        *,
+        as_of: date,
+        on_judged: Callable[[int], None] | None = None,
+    ) -> JudgeOutcome:
+        """Judge every packet. `on_judged` hears how many have been handled."""
+        report = on_judged or _ignore
+        capabilities = self._structured.capabilities
+        model = replace(self._model, model_digest=capabilities.model_digest)
+        keys = {
+            p.requirement_id: verdict_key(p, facts, model, as_of=as_of) for p in packets
+        }
+        context = _Context(facts=facts, as_of=as_of, keys=keys)
+        records: dict[str, VerdictRecord] = {}
+        pending: list[RequirementPacket] = []
+        for packet in packets:
+            hit = self._cache.find(keys[packet.requirement_id])
+            if hit is None:
+                pending.append(packet)
+            else:
+                records[packet.requirement_id] = _rebound(hit, packet.requirement_id)
+        handled = len(packets) - len(pending)
+        report(handled)
+        prefix = len(render_facts(facts, as_of=as_of))
+        batches = judge_batches(
+            pending, capabilities, self._limits, prefix_chars=prefix
+        )
+        plan_calls(model=len(batches))
+        if self.concurrency > 1 and len(batches) > 1:
+            records.update(self._judge_parallel(batches, context, handled, report))
+        else:
+            for batch in batches:
+                records.update(self._judge_batch(batch, context))
+                handled += len(batch)
+                report(handled)
+        incomplete = tuple(
+            p.requirement_id for p in packets if p.requirement_id not in records
+        )
+        if incomplete:
+            log_failure(
+                _log,
+                "judge.incomplete",
+                provider_id=self._model.provider_id,
+                model_tag=self._model.model_tag,
+                requirement_count=len(packets),
+                accepted_count=len(records),
+                incomplete_count=len(incomplete),
+            )
+        return JudgeOutcome(verdicts=records, incomplete=incomplete)
+
+    def _judge_parallel(
+        self,
+        batches: Sequence[Sequence[RequirementPacket]],
+        context: _Context,
+        handled: int,
+        report: Callable[[int], None],
+    ) -> dict[str, VerdictRecord]:
+        """Independent batches share no verdicts. A repair stays inside its batch."""
+        state = {"handled": handled}
+        lock = threading.Lock()
+
+        def one(batch: Sequence[RequirementPacket]) -> dict[str, VerdictRecord]:
+            judged = self._judge_batch(batch, context)
+            with lock:
+                state["handled"] += len(batch)
+                report(state["handled"])
+            return judged
+
+        merged: dict[str, VerdictRecord] = {}
+        for part in map_in_order(
+            batches, one, parallel=True, max_workers=self.concurrency
+        ):
+            merged.update(part)
+        return merged
+
+    def _judge_batch(
+        self, batch: Sequence[RequirementPacket], context: _Context
+    ) -> dict[str, VerdictRecord]:
+        user = judge_user(context.facts, batch, as_of=context.as_of)
+        try:
+            result = self._call(user)
+        except (StructuredOutputTruncatedError, ProviderInputTooLargeError) as exc:
+            self._call_failed(exc, "initial", len(batch))
+            return self._split(batch, context)
+        except _UNANSWERED as exc:
+            self._call_failed(exc, "initial", len(batch))
+            return {}
+        records, problems = self._accept(batch, result, context)
+        self._rejected("initial", len(batch), len(records), len(problems))
+        failed = [p for p in batch if p.requirement_id in problems]
+        if failed:
+            records.update(self._repair(failed, problems, context))
+        return records
+
+    def _split(
+        self, batch: Sequence[RequirementPacket], context: _Context
+    ) -> dict[str, VerdictRecord]:
+        if len(batch) == 1:
+            return {}
+        half = len(batch) // 2
+        plan_calls(model=2)
+        return {
+            **self._judge_batch(batch[:half], context),
+            **self._judge_batch(batch[half:], context),
+        }
+
+    def _repair(
+        self,
+        failed: Sequence[RequirementPacket],
+        problems: Mapping[str, tuple[str, ...]],
+        context: _Context,
+    ) -> dict[str, VerdictRecord]:
+        listed = [
+            f"- {p.requirement_id}: {problem}"
+            for p in failed
+            for problem in problems[p.requirement_id]
+        ]
+        user = "\n\n".join(
+            [
+                judge_user(context.facts, failed, as_of=context.as_of),
+                "\n".join([_REPAIR_OPENING, *listed]),
+                _REPAIR_CLOSING,
+            ]
+        )
+        plan_calls(model=1)
+        try:
+            result = self._call(user)
+        except _UNANSWERED as exc:
+            self._call_failed(exc, "repair", len(failed))
+            return {}
+        records, remaining = self._accept(failed, result, context)
+        self._rejected("repair", len(failed), len(records), len(remaining))
+        return records
+
+    def _call_failed(
+        self, error: Exception, phase: str, requirement_count: int
+    ) -> None:
+        category = "structured_output"
+        for error_type, name in _FAILURE_CATEGORIES:
+            if isinstance(error, error_type):
+                category = name
+                break
+        log_failure(
+            _log,
+            "judge.call_failed",
+            provider_id=self._model.provider_id,
+            model_tag=self._model.model_tag,
+            phase=phase,
+            requirement_count=requirement_count,
+            error_category=category,
+        )
+
+    def _rejected(
+        self, phase: str, requirement_count: int, accepted: int, rejected: int
+    ) -> None:
+        if rejected:
+            log_event(
+                _log,
+                "judge.verdicts_rejected",
+                provider_id=self._model.provider_id,
+                model_tag=self._model.model_tag,
+                phase=phase,
+                requirement_count=requirement_count,
+                accepted_count=accepted,
+                rejected_count=rejected,
+            )
+
+    def _accept(
+        self,
+        batch: Sequence[RequirementPacket],
+        result: StructuredResult[JudgeResponse],
+        context: _Context,
+    ) -> tuple[dict[str, VerdictRecord], Mapping[str, tuple[str, ...]]]:
+        check = check_verdicts(batch, [_proposed(v) for v in result.value.verdicts])
+        same_model = (result.provider_id, result.model_tag) == (
+            self._model.provider_id,
+            self._model.model_tag,
+        )
+        records: dict[str, VerdictRecord] = {}
+        for requirement_id, verdict in check.verdicts.items():
+            key = context.keys[requirement_id]
+            record = VerdictRecord(
+                verdict=verdict,
+                input_hash=key,
+                provider_id=result.provider_id,
+                model_tag=result.model_tag,
+                left_machine=result.left_machine,
+            )
+            if same_model:
+                self._cache.keep(key, record)
+            records[requirement_id] = record
+        return records, check.problems
+
+    def _call(self, user: str) -> StructuredResult[JudgeResponse]:
+        capabilities = self._structured.capabilities
+        request = StructuredRequest(
+            contract=JudgeResponse,
+            system=JUDGE_SYSTEM,
+            user=user,
+            max_output_tokens=min(
+                judge_output_limit(capabilities, self._limits),
+                max(
+                    1,
+                    capabilities.context_window_tokens
+                    - (len(JUDGE_SYSTEM) + len(user) + 3)
+                    // self._limits.chars_per_token,
+                ),
+            ),
+            temperature=0.0 if capabilities.supports_temperature else None,
+            seed=0 if capabilities.supports_seed else None,
+        )
+        return self._structured.complete_structured(request)
+
+
+def _ignore(handled: int) -> None:
+    del handled
+
+
+def _rebound(record: VerdictRecord, requirement_id: str) -> VerdictRecord:
+    verdict = replace(record.verdict, requirement_id=requirement_id)
+    return replace(record, verdict=verdict, cached=True)
+
+
+def _proposed(verdict: RequirementVerdict) -> ProposedVerdict:
+    return ProposedVerdict(
+        requirement_id=verdict.requirement_id,
+        verdict=verdict.verdict,
+        match=ProposedScore(verdict.match.score, verdict.match.rationale),
+        evidence=tuple(
+            ProposedQuote(q.chunk_id, q.quote) for q in verdict.match.evidence
+        ),
+        seniority=_score(verdict.seniority),
+        experience=_score(verdict.experience),
+        unmet_conditions=tuple(verdict.unmet_conditions),
+        contradiction=verdict.contradiction,
+        sufficient=verdict.retrieval_feedback.sufficient,
+        rewrite_query=verdict.retrieval_feedback.rewrite_query,
+    )
+
+
+def _score(judgement: DimensionJudgement | None) -> ProposedScore | None:
+    if judgement is None:
+        return None
+    return ProposedScore(judgement.score, judgement.rationale)

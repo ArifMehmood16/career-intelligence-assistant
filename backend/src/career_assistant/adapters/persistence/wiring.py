@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.conversation_store import (
@@ -21,24 +22,29 @@ from career_assistant.adapters.persistence.supporting_store import (
     SqlSupportingDocumentStore,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
+from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
 from career_assistant.logconfig import log_event
 from career_assistant.settings import DatabaseSettings, ProviderSettings
 
 _log = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class SqlStores:
+    cv: SqlCvStore
+    roles: SqlRoleStore
+    supporting: SqlSupportingDocumentStore
+    conversations: SqlConversationStore
+    provider_choices: SqlProviderSettingsStore
+    v2_results: SqlV2ResultReader
+    analysis_worker: SqlAnalysisWorker
+
+
 def build_sql_stores(
     settings: DatabaseSettings | None = None,
     *,
     providers: ProviderSettings | None = None,
-) -> tuple[
-    SqlCvStore,
-    SqlRoleStore,
-    SqlSupportingDocumentStore,
-    SqlConversationStore,
-    SqlProviderSettingsStore,
-    SqlAnalysisWorker,
-]:
+) -> SqlStores:
     """Build production stores over one engine."""
     database = settings or DatabaseSettings()
     engine = create_db_engine(database)
@@ -55,18 +61,17 @@ def build_sql_stores(
         return SqlUnitOfWork(session_factory)
 
     cv_store = SqlCvStore(uow_factory)
-    role_store = SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory)
-    supporting_store = SqlSupportingDocumentStore(
-        uow_factory=uow_factory, cv_store=cv_store
-    )
-    conversation_store = SqlConversationStore(uow_factory)
-    provider_choice_store = SqlProviderSettingsStore(uow_factory)
-    analysis_worker = SqlAnalysisWorker(uow_factory, providers=providers)
-    return (
-        cv_store,
-        role_store,
-        supporting_store,
-        conversation_store,
-        provider_choice_store,
-        analysis_worker,
+    return SqlStores(
+        cv=cv_store,
+        roles=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
+        supporting=SqlSupportingDocumentStore(
+            uow_factory=uow_factory, cv_store=cv_store
+        ),
+        conversations=SqlConversationStore(uow_factory),
+        provider_choices=SqlProviderSettingsStore(uow_factory),
+        v2_results=SqlV2ResultReader(uow_factory),
+        analysis_worker=SqlAnalysisWorker(
+            uow_factory, providers=providers,
+            max_concurrent=providers.analysis_max_concurrent_jobs if providers is not None else 1,
+        ),
     )

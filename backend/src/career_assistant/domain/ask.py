@@ -9,6 +9,7 @@ from career_assistant.domain.intents import Intent
 from career_assistant.domain.mapping import MappingStatus, RequirementMapping
 from career_assistant.domain.requirements import Requirement
 from career_assistant.domain.scoring import ScoreExplanation
+from career_assistant.domain.scoring_v2 import Gap
 
 
 class AnswerKind(StrEnum):
@@ -28,6 +29,18 @@ class AnswerResult:
     content: str
     citations: tuple[AnswerCitation, ...]
     intent: Intent
+    # The tools the agent called for this answer, in order; empty off the agent.
+    tool_steps: tuple[ToolStep, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ToolStep:
+    """One tool call: what the agent asked for and how much came back."""
+
+    name: str
+    arguments: tuple[tuple[str, str], ...]
+    found: int
+    failed: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +51,7 @@ class RoleAnalysisView:
     requirements: tuple[Requirement, ...]
     mappings: tuple[RequirementMapping, ...]
     span_texts: dict[str, str]
+    gaps: tuple[Gap, ...] = ()
 
 
 def validate_citations(

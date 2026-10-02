@@ -11,22 +11,10 @@ from sqlalchemy.orm import Session
 
 from career_assistant.adapters.persistence.models import (
     AnalysisJobRow,
-    ClaimRow,
-    ClaimSpanRow,
-    EmbeddingRow,
-    MappingRow,
-    MappingSpanRow,
-    RequirementRow,
     RoleRow,
     ScoreExplanationRow,
 )
 from career_assistant.application.ports.persistence import RoleRecord
-from career_assistant.domain.attribution import (
-    RUBRIC_VERSION,
-    AnalysisAttribution,
-    analysis_failure_status,
-)
-from career_assistant.domain.claims import Claim
 from career_assistant.domain.jobs import (
     AnalysisJob,
     JobError,
@@ -36,15 +24,8 @@ from career_assistant.domain.jobs import (
     RoleStatus,
     new_role_analysis_job,
 )
-from career_assistant.domain.mapping import (
-    MappingReason,
-    MappingStatus,
-    RequirementMapping,
-)
+from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.reanalysis import resolve_failed_analysis_pointer
-from career_assistant.domain.relatedness import RelatednessSignals
-from career_assistant.domain.requirements import Requirement
-from career_assistant.domain.scoring import ScoreExplanation
 from career_assistant.logconfig import log_event
 
 _log = logging.getLogger(__name__)
@@ -93,28 +74,6 @@ def _apply_job(row: AnalysisJobRow, job: AnalysisJob) -> None:
     row.finished_at = job.finished_at
     row.error_code = job.error.code if job.error else None
     row.error_message = job.error.message if job.error else None
-
-
-def _explanation_payload(explanation: ScoreExplanation) -> dict[str, object]:
-    return {
-        "score": explanation.score,
-        "band": explanation.band,
-        "denominator": explanation.denominator,
-        "numerator": explanation.numerator,
-        "components": [
-            {
-                "requirement_id": c.requirement_id,
-                "must_have": c.must_have,
-                "status": c.status.value,
-                "weight": c.weight,
-                "status_factor": c.status_factor,
-                "recency_factor": c.recency_factor,
-                "contribution": c.contribution,
-                "adjudicated": c.adjudicated,
-            }
-            for c in explanation.components
-        ],
-    }
 
 
 class SqlRoleRepository:
@@ -220,20 +179,6 @@ class SqlRoleRepository:
         )
         if row is None:
             raise KeyError(role_id)
-        requirement_ids = self._session.scalars(
-            select(RequirementRow.id).where(
-                RequirementRow.workspace_id == _as_uuid(workspace_id),
-                RequirementRow.role_id == _as_uuid(role_id),
-            )
-        ).all()
-        if requirement_ids:
-            self._session.execute(
-                delete(EmbeddingRow).where(
-                    EmbeddingRow.workspace_id == _as_uuid(workspace_id),
-                    EmbeddingRow.owner_kind == "requirement",
-                    EmbeddingRow.owner_id.in_(requirement_ids),
-                )
-            )
         self._session.delete(row)
         self._session.flush()
 
@@ -291,6 +236,18 @@ class SqlAnalysisJobRepository:
         )
         return _to_job(row) if row else None
 
+    def get_for_update(self, workspace_id: str, job_id: str) -> AnalysisJob | None:
+        """Read the job and hold its row lock until this unit of work ends."""
+        row = self._session.scalar(
+            select(AnalysisJobRow)
+            .where(
+                AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
+                AnalysisJobRow.id == _as_uuid(job_id),
+            )
+            .with_for_update()
+        )
+        return _to_job(row) if row else None
+
     def save(self, job: AnalysisJob) -> AnalysisJob:
         row = self._session.scalar(
             select(AnalysisJobRow).where(
@@ -342,6 +299,14 @@ class SqlAnalysisJobRepository:
         self._session.flush()
         return tuple(assigned)
 
+    def set_pipeline_version(
+        self, workspace_id: str, job_id: str, version: PipelineVersion
+    ) -> None:
+        row = self._session.get(AnalysisJobRow, _as_uuid(job_id))
+        if row is not None and row.workspace_id == _as_uuid(workspace_id):
+            row.pipeline_version = version.value
+            self._session.flush()
+
     def list_queued(self) -> tuple[AnalysisJob, ...]:
         return self._list_by_state(JobState.QUEUED)
 
@@ -362,11 +327,25 @@ class SqlAnalysisJobRepository:
         )
         return _to_job(row) if row is not None else None
 
+    def live_for_workspace(self, workspace_id: str) -> tuple[AnalysisJob, ...]:
+        """Queued and running jobs, in the order the worker takes them."""
+        rows = self._session.scalars(
+            select(AnalysisJobRow)
+            .where(
+                AnalysisJobRow.workspace_id == _as_uuid(workspace_id),
+                AnalysisJobRow.state.in_(
+                    (JobState.QUEUED.value, JobState.RUNNING.value)
+                ),
+            )
+            .order_by(AnalysisJobRow.created_at.asc(), AnalysisJobRow.id.asc())
+        ).all()
+        return tuple(_to_job(row) for row in rows)
+
     def _list_by_state(self, state: JobState) -> tuple[AnalysisJob, ...]:
         rows = self._session.scalars(
             select(AnalysisJobRow)
             .where(AnalysisJobRow.state == state.value)
-            .order_by(AnalysisJobRow.created_at.asc())
+            .order_by(AnalysisJobRow.created_at.asc(), AnalysisJobRow.id.asc())
         ).all()
         return tuple(_to_job(row) for row in rows)
 
@@ -381,140 +360,6 @@ class SqlAnalysisResultRepository:
         self._session = session
         self._roles = roles
         self._jobs = jobs
-
-    def publish(
-        self,
-        *,
-        workspace_id: str,
-        role_id: str,
-        analysis_version: int,
-        cv_document_id: str,
-        requirements: tuple[Requirement, ...],
-        claims: tuple[Claim, ...],
-        mappings: tuple[RequirementMapping, ...],
-        explanation: ScoreExplanation,
-        job: AnalysisJob,
-        attribution: AnalysisAttribution | None = None,
-    ) -> None:
-        wid = _as_uuid(workspace_id)
-        rid = _as_uuid(role_id)
-        # Replace any prior rows for this version (idempotent republish).
-        self._delete_analysis_rows(wid, rid, analysis_version)
-
-        for req in requirements:
-            self._session.add(
-                RequirementRow(
-                    id=_as_uuid(req.id),
-                    workspace_id=wid,
-                    role_id=rid,
-                    text=req.text,
-                    competency=req.competency,
-                    must_have=req.must_have,
-                    source_span_id=_as_uuid(req.source_span_id),
-                    extraction_confidence=req.extraction_confidence,
-                    seniority_signal=req.seniority_signal,
-                    is_vague=req.is_vague,
-                    item_type=req.item_type.value,
-                    analysis_version=analysis_version,
-                )
-            )
-
-        for claim in claims:
-            claim_id = _as_uuid(claim.id)
-            self._session.add(
-                ClaimRow(
-                    id=claim_id,
-                    workspace_id=wid,
-                    document_id=_as_uuid(cv_document_id),
-                    competency=claim.competency,
-                    context=claim.context,
-                    duration_signal=claim.duration_signal,
-                    recency_signal=claim.recency_signal,
-                    employer=claim.employer,
-                    title=claim.title,
-                    scope=claim.scope,
-                    technologies=list(claim.technologies),
-                    outcome=claim.outcome,
-                    extraction_confidence=claim.extraction_confidence,
-                    period_start=claim.period_start,
-                    period_end=claim.period_end,
-                    self_authored=claim.self_authored,
-                )
-            )
-            for span_id in claim.source_span_ids:
-                self._session.add(
-                    ClaimSpanRow(
-                        workspace_id=wid,
-                        claim_id=claim_id,
-                        span_id=_as_uuid(span_id),
-                    )
-                )
-
-        self._session.flush()
-
-        for mapping in mappings:
-            mapping_id = uuid.uuid4()
-            self._session.add(
-                MappingRow(
-                    id=mapping_id,
-                    workspace_id=wid,
-                    role_id=rid,
-                    requirement_id=_as_uuid(mapping.requirement_id),
-                    status=mapping.status.value,
-                    reason_code=mapping.reason_code.value,
-                    signals=mapping.signals.as_payload(),
-                    analysis_version=analysis_version,
-                    invalidated=False,
-                )
-            )
-            for span_id in mapping.justifying_span_ids:
-                self._session.add(
-                    MappingSpanRow(
-                        workspace_id=wid,
-                        mapping_id=mapping_id,
-                        span_id=_as_uuid(span_id),
-                    )
-                )
-
-        stored = attribution or AnalysisAttribution(
-            provider="hermetic",
-            model="rules-v1",
-            prompt_version="",
-            rubric_version=RUBRIC_VERSION,
-            left_machine=False,
-            failure_status=analysis_failure_status(mappings),
-        )
-        self._session.add(
-            ScoreExplanationRow(
-                id=uuid.uuid4(),
-                workspace_id=wid,
-                role_id=rid,
-                analysis_version=analysis_version,
-                score=explanation.score,
-                band=explanation.band,
-                explanation=_explanation_payload(explanation),
-                invalidated=False,
-                assessment_provider=stored.provider,
-                assessment_model=stored.model,
-                prompt_version=stored.prompt_version,
-                rubric_version=stored.rubric_version,
-                left_machine=stored.left_machine,
-                failure_status=stored.failure_status,
-            )
-        )
-        self._jobs.save(job)
-        self._roles.set_status(workspace_id, role_id, RoleStatus.READY)
-        self._session.flush()
-        log_event(
-            _log,
-            "sql.analysis.published",
-            role_id=role_id,
-            job_id=job.id,
-            analysis_version=analysis_version,
-            requirement_count=len(requirements),
-            claim_count=len(claims),
-            mapping_count=len(mappings),
-        )
 
     def fail_job(
         self,
@@ -568,99 +413,17 @@ class SqlAnalysisResultRepository:
         ).all()
         return tuple(int(version) for version in rows)
 
-    def list_mappings(
-        self, workspace_id: str, role_id: str
-    ) -> tuple[RequirementMapping, ...]:
-        role = self._roles.get(workspace_id, role_id)
-        if role is None:
-            return ()
-        rows = self._session.scalars(
-            select(MappingRow).where(
-                MappingRow.workspace_id == _as_uuid(workspace_id),
-                MappingRow.role_id == _as_uuid(role_id),
-                MappingRow.analysis_version == role.analysis_version,
-                MappingRow.invalidated.is_(False),
-            )
-        ).all()
-        results: list[RequirementMapping] = []
-        for row in rows:
-            span_ids = tuple(
-                str(span.span_id)
-                for span in self._session.scalars(
-                    select(MappingSpanRow).where(MappingSpanRow.mapping_id == row.id)
-                ).all()
-            )
-            claim_ids: tuple[str, ...] = ()
-            if span_ids:
-                found = self._session.scalars(
-                    select(ClaimSpanRow.claim_id)
-                    .where(
-                        ClaimSpanRow.workspace_id == _as_uuid(workspace_id),
-                        ClaimSpanRow.span_id.in_(
-                            [_as_uuid(span_id) for span_id in span_ids]
-                        ),
-                    )
-                    .distinct()
-                ).all()
-                claim_ids = tuple(str(claim_id) for claim_id in found)
-            results.append(
-                RequirementMapping(
-                    requirement_id=str(row.requirement_id),
-                    status=MappingStatus(row.status),
-                    reason_code=MappingReason(row.reason_code),
-                    justifying_span_ids=span_ids,
-                    justifying_claim_ids=claim_ids,
-                    signals=RelatednessSignals.from_payload(row.signals),
-                )
-            )
-        return tuple(results)
-
     def _delete_analysis_rows(
         self,
         workspace_id: uuid.UUID,
         role_id: uuid.UUID,
         analysis_version: int | None,
     ) -> None:
-        mapping_filter = [
-            MappingRow.workspace_id == workspace_id,
-            MappingRow.role_id == role_id,
-        ]
-        req_filter = [
-            RequirementRow.workspace_id == workspace_id,
-            RequirementRow.role_id == role_id,
-        ]
-        score_filter = [
+        filters = [
             ScoreExplanationRow.workspace_id == workspace_id,
             ScoreExplanationRow.role_id == role_id,
         ]
         if analysis_version is not None:
-            mapping_filter.append(MappingRow.analysis_version == analysis_version)
-            req_filter.append(RequirementRow.analysis_version == analysis_version)
-            score_filter.append(
-                ScoreExplanationRow.analysis_version == analysis_version
-            )
-
-        mapping_ids = self._session.scalars(
-            select(MappingRow.id).where(*mapping_filter)
-        ).all()
-        if mapping_ids:
-            self._session.execute(
-                delete(MappingSpanRow).where(MappingSpanRow.mapping_id.in_(mapping_ids))
-            )
-            self._session.execute(delete(MappingRow).where(*mapping_filter))
-        self._session.execute(delete(RequirementRow).where(*req_filter))
-        self._session.execute(delete(ScoreExplanationRow).where(*score_filter))
-        # Claims are CV-scoped; discard claim_spans + claims for this workspace CV
-        # only when discarding partials for a failed role analysis with no version.
-        if analysis_version is None:
-            claim_ids = self._session.scalars(
-                select(ClaimRow.id).where(ClaimRow.workspace_id == workspace_id)
-            ).all()
-            if claim_ids:
-                self._session.execute(
-                    delete(ClaimSpanRow).where(ClaimSpanRow.claim_id.in_(claim_ids))
-                )
-                self._session.execute(
-                    delete(ClaimRow).where(ClaimRow.workspace_id == workspace_id)
-                )
+            filters.append(ScoreExplanationRow.analysis_version == analysis_version)
+        self._session.execute(delete(ScoreExplanationRow).where(*filters))
         self._session.flush()

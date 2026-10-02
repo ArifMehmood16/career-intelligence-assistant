@@ -127,6 +127,71 @@ describe("RolesPanel analysis status", () => {
     expect(screen.queryByText(/\/ 100/)).not.toBeInTheDocument();
   });
 
+  it("shows each analysing role's progress when the server sends it", () => {
+    const running: Role = {
+      ...analysingRole,
+      activeJob: {
+        id: "job-a",
+        kind: "role_analysis",
+        state: "running",
+        stage: "extracting_claims",
+        startedAt: "2026-09-18T12:00:00Z",
+        finishedAt: null,
+        error: null,
+        progress: {
+          tasksDone: 2,
+          tasksTotal: 5,
+          fraction: 0.4,
+          currentTask: "read_cv",
+          elapsedSeconds: 42,
+          remainingSeconds: 75,
+          queuePosition: null,
+          tasks: [
+            { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
+            {
+              key: "read_advert",
+              state: "done",
+              unitsDone: 0,
+              unitsTotal: null,
+            },
+            {
+              key: "read_cv",
+              state: "running",
+              unitsDone: 0,
+              unitsTotal: null,
+            },
+            { key: "search", state: "pending", unitsDone: 0, unitsTotal: null },
+            { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
+          ],
+        },
+      },
+    };
+
+    render(
+      <RolesPanel
+        state="ready"
+        roles={[running]}
+        sortKey="fit"
+        sortDirection="desc"
+        onSort={vi.fn()}
+        onRetry={vi.fn()}
+        addRoleSlot={null}
+        layout="table"
+        observedAt={Date.now()}
+      />,
+    );
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByText("2 of 5 tasks done")).toBeInTheDocument();
+    expect(table.getByText("Reading your CV")).toBeInTheDocument();
+    expect(
+      table.getByText(/0:4\d elapsed · About 1:\d\d left/),
+    ).toBeInTheDocument();
+    expect(
+      table.getByRole("progressbar", { name: "Analysis progress" }),
+    ).toHaveAttribute("aria-valuenow", "40");
+  });
+
   it("shows Failed with reason and a Retry control", async () => {
     const user = userEvent.setup();
     const onReanalyse = vi.fn();

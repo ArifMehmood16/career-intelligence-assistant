@@ -4,7 +4,6 @@
  */
 import type {
   AnalysisJob,
-  BreakdownRow,
   BulletDraft,
   ChatMessage,
   Citation,
@@ -12,18 +11,18 @@ import type {
   CoverLetterDraft,
   CvDocument,
   Evidence,
-  GapPlan,
   InterviewPack,
   Provider,
   ProviderChoice,
   RankedRole,
-  Requirement,
+  RetrievalTrace,
   Role,
+  RoleVerdicts,
   SupportingDocument,
+  ToolStep,
 } from "@/types";
 import {
   analysisJobSchema,
-  breakdownRowSchema,
   bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
@@ -32,17 +31,18 @@ import {
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
-  gapPlanSchema,
   interviewPackSchema,
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
   rankedRoleSchema,
   reanalyseResponseSchema,
-  requirementSchema,
+  retrievalTraceSchema,
   roleCreatedSchema,
   roleSchema,
+  roleVerdictsSchema,
   supportingDocumentSchema,
+  toolStepSchema,
 } from "./schemas";
 import { z } from "zod";
 
@@ -182,6 +182,12 @@ function mapRole(raw: z.infer<typeof roleSchema>): Role {
     status: raw.status,
     updatedAt: raw.updatedAt,
     fitSummary: raw.fitSummary ?? null,
+    ...(raw.activeJob === undefined
+      ? {}
+      : { activeJob: raw.activeJob === null ? null : mapJob(raw.activeJob) }),
+    ...(raw.analysisPipeline === undefined
+      ? {}
+      : { analysisPipeline: raw.analysisPipeline }),
   };
 }
 
@@ -222,6 +228,9 @@ function mapMessage(raw: z.infer<typeof chatMessageSchema>): ChatMessage {
   }
   if (raw.createdAt !== undefined) {
     message.createdAt = raw.createdAt;
+  }
+  if (raw.toolSteps !== undefined && raw.toolSteps.length > 0) {
+    message.toolSteps = raw.toolSteps;
   }
   return message;
 }
@@ -325,21 +334,19 @@ export async function getRole(id: string): Promise<Role | null> {
   }
 }
 
-export function getRequirements(roleId: string): Promise<Requirement[]> {
-  return request(`/api/roles/${roleId}/requirements`, {
-    schema: requirementSchema.array(),
+/** The published fit; 409 `analysis_incomplete` until analysis finishes. */
+export function getRoleVerdicts(roleId: string): Promise<RoleVerdicts> {
+  return request(`/api/roles/${roleId}/verdicts`, {
+    schema: roleVerdictsSchema,
   });
 }
 
-export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
-  return request(`/api/roles/${roleId}/breakdown`, {
-    schema: breakdownRowSchema.array(),
-  });
-}
-
-export function getGapPlan(roleId: string): Promise<GapPlan> {
-  return request(`/api/roles/${roleId}/gap-plan`, {
-    schema: gapPlanSchema,
+export function getVerdictTrace(
+  roleId: string,
+  requirementId: string,
+): Promise<RetrievalTrace> {
+  return request(`/api/roles/${roleId}/verdicts/${requirementId}/trace`, {
+    schema: retrievalTraceSchema,
   });
 }
 
@@ -448,6 +455,10 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
   const raw = await request(`/api/jobs/${jobId}`, {
     schema: analysisJobSchema,
   });
+  return mapJob(raw);
+}
+
+function mapJob(raw: z.infer<typeof analysisJobSchema>): AnalysisJob {
   const error =
     raw.error == null
       ? null
@@ -462,6 +473,7 @@ export async function getJob(jobId: string): Promise<AnalysisJob> {
     startedAt: raw.startedAt,
     finishedAt: raw.finishedAt,
     error,
+    ...(raw.progress === undefined ? {} : { progress: raw.progress }),
   };
 }
 
@@ -497,6 +509,7 @@ export type MessageStreamEvent =
       model: string | null;
       leftMachine: boolean;
     }
+  | { type: "tools"; steps: ToolStep[] }
   | { type: "token"; text: string }
   | { type: "citations"; citations: Citation[] }
   | { type: "done"; kind: "answer" | "insufficient" }
@@ -512,6 +525,7 @@ export interface MessageStreamResult {
   model: string | null;
   leftMachine: boolean;
   clientRequestId: string;
+  toolSteps: ToolStep[];
 }
 
 export async function postMessageStream(options: {
@@ -585,6 +599,7 @@ export async function postMessageStream(options: {
     model: null,
     leftMachine: false,
     clientRequestId,
+    toolSteps: [],
   };
 
   const reader = response.body.getReader();
@@ -627,6 +642,14 @@ export async function postMessageStream(options: {
       result.model = event.model;
       result.leftMachine = event.leftMachine;
       options.onEvent(event);
+      return;
+    }
+
+    if (eventName === "tools") {
+      const parsed = z.array(toolStepSchema).safeParse(data["steps"] ?? []);
+      const steps = parsed.success ? parsed.data : [];
+      result.toolSteps = steps;
+      options.onEvent({ type: "tools", steps });
       return;
     }
 

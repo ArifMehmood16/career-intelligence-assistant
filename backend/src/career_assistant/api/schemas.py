@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
 
 
 class ApiModel(BaseModel):
@@ -80,6 +81,51 @@ class RoleCounts(ApiModel):
     missing: int
 
 
+class JobErrorBody(ApiModel):
+    code: str
+    message: str
+
+
+class JobTaskWire(ApiModel):
+    key: str
+    state: str
+    units_done: int
+    units_total: int | None
+    model_calls_done: int = 0
+    model_calls_total: int | None = None
+    embedding_calls_done: int = 0
+    embedding_calls_total: int | None = None
+
+
+class JobProgressWire(ApiModel):
+    """Tasks done of total, and times in whole seconds; remaining is an estimate."""
+
+    tasks_done: int
+    tasks_total: int
+    fraction: float
+    current_task: str | None
+    elapsed_seconds: int | None
+    remaining_seconds: int | None
+    queue_position: int | None
+    tasks: list[JobTaskWire]
+    model_calls_done: int = 0
+    model_calls_remaining: int = 0
+    embedding_calls_done: int = 0
+    embedding_calls_remaining: int = 0
+    call_estimate_complete: bool = False
+
+
+class AnalysisJobResponse(ApiModel):
+    id: str
+    kind: str
+    state: str
+    stage: str | None
+    started_at: str | None
+    finished_at: str | None
+    error: JobErrorBody | None
+    progress: JobProgressWire | None = None
+
+
 class RoleResponse(ApiModel):
     id: str
     title: str
@@ -90,6 +136,8 @@ class RoleResponse(ApiModel):
     status: str
     updated_at: str
     fit_summary: str | None = None
+    active_job: AnalysisJobResponse | None = None
+    analysis_pipeline: str | None = None
 
 
 class RoleCreateRequest(ApiModel):
@@ -105,21 +153,6 @@ class RoleCreatedResponse(ApiModel):
 
 class ReanalyseResponse(ApiModel):
     job_id: str
-
-
-class JobErrorBody(ApiModel):
-    code: str
-    message: str
-
-
-class AnalysisJobResponse(ApiModel):
-    id: str
-    kind: str
-    state: str
-    stage: str | None
-    started_at: str | None
-    finished_at: str | None
-    error: JobErrorBody | None
 
 
 class RelatednessSignalsWire(ApiModel):
@@ -224,6 +257,13 @@ class CitationWire(ApiModel):
     evidence: EvidenceResponse | None = None
 
 
+class ToolStepWire(ApiModel):
+    name: str
+    arguments: dict[str, str]
+    found: int
+    failed: bool
+
+
 class ChatMessageWire(ApiModel):
     id: str
     conversation_id: str
@@ -235,6 +275,8 @@ class ChatMessageWire(ApiModel):
     provider: str | None
     left_machine: bool
     created_at: str
+    # The agent's tool calls for a fresh answer; not stored, so empty in history.
+    tool_steps: list[ToolStepWire] = Field(default_factory=list)
 
 
 class RankedRoleWire(ApiModel):
@@ -281,6 +323,80 @@ class ProviderChoiceResponse(ApiModel):
     answer_model: str
     index_provider_id: str
     index_model: str
+
+
+class DimensionScoreWire(ApiModel):
+    score: int
+    rationale: str
+
+
+class VerdictEvidenceWire(ApiModel):
+    chunk_id: str
+    document_id: str
+    quote: str
+
+
+class VerdictWire(ApiModel):
+    requirement_id: str
+    quote: str
+    statement: str
+    must_have: bool
+    verdict: str
+    requirement_score: float | None
+    match: DimensionScoreWire
+    seniority: DimensionScoreWire | None
+    experience: DimensionScoreWire | None
+    unmet_conditions: list[str]
+    contradiction: bool
+    adjustments: list[str]
+    evidence: list[VerdictEvidenceWire]
+    provider: str
+    model: str
+
+
+class KeywordCoverageWire(ApiModel):
+    exact: list[str]
+    alias: list[str]
+    missing: list[str]
+
+
+class V2GapWire(ApiModel):
+    requirement_id: str
+    dimension: str
+    current: float
+    delta: float
+
+
+class RoleVerdictsWire(ApiModel):
+    role_id: str
+    analysis_id: str
+    fit_score: float
+    band: str
+    gated: bool
+    rubric_version: str
+    left_machine: bool
+    verdicts: list[VerdictWire]
+    keyword_coverage: KeywordCoverageWire
+    gap_plan: list[V2GapWire]
+
+
+class TraceHitWire(ApiModel):
+    chunk_id: str
+    fused_score: float
+    dense_rank: int | None
+    lexical_rank: int | None
+    exact_rank: int | None
+
+
+class TraceRoundWire(ApiModel):
+    round: int
+    query_text: str
+    hits: list[TraceHitWire]
+
+
+class RetrievalTraceWire(ApiModel):
+    requirement_id: str
+    rounds: list[TraceRoundWire]
 
 
 class ProviderChoiceUpdateRequest(ApiModel):

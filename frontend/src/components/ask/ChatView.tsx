@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { ToolSteps } from "@/components/ask/ToolSteps";
 import type { ChatMessage, Citation } from "@/types";
 
 export type ChatViewState = "loading" | "error" | "ready";
@@ -238,6 +239,10 @@ function MessageBubble({
             </button>
           ))}
         </div>
+      ) : null}
+
+      {!streaming && message.toolSteps ? (
+        <ToolSteps steps={message.toolSteps} />
       ) : null}
 
       {!streaming && (message.model || message.provider) ? (

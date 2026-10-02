@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_repos import (
@@ -13,23 +13,35 @@ from career_assistant.adapters.persistence.analysis_repos import (
     SqlAnalysisResultRepository,
     SqlRoleRepository,
 )
+from career_assistant.adapters.persistence.chunk_repos import SqlChunkRepository
 from career_assistant.adapters.persistence.draft_repos import SqlDraftRepository
-from career_assistant.adapters.persistence.embedding_repos import SqlEmbeddingRepository
+from career_assistant.adapters.persistence.graph_repos import (
+    SqlKnowledgeGraphRepository,
+)
+from career_assistant.adapters.persistence.job_task_repos import SqlJobTaskRepository
 from career_assistant.adapters.persistence.models import (
     AnswerCitationRow,
     AnswerRow,
     ConversationRow,
     DocumentRow,
-    EmbeddingRow,
     GeneratedDraftRow,
-    MappingRow,
     ProviderCallAccountingRow,
     ProviderSettingsRow,
     QuestionRow,
+    RoleRow,
     ScoreExplanationRow,
     SpanRow,
     WorkspaceRow,
 )
+from career_assistant.adapters.persistence.models_v2 import MatchVerdictRow
+from career_assistant.adapters.persistence.search_repos import (
+    SqlRetrievalTraceRepository,
+    SqlSessionHybridSearch,
+)
+from career_assistant.adapters.persistence.v2_analysis_repos import (
+    SqlV2AnalysisRepository,
+)
+from career_assistant.application.ports.graph import KnowledgeGraphRepository
 from career_assistant.application.ports.persistence import (
     AnalysisJobRepository,
     AnalysisResultRepository,
@@ -44,10 +56,15 @@ from career_assistant.application.ports.persistence import (
     RoleRepository,
     StoredDocument,
     WorkspaceRepository,
+    WorkspaceSummary,
 )
+from career_assistant.application.ports.search import RetrievalTraceRepository
 from career_assistant.application.ports.types import CallRecord
 from career_assistant.application.providers.catalogue import ProviderChoice
 from career_assistant.domain.documents import DocumentKind, Page, Span
+
+# Documents whose chunks a v2 verdict may cite as evidence.
+_EVIDENCE_KINDS = frozenset({"cv", "cover_letter"})
 
 
 def _as_uuid(value: str) -> uuid.UUID:
@@ -80,10 +97,34 @@ class SqlWorkspaceRepository:
 
     def ensure(self, workspace_id: str) -> None:
         wid = _as_uuid(workspace_id)
-        existing = self._session.get(WorkspaceRow, wid)
-        if existing is None:
+        if self._session.get(WorkspaceRow, wid) is None:
             self._session.add(WorkspaceRow(id=wid))
             self._session.flush()
+
+    def summaries(self) -> tuple[WorkspaceSummary, ...]:
+        """Every workspace with its role count, oldest first (for MCP setup)."""
+        roles = (
+            select(func.count(RoleRow.id))
+            .where(RoleRow.workspace_id == WorkspaceRow.id)
+            .scalar_subquery()
+        )
+        has_cv = (
+            select(DocumentRow.id)
+            .where(
+                DocumentRow.workspace_id == WorkspaceRow.id,
+                DocumentRow.kind == DocumentKind.CV.value,
+                DocumentRow.is_active.is_(True),
+            )
+            .exists()
+        )
+        rows = self._session.execute(
+            select(WorkspaceRow.id, roles, has_cv).order_by(
+                WorkspaceRow.created_at, WorkspaceRow.id
+            )
+        ).all()
+        return tuple(
+            WorkspaceSummary(str(row[0]), int(row[1]), bool(row[2])) for row in rows
+        )
 
 
 class SqlDocumentRepository:
@@ -231,9 +272,15 @@ class SqlDocumentRepository:
         )
         if row is None:
             return
-        self._session.execute(
-            delete(EmbeddingRow).where(EmbeddingRow.workspace_id == row.workspace_id)
-        )
+        if row.kind in _EVIDENCE_KINDS:
+            # A v2 verdict's rationale may paraphrase any evidence document it read.
+            # Chunks, vectors, graph rows, quotes and traces cascade in the
+            # database; the verdicts go here and are recomputed on re-analysis.
+            self._session.execute(
+                delete(MatchVerdictRow).where(
+                    MatchVerdictRow.workspace_id == row.workspace_id
+                )
+            )
         self._session.delete(row)
         self._session.flush()
 
@@ -243,10 +290,6 @@ class SqlDocumentRepository:
         wid = _as_uuid(workspace_id)
         # Soft-invalidate analysis that depended on the previous CV; hard-delete
         # generated drafts (they quote CV-derived text and were never filtered).
-        for mapping in self._session.scalars(
-            select(MappingRow).where(MappingRow.workspace_id == wid)
-        ).all():
-            mapping.invalidated = True
         for score in self._session.scalars(
             select(ScoreExplanationRow).where(ScoreExplanationRow.workspace_id == wid)
         ).all():
@@ -549,7 +592,9 @@ class SqlUnitOfWork:
         self.jobs: AnalysisJobRepository
         self.analysis: AnalysisResultRepository
         self.drafts: DraftRepository
-        self.embeddings: SqlEmbeddingRepository
+        self.graph: KnowledgeGraphRepository
+        self.traces: RetrievalTraceRepository
+        self.job_tasks: SqlJobTaskRepository
 
     def __enter__(self) -> SqlUnitOfWork:
         self._session = self._session_factory()
@@ -564,7 +609,12 @@ class SqlUnitOfWork:
             self._session, self.roles, self.jobs
         )
         self.drafts = SqlDraftRepository(self._session)
-        self.embeddings = SqlEmbeddingRepository(self._session)
+        self.graph = SqlKnowledgeGraphRepository(self._session)
+        self.chunks = SqlChunkRepository(self._session)
+        self.v2 = SqlV2AnalysisRepository(self._session, self.roles, self.jobs)
+        self.traces = SqlRetrievalTraceRepository(self._session)
+        self.job_tasks = SqlJobTaskRepository(self._session)
+        self.search = SqlSessionHybridSearch(self._session)
         return self
 
     def __exit__(self, *exc: object) -> None:

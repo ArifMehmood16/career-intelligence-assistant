@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from tests.support.published_analysis import mappings_fixture, published_scores
 
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.generation import build_fit_summary
-from career_assistant.domain.mapping import map_requirements
 from career_assistant.domain.requirements import ItemType, Requirement
-
-ROOT = Path(__file__).resolve().parents[3]
-RUBRIC = load_scoring_rubric(ROOT / "config" / "scoring_rubric.toml")
 
 
 def _req(
@@ -53,8 +48,13 @@ def test_fit_summary_names_strongest_match_and_biggest_gap() -> None:
         _req("cuda", "CUDA kernel authoring", competency="cuda"),
     )
     claims = (_claim("c1", "dbt", "Owned dbt models in production."),)
-    mappings = map_requirements(requirements, claims)
-    summary = build_fit_summary(requirements, mappings, claims, RUBRIC)
+    mappings = mappings_fixture(requirements, claims)
+    summary = build_fit_summary(
+        requirements,
+        mappings,
+        explanation=published_scores(requirements, mappings)[0],
+        gaps=published_scores(requirements, mappings)[1],
+    )
     assert summary.strongest_requirement_id == "dbt"
     assert summary.weakest_requirement_id == "cuda"
     assert "Production dbt experience" in summary.text
@@ -72,16 +72,25 @@ def test_fit_summary_ignores_unscoreable_items() -> None:
         ),
     )
     claims = (_claim("c1", "dbt", "Owned dbt models in production."),)
-    mappings = map_requirements(requirements, claims)
-    summary = build_fit_summary(requirements, mappings, claims, RUBRIC)
+    mappings = mappings_fixture(requirements, claims)
+    summary = build_fit_summary(
+        requirements,
+        mappings,
+        explanation=published_scores(requirements, mappings)[0],
+        gaps=published_scores(requirements, mappings)[1],
+    )
     assert "Salary" not in summary.text
     assert summary.strongest_requirement_id == "dbt"
 
 
 def test_fit_summary_when_nothing_is_met() -> None:
     requirements = (_req("cuda", "CUDA kernel authoring", competency="cuda"),)
-    mappings = map_requirements(requirements, ())
-    summary = build_fit_summary(requirements, mappings, (), RUBRIC)
+    mappings = mappings_fixture(requirements, ())
+    summary = build_fit_summary(
+        requirements, mappings,
+        explanation=published_scores(requirements, mappings)[0],
+        gaps=published_scores(requirements, mappings)[1],
+    )
     assert summary.strongest_requirement_id is None
     assert summary.weakest_requirement_id == "cuda"
     assert "CUDA kernel authoring" in summary.text

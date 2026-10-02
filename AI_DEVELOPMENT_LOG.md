@@ -29,6 +29,938 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 164 — Reconcile and publish the Phase 18/19 delivery
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested delivery housekeeping for 19.1–19.4
+- Prompt intent: commit the work, create a PR, update docs/README/plan and remove
+  redundant branches.
+- Outcome: documentation reconciled and delivery published. README describes the
+  current verdict view and Ask tool steps; PLAN/BACKLOG separate implemented work, observed
+  diagnosis and pending release checks. Running/provider docs acknowledge the later
+  completed analysis and explain the recency display repair. Limitations clarify
+  that hosted model inputs leave through the egress gate while applications/messages
+  are never sent by the product.
+- Reason: the human explicitly authorized publication and redundant-branch cleanup.
+  Remote history was fetched; all existing PRs are merged, with no open review to
+  supersede. The accumulated Phase 18/19 work is unmerged, so the delivery branch is
+  renamed feat/phase-19-analysis-delivery rather than resetting to obsolete main.
+- Human validation: pending. Git status/history, worktrees, remote refs and GitHub
+  PR inventory inspected; changed documentation diff reviewed against source and
+  prior observations. No tests, lint, typecheck, benchmark, migration, model call or
+  security scan performed locally. `git diff --check` passed. This task changes
+  documentation and Git references. Opening the PR automatically started the
+  configured GitHub CI jobs; their first observed snapshot was in progress.
+  The completed run on `1c9a4e6` failed lint/typecheck and both integration steps,
+  with hermetic tests skipped. Later heads have no attached checks because CI
+  triggers only on PR opened; triage and trigger coverage are recorded under 19.4.
+  No CI logs analyzed or reruns requested. Final whole-branch whitespace review
+  found one inherited trailing blank line in candidate_spans.py; it is removed
+  without changing behavior.
+- Rejected: marking release gates passed, merging without human review, changing
+  local provider configuration, rewriting pushed history or deleting unique work.
+- Publication: commit `1c9a4e6` reconciles the delivery docs; pushed the delivery
+  branch and created/attached [draft PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
+  against main. Its state/head/base/draft flag were confirmed through GitHub.
+- Cleanup: ancestry and zero unique commits proved against the published delivery
+  head before deletion. Removed five local branches (Spec Kit adoption,
+  consolidated analysis, synthetic benchmark, judge diagnostics, OpenAI request
+  repair) and four remote branches (adoption, consolidation, benchmark, former
+  recency display head). The active recency branch was renamed to the delivery
+  branch. All commits remain in PR #42; no other worktree or open PR used the refs.
+  Main and the delivery branch are retained; no force push, history rewrite or merge.
+- Carried forward: explicitly resume deferred checks, then execute the synthetic
+  migration/browser/quality/latency release work in PLAN 19.4.
+
+### 163 — Accept published recency gaps in Fit and Gaps
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.1 display defect; release verification under 19.4
+- Prompt intent: completed analysis shows the overall score/counts but detailed
+  Fit and Gaps cannot be displayed; find and fix the cause.
+- Suggestion: compare the published response against the actual client schema;
+  align gap categories with the domain and render recency on its proper scale.
+- Outcome: implemented for review. Read-only local HTTP returns a ready role and
+  18 verdicts. Actual Zod validation rejected eight gapPlan.dimension fields;
+  safe identifier inspection confirms recency. The domain already emits recency,
+  while frontend schema/types and API/product docs only named three judge dimensions.
+  This rejects the entire shared detail response; the summary uses another request.
+- Changed: GapDimension adds recency separately from JudgeDimension; strict client
+  enum accepts all four domain values. The gap pane displays recency as percentage
+  weight, with existing 0–4 anchor display retained for judge gaps. Added a synthetic
+  recency fixture, API/unknown-category regressions, both container-pane cases and
+  panel/gallery assertions. API/features docs corrected; root gates remain open.
+- Reason: preserve the authoritative published analysis and meaningful units.
+  No score recomputation, backend/storage change, provider call or user reanalysis.
+- Rejected: dropping valid recency gaps server-side, accepting arbitrary dimension
+  strings, calling recency a fourth judge score, rerunning personal analysis or
+  treating query invalidation as the cause (it already exists).
+- Human validation: pending. Live schema diagnosis before/after repair performed
+  via Bun with only status/path/code/count output, no payload text retained. The same
+  result passes through API and web proxy after repair: 18 verdicts, 9 gaps, 8 recency.
+  Browser inspection of /dev/states shows recency at 60% weight and match at 1 / 4;
+  screenshot is synthetic-only and outside Git. Fixture dialogs were dismissed,
+  without accepting hosted egress. Source/spec/diff review and targeted Prettier
+  formatting performed. No Vitest/pytest/lint/typecheck/security/benchmark run;
+  tests/lint remain explicitly deferred, with no red/green evidence claimed.
+- Carried forward: refresh the existing role page or use Retry to clear its cached
+  failed response; deferred regressions/full release checks. Task branch depends
+  on consolidated 5e67682 rather than obsolete main; no external push or merge.
+
+### 162 — Explain incomplete judging and mitigate suspected timeouts
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.2 debugging; verification remains under 19.4
+- Prompt intent: diagnose assessment_incomplete at scoring in the running app.
+- Suggestion: inspect content-free progress/accounting, add safe diagnostics at
+  transport and judge catches, and increase the existing local timeout.
+- Outcome: implemented for review. Job progress shows cached CV, successful advert
+  reading/search for 18 requirements and three physical judge attempts. Read-only
+  accounting contains successful advert/embedding calls but no judge response;
+  roughly three minutes from embedding to failure matches 60 seconds/two retries.
+  Timeouts are a strong inference, not a confirmed cause from the old logs.
+- Changed: transport logs fixed failure category and timeout phase/limit; judge
+  logs initial/repair failure categories, validation rejection counts and aggregate
+  incompleteness. No exception message/cause, URL, validation problem, prompt,
+  document, requirement identifier or response is logged. Authored regression
+  cases cover timeout phases, hostile strings, all caught judge categories and
+  invalid repairs. Local ignored timeout now loads 180 seconds with two retries;
+  defaults stay unchanged. A restart is required and longer waits are possible.
+- Reason: existing timeout translation and judge handling hid the failed call's
+  cause. Publishing no score for incomplete judgments remains correct. The human
+  requested continued debugging and retained the test/lint deferral.
+- Rejected: claiming timeouts proven, switching model/effort, weakening server
+  validation, inventing judgments, changing retry behavior or rerunning personal
+  documents. No hosted development request or database mutation was made.
+- Human validation: pending. Read-only local job HTTP/SQL metadata, non-secret
+  settings inspection, Spec Kit prerequisites, source/diff review and formatting
+  performed. No red/green run, tests/lint/typecheck/security scan, benchmark or
+  complete analysis executed. No release gate closed. Dependency base is aae9b24;
+  main comparison includes prior consolidation work outside this bounded change.
+- Carried forward: API restart and human retry; inspect preceding safe timeout/judge
+  events if it fails; deferred regressions and complete synthetic analysis.
+
+### 161 — Repair OpenAI advert schema rejection and expose safe diagnostics
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.2 defect repair; verification remains under 19.4
+- Prompt intent: debug continued analysis failure after API credits were added;
+  the human supplied logs and made the running local app available.
+- Suggestion: identify the actual failed operation, reproduce its contract using
+  tiny synthetic inputs through existing provider factories/egress, and preserve
+  content-free provider failure diagnostics.
+- Outcome: implemented for review. Workspace metadata confirmed gpt-5-mini and
+  text-embedding-3-small. The new failed job's safe API progress identifies
+  read_advert after one model attempt; cached CV reading made no calls. Synthetic
+  CV/embedding submissions succeeded, while the actual advert contract received
+  HTTP 400 with response_format identified. No personal text was dispatched.
+- Reason: strict conversion unnecessarily added null alternatives to non-nullable
+  defaulted arrays. Keeping arrays as arrays and avoiding duplicate null branches
+  changed the synthetic advert submission to HTTP 200. The final source converter
+  was checked with temporary transport mutations removed. That proves request
+  acceptance, not a complete model answer, successful personal analysis or quality.
+- Changed: strict-schema conversion; shared OpenAI response classifier reused by
+  completion, embeddings and tool calling; regressions covering actual contracts,
+  explicit nulls, hostile/malformed/oversized error payloads and retry semantics.
+  Logs identify model/operation/status plus fixed category and allowlisted codes;
+  unknown strings are discarded. Raw messages and bodies are never logged.
+- Rejected: treating the previous billing diagnosis as this new cause, switching
+  providers, increasing timeouts, weakening evidence validation, rerunning personal
+  documents, or logging raw vendor responses. Numeric-field removal, null-branch
+  deduplication alone and changing only the outer requirements array did not resolve
+  the synthetic rejection; these diagnostic variations are not production fixes.
+- Human validation: pending. Source/spec/diff review and formatting performed;
+  tiny synthetic live diagnosis used the configured egress gate, with restricted
+  networking retried through approved escalations. Read-only SQL looked at provider
+  names/accounting/task counters; local API reads inspected settings/job progress.
+  No database writes, migrations, browser interactions, pytest, lint, typecheck,
+  benchmark or security scan ran. No suite red/green evidence is claimed.
+- Branch: fix/phase-19-openai-request-errors from 9de3d9d, the current implementation
+  dependency; main still holds the older architecture. Spec Kit artifacts link to
+  the existing milestone and record all deferred checks. Root gates stay unchecked.
+- Carried forward: authored regressions/full gates and a complete synthetic analysis;
+  the human can retry a fresh job after the development reloader/restart.
+
+### 160 — Synthetic cold/warm analysis benchmark implementation
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: bounded 19.4 timing/accounting slice; 19.1 naming prerequisite is entry 159
+- Prompt intent: continue the development plan, with explicit instruction to keep
+  checks deferred and implement the synthetic benchmark.
+- Suggestion: reuse the running analysis and explicit existing fixture index/search
+  adapters, measure cold/warm application caches, and distinguish physical HTTP
+  attempts from structured/embedding operations and progress accounting.
+- Outcome: implemented for review. Spec Kit spec/plan/research/data/CLI/run-guide/tasks
+  link to the root milestone. The CLI accepts named synthetic pairs, freezes the
+  analysis date, fingerprints inputs/configuration, and records elapsed duration,
+  provider/model/digest/prompt/contract/rubric attribution, execution limits and
+  document/vector/verdict cache reuse. Retry/failure and metadata requests are counted
+  at a transport decorator without retaining payloads.
+- Reason: the human authorized this slice ahead of earlier verification gates.
+  The current consolidated implementation/adoption branch is the dependency base,
+  rather than restoring obsolete main or treating installed skills as finished work.
+- Changed: offline defaults read no provider settings and cannot dispatch HTTP;
+  live selections require explicit opt-in and existing factories/egress gate, with
+  fallback disabled. Failed/incomplete observations retain safe accounting, publish
+  no score and skip the warm run; output files are exclusively created before work.
+- Rejected: v1 evaluation reuse, arbitrary personal document inputs, production
+  persistence changes, hidden paid calls, resetting vendor caches, quality claims
+  from rule fixtures, or treating fixture retrieval timing as SQL/browser latency.
+- Human validation: pending. `git fetch origin` succeeded after the restricted
+  attempt could not resolve GitHub; task branch created from `c603f33`. Spec Kit
+  template/setup/prerequisite scripts resolved the feature artifacts. Source and
+  diffs were manually inspected for scope/privacy. `ruff format` formatted only
+  the new benchmark source/test files; no lint, typecheck, pytest, benchmark,
+  browser journey, security scan or migration ran. No TDD red/green evidence or
+  measured improvement is claimed. Authored regressions cover reuse, incomplete
+  publication, retry/failure accounting, privacy, fixture paths, thread counting,
+  opt-in/egress and output preservation. Migration repair commit: `f32f244`.
+- Carried forward: generated verification tasks T011–T012, full earlier gates,
+  disposable SQL preservation/deletion tests, current frozen-label model quality
+  and ranking measurements, startup/browser proof. No release checkbox closed.
+
+### 159 — Repair retirement migration constraint naming
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent
+- Plan task: 19.1 migration prerequisite while implementing the requested 19.4 benchmark
+- Prompt intent: the human supplied the failed retirement-migration traceback during
+  benchmark development; tests/lint remain explicitly deferred.
+- Suggestion: mark existing full-form constraint names with Alembic `op.f()` so
+  SQLAlchemy does not apply `ck_<table>_<constraint_name>` twice.
+- Outcome: implemented for review. Upgrade and downgrade pipeline constraints,
+  plus the downgrade embedding-owner check, now use fixed names.
+- Reason: observed pasted SQL tries to drop
+  `ck_workspaces_ck_workspaces_pipeline_version`, whereas the earlier revision
+  created `ck_workspaces_pipeline_version` with `op.f()`.
+- Changes: retirement revision and a PostgreSQL offline-DDL regression test using
+  the actual application's naming metadata; no data-handling policy changes.
+- Human validation: pending. Source, predecessor migration, naming convention and
+  diff inspected. The human's traceback is the observed failure; no red/green test,
+  lint, offline SQL compilation or database migration was executed in this session.
+  The human may retry `make db-migrate`; disposable preservation/deletion checks
+  remain open. Benchmark work continues under their explicit instruction.
+
+### 158 — GitHub Spec Kit adoption for the existing project
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one delegated read-only adoption review
+- Plan task: development workflow supporting Phase 19; no release gate closed
+- Prompt intent: bring GitHub Spec Kit into this existing project and explain the
+  steps the human needs to use it.
+- Suggestion: initialize official Codex skills and shared infrastructure in place,
+  pin upstream v1.0.13, derive a constitution from current architecture/privacy
+  constraints, and use specs only for the next bounded change.
+- Outcome: accepted within the human's requested scope.
+- Reason: the project already has implementation, ADRs, a delivery plan and backlog.
+  Spec Kit supplies feature-level planning without creating another application or
+  roadmap. Separate provider policies and v1 retirement remain intact.
+- Changed: upstream initialization on a branch based on the current consolidated
+  implementation; ten Codex skills and version manifests; constitution 1.0.0;
+  upstream MIT attribution; existing-project usage/upgrade guide and documentation
+  ownership rules. Suggested first feature is PLAN 19.4's synthetic latency/call
+  measurement, not a retrospective specification of the entire application.
+- Rejected: reinitializing the application, automatically rebuilding all existing
+  feature specs, adding runtime dependencies, or claiming planning proves quality.
+- Human validation: pending. Official release metadata returned v1.0.13; CLI help
+  and initialization succeeded; the constitution template resolver succeeded.
+  Scaffold/constitution commit observed as `904a271`. No tests/lint, live model calls,
+  benchmarks or migrations ran. A fresh chat in the application repository is still
+  needed to discover the newly installed local skills. The permanent management CLI
+  is optional; instructions explain its installation separately from the committed
+  project integration.
+
+### 157 — Consolidated analysis, fewer calls and bounded concurrency
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6, with three delegated implementation agents
+- Plan task: 19.1–19.3; final verification and measurement remain in 19.4
+- Prompt intent: remove v1, reduce analysis latency and repeated calls, give Ollama,
+  OpenAI and Anthropic separate execution policies, expose time/call estimates,
+  consolidate the plan, commit regularly and remove redundant branches.
+- Suggestion: one validated document response containing chunks, requirements,
+  details and inferred technology relations; provider-specific budgets/builders;
+  batched embeddings and judging; bounded thread pools for independent I/O and
+  spawned processes for binary parsing; physical-attempt progress accounting.
+- Outcome: accepted direction from the human; implementation committed for review.
+- Reason: two executable analysis approaches and repeated model passes duplicated
+  work. Fit, Gaps, Prepare, Letter, ranking, Ask and MCP now read current verdicts
+  and their published score through shared projections. Legacy scoring/extraction,
+  selector, frontend components, evaluation entry point and derived schema are
+  retired. Uploads and current results are retained by the forward migration.
+- Changes to the approach: configured models keep their own operational limits;
+  local concurrency defaults conservatively, hosted rate headers bound paid calls.
+  Cached documents/vectors need no probe where model identity is known. ETA remains
+  unknown without timing history; undiscovered work is labelled. Parser workers
+  inherit the host environment and are not a security sandbox. Supporting letters
+  remain narrative-only, and CV bullet drafting remains available from verdict gaps.
+- Human validation: pending. Earlier focused backend checks and a frontend run
+  preceded the human's request to stop tests/lint. They do not verify the final
+  retirement, provider construction, frontend cleanup and documentation changes.
+  No further tests/lint were run after that request; no migrations were applied and
+  no live-model latency or quality result is claimed. The human then requested a
+  stop after documentation, commits and push; release gates remain open in PLAN.
+
+### 156 — Pipeline version in app.env
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: none — the settings URL stayed on v1 because the workspace row
+  is the switch and nothing in the UI writes it
+- Prompt intent: put the pipeline choice in `config/app.env` so the running
+  workspace uses v2 without a PUT
+- Suggestion: `PIPELINE_VERSION` on provider settings. The production process
+  writes that value onto every workspace at startup, and a workspace created
+  afterwards is inserted with it. A PUT still overrides one workspace until
+  the next process start.
+- Outcome: accepted
+- Reason: the existing row is already `v1` from the database default, so a
+  default that applies only to a missing row would leave the URL and the
+  worker on v1
+- Human validation: not yet reviewed by the human. Focused pytest of
+  `test_provider_defaults`, `test_pipeline_setting` and
+  `test_pipeline_version_sql` exited 0 (8 passed). Ruff and mypy on the
+  touched Python files passed. Full `make test` was not run.
+
+### 155 — Two calls to read a document
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: read-stage batching, ahead of 18.14
+- Prompt intent: stop sending a model call per slice while reading a job
+  description and a CV. A truncated reply was being discarded and both halves
+  sent again.
+- Suggestion: one structure call for line ranges and kinds, then one detail call
+  for the chunks that need a search sentence, technology terms or atomic
+  requirements. A truncated detail reply is retried once. The output guess of 40
+  tokens per line is dropped, so section size follows the input window.
+- Outcome: accepted.
+- Reason: the human had been waiting on Read the job description and Read your CV,
+  and the call pattern was spending the tokens on replies that were thrown away.
+- Human validation: TBD. Observed: focused unit tests for the chunker, hermetic
+  fixture, parallel section calls and the LLM contracts passed. `ruff` and `mypy`
+  were clean on the changed backend modules.
+
+### 154 — Parallel model calls during v2 analysis (PLAN 18.11b)
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: 18.11b
+- Prompt intent: overlap v2 analysis model calls that do not need the previous
+  reply, and hold hosted calls inside OpenAI and Anthropic rate-limit headers.
+- Suggestion: a process-wide hosted call gate, a thread-pool fan-out selected by
+  `leaves_machine`, one embedding request per search wave, and parallel first-pass
+  section, judge and rewrite calls. v1, Ask and draft generation stay sequential.
+- Outcome: accepted. The gate reserves an estimate and then trusts the remaining
+  headers rather than subtracting reported usage a second time, because those
+  headers already include the call. A 429 with no `Retry-After` is not retried.
+- Reason: the human asked for parallel calls inside the vendor allowance. No tier
+  is hard-coded, and local and hermetic providers stay one call at a time.
+- Human validation: TBD. Observed:
+  - `make lint`: ruff, format and mypy clean; frontend `tsc --noEmit` and eslint
+    clean.
+  - `make test`: 906 backend tests passed, 3 skipped, coverage 85.17%. 174
+    frontend tests passed.
+  - Not run against a live hosted model.
+
+### 153 — Pipeline v2 frontend (PLAN 18.13)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.13
+- Prompt intent: continue with 18.13 after the MCP server.
+- Suggestion:
+  - A v2 Fit view built from `GET /api/roles/{id}/verdicts`: three dimension
+    scores with the judge's anchors and reasons, verbatim evidence, server
+    adjustments, keyword coverage beside the score, and a trace drawer loaded on
+    demand.
+  - Ask shows the agent's tool steps.
+  - The Lovable prompt and component tests.
+- Outcome: built as proposed. It needed three additive API fields, each documented
+  in `docs/api-contract.md`:
+  - `Role.analysisPipeline`, so the web app knows to read a v2 role from the
+    verdicts route rather than inferring it from a 409;
+  - a `tools` event on the answer stream;
+  - `ChatMessage.toolSteps`.
+  Other changes along the way:
+  - A v2 role's Gaps tab shows the verdicts' gap plan, because the v1 gap plan
+    is empty for it.
+  - The api-contract said judge scores run 0–3; the contract model and the judge
+    anchors are 0–4, so the doc was corrected.
+  - The 18.11a progress bar used an inline style, which the frontend brief rules
+    out. It now uses an SVG rect, like the fit breakdown's bars.
+  - The gallery was given its own sample data instead of importing a test
+    fixture.
+- Reason: reading the pipeline from the role is explicit, and a v1 role then sends
+  no request that is bound to fail. Tool steps are not persisted, which would need a
+  migration; the page keeps them for the session, and the limitation is recorded.
+- Human validation: TBD. Observed:
+  - Backend: ruff, format and mypy clean. 885 unit tests passed, coverage 85.15%. On
+    PostgreSQL 16.13 with pgvector 0.6.0, 141 integration tests passed.
+  - Frontend: `tsc --noEmit` and eslint clean. 174 vitest tests passed.
+  - Behavioural red runs were observed for three things. The role-pipeline route
+    test hit a KeyError on the missing field. The agent-steps and stream-tools
+    tests failed on the missing attribute and event. The verdicts client tests
+    failed on the missing functions and the unhandled tools event.
+  - The component tests were first run against missing modules. The copy helper
+    and gallery tests were written with the code.
+  - The views were not checked in a browser against a live v2 analysis, and no
+    live model or real document was used.
+
+### 152 — MCP server (PLAN 18.12)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.12
+- Prompt intent: build the MCP server, then continue with 18.13. The human first
+  asked whether MCP helps the app or is for other agents; the answer given was
+  that it is for other agents and changes nothing in the web app.
+- Suggestion: pin the official SDK after checking its protocol support. Build a
+  low-level `Server` adapter over the ask registry, with an output schema per tool
+  and a workspace-wide registry read fresh per call. Read the switches from
+  `config/app.env` only, and test with the SDK's in-process client in both
+  protocol modes.
+- Outcome: built as proposed, plus three additions.
+  - An output model per registry tool, and an error code on a failed call. The
+    18.11 registry had neither.
+  - `--list-workspaces`, so `MCP_WORKSPACE_ID` can be found without reading an
+    HTTP-only cookie.
+  - `python -m career_assistant.adapters.mcp` as an alternative to the script.
+  - No `--config` flag: the client controls the command line as well as the
+    environment, so a flag would hand it the switch.
+- Reason: the configuration file is the only input the MCP client does not
+  control. Keeping the 18.11 handlers keeps one definition for the agent and MCP;
+  wiring them to hybrid search and the graph improves both and is recorded as
+  open in `BACKLOG.md`.
+- Human validation: TBD. Observed:
+  - `mcp` 2.2.0 on PyPI is dated 2026-09-07. Its `mcp_types.version` lists
+    2026-07-28 as the modern version and 2025-11-25 as the newest handshake
+    version. In-process tests negotiated `2025-11-25` in legacy mode and
+    `2026-07-28` in modern mode.
+  - A stdio run was made in the cloud copy, with a disposable `config/app.env` and
+    hermetic data on PostgreSQL 16, launching the process from `/tmp`. It listed 8
+    read-only tools, and `list_roles` and `search_evidence` returned structured
+    results carrying the notice in both modes. With the switches only in the
+    environment, the process printed the reason and exited 2.
+  - Backend: ruff, format and mypy clean. 878 unit tests passed, coverage 85.13%.
+    The MCP integration tests passed on PostgreSQL.
+  - pip-audit on the new lock found no advisories in the added packages. The
+    existing `cryptography` 46.0.7 pin has 7 advisories whose fixes need 48 or
+    later, outside the current `<47` range; this is not changed here.
+  - No live model and no real document were used.
+
+### 151 — Analysis progress and cancellation on delete (PLAN 18.11a)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork), configured model `claude-opus-5-5`
+- Plan task: 18.11a, a recorded override taken before 18.12
+- Prompt intent: while an analysis runs after a job description is added, show how
+  many tasks are done out of the total, the elapsed time and the time left for each
+  analysis. Mid-task, the human added a second requirement: stop pending analysis
+  jobs and provider calls when a job description (role) or the CV is deleted.
+- Suggestion: a per-job task plan for each pipeline and a task table holding keys,
+  counts and timestamps only. The time left is domain arithmetic. The worker reports
+  every transition, and the API returns `progress` on jobs and `activeJob` on roles.
+  Cancellation checks the job row before every provider call and locks it before
+  every worker write.
+- Outcome: built as proposed, with three changes found during the work.
+  - Before this change, deleting the CV failed the job as `cv_deleted`, but the
+    worker kept calling the model. In v2 its final write then failed a foreign key
+    and was recorded as a stage failure. The new integration test showed it on the
+    code before the fix: three of four cases failed.
+  - Evidence search became its own v2 task, because it makes one embedding call per
+    requirement before judging starts.
+  - The v1 role-deleted case already stopped after one call with the fixture used:
+    requirement extraction is a single call, and the existing role check ran before
+    the next write. It is kept as a regression test.
+- Reason: a remaining time that is invented looks precise and misleads, so the
+  estimate is unknown until this job's pace or recent history supports one. A call
+  already in flight cannot be interrupted from a synchronous worker without closing
+  a shared HTTP client, so the design only guarantees that no call starts after the
+  delete.
+- Human validation: TBD. Observed:
+  - Backend: ruff, format and mypy clean. 860 unit tests passed, 3 skipped,
+    coverage 84.89%. On PostgreSQL 16.13 with pgvector 0.6.0, 138 integration tests
+    passed, including the new cancellation, task store, worker progress and HTTP
+    progress tests.
+  - Frontend: `tsc --noEmit` and eslint clean. 143 vitest tests passed.
+  - Behavioural red runs were observed for three things. The cancellation
+    integration test failed 3 of 4 cases on the old code. The similarity test
+    reported "did not raise". The role header test failed on the missing progress.
+  - Other tests failed first for a missing module or parameter, not a behavioural
+    reason. The domain, tracker, component and copy tests failed on the missing
+    module; the judge, matcher and v2-analysis tests failed on the missing keyword
+    argument.
+  - Written alongside the code and not run red first: the integration tests for the
+    task store, worker progress and HTTP progress, the roles-list component test and
+    the client mapping test.
+  - Hermetic providers only. No live model and no real document were used, so the
+    estimate's accuracy is not measured.
+
+### 150 — Tool registry and the bounded ask agent (PLAN 18.11)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Grok 4.7)
+- Plan task: 18.11
+- Prompt intent: continue, TDD with regular commits, and only the work the
+  acceptance criteria need.
+- Suggestion: one tool registry, a `ToolCallingPort` with hermetic, Ollama,
+  OpenAI and Anthropic adapters on one recorded-reply contract, and a bounded
+  loop that validates same-turn citations. The intent router stays for the
+  stored-analysis questions. Open questions use the agent only when the
+  completion capability descriptor reports tool calling.
+- Outcome: changed in one place. `search_evidence` and `skill_experience` read
+  the spans already retrieved for the question. They do not call `hybrid_search`
+  or the knowledge graph, so years are reported as unknown. Tool steps are
+  checked in memory and are not stored with the answer.
+- Reason: the citation rule is the same either way — a quote counts only when
+  this turn's tools returned that text verbatim — and the ask route already
+  holds those spans. A new database round trip was not required to meet the
+  tests. MCP stays 18.12.
+- Human validation: TBD. Observed:
+  - `make lint` clean. `make test`: 825 passed, 3 skipped, 123 deselected,
+    coverage 84.96%, and 124 frontend tests passed.
+  - The agent tests cover the tool-call budget, a guessed chunk id, a
+    paraphrased quote and an injection kept inside the untrusted delimiter.
+  - Hermetic providers only. No live model and no real document was used.
+
+### 149 — Pipeline v2 wiring and the verdict and trace routes (PLAN 18.10)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.10
+- Prompt intent: continue with the next phase work items. Asked whether to build
+  the API additions, the human chose "Build the wiring and the API additions; I
+  approve the API change now".
+- Suggestion: a per-workspace `pipeline_version` setting and migration; a chunk
+  store and a `DocumentIndexer` that chunks, graphs and embeds a document once per
+  chunking prompt version; `HybridCandidateSearch` over `hybrid_search`;
+  `RoleAnalysisV2` to judge, rewrite, score and build keyword coverage and the gap
+  plan; `SqlV2AnalysisRepository` to publish verdicts, evidence, traces and a score
+  row in one unit of work; `V2JobRunner`, selected by the worker from the
+  workspace setting (strategy); `GET /api/roles/{id}/verdicts` and
+  `.../verdicts/{requirementId}/trace` behind a `V2ResultReader` port with a
+  `NoV2Results` null object.
+- Outcome: changed in three places.
+  - The worker has no session factory, so hybrid search runs on the unit of work's
+    session (`SqlSessionHybridSearch`) rather than opening its own.
+  - A v2 role's summary counts on `GET /api/roles/{id}` were zeros, because they
+    came from v1 mappings. They now count v2 verdict labels.
+  - Two claims in the first contract draft were wrong and were corrected against
+    the code. `gated` is a must-have's match score at or below the rubric gate,
+    not "scored 0". An oversized embedding input is refused, not truncated.
+- Reason: the fit score, band and gap plan stay domain arithmetic. An incomplete
+  judge run or chunk plan fails the job with `assessment_incomplete` or
+  `extraction_incomplete` and publishes no score. Only the active CV and the
+  advert are indexed; cover letters stay out of v2 matching, consistent with the
+  recorded narrative-only scope decision. The judge's rationales and rewrite query
+  are returned as explanation, as ADR 014 and architecture-v2 §9 show them, and
+  never as evidence.
+- Human validation: TBD. Observed:
+  - Red runs kept for this entry: the v2 worker test failed because the job ran on
+    `v1`, and the verdict-route tests failed with 404 and `validation_failed` from
+    the unmatched route. The red output of the earlier slices was not kept, so it
+    is not restated here.
+  - Some tests passed before the code they guard: two chunk-store scoping tests and
+    the requirement-id stability test passed against stubs; the v1 worker test and
+    the three "v1 routes do not fail on a v2 analysis" tests pass as regression
+    guards. The failure-path and route-shape tests were added after the behaviour
+    and checked by mutation: removing the publishable guard fails the judge case,
+    and removing the trace sort fails the round-order test.
+  - A fixup commit folded the `docs/production-wiring.md` rows into the first
+    commit so it builds; the branch had not been pushed.
+  - `make lint` clean. `make test`: 804 passed, 3 skipped, 123 deselected,
+    coverage 84.91%, and 124 frontend tests passed. `make test-integration`: 122
+    passed.
+  - Hermetic providers only; no live model and no real document was used.
+  - Open for the human: the three 18.5 graph choices and the 18.9 per-dimension
+    cap still await confirmation, and 18.3's Supabase CI row has not run.
+
+### 148 — Scoring v2, keyword coverage and the gap plan (PLAN 18.9)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.9
+- Prompt intent: continue with the next phase work items.
+- Suggestion: pure domain aggregation over `JudgedVerdict`, with the rubric as a
+  `[v2]` table in the existing rubric file so v1 reads it unchanged.
+- Outcome: changed in one place. §9's formula, read literally, lets a match of 4
+  make up for a low experience score inside one requirement. Each dimension is
+  now capped at 3 before weighting, which matches the design's "a 4 earns no
+  bonus". This is an interpretation for the human to confirm. The gap plan lists
+  one entry per requirement, its biggest single lift, recency included.
+- Reason: the fit score stays domain code the model never produces. An
+  incomplete analysis publishes no score, band, components or gap plan.
+- Human validation: TBD. Observed:
+  - 13 of 16 tests failed against stubs. The rubric-loader test passed because
+    the loader was already written, and two passed vacuously.
+  - One test's assumption about component order was corrected to look
+    components up by id. They are ordered by requirement id on purpose.
+  - All 16 then passed, and v1's scoring tests still pass.
+  - `make lint` clean. `make test`: 785 passed, 3 skipped, 96 deselected,
+    coverage 86.04%, and 124 frontend tests passed.
+  - No persistence changed.
+
+### 147 — Corrective retrieval, one bounded rewrite (PLAN 18.8)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.8
+- Prompt intent: continue with 18.8 in the same TDD style.
+- Suggestion: an `EvidenceMatcher` workflow over a narrow `CandidateSearch` port
+  (hits for the trace, candidates for the judge), because `HybridSearchPort`
+  returns ranked ids without text.
+- Outcome: accepted as suggested. Two choices the design text leaves open:
+  - A rewrite that finds no new chunk makes no second judge call.
+  - A re-judgement that comes back incomplete keeps the first verdict, which had
+    already passed the server's rules, rather than making the requirement
+    incomplete.
+- Reason: the model decides whether it has enough evidence; the workflow bounds
+  how much it may look.
+- Human validation: TBD. Observed:
+  - The seven tests failed against a stub that returned nothing, then passed.
+  - `make lint` clean. `make test`: 769 passed, 3 skipped, 96 deselected,
+    coverage 85.84%, and 124 frontend tests passed.
+  - No persistence changed.
+
+### 146 — The model digest, and transport errors as provider errors (PLAN 18.7)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.7, closing the digest source left open in entry 145
+- Prompt intent: the human chose an optional `model_digest` on
+  `CapabilityDescriptor`, filled by the Ollama adapter. Options offered were a new
+  narrow port, the descriptor field, deferring to 18.10, or dropping the digest.
+- Suggestion: look the digest up over `/api/tags` inside the `capabilities`
+  property.
+- Outcome: changed.
+  - Doing I/O in the property would have broken every contract test that builds
+    Ollama directly, and would have made reading a descriptor able to fail.
+  - Instead the adapter takes an optional `digest_lookup` that only the factory
+    supplies. It keeps a digest once it finds one and tries again after a
+    failure.
+  - A refused connection or a timeout left `HttpxTransport` as a raw httpx
+    exception, which no use case catches. It is now fixed, as its own `fix`
+    commit with a regression test: a timeout is transient and any other
+    transport failure means the provider is unavailable. That is a small
+    behaviour change for every provider: the retry policy now retries timeouts,
+    and a refused connection is `ProviderUnavailableError` rather than an
+    internal error.
+  - Two catalogue-wiring tests now record an empty `/api/tags` reply.
+- Reason: a failed lookup reports no digest, which costs a cache miss, never a
+  wrong reuse. A re-pulled tag with new weights now misses the cache.
+- Human validation: the digest design was chosen by the human. The rest is TBD.
+  Observed:
+  - The transport tests failed on raw `httpx.ConnectError` and `ReadTimeout`,
+    then passed.
+  - The digest tests failed on assertions (five; four passed vacuously against a
+    stub that returned `None`), then passed.
+  - The judge test failed with `cached is True` for new weights, then passed.
+  - `make lint` clean. `make test`: 762 passed, 3 skipped, 96 deselected,
+    coverage 85.74%, and 124 frontend tests passed.
+  - Integration: 95 passed.
+
+### 145 — The model judge and the server's rules (PLAN 18.7)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.7
+- Prompt intent: continue the remaining Phase 18 work in TDD commits.
+- Suggestion:
+  - ADR 014's rules and caps as pure domain code over proposal value objects, as
+    `domain/chunking.py` does.
+  - Graph facts per required term: exact, alias-only or missing, with years.
+  - A stable-first prompt, batched from the capability descriptor.
+  - A cache key over everything the judge saw.
+  - A use case with one repair call.
+  - A rule-based hermetic judge.
+- Outcome: changed during the work.
+  - The fact tests were first written with hand-built `Chunk` objects, then
+    rewritten through `validate_chunk_plan`, as the graph tests do.
+  - The hermetic fixture tests first imported the use case's private mapping;
+    they were rewritten through `RequirementJudge`.
+  - A duplicated whole-word term finder became one `find_term` in its own
+    `refactor` commit. A verification pipe (`mypy | tail`) hid a type error, so
+    that commit was made broken. It was amended before any push, with the
+    domain change applied and verified under `pipefail`.
+  - The model digest is only half done. `ModelIdentity` carries it into the
+    key, but no adapter reports one, because reading Ollama's digest would
+    change a port. It stays open for the human.
+- Reason:
+  - A problem goes back to the model with ids and fields only.
+  - A schema failure the port already repaired is not repaired again.
+  - Truncation splits rather than repairs, as the error type asks.
+  - A fallback model's verdict is never cached under the primary's key.
+- Human validation: TBD. Observed:
+  - The rules (18 of 20), fact, prompt, key and use-case tests failed on
+    assertions against stubs, then passed. The two rules tests that passed
+    against the stub pass vacuously there and are meaningful after.
+  - The hermetic tests failed on "no hermetic fixture for JudgeResponse", then
+    passed.
+  - The injection tests passed on their first run, as regression tests. The
+    obedient-judge test failed when the evidence rule was disabled in memory.
+  - `make lint` clean. `make test`: 749 passed, 3 skipped, 96 deselected,
+    coverage 85.65%, and 124 frontend tests passed.
+  - Integration: 95 passed; no persistence changed.
+
+### 144 — Hybrid search as one PostgreSQL function (PLAN 18.6)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.6
+- Prompt intent: continue the remaining Phase 18 work in TDD commits.
+- Suggestion: pure query shaping and weighted RRF in the domain; a
+  `HybridSearchPort` with a contract suite run against a test-only in-memory fake
+  and PostgreSQL; the design's SQL sketch as migration `e2c7a4b9d150`; a trace
+  repository for the per-requirement candidates.
+- Outcome: changed. The function gained two guards over the sketch — `documents`
+  filtered by workspace, and job-description chunks refused even when listed as a
+  source. The trace stores no terms, because `retrieval_traces` has no column for
+  them. The fake's lexical leg is word overlap rather than a stemmer, so stemming,
+  context-header matching, coverage ranking and `C#` / `C++` are PostgreSQL-only
+  regression tests. The v2 seed data moved into a shared fixture in its own
+  `refactor(test)` commit, rather than one test importing another's fixture.
+- Reason: the contract suite pins what callers depend on — scope, eligibility,
+  ranks, tie-breaks, limits — and leaves the parser to the database it belongs to.
+- Human validation: TBD. Observed: the domain tests failed first on assertions;
+  the PostgreSQL contract row failed on the missing function (after a seeding
+  flush-order fix in the test world), then passed; the trace tests failed on
+  assertions, then passed. The in-memory fake and the five leg tests passed on
+  their first run and are kept as regression tests. `make lint` clean; `make test`
+  690 passed, 3 skipped, 96 deselected, coverage 85.05%; 124 frontend tests
+  passed; integration 95 passed on local Homebrew PostgreSQL 17.10.
+
+### 143 — The knowledge graph and the experience calculator (PLAN 18.5)
+
+- Date: 2026-09-29
+- Tool / model: Cursor agent (Claude Opus 5.5)
+- Plan task: 18.5
+- Prompt intent: continue with the next Phase 18 item.
+- Suggestion: a pure graph builder from validated chunks; years with a term as a
+  month-granular union of role dates; one batched taxonomy call for new terms; a
+  graph repository in the unit of work with a recursive CTE for related terms.
+- Outcome: accepted, with three choices the design left open. The design lists
+  `MENTIONS` without its source, so a skills line or project with no role is a
+  `MENTIONS` edge from a per-document `document` node; it cites its chunk and adds
+  no years. Technology nodes are keyed by the verified surface form, and the
+  chunker's canonical spelling hangs off it by an inferred `ALIAS_OF`, so a
+  canonical spelling alone is never an exact match. A failed taxonomy call (bad
+  reply, refusal, transient error, oversized input) stores the graph without
+  inferred edges instead of failing ingestion; an unavailable or not-permitted
+  provider still raises. `docs/architecture-v2.md` §7 records all three. The
+  human has not yet reviewed them.
+- Reason: inferred edges only widen a search, so losing them costs recall, never
+  correctness; keeping the verified spelling as the node keeps the exact-term rule
+  in the data rather than in every query. The months are counted with the end
+  month included, which reproduces the design's "Mar 2021 – Dec 2024 is 3.8 years".
+- Human validation: TBD. Observed: every new test failed first on an assertion
+  (for example `assert 0 == 46`, `assert set() == {...}`, `ProviderUnavailableError:
+  no hermetic fixture for TaxonomyResponse`); three guard tests passed against the
+  stubs and are kept as regression tests. `make test` gave 676 passed, 3 skipped,
+  79 deselected, coverage 85.12%; 124 frontend tests passed; integration gave 78
+  passed on local Homebrew PostgreSQL 17.10.
+
+### 142 — The model-defined chunker and its hermetic fixture (PLAN 18.4)
+
+- Date: 2026-09-29
+- Tool / model: Claude Code session (commits 2717e85–5047065), then Cursor agent
+  (Claude Opus 5.5) for the rest.
+- Plan task: 18.4
+- Prompt intent: continue from 18.3, find where the work stopped and pick it up.
+- Suggestion: line numbering, section splitting by the provider's budget, plan
+  validation and a `DocumentChunker` with one repair call had been committed. A
+  rule-based hermetic structured fixture was on disk, untracked. The Cursor session
+  committed that fixture, parsed a role's verbatim `date_text` in domain code, and
+  added `retrieval_text`: the context header followed by the verbatim text, and
+  `None` for a contact chunk.
+- Outcome: accepted
+- Reason: the fixture is a registry keyed by contract, so 18.5, 18.7 and 18.11
+  add a builder each instead of an `if` chain, and it refuses a contract it has no
+  builder for. Unparsed date text leaves the role undated rather than guessing.
+  `retrieval_text` keeps the model-written header out of the text the user sees.
+  The `fts` generated column already returns null for contact chunks. The chunker
+  is not yet called by ingestion; that wiring is 18.10.
+- Human validation: TBD. Observed in the Cursor session: the two new tests
+  failed first on assertions (`'Jane Doe\njane@example.com' is not None` and
+  `None == DateRange(...)`), then passed. The fixture's 15 tests passed
+  when it was first run from the untracked files. `make lint` was clean; `make
+  test` gave 648 passed, 3 skipped, 70 deselected, coverage 85.17%, and 124
+  frontend tests passed; `make test-integration` gave 69 passed on local Homebrew
+  PostgreSQL 17.10. Docker is not available on this machine, so the Supabase
+  image row for 18.3 still waits on CI.
+
+### 141 — The v2 schema, and a cloud PostgreSQL runner for it (PLAN 18.3)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.3
+- Prompt intent: continue Phase 18 in TDD fashion.
+- Suggestion: one migration for the eight v2 tables with the cascades, checks and
+  indexes the design names; pgvector moved into an `extensions` schema; row-level
+  security with no policies on every table; a CI job for PostgreSQL 16 and for
+  Supabase's Postgres image.
+- Outcome: changed
+- Reason: three things changed while it ran. Setting the search path for every
+  migration in `migrations/env.py` put the baseline tables into the new
+  `extensions` schema on a rebuilt database, so the search path is now set inside
+  the new revision only, and its downgrade moves pgvector back to `public`, where
+  older revisions expect it. Foreign keys alone could not honour "every analysis
+  that read the document": a verdict's rationale may paraphrase the CV without
+  citing a chunk, so the unit of work deletes the workspace's v2 verdicts when a CV
+  or cover letter is deleted; chunks, vectors, graph rows, quotes and traces still
+  cascade in the database. And the Supabase image could not be pulled — Docker
+  Hub, ghcr.io and public ECR are all refused from this session — so that row is a
+  CI job whose first run is its verification, and 18.3 stays unticked until then.
+- Human validation: TBD. Observed: the device VM has no PostgreSQL and cannot
+  install one, so integration tests ran in the session's cloud container against
+  PostgreSQL 16.13 with pgvector 0.6.0, on a fresh database, with the working tree
+  copied from the device before each run. The new tests failed first because the
+  tables did not exist, and the CV-delete test failed again until the unit of work
+  deleted verdicts. Final run: 69 integration tests passed, including the existing
+  migration upgrade-and-downgrade test; the hermetic suite gave 597 passed,
+  3 skipped, 70 deselected. The cloud role was a superuser, because the migrations
+  create and move the extension; a developer database needs the migration role to
+  own pgvector, which `docs/running-locally.md` now says.
+
+### 140 — Pydantic contracts and a structured completion port (PLAN 18.2)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.2
+- Prompt intent: continue Phase 18 in TDD fashion.
+- Suggestion: one Pydantic model per v2 model call — CV, cover-letter and
+  job-description chunking, taxonomy, judge verdicts, agent answer — each with
+  `extra="forbid"` and a contract version; a repair message rendered from the
+  validation error; a `StructuredCompletionPort` implemented once over any
+  completion port, with one repair call and typed failures.
+- Outcome: accepted
+- Reason: the contracts check shape only — closed kinds per document type, 0–4
+  scores, required fields — so the server's semantic rules stay in domain code
+  where ADR 013 and ADR 014 put them. The repair message lists JSON paths and
+  Pydantic's messages and never repeats the invalid values, which may be CV text.
+  A truncated reply is not repaired, because repairing a half-written JSON object
+  wastes a call; the caller splits the work instead. Checking the new port against
+  the hermetic adapter showed that it only produces v1 shapes; rather than grow its
+  property-name `if` chain, each contract's hermetic fixture lands with the task
+  that first uses it, and the plan says so.
+- Human validation: TBD. Observed in this session: each contract, repair and
+  completer test failed first on an assertion against a stub, then passed; the
+  contract test through the three HTTP adapters passed on first run and is a
+  regression test. After the last code commit `ruff check`, `ruff format --check`
+  and `mypy` were clean and `pytest` gave 597 passed, 3 skipped, 58 deselected,
+  coverage 84.30%. `pydantic` is now declared in `pyproject.toml` at the version
+  the lock already pinned.
+
+### 139 — Provider foundations for v2 (PLAN 18.1)
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.1
+- Prompt intent: continue with Phase 18 in TDD fashion with regular commits and
+  the documentation kept current.
+- Suggestion: a per-model catalogue in `config/models.toml` behind the capability
+  descriptor; native structured output on every hosted API with a schema adapted
+  to each dialect; Ollama's chat API with an explicit `num_ctx`; truncation as
+  `finish_reason: length` everywhere; temperature and seed gated by the catalogue;
+  embedding input types with the model's task prefixes.
+- Outcome: accepted
+- Reason: every change is additive for v1. A request with no input type, no
+  temperature and no seed is sent as before, apart from the schema now being
+  enforced by the API. Two findings changed the work while it ran. OpenAI strict
+  mode forces every optional property to be present as null, and the v1 claim and
+  requirement extractors read optional fields with `str(item.get(...))`, which
+  would have stored the text "None"; the adapter now removes those forced nulls
+  from the reply. The Ollama embedding call sends `num_ctx` too, because the
+  completion fix alone would have left the same silent cut on embeddings. A check
+  of Anthropic's supported-model list during the checkpoint found that the
+  configured default, `claude-sonnet-4-0`, predates structured outputs, so native
+  enforcement became a per-model catalogue flag (f677b77) and that model keeps the
+  v1 prompt instruction.
+- Human validation: TBD. Observed in this session, on the local VM with Python
+  3.14.7: each behaviour's test failed first on an assertion or on the missing
+  parameter it introduces, then passed; after the last commit `ruff check`,
+  `ruff format --check` and `mypy` were clean and `pytest` gave 541 passed,
+  3 skipped, 58 deselected, coverage 83.88%. Two contract tests passed on their
+  first run and are recorded as regression tests. No live provider, database or
+  frontend command was run; bun is not installed on the VM and no frontend file
+  changed.
+
+### 138 — Accept the v2 design and split the README
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: 18.0; README maintenance
+- Prompt intent: "let's continue" after the design summary; then keep the README
+  updated, remove clutter from it, and move detail into linked sub-files.
+- Suggestion: record 18.0 as accepted without amendment, and move the README's long
+  sections unchanged into eight pages under `docs/`, keeping a short README with a
+  documentation index.
+- Outcome: accepted, with one correction
+- Reason: the human's instruction to continue was taken as acceptance of ADRs
+  013–015 as written; the plan records that reading. The README split moved text
+  without editing it, apart from relative links. It also moved the provider table
+  and the ADR pointers that `test_readme_status_matches_observed_phase_13c_behaviour`
+  checks, and that test failed on the next full run. The check was changed to read
+  the README and the pages it links, keeping every assertion, and
+  `docs/architecture.md` regained the ADR 010–012 pointers the old documentation
+  table carried. The commit that broke the test is fffad11; the fix is b6ed3e7.
+- Human validation: TBD. Observed: every relative link and anchor in the
+  repository's Markdown resolved; the full backend suite passed after the fix.
+
+### 137 — Design the v2 architecture: chunks, hybrid search, a model judge, agents and MCP
+
+- Date: 2026-09-29
+- Tool / model: Claude (Cowork session, configured model `claude-opus-5-5`)
+- Plan task: Phase 18 design; PLAN 18.0 is the human review. Recorded override:
+  requested before 13D.6g.
+- Prompt intent: keep the career-assistant use case and change the architecture.
+  The model should define the chunks of CVs, cover letters and job descriptions;
+  RAG and hybrid search should match job-description points to CV and letter
+  chunks; the model should score the candidate matches on seniority, match and
+  experience; token budgets should be larger and responses JSON. The design should
+  show MCP, agentic behaviour, hybrid, semantic and lexical search, and Supabase or
+  pgvector. Work on a new branch.
+- Suggestion: build the design and the backend core in this session, with
+  Supabase-ready PostgreSQL rather than adopting Supabase Auth, explicit handling of
+  exact technology names, and the MCP server, agentic Ask and corrective retrieval
+  as the agentic pieces.
+- Outcome: changed
+- Reason: the human chose design only, reviewed before any code, instead of the
+  backend core; accepted Supabase-ready PostgreSQL, exact technology-name handling
+  and the three agentic pieces; and added a knowledge graph. The design keeps v1's rule that the server verifies every
+  model-written field against stored text, and keeps the fit score in domain code:
+  the model judges three dimensions per requirement and the domain aggregates them
+  (ADR 014). Reading the code for the design found four v1 gaps that the plan now
+  owns: the Ollama adapter sends no `num_ctx`; the Anthropic adapter asks for JSON
+  in the prompt instead of using structured output; `nomic-embed-text` is called
+  without its task prefixes; and ADR 010 carries nine amendments. Rejected inside
+  the design: an agent framework, a separate vector or graph database, a
+  cross-encoder reranker before measurement, a BM25 extension Supabase does not
+  ship, write tools and Streamable HTTP over MCP before authentication, and a
+  model-emitted fit score.
+- Human validation: TBD until the 18.0 review. Observed in this session: the eight
+  Mermaid diagrams in `docs/architecture-v2.md` rendered with
+  `@mermaid-js/mermaid-cli` 11 after two syntax fixes; the `hybrid_search` SQL
+  sketch ran against PostgreSQL 16.13 and pgvector 0.6.0, with pgvector in an
+  `extensions` schema and synthetic rows, and workspace isolation, the active-CV
+  rule, the source filter and all three legs behaved as described. A second Claude
+  agent reviewed the draft before the first commit. It found a scoring formula that
+  put a candidate who meets every requirement on the band boundary, two server rules
+  that changed nothing, an unstable verdict-cache key, graph rows and verdict quotes
+  that would survive a CV delete, an MCP switch the launching client could set, and
+  wrong Supabase, `ts_rank_cd` and n8n claims. Each was corrected in the design, the
+  ADRs and this plan; the `ts_rank_cd` and extension-schema findings were confirmed
+  on PostgreSQL first. No application code changed, so `make lint` and
+  `make test` were not run. `git fetch` left `.git/index.lock` and
+  `.git/objects/maintenance.lock` behind because the session could not delete
+  files; the human granted deletion for the repository folder and both were
+  removed before the branch was created.
+
 ### 136 — A skills line can meet a requirement that only names a tool
 
 - Date: 2026-09-24

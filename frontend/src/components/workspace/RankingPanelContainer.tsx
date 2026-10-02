@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { getRanking } from "@/api/client";
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import { RankingPanel } from "@/components/workspace/RankingPanel";
 
 export function RankingPanelContainer() {

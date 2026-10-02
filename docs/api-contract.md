@@ -152,6 +152,8 @@ Role {
   status: "analysing" | "ready" | "failed";   // additive
   updatedAt: string;                          // additive
   fitSummary: string | null;                  // additive; GET /roles/{id} once ready, otherwise null
+  activeJob: AnalysisJob | null;              // additive; the queued or running job, with progress
+  analysisPipeline: "v2" | null;       // additive; which pipeline produced the published analysis
 }
 
 RoleCreated { role: Role; jobId: string }
@@ -182,12 +184,60 @@ AnalysisJob {
   startedAt: string | null;
   finishedAt: string | null;
   error: { code: string; message: string } | null;
+  progress: JobProgress | null;   // additive; null from the in-memory store
 }
+
+JobProgress {
+  tasksDone: number;              // done or skipped
+  tasksTotal: number;
+  fraction: number;               // 0–1, including the running task's share of its units
+  currentTask: TaskKey | null;
+  elapsedSeconds: number | null;  // since the job started; null while queued
+  remainingSeconds: number | null;// an estimate; null while it cannot be made
+  queuePosition: number | null;   // live analyses ahead; only while queued
+  modelCallsDone: number;
+  modelCallsRemaining: number;    // estimate; repairs can add calls
+  embeddingCallsDone: number;
+  embeddingCallsRemaining: number;
+  callEstimateComplete: boolean;  // false while downstream work is undiscovered
+  tasks: {
+    key: TaskKey;
+    state: "pending" | "running" | "done" | "skipped" | "failed";
+    unitsDone: number;
+    unitsTotal: number | null;    // requirements searched or judged, rechecks
+    modelCallsDone: number;
+    modelCallsTotal: number | null;
+    embeddingCallsDone: number;
+    embeddingCallsTotal: number | null;
+  }[];
+}
+
+TaskKey = "prepare" | "read_advert" | "read_cv"
+        | "search" | "judge" | "recheck" | "score";
+// Independent reads may run concurrently; the remaining stages follow dependencies.
 ```
 
 The frontend polls this with react-query while `state` is `queued` or `running`, at a
 fixed interval, and stops on a terminal state. A failed job leaves the role at
 `status: "failed"` with the reason, and `POST /reanalyse` is the retry.
+
+**Progress.** The worker writes a row per task as it moves (keys, counts and
+timestamps, never document text). `remainingSeconds` is arithmetic, not a model
+output: this job's own pace inside a counted task, otherwise the median duration of
+the same task in the workspace's last ten successful analyses on the same pipeline,
+less the time already spent. It is `null` while any unfinished model task has neither,
+which is the case for a workspace's first analysis until judging starts. A queued job
+uses the available worker capacity and observed live-job durations. A failed job shows the task it
+stopped in as `failed`. A queued job lists the current plan, all `pending`.
+Parallel read time uses the maximum while reads overlap, otherwise their sum.
+Remaining API counts include physical retry attempts and omit cached/skipped work.
+Unknown downstream work is labelled "at least"; a complete plan is still an estimate.
+
+**Cancellation.** Deleting a role, or the CV, stops its running analysis. Every
+provider call and every progress write first checks the job, so no model call starts
+after the delete. A call already in flight finishes or times out, and its result is
+discarded. A deleted role's job disappears (`404`); a deleted CV leaves the job
+`failed` with `cv_deleted`.
 
 **Incomplete analysis (13D.6a).** An extraction or assessment that does not
 validate is a failed job, not a fit score. The decision uses the existing
@@ -285,6 +335,81 @@ InterviewPack {
 Probe questions, lead-with notes and ask-them lines are phrased through the same
 generation pipeline as drafts. Citations on `leadWith` and `thinAreas.nearest` are
 dropped unless the span still resolves in this workspace.
+
+---
+
+## Role verdicts
+
+These routes read the sole published chunk/verdict analysis.
+
+```http
+GET /api/roles/{id}/verdicts                            → RoleVerdicts
+GET /api/roles/{id}/verdicts/{requirementId}/trace      → RetrievalTrace
+```
+
+- `404 role_not_found` — no role with that id in this workspace.
+- `409 analysis_incomplete` — the role has no succeeded current analysis (it is still
+  running, failed or needs reanalysis after retirement).
+- `404 requirement_not_found` — the trace route's `requirementId` names no verdict in
+  the role's current v2 analysis.
+
+```ts
+RoleVerdicts {
+  roleId; analysisId;
+  fitScore: number;          // computed by domain code, never by the model
+  band: string;
+  gated: boolean;            // a must-have's match score is at or below the rubric
+                             // gate, so the band cannot be "strong"
+  rubricVersion: string;     // "scoring-rubric-v2"
+  leftMachine: boolean;      // true if any call in this analysis used a hosted provider
+  verdicts: Verdict[];
+  keywordCoverage: { exact: string[]; alias: string[]; missing: string[] };
+  gapPlan: { requirementId; dimension: "match" | "seniority" | "experience" | "recency";
+             current: number; delta: number }[];   // ordered by delta descending;
+                                                  // current: 0–4 judge anchor,
+                                                  // or 0–1 recency weight
+}
+
+Verdict {
+  requirementId; quote; statement; mustHave: boolean;
+  verdict: "met" | "partial" | "missing";
+  requirementScore: number | null;
+  match: DimensionScore;
+  seniority: DimensionScore | null;
+  experience: DimensionScore | null;
+  unmetConditions: string[];
+  contradiction: boolean;
+  adjustments: string[];     // server rules applied to the judge's proposal (ADR 014)
+  evidence: { chunkId; documentId; quote }[];   // quote is verbatim from the chunk
+  provider; model;
+}
+
+DimensionScore { score: 0 | 1 | 2 | 3 | 4; rationale: string }   // the judge's anchors; 3 is "as stated"
+
+RetrievalTrace {
+  requirementId;
+  rounds: { round: 0 | 1; queryText: string;
+            hits: { chunkId; fusedScore: number; denseRank: number | null;
+                    lexicalRank: number | null; exactRank: number | null }[] }[];
+}
+```
+
+Every evidence quote passed the server's verbatim check against a stored chunk before
+it was saved. Each `rationale`, and a round-1 `queryText`, is the judge's own
+phrasing ([ADR 014](adr/014-model-judges-domain-aggregates.md)): it explains a score
+and is never evidence, and the browser renders it as escaped text. Round 1 exists only
+when the judge asked for one corrective rewrite. Traces carry chunk ids and ranks,
+never chunk text. A v2 role's `counts` on
+`GET /api/roles/{id}` count these verdict labels, and its `fitScore` is the v2 score.
+Shared requirement/breakdown/gap/preparation/draft routes project these validated
+results and the published score. They no longer depend on retired analysis tables.
+Recency is a domain-calculated gap category, not a fourth judge dimension. Its
+current weighting factor is displayed as a percentage (0.6 means 60%); other gap
+dimensions display their 0–4 anchors. One valid recency gap must not prevent the
+shared Fit/Gaps response from loading. Unknown dimension strings remain invalid.
+The web app reads Fit/Gaps from verdicts for every ready role. `analysisPipeline`
+remains `"v2"` or null as a compatibility attribution field; it is not a selector.
+The TypeScript types live in `frontend/src/types/index.ts`.
 
 ---
 
@@ -420,9 +545,11 @@ ChatMessage {
   provider: string | null;
   leftMachine: boolean;
   createdAt: string;
+  toolSteps: ToolStep[];   // additive; the agent's tool calls for a fresh answer; [] in history
 }
 
 Citation { id; label; evidence: Evidence }
+ToolStep { name; arguments: Record<string, string>; found: number; failed: boolean }
 ```
 
 `frontend/src/types/index.ts` is the canonical TypeScript statement of this contract,
@@ -439,11 +566,16 @@ Event sequence:
 
 ```text
 event: meta      data: { "questionId": "...", "messageId": "...", "intent": "gaps", "provider": "ollama", "model": "...", "leftMachine": false }
+event: tools     data: { "steps": [ ToolStep, ... ] } (only when the agent answered)
 event: token     data: { "text": "..." }            (repeated)
 event: citations data: { "citations": [ ... ] }     (after the text, once)
 event: done      data: { "kind": "answer" | "insufficient" }
 event: error     data: { "code": "provider_failed", "message": "..." }
 ```
+
+Tool steps arrive before the text, because the agent called the tools before it
+answered. Each argument is shown as a string of at most 120 characters. Steps are not
+stored: history messages carry `toolSteps: []`.
 
 Citations arrive **after** the text because they are validated against stored spans
 once the answer is complete. An answer whose citations do not all resolve is reduced
@@ -503,11 +635,14 @@ ProviderChoice { answerProviderId; answerModel; indexProviderId; indexModel }
 - Changing `indexProviderId` or `indexModel` invalidates embeddings and returns
   `reindex: { jobId }` as an additive field.
 
-The persisted `answerProviderId` / `answerModel` is what Ask, requirement/claim
-extraction and bullet phrasing actually call. `indexProviderId` stays independent.
+The persisted `answerProviderId` / `answerModel` is what Ask, document reading, judging and bullet phrasing actually call. `indexProviderId` stays independent.
 Answer and draft `provider` / `model` / `leftMachine` come from that completion
 port, not a hard-coded hermetic tag. Call accounting records those identifiers and
 token counts only — never question, CV or prompt text.
+
+The pipeline-settings routes and `PIPELINE_VERSION` are removed. Every workspace
+uses the current analysis. Reanalyse legacy roles after the retirement migration;
+original uploads are preserved.
 
 **No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
 masked, not a boolean per key beyond `available`. A redaction test asserts that the

@@ -5,10 +5,20 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from career_assistant.adapters.providers.call_gate import (
+    HostedCallGate,
+    RateLimitNote,
+    estimate_tokens,
+    run_hosted,
+)
+from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.adapters.providers.resilience import (
     ResiliencePolicy,
     classify_http_status,
+)
+from career_assistant.adapters.providers.schema_dialects import (
+    anthropic_output_schema,
 )
 from career_assistant.application.ports.errors import (
     ProviderInputTooLargeError,
@@ -18,9 +28,11 @@ from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
     CompletionResult,
+    ModelProfile,
 )
 
-_MAX_INPUT_CHARS = 200_000
+# Conservative standalone defaults; production supplies the model catalogue row.
+_DEFAULT_PROFILE = ModelProfile(context_window_tokens=200_000, max_output_tokens=4_096)
 
 
 class AnthropicCompletionAdapter:
@@ -34,12 +46,16 @@ class AnthropicCompletionAdapter:
         transport: HttpTransport,
         resilience: ResiliencePolicy,
         base_url: str = "https://api.anthropic.com/v1",
+        profile: ModelProfile | None = None,
+        gate: HostedCallGate | None = None,
     ) -> None:
         self._api_key = api_key
         self._model_tag = model_tag
         self._transport = transport
         self._resilience = resilience
+        self._profile = profile or _DEFAULT_PROFILE
         self._base_url = base_url.rstrip("/")
+        self._gate = gate
 
     @property
     def capabilities(self) -> CapabilityDescriptor:
@@ -48,24 +64,26 @@ class AnthropicCompletionAdapter:
             supports_completion=True,
             supports_embedding=False,
             supports_structured_output=True,
-            context_window_tokens=200_000,
-            max_output_tokens=4_096,
+            context_window_tokens=self._profile.context_window_tokens,
+            max_output_tokens=self._profile.max_output_tokens,
             embedding_dimensions=None,
             leaves_machine=True,
+            execution=execution_profile(self._profile),
+            supports_tool_calling=self._profile.supports_tool_calling,
+            supports_prompt_caching=self._profile.supports_prompt_caching,
+            supports_temperature=self._profile.supports_temperature,
+            supports_seed=self._profile.supports_seed,
         )
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
-        if len(request.system) + len(request.user) > _MAX_INPUT_CHARS:
+        if (
+            len(request.system) + len(request.user) + 3
+        ) // 4 + request.max_output_tokens > self._profile.context_window_tokens:
             raise ProviderInputTooLargeError("anthropic input too large")
 
-        user_content = request.user
-        if request.json_schema is not None:
-            user_content = (
-                f"{request.user}\n\nRespond with JSON only matching this schema:\n"
-                f"{json.dumps(request.json_schema)}"
-            )
+        body = self._body(request)
 
-        def _call() -> CompletionResult:
+        def _call(note: RateLimitNote) -> CompletionResult:
             response = self._transport.request(
                 "POST",
                 f"{self._base_url}/messages",
@@ -74,15 +92,12 @@ class AnthropicCompletionAdapter:
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json",
                 },
-                json_body={
-                    "model": self._model_tag,
-                    "max_tokens": request.max_output_tokens,
-                    "system": request.system,
-                    "messages": [{"role": "user", "content": user_content}],
-                },
+                json_body=body,
                 timeout_seconds=self._resilience.timeout_seconds,
             )
-            classify_http_status(response.status_code)
+            if response.status_code >= 400:
+                note(response.headers)
+            classify_http_status(response.status_code, response.headers)
             data = json.loads(response.body.decode("utf-8"))
             if data.get("stop_reason") == "refusal":
                 raise ProviderRefusedError("anthropic refused the request")
@@ -94,19 +109,76 @@ class AnthropicCompletionAdapter:
             ]
             text = "".join(text_parts)
             usage = data.get("usage") or {}
+            input_tokens = _int_or_none(usage.get("input_tokens"))
+            output_tokens = _int_or_none(usage.get("output_tokens"))
+            note(response.headers, used_tokens=_sum(input_tokens, output_tokens))
             return CompletionResult(
                 text=text,
                 provider_id=self.provider_id,
                 model_tag=self._model_tag,
                 left_machine=True,
-                input_tokens=_int_or_none(usage.get("input_tokens")),
-                output_tokens=_int_or_none(usage.get("output_tokens")),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                finish_reason=_finish_reason(data.get("stop_reason")),
             )
 
-        return self._resilience.run(_call)
+        return run_hosted(
+            self._gate,
+            provider_id=self.provider_id,
+            model_tag=self._model_tag,
+            estimated_tokens=estimate_tokens(
+                len(request.system) + len(request.user), request.max_output_tokens
+            ),
+            resilience=self._resilience,
+            operation=_call,
+        )
+
+    def _body(self, request: CompletionRequest) -> dict[str, object]:
+        body: dict[str, object] = {
+            "model": self._model_tag,
+            "max_tokens": request.max_output_tokens,
+            "system": request.system,
+            "messages": [{"role": "user", "content": request.user}],
+        }
+        schema = request.json_schema
+        if schema is not None and self._profile.native_structured_output:
+            body["output_config"] = {
+                "format": {
+                    "type": "json_schema",
+                    "schema": anthropic_output_schema(schema),
+                }
+            }
+        elif schema is not None:
+            # Models without structured outputs are asked in the prompt, as in v1.
+            body["messages"] = [
+                {
+                    "role": "user",
+                    "content": f"{request.user}\n\nRespond with JSON only matching "
+                    f"this schema:\n{json.dumps(schema)}",
+                }
+            ]
+        if request.temperature is not None and self._profile.supports_temperature:
+            body["temperature"] = request.temperature
+        return body
+
+
+# Anthropic's stop reasons, in the vocabulary callers already check.
+_FINISH_REASONS = {"end_turn": "stop", "stop_sequence": "stop", "max_tokens": "length"}
+
+
+def _finish_reason(value: Any) -> str | None:
+    if not isinstance(value, str) or not value:
+        return None
+    return _FINISH_REASONS.get(value, value)
 
 
 def _int_or_none(value: Any) -> int | None:
     if isinstance(value, int):
         return value
     return None
+
+
+def _sum(left: int | None, right: int | None) -> int | None:
+    if left is None and right is None:
+        return None
+    return (left or 0) + (right or 0)

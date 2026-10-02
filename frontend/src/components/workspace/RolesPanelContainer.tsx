@@ -158,6 +158,9 @@ export function RolesPanelContainer() {
   const remove = useMutation({
     mutationFn: deleteRole,
     onSuccess: (_result, roleId) => {
+      // The server stopped this role's analysis; stop asking about its job.
+      const jobId = roleJobs[roleId];
+      if (jobId) queryClient.removeQueries({ queryKey: ["jobs", jobId] });
       setRoleJobs((prev) => {
         const next = { ...prev };
         delete next[roleId];
@@ -211,6 +214,7 @@ export function RolesPanelContainer() {
       sortDirection={sortDirection}
       failureReasons={failureReasons}
       failureCodes={failureCodes}
+      observedAt={rolesQuery.dataUpdatedAt}
       onSort={(key) => {
         if (key === sortKey) {
           setSortDirection(sortDirection === "asc" ? "desc" : "asc");

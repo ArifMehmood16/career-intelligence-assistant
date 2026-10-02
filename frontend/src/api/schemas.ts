@@ -35,6 +35,11 @@ export const roleSchema = z
     status: z.enum(["analysing", "ready", "failed"]),
     updatedAt: z.string(),
     fitSummary: z.string().nullable().optional(),
+    activeJob: z
+      .lazy(() => analysisJobSchema)
+      .nullable()
+      .optional(),
+    analysisPipeline: z.literal("v2").nullable().optional(),
   })
   .passthrough();
 
@@ -62,13 +67,6 @@ export const requirementSchema = z.object({
   signals: relatednessSignalsSchema.nullable().optional(),
 });
 
-export const breakdownRowSchema = z.object({
-  id: z.enum(["must", "desirable", "recency"]),
-  label: z.string(),
-  value: z.number(),
-  requirementIds: z.array(z.string()),
-});
-
 export const citationSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -86,6 +84,14 @@ export const chatMessageSchema = z.object({
   provider: z.string().nullable(),
   leftMachine: z.boolean(),
   createdAt: z.string().optional(),
+  toolSteps: z.lazy(() => toolStepSchema.array()).optional(),
+});
+
+export const toolStepSchema = z.object({
+  name: z.string(),
+  arguments: z.record(z.string(), z.string()),
+  found: z.number().int(),
+  failed: z.boolean(),
 });
 
 export const providerSchema = z
@@ -115,6 +121,43 @@ export const providerChoiceUpdateResponseSchema = providerChoiceSchema.extend({
     .optional(),
 });
 
+const analysisTaskKeySchema = z.enum([
+  "prepare",
+  "read_advert",
+  "read_cv",
+  "search",
+  "judge",
+  "recheck",
+  "score",
+]);
+
+export const jobProgressSchema = z.object({
+  tasksDone: z.number().int(),
+  tasksTotal: z.number().int(),
+  fraction: z.number(),
+  currentTask: analysisTaskKeySchema.nullable(),
+  elapsedSeconds: z.number().nullable(),
+  remainingSeconds: z.number().nullable(),
+  queuePosition: z.number().int().nullable(),
+  modelCallsDone: z.number().int().nonnegative().optional(),
+  modelCallsRemaining: z.number().int().nonnegative().optional(),
+  embeddingCallsDone: z.number().int().nonnegative().optional(),
+  embeddingCallsRemaining: z.number().int().nonnegative().optional(),
+  callEstimateComplete: z.boolean().optional(),
+  tasks: z.array(
+    z.object({
+      key: analysisTaskKeySchema,
+      state: z.enum(["pending", "running", "done", "skipped", "failed"]),
+      unitsDone: z.number().int(),
+      unitsTotal: z.number().int().nullable(),
+      modelCallsDone: z.number().int().nonnegative().optional(),
+      modelCallsTotal: z.number().int().nonnegative().nullable().optional(),
+      embeddingCallsDone: z.number().int().nonnegative().optional(),
+      embeddingCallsTotal: z.number().int().nonnegative().nullable().optional(),
+    }),
+  ),
+});
+
 export const analysisJobSchema = z
   .object({
     id: z.string(),
@@ -138,6 +181,7 @@ export const analysisJobSchema = z
         z.null(),
       ])
       .optional(),
+    progress: jobProgressSchema.nullable().optional(),
   })
   .passthrough();
 
@@ -154,29 +198,6 @@ export const supportingDocumentSchema = z.object({
   pageCount: z.number().int(),
   parsedAt: z.string(),
   createdAt: z.string(),
-});
-
-export const gapItemSchema = z.object({
-  requirementId: z.string(),
-  requirementText: z.string(),
-  type: z.enum(["must", "desirable"]),
-  status: z.enum(["partial", "missing"]),
-  reason: z.enum([
-    "no_related_claim",
-    "adjacent_claim_only",
-    "evidence_too_old",
-    "evidence_thin",
-  ]),
-  adjacentEvidence: evidenceSchema.nullable(),
-  scoreDelta: z.number(),
-  action: z.enum(["evidence_it", "learn_it", "accept_it"]),
-  canDraftBullet: z.boolean(),
-});
-
-export const gapPlanSchema = z.object({
-  roleId: z.string(),
-  currentScore: z.number(),
-  items: z.array(gapItemSchema),
 });
 
 export const draftProvenanceSchema = z.object({
@@ -279,4 +300,76 @@ export const errorEnvelopeSchema = z.object({
     message: z.string(),
     correlationId: z.string(),
   }),
+});
+
+const dimensionScoreSchema = z.object({
+  score: z.number().int().min(0).max(4),
+  rationale: z.string(),
+});
+
+export const roleVerdictsSchema = z.object({
+  roleId: z.string(),
+  analysisId: z.string(),
+  fitScore: z.number(),
+  band: z.string(),
+  gated: z.boolean(),
+  rubricVersion: z.string(),
+  leftMachine: z.boolean(),
+  verdicts: z.array(
+    z.object({
+      requirementId: z.string(),
+      quote: z.string(),
+      statement: z.string(),
+      mustHave: z.boolean(),
+      verdict: z.enum(["met", "partial", "missing"]),
+      requirementScore: z.number().nullable(),
+      match: dimensionScoreSchema,
+      seniority: dimensionScoreSchema.nullable(),
+      experience: dimensionScoreSchema.nullable(),
+      unmetConditions: z.array(z.string()),
+      contradiction: z.boolean(),
+      adjustments: z.array(z.string()),
+      evidence: z.array(
+        z.object({
+          chunkId: z.string(),
+          documentId: z.string(),
+          quote: z.string(),
+        }),
+      ),
+      provider: z.string(),
+      model: z.string(),
+    }),
+  ),
+  keywordCoverage: z.object({
+    exact: z.array(z.string()),
+    alias: z.array(z.string()),
+    missing: z.array(z.string()),
+  }),
+  gapPlan: z.array(
+    z.object({
+      requirementId: z.string(),
+      dimension: z.enum(["match", "seniority", "experience", "recency"]),
+      current: z.number(),
+      delta: z.number(),
+    }),
+  ),
+});
+
+export const retrievalTraceSchema = z.object({
+  requirementId: z.string(),
+  rounds: z.array(
+    z.object({
+      round: z.number().int(),
+      queryText: z.string(),
+      hits: z.array(
+        z.object({
+          chunkId: z.string(),
+          fusedScore: z.number(),
+          denseRank: z.number().int().nullable(),
+          lexicalRank: z.number().int().nullable(),
+          exactRank: z.number().int().nullable(),
+        }),
+      ),
+    }),
+  ),
 });

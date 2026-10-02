@@ -1,8 +1,8 @@
 """Phase 13A.9 — production wiring matrix must name every live HTTP route.
 
 An isolated domain or repository test is not a wired feature. This suite fails when
-the README still describes an earlier phase, or when a FastAPI route is missing from
-docs/production-wiring.md.
+the README, or a page it links for detail, still describes an earlier phase, or when
+a FastAPI route is missing from docs/production-wiring.md.
 """
 
 from __future__ import annotations
@@ -13,6 +13,17 @@ from career_assistant.main import create_app
 
 ROOT = Path(__file__).resolve().parents[3]
 README = ROOT / "README.md"
+ARCHITECTURE = ROOT / "docs" / "architecture.md"
+MODEL_PROVIDERS = ROOT / "docs" / "model-providers.md"
+# The README keeps a summary; these pages hold the detail it links to.
+README_PAGES = (
+    README,
+    ARCHITECTURE,
+    MODEL_PROVIDERS,
+    ROOT / "docs" / "running-locally.md",
+    ROOT / "docs" / "how-to-use.md",
+    ROOT / "docs" / "limitations.md",
+)
 WIRING = ROOT / "docs" / "production-wiring.md"
 THREAT_MODEL = ROOT / "docs" / "threat-model.md"
 API_CONTRACT = ROOT / "docs" / "api-contract.md"
@@ -64,13 +75,20 @@ def _matrix_rows(text: str) -> list[list[str]]:
 
 
 def test_readme_status_matches_observed_phase_13c_behaviour() -> None:
-    text = README.read_text(encoding="utf-8")
-    for claim in STALE_README_CLAIMS:
-        assert claim not in text, f"README still claims {claim!r}"
-    assert "docs/production-wiring.md" in text
-    assert "docs/adr/010-model-first-extraction.md" in text
-    assert "`hermetic` (test fixture)" in text
-    assert "`ollama` (product default)" in text
+    for page in README_PAGES:
+        text = page.read_text(encoding="utf-8")
+        for claim in STALE_README_CLAIMS:
+            assert claim not in text, f"{page.name} still claims {claim!r}"
+    readme = README.read_text(encoding="utf-8")
+    assert "docs/production-wiring.md" in readme
+    assert "docs/architecture.md" in readme
+    assert "docs/model-providers.md" in readme
+    assert "adr/010-model-first-extraction.md" in ARCHITECTURE.read_text(
+        encoding="utf-8"
+    )
+    providers = MODEL_PROVIDERS.read_text(encoding="utf-8")
+    assert "`hermetic` (test fixture)" in providers
+    assert "`ollama` (product default)" in providers
 
 
 def test_adr_010_records_the_audit_and_closed_13c_work() -> None:

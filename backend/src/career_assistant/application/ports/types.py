@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
+
+from career_assistant.application.providers.execution import ExecutionProfile
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +20,36 @@ class CapabilityDescriptor:
     max_output_tokens: int
     embedding_dimensions: int | None
     leaves_machine: bool
+    supports_tool_calling: bool = False
+    supports_prompt_caching: bool = False
+    supports_temperature: bool = False
+    supports_seed: bool = False
+    # The weights behind the tag, where the provider exposes it (Ollama does).
+    model_tag: str | None = None
+    model_digest: str | None = None
+    execution: ExecutionProfile = field(default_factory=ExecutionProfile)
+
+
+@dataclass(frozen=True, slots=True)
+class ModelProfile:
+    """Published limits and capabilities of one model tag, from configuration."""
+
+    context_window_tokens: int
+    max_output_tokens: int
+    supports_tool_calling: bool = False
+    supports_prompt_caching: bool = False
+    supports_temperature: bool = False
+    supports_seed: bool = False
+    # The API enforces a JSON schema itself; otherwise the adapter asks in the prompt.
+    native_structured_output: bool = False
+    embedding_query_prefix: str = ""
+    embedding_document_prefix: str = ""
+    completion_concurrency: int = 1
+    embedding_concurrency: int = 1
+    document_output_tokens: int = 0
+    judge_output_tokens: int = 0
+    tokens_per_verdict: int = 400
+    max_document_split_depth: int = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +60,9 @@ class CompletionRequest:
     user: str
     max_output_tokens: int
     json_schema: dict[str, Any] | None = None
+    # Sent only when the model's capability descriptor says it accepts them.
+    temperature: float | None = None
+    seed: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,10 +78,15 @@ class CompletionResult:
     finish_reason: str | None = None
 
 
+EmbeddingInputType = Literal["query", "document"]
+
+
 @dataclass(frozen=True, slots=True)
 class EmbeddingRequest:
     texts: tuple[str, ...]
     max_chars_per_text: int
+    # None is a v1 request: embedded exactly as before, with no task prefix.
+    input_type: EmbeddingInputType | None = None
 
 
 @dataclass(frozen=True, slots=True)

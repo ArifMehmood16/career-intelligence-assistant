@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -88,6 +88,66 @@ describe("RoleHeader states", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(/analysing/i);
     expect(screen.queryByText("82")).toBeNull();
+  });
+
+  it("shows a queued analysis's place and its planned tasks", () => {
+    render(
+      <RoleHeader
+        loading={false}
+        state="analysing"
+        observedAt={Date.now()}
+        role={{
+          id: "role-1",
+          title: "Analytics Engineer",
+          company: "Acme",
+          fitScore: 0,
+          bandLabel: "Not scored yet",
+          counts: { met: 0, partial: 0, missing: 0 },
+          status: "analysing",
+          updatedAt: "2026-09-18T12:00:00Z",
+          activeJob: {
+            id: "job-1",
+            kind: "role_analysis",
+            state: "queued",
+            stage: null,
+            startedAt: null,
+            finishedAt: null,
+            error: null,
+            progress: {
+              tasksDone: 0,
+              tasksTotal: 5,
+              fraction: 0,
+              currentTask: null,
+              elapsedSeconds: null,
+              remainingSeconds: 95,
+              queuePosition: 2,
+              tasks: [
+                "prepare",
+                "read_advert",
+                "read_cv",
+                "match",
+                "score",
+              ].map((key) => ({
+                key: key as "prepare",
+                state: "pending" as const,
+                unitsDone: 0,
+                unitsTotal: null,
+              })),
+            },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Waiting · 2 analyses ahead",
+    );
+    expect(screen.getByText(/About 1:35 left/)).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list", { name: "Analysis tasks" })).getAllByRole(
+        "listitem",
+      ),
+    ).toHaveLength(5);
   });
 
   it("shows failed analysis with a retry action", async () => {

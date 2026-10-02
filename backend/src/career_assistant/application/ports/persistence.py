@@ -7,14 +7,10 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
 
-from career_assistant.domain.attribution import AnalysisAttribution
-from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import AnalysisJob, RoleStatus
-from career_assistant.domain.mapping import RequirementMapping
-from career_assistant.domain.requirements import Requirement
-from career_assistant.domain.scoring import ScoreExplanation
+from career_assistant.domain.pipeline import PipelineVersion
 
 
 class ParseStatus(StrEnum):
@@ -103,8 +99,17 @@ class HistoryMessage:
     left_machine: bool | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class WorkspaceSummary:
+    workspace_id: str
+    roles: int
+    has_cv: bool
+
+
 class WorkspaceRepository(Protocol):
     def ensure(self, workspace_id: str) -> None: ...
+
+    def summaries(self) -> tuple[WorkspaceSummary, ...]: ...
 
 
 class DocumentRepository(Protocol):
@@ -211,7 +216,13 @@ class AnalysisJobRepository(Protocol):
 
     def get(self, workspace_id: str, job_id: str) -> AnalysisJob | None: ...
 
+    def get_for_update(self, workspace_id: str, job_id: str) -> AnalysisJob | None: ...
+
     def save(self, job: AnalysisJob) -> AnalysisJob: ...
+
+    def set_pipeline_version(
+        self, workspace_id: str, job_id: str, version: PipelineVersion
+    ) -> None: ...
 
     def enqueue_reanalysis_for_workspace(
         self,
@@ -225,27 +236,14 @@ class AnalysisJobRepository(Protocol):
 
     def list_running(self) -> tuple[AnalysisJob, ...]: ...
 
+    def live_for_workspace(self, workspace_id: str) -> tuple[AnalysisJob, ...]: ...
+
     def active_for_role(
         self, workspace_id: str, role_id: str
     ) -> AnalysisJob | None: ...
 
 
 class AnalysisResultRepository(Protocol):
-    def publish(
-        self,
-        *,
-        workspace_id: str,
-        role_id: str,
-        analysis_version: int,
-        cv_document_id: str,
-        requirements: tuple[Requirement, ...],
-        claims: tuple[Claim, ...],
-        mappings: tuple[RequirementMapping, ...],
-        explanation: ScoreExplanation,
-        job: AnalysisJob,
-        attribution: AnalysisAttribution | None = None,
-    ) -> None: ...
-
     def fail_job(
         self,
         *,
@@ -253,10 +251,6 @@ class AnalysisResultRepository(Protocol):
         role_id: str,
         job: AnalysisJob,
     ) -> None: ...
-
-    def list_mappings(
-        self, workspace_id: str, role_id: str
-    ) -> tuple[RequirementMapping, ...]: ...
 
 
 @dataclass(frozen=True, slots=True)

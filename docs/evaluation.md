@@ -1,7 +1,90 @@
 # Evaluation
 
+> Current status (2026-10-02): the measurements below are historical results for the
+> retired analysis. The current one-call document reader, capacity-sized judge and
+> parallel executor have not received a live quality/latency evaluation. Tests/lint
+> for final consolidation edits were deferred at the human's request. PLAN 19.4
+> records the remaining measurement gate; retirement is an approved product decision,
+> not evidence that measured quality improved.
+
 Retrieval, extraction and generation quality are claims. This file is where they are
 evidenced. No number appears here that was not observed from a recorded run.
+
+## Current analysis benchmark (PLAN 19.4)
+
+Implemented 2026-10-02 in `career_assistant.ops.benchmark`, with its bounded
+[feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Not executed:**
+the human retained their tests/lint/measurement deferral. There is no new performance
+or quality result, and no release checkbox is closed.
+
+After verification is resumed, from the repository root:
+
+```bash
+make benchmark BENCHMARK_ARGS='--case clean_match --repetitions 3'
+mkdir -p tmp
+make benchmark BENCHMARK_ARGS='--case clean_match --output tmp/benchmark.json'
+```
+
+With no arguments the command selects every pairing in the shipped synthetic
+`sample-data/fixtures/manifest.json`, runs each once cold and immediately warm, and
+prints `analysis-benchmark-v1` JSON. `--case` is repeatable; `--repetitions` is bounded
+to 1–20; `--as-of` defaults to the frozen date 2026-09-01. There is no arbitrary
+CV/JD input option, and an existing output file is never overwritten.
+
+Cold starts fresh document/vector/verdict caches and provider adapters. Warm retains
+those identities, caches and analysis date. This does not unload an Ollama model,
+reset a vendor prompt cache or simulate a fresh operating-system process. Measured
+time includes harness/provider assembly, document reading, indexing, retrieval,
+judging and domain scoring. Input loading, Git provenance, report serialization and
+summary construction are outside that interval.
+
+The harness executes the same `RoleAnalysisV2`, indexer, chunker, matcher, judge and
+rubric as the application, with explicit fixture index/search/cache adapters.
+**Fixture retrieval is used even in live-provider mode.** These observations measure
+model plus application work; they exclude PostgreSQL, parsing binary uploads, queue
+waiting and browser latency, and cannot establish production retrieval quality.
+
+Every observation separates:
+
+- `physical_attempts`: completion/embedding HTTP requests attempted at the existing
+  transport boundary, including failed attempts and retries. GET model-metadata
+  requests have their own bucket. Local Ollama HTTP is still a physical API attempt.
+- `logical_operations`: structured and embedding method invocations; a structured
+  invocation may contain schema repairs and several physical requests. Offline
+  fixture operations produce zero physical attempts.
+- `progress_attempts`: existing accounting scoped to analysis tasks. The offline
+  structured fixture is instrumented as a fixture operation. These counts do not
+  replace physical transport measurement; metadata lookups are outside progress.
+- `cache_reuse`: document hits, existing vectors, verdict lookups and verdict hits.
+  These are observed boundary events, not guessed savings. Warm search still embeds
+  queries, and corrective retrieval may still do work.
+
+Input/manifest/model-config/rubric fingerprints, source revision/dirty state,
+Python/platform, actual provider/model tags and off-machine flags, selected settings,
+capabilities, execution profiles and prompt/contract/rubric versions accompany the
+measurements. Operational reports contain no evidence, prompts, responses, keys,
+provider endpoints or raw exception text. Failure retains duration/counts, exposes
+no fit score/band, skips its warm run and returns nonzero. Summaries use nearest-rank
+p50/p95 per case and cold/warm group, exclude failed runs and state their counts.
+
+Separately requested synthetic live work uses explicit provider selections:
+
+```bash
+make benchmark BENCHMARK_ARGS='--live --provider ollama --embedding-provider ollama --case clean_match'
+```
+
+Completion supports the existing Ollama/OpenAI/Anthropic builders; embeddings use
+Ollama/OpenAI. Optional `--completion-model` and `--embedding-model` choose tags.
+Only live mode loads existing provider settings; hosted requests still require
+`ALLOW_HOSTED_PROVIDERS` and the selected provider's key. Automatic fallback is
+disabled so a failed hosted run cannot become a fixture measurement. The command
+does not enable hosted egress, migrate a database or read uploaded personal data.
+
+The old evaluation dataset below remains historical. This runner measures timing
+and accounting only: frozen current-architecture labels, unsupported matches,
+ranking agreement, SQL migration preservation and the browser journey remain open
+19.4 work. Record any future observed numbers here with the saved report's provenance;
+do not present offline fixture timing as live-model quality or production latency.
 
 ## Dataset
 

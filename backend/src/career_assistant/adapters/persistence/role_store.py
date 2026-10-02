@@ -13,10 +13,8 @@ from typing import Protocol
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from career_assistant.adapters.persistence.job_progress import WorkspaceProgress
 from career_assistant.adapters.persistence.models import (
-    ClaimRow,
-    ClaimSpanRow,
-    RequirementRow,
     ScoreExplanationRow,
 )
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
@@ -30,10 +28,12 @@ from career_assistant.application.ports.persistence import (
     ParseStatus,
     RoleRecord,
 )
-from career_assistant.application.roles.hermetic_analysis import (
+from career_assistant.application.ports.v2_results import V2RoleResult
+from career_assistant.application.roles.analysis import (
     AnalysisBundle,
     band_label,
-    count_statuses,
+    published_bundle,
+    score_explanation,
 )
 from career_assistant.application.roles.store import (
     JobErrorView,
@@ -42,7 +42,6 @@ from career_assistant.application.roles.store import (
     RoleView,
 )
 from career_assistant.domain.attribution import AnalysisAttribution
-from career_assistant.domain.claims import Claim
 from career_assistant.domain.documents import DocumentKind, Page, ParsedDocument, Span
 from career_assistant.domain.groundedness import GroundednessVerdict
 from career_assistant.domain.jobs import (
@@ -51,10 +50,10 @@ from career_assistant.domain.jobs import (
     new_role_analysis_job,
 )
 from career_assistant.domain.mapping import MappingStatus
+from career_assistant.domain.pipeline import PipelineVersion
+from career_assistant.domain.progress import ProgressView
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
-from career_assistant.domain.requirements import ItemType, Requirement
-from career_assistant.domain.scoring import ScoreComponent, ScoreExplanation
 from career_assistant.logconfig import log_event
 from career_assistant.parsing.pipeline import parse_pasted_text
 
@@ -233,8 +232,10 @@ class SqlRoleStore:
     def list_roles(self, workspace_id: str) -> tuple[RoleView, ...]:
         with self._uow_factory() as uow:
             records = uow.roles.list_for_workspace(workspace_id)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
             return tuple(
-                self._role_view(uow, workspace_id, record) for record in records
+                self._role_view(uow, workspace_id, record, progress)
+                for record in records
             )
 
     def get_role(self, workspace_id: str, role_id: str) -> RoleView | None:
@@ -242,7 +243,8 @@ class SqlRoleStore:
             record = uow.roles.get(workspace_id, role_id)
             if record is None:
                 return None
-            return self._role_view(uow, workspace_id, record)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
+            return self._role_view(uow, workspace_id, record, progress)
 
     def get_span(
         self, workspace_id: str, span_id: str
@@ -278,7 +280,8 @@ class SqlRoleStore:
             job = uow.jobs.get(workspace_id, job_id)
             if job is None:
                 return None
-            return _job_view(job)
+            progress = WorkspaceProgress(uow, workspace_id, now=datetime.now(UTC))
+            return _job_view(job, progress.view(job))
 
     def require_analysis(self, workspace_id: str, role_id: str) -> AnalysisBundle:
         with self._uow_factory() as uow:
@@ -413,7 +416,11 @@ class SqlRoleStore:
         return session
 
     def _role_view(
-        self, uow: SqlUnitOfWork, workspace_id: str, record: RoleRecord
+        self,
+        uow: SqlUnitOfWork,
+        workspace_id: str,
+        record: RoleRecord,
+        progress: WorkspaceProgress | None = None,
     ) -> RoleView:
         session = self._session(uow)
         score_row = session.scalar(
@@ -424,7 +431,10 @@ class SqlRoleStore:
                 ScoreExplanationRow.invalidated.is_(False),
             )
         )
-        mappings = uow.analysis.list_mappings(workspace_id, record.id)
+        result = uow.v2.result(workspace_id, record.id)
+        counts = _verdict_counts(result)
+        if result is None:
+            score_row = None
         fit_score = int(round(score_row.score)) if score_row is not None else 0
         band = score_row.band if score_row is not None else "unscored"
         jd = uow.documents.get(workspace_id, record.job_description_document_id)
@@ -438,130 +448,49 @@ class SqlRoleStore:
             company=record.company,
             fit_score=fit_score,
             band_label=band_label(band),
-            counts=count_statuses(mappings),
-            status=record.status.value,
+            counts=counts,
+            status=(RoleStatus.FAILED.value if result is None and record.status is RoleStatus.READY else record.status.value),
             updated_at=created,
             description=description,
+            active_job=_active_job(progress, record.id),
+            analysis_pipeline=_pipeline_of(score_row),
         )
 
     def _load_bundle(
         self, uow: SqlUnitOfWork, workspace_id: str, record: RoleRecord
     ) -> AnalysisBundle:
-        session = self._session(uow)
-        wid = uuid.UUID(workspace_id)
-        rid = uuid.UUID(record.id)
-        req_rows = session.scalars(
-            select(RequirementRow).where(
-                RequirementRow.workspace_id == wid,
-                RequirementRow.role_id == rid,
-                RequirementRow.analysis_version == record.analysis_version,
-            )
-        ).all()
-        requirements = tuple(
-            Requirement(
-                id=str(row.id),
-                text=row.text,
-                competency=row.competency,
-                seniority_signal=row.seniority_signal,
-                must_have=row.must_have,
-                source_span_id=str(row.source_span_id) if row.source_span_id else "",
-                extraction_confidence=row.extraction_confidence or 0.0,
-                is_vague=row.is_vague,
-                item_type=ItemType(row.item_type)
-                if row.item_type
-                else ItemType.REQUIREMENT,
-            )
-            for row in req_rows
-        )
-        cv = uow.documents.get_active_cv(workspace_id)
-        claims: tuple[Claim, ...] = ()
-        if cv is not None:
-            claim_rows = session.scalars(
-                select(ClaimRow).where(
-                    ClaimRow.workspace_id == wid,
-                    ClaimRow.document_id == uuid.UUID(cv.id),
-                )
-            ).all()
-            loaded: list[Claim] = []
-            for row in claim_rows:
-                span_ids = tuple(
-                    str(link.span_id)
-                    for link in session.scalars(
-                        select(ClaimSpanRow).where(ClaimSpanRow.claim_id == row.id)
-                    ).all()
-                )
-                stored_technologies = row.technologies
-                technologies = (
-                    tuple(str(item) for item in stored_technologies)
-                    if isinstance(stored_technologies, list)
-                    else ()
-                )
-                confidence = row.extraction_confidence
-                loaded.append(
-                    Claim(
-                        id=str(row.id),
-                        competency=row.competency,
-                        context=row.context,
-                        duration_signal=row.duration_signal or "",
-                        recency_signal=row.recency_signal or "",
-                        source_span_ids=span_ids,
-                        extraction_confidence=(
-                            float(confidence) if confidence is not None else 0.0
-                        ),
-                        employer=row.employer or "",
-                        title=row.title or "",
-                        scope=row.scope or "",
-                        technologies=technologies,
-                        outcome=row.outcome or "",
-                        period_start=row.period_start,
-                        period_end=row.period_end,
-                        self_authored=bool(row.self_authored),
-                    )
-                )
-            claims = tuple(loaded)
-        mappings = uow.analysis.list_mappings(workspace_id, record.id)
-        score_row = session.scalar(
+        result = uow.v2.result(workspace_id, record.id)
+        score_row = self._session(uow).scalar(
             select(ScoreExplanationRow).where(
-                ScoreExplanationRow.workspace_id == wid,
-                ScoreExplanationRow.role_id == rid,
+                ScoreExplanationRow.workspace_id == uuid.UUID(workspace_id),
+                ScoreExplanationRow.role_id == uuid.UUID(record.id),
                 ScoreExplanationRow.analysis_version == record.analysis_version,
                 ScoreExplanationRow.invalidated.is_(False),
             )
         )
-        if score_row is None:
+        if result is None or score_row is None:
             raise RoleOperationRejected(
                 "analysis_incomplete",
                 "Analysis has not finished for this role.",
                 status_code=409,
             )
-        payload = score_row.explanation
-        components = tuple(
-            ScoreComponent(
-                requirement_id=str(c["requirement_id"]),
-                must_have=bool(c["must_have"]),
-                status=MappingStatus(str(c["status"])),
-                weight=float(c["weight"]),
-                status_factor=float(c["status_factor"]),
-                recency_factor=float(c["recency_factor"]),
-                contribution=float(c["contribution"]),
-                adjudicated=bool(c.get("adjudicated", False)),
+        chunk_ids = tuple(
+            dict.fromkeys(
+                key
+                for verdict in result.verdicts
+                for key in (
+                    verdict.source_chunk_id,
+                    *(e.chunk_id for e in verdict.evidence),
+                )
+                if key
             )
-            for c in payload.get("components", [])
         )
-        band = str(score_row.band)
-        explanation = ScoreExplanation(
-            score=float(score_row.score),
-            band=band,
-            components=components,
-            denominator=float(payload.get("denominator", 0.0)),
-            numerator=float(payload.get("numerator", 0.0)),
-            publishable=band not in {"incomplete", "unscored"},
-        )
-        return AnalysisBundle(
-            requirements=requirements,
-            claims=claims,
-            mappings=mappings,
-            explanation=explanation,
+        chunks = uow.chunks.load_chunks(workspace_id, chunk_ids)
+        cv = uow.documents.get_active_cv(workspace_id)
+        bundle = published_bundle(
+            result=result,
+            chunks=chunks,
+            explanation=score_explanation(result, score_row.explanation),
             jd_document_id=record.job_description_document_id,
             cv_document_id=cv.id if cv is not None else "",
             attribution=AnalysisAttribution(
@@ -573,6 +502,22 @@ class SqlRoleStore:
                 failure_status=score_row.failure_status or None,
             ),
         )
+        # Older current-pipeline records predate persisted chunk citations.
+        # Materialise these deterministic, verbatim spans once; never call a model.
+        for document_id in dict.fromkeys(
+            span.document_id for span in (*bundle.jd_spans, *bundle.cv_claim_spans)
+        ):
+            uow.documents.ensure_spans(
+                workspace_id,
+                document_id,
+                tuple(
+                    span
+                    for span in (*bundle.jd_spans, *bundle.cv_claim_spans)
+                    if span.document_id == document_id
+                ),
+            )
+        uow.commit()
+        return bundle
 
 
 def _provenance_bits(
@@ -635,7 +580,31 @@ def _bullet_span_ids(draft: _DraftLike) -> tuple[str, ...]:
     return tuple(dict.fromkeys(ids))
 
 
-def _job_view(job: AnalysisJob) -> JobView:
+def _pipeline_of(score_row: ScoreExplanationRow | None) -> str | None:
+    if score_row is None:
+        return None
+    return PipelineVersion.V2.value if _is_v2(score_row) else None
+
+
+def _is_v2(score_row: ScoreExplanationRow) -> bool:
+    return score_row.explanation.get("pipeline_version") == PipelineVersion.V2.value
+
+
+def _verdict_counts(result: V2RoleResult | None) -> dict[str, int]:
+    counts = {"met": 0, "partial": 0, "missing": 0}
+    for stored in result.verdicts if result is not None else ():
+        counts[stored.verdict.verdict] += 1
+    return counts
+
+
+def _active_job(progress: WorkspaceProgress | None, role_id: str) -> JobView | None:
+    if progress is None:
+        return None
+    job = progress.active_for_role(role_id)
+    return _job_view(job, progress.view(job)) if job is not None else None
+
+
+def _job_view(job: AnalysisJob, progress: ProgressView | None = None) -> JobView:
     error = None
     if job.error is not None:
         error = JobErrorView(code=job.error.code, message=job.error.message)
@@ -647,6 +616,7 @@ def _job_view(job: AnalysisJob) -> JobView:
         started_at=job.started_at,
         finished_at=job.finished_at,
         error=error,
+        progress=progress,
     )
 
 

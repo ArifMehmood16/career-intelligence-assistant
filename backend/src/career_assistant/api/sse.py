@@ -5,6 +5,20 @@ from __future__ import annotations
 import json
 
 from career_assistant.application.ask.service import AskEvent
+from career_assistant.domain.ask import ToolStep
+
+
+def tool_steps_payload(steps: tuple[ToolStep, ...]) -> list[dict[str, object]]:
+    """The agent's tool calls as the browser shows them; shared with the JSON route."""
+    return [
+        {
+            "name": step.name,
+            "arguments": dict(step.arguments),
+            "found": step.found,
+            "failed": step.failed,
+        }
+        for step in steps
+    ]
 
 
 def format_ask_sse(event: AskEvent) -> str:
@@ -18,6 +32,8 @@ def format_ask_sse(event: AskEvent) -> str:
             "model": event.model,
             "leftMachine": bool(event.left_machine),
         }
+    elif event.type == "tools":
+        data = {"steps": tool_steps_payload(event.tool_steps or ())}
     elif event.type == "token":
         data = {"text": event.text or ""}
     elif event.type == "citations":

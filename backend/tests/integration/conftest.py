@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 from sqlalchemy import text
@@ -18,6 +19,9 @@ from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentKind, Span
 from career_assistant.settings import DatabaseSettings
+
+if TYPE_CHECKING:
+    from tests.support.v2_seed import Seeded
 
 
 @pytest.fixture(scope="session")
@@ -49,14 +53,12 @@ def session_factory(migrated_engine: Engine) -> Iterator[sessionmaker[Session]]:
         conn.execute(
             text(
                 f"TRUNCATE TABLE "
-                f"{APP_SCHEMA}.mapping_spans, {APP_SCHEMA}.mappings, "
                 f"{APP_SCHEMA}.draft_citations, {APP_SCHEMA}.answer_citations, "
-                f"{APP_SCHEMA}.score_explanations, {APP_SCHEMA}.requirements, "
-                f"{APP_SCHEMA}.generated_drafts, {APP_SCHEMA}.embeddings, "
-                f"{APP_SCHEMA}.claim_spans, {APP_SCHEMA}.answers, "
+                f"{APP_SCHEMA}.score_explanations, "
+                f"{APP_SCHEMA}.generated_drafts, "
+                f"{APP_SCHEMA}.answers, "
                 f"{APP_SCHEMA}.analysis_jobs, {APP_SCHEMA}.spans, "
                 f"{APP_SCHEMA}.roles, {APP_SCHEMA}.questions, "
-                f"{APP_SCHEMA}.claims, "
                 f"{APP_SCHEMA}.provider_settings, "
                 f"{APP_SCHEMA}.provider_call_accounting, "
                 f"{APP_SCHEMA}.documents, {APP_SCHEMA}.conversations, "
@@ -70,6 +72,15 @@ def session_factory(migrated_engine: Engine) -> Iterator[sessionmaker[Session]]:
 @pytest.fixture()
 def uow(session_factory: sessionmaker[Session]) -> SqlUnitOfWork:
     return SqlUnitOfWork(session_factory)
+
+
+@pytest.fixture()
+def seeded(uow: SqlUnitOfWork, session_factory: sessionmaker[Session]) -> Seeded:
+    """One workspace with a row in every v2 table."""
+    # Imported here: v2_seed builds its documents with make_document below.
+    from tests.support.v2_seed import seed_v2
+
+    return seed_v2(uow, session_factory)
 
 
 def make_document(

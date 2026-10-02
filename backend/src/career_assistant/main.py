@@ -14,7 +14,6 @@ from typing import Literal
 
 from fastapi import APIRouter, FastAPI, Request, Response
 
-from career_assistant.adapters.extraction.selected import extractors_for_choice
 from career_assistant.adapters.persistence.accounting import SqlCallAccountant
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.conversation_store import (
@@ -22,6 +21,7 @@ from career_assistant.adapters.persistence.conversation_store import (
 )
 from career_assistant.adapters.persistence.readiness import SettingsReadiness
 from career_assistant.adapters.persistence.wiring import build_sql_stores
+from career_assistant.adapters.providers.hermetic.analysis import analyse_hermetic
 from career_assistant.api.errors import install_exception_handlers
 from career_assistant.api.middleware import (
     CorrelationIdMiddleware,
@@ -40,7 +40,9 @@ from career_assistant.api.routes_messages import router as messages_router
 from career_assistant.api.routes_providers import router as providers_router
 from career_assistant.api.routes_roles import router as roles_router
 from career_assistant.api.routes_spans import router as spans_router
+from career_assistant.api.routes_verdicts import router as verdicts_router
 from career_assistant.api.schemas import ApiModel, ReadyResponse
+from career_assistant.application.analysis.v2_results import NoV2Results
 from career_assistant.application.ask.memory import InMemoryConversationStore
 from career_assistant.application.ask.service import ConversationStore
 from career_assistant.application.documents.cv import CvStore, InMemoryCvStore
@@ -49,19 +51,16 @@ from career_assistant.application.documents.supporting import (
     SupportingDocumentStore,
 )
 from career_assistant.application.observability.memory import InMemoryAuditRecorder
-from career_assistant.application.ports.extraction import (
-    ClaimExtractionPort,
-    RequirementExtractionPort,
-)
 from career_assistant.application.ports.observability import AuditRecorder
+from career_assistant.application.ports.v2_results import V2ResultReader
 from career_assistant.application.providers.accounting import CallAccountant
-from career_assistant.application.providers.catalogue import default_provider_choice
 from career_assistant.application.providers.choice_store import (
     InMemoryProviderChoiceStore,
     ProviderChoiceStore,
 )
-from career_assistant.application.roles.store import ExtractorFactory, InMemoryRoleStore
+from career_assistant.application.roles.store import InMemoryRoleStore
 from career_assistant.logconfig import configure_logging, load_secret_values, log_event
+from career_assistant.parsing.process_pool import ProcessUploadParser
 from career_assistant.settings import (
     DatabaseSettings,
     LimitSettings,
@@ -102,7 +101,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     worker = getattr(app.state, "analysis_worker", None)
     if worker is None:
-        yield
+        try:
+            yield
+        finally:
+            app.state.upload_parser.close()
         return
     stop = threading.Event()
     thread = threading.Thread(
@@ -117,6 +119,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         stop.set()
         thread.join(timeout=5.0)
+        app.state.upload_parser.close()
 
 
 def _safe_process_fields(app: FastAPI) -> dict[str, object]:
@@ -194,6 +197,7 @@ def create_app(
     provider_choice_store: ProviderChoiceStore | None = None,
     analysis_worker: SqlAnalysisWorker | None = None,
     audit_recorder: AuditRecorder | None = None,
+    v2_results: V2ResultReader | None = None,
 ) -> FastAPI:
     """Build the application. Kept a factory so tests construct their own.
 
@@ -220,6 +224,10 @@ def create_app(
     install_exception_handlers(app)
     app.state.readiness = readiness
     app.state.limits = upload_limits
+    app.state.upload_parser = ProcessUploadParser(
+        workers=upload_limits.parsing_workers,
+        timeout_seconds=upload_limits.parsing_timeout_seconds,
+    )
     # Hermetic API tests must not inherit a hosted env default.
     app.state.providers = providers or ProviderSettings(
         completion_provider="hermetic",
@@ -233,7 +241,7 @@ def create_app(
     app.state.role_store = (
         role_store
         if role_store is not None
-        else InMemoryRoleStore(cv_store=resolved_cv)
+        else InMemoryRoleStore(cv_store=resolved_cv, analyser=analyse_hermetic)
     )
     app.state.supporting_store = (
         supporting_store
@@ -251,6 +259,12 @@ def create_app(
         if provider_choice_store is not None
         else InMemoryProviderChoiceStore()
     )
+    if v2_results is not None:
+        app.state.v2_results = v2_results
+    elif isinstance(app.state.role_store, InMemoryRoleStore):
+        app.state.v2_results = app.state.role_store
+    else:
+        app.state.v2_results = NoV2Results()
     app.state.analysis_worker = analysis_worker
     if isinstance(resolved_conversation, SqlConversationStore):
         app.state.call_accountant = SqlCallAccountant(
@@ -258,8 +272,6 @@ def create_app(
         )
     else:
         app.state.call_accountant = CallAccountant()
-    if isinstance(app.state.role_store, InMemoryRoleStore):
-        app.state.role_store.extractor_factory = _extractor_factory(app)
     app.include_router(router)
     app.include_router(providers_router, prefix="/api")
     app.include_router(cv_router, prefix="/api")
@@ -267,25 +279,9 @@ def create_app(
     app.include_router(spans_router, prefix="/api")
     app.include_router(roles_router, prefix="/api")
     app.include_router(analysis_router, prefix="/api")
+    app.include_router(verdicts_router, prefix="/api")
     app.include_router(messages_router, prefix="/api")
     return app
-
-
-def _extractor_factory(app: FastAPI) -> ExtractorFactory:
-    def factory(
-        workspace_id: str,
-    ) -> tuple[RequirementExtractionPort, ClaimExtractionPort]:
-        settings = app.state.providers or ProviderSettings()
-        choice = app.state.provider_choice_store.get(
-            workspace_id
-        ) or default_provider_choice(settings)
-        return extractors_for_choice(
-            settings,
-            choice,
-            transport=getattr(app.state, "http_transport", None),
-        )
-
-    return factory
 
 
 def create_production_app(
@@ -296,25 +292,20 @@ def create_production_app(
 ) -> FastAPI:
     """Wire SQL stores for the process entrypoint (uvicorn / Docker CMD)."""
     resolved_providers = providers or ProviderSettings()
-    (
-        cv_store,
-        role_store,
-        supporting_store,
-        conversation_store,
-        provider_choice_store,
-        analysis_worker,
-    ) = build_sql_stores(providers=resolved_providers)
-    return create_app(
+    stores = build_sql_stores(providers=resolved_providers)
+    app = create_app(
         readiness=readiness if readiness is not None else SettingsReadiness(),
         limits=limits,
         providers=resolved_providers,
-        cv_store=cv_store,
-        role_store=role_store,
-        supporting_store=supporting_store,
-        conversation_store=conversation_store,
-        provider_choice_store=provider_choice_store,
-        analysis_worker=analysis_worker,
+        cv_store=stores.cv,
+        role_store=stores.roles,
+        supporting_store=stores.supporting,
+        conversation_store=stores.conversations,
+        provider_choice_store=stores.provider_choices,
+        analysis_worker=stores.analysis_worker,
+        v2_results=stores.v2_results,
     )
+    return app
 
 
 app = create_production_app()

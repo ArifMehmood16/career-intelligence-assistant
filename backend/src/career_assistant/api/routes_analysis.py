@@ -6,12 +6,12 @@ import json
 import uuid
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Protocol
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import PlainTextResponse
 
+from career_assistant.adapters.providers.hermetic.analysis import analyse_hermetic
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
 from career_assistant.api.provider_runtime import (
@@ -59,13 +59,12 @@ from career_assistant.application.intake.workspace_spans import lookup_workspace
 from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.ports.persistence import GeneratedDraftRecord
 from career_assistant.application.providers.catalogue import default_provider_choice
-from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
+from career_assistant.application.roles.analysis import AnalysisBundle
 from career_assistant.application.roles.store import (
     InMemoryRoleStore,
     RoleOperationRejected,
     RoleView,
 )
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.comparison import compare_requirement_sets
 from career_assistant.domain.generation import (
     CoverLetterRefusal,
@@ -85,9 +84,6 @@ from career_assistant.domain.mapping import MappingStatus, RequirementMapping
 from career_assistant.domain.requirements import Requirement
 
 router = APIRouter(tags=["analysis"])
-_RUBRIC = load_scoring_rubric(
-    Path(__file__).resolve().parents[4] / "config" / "scoring_rubric.toml"
-)
 
 
 def _cv_store(request: Request) -> CvStore:
@@ -101,7 +97,9 @@ def _cv_store(request: Request) -> CvStore:
 def _roles(request: Request) -> InMemoryRoleStore:
     store = getattr(request.app.state, "role_store", None)
     if store is None:
-        store = InMemoryRoleStore(cv_store=_cv_store(request))
+        store = InMemoryRoleStore(
+            cv_store=_cv_store(request), analyser=analyse_hermetic
+        )
         request.app.state.role_store = store
     return store
 
@@ -483,7 +481,12 @@ def get_gap_plan(
     role_id: str, request: Request, workspace_id: WorkspaceId
 ) -> GapPlanWire:
     bundle = _require_bundle(request, workspace_id, role_id)
-    plan = build_gap_plan(bundle.requirements, bundle.mappings, bundle.claims, _RUBRIC)
+    plan = build_gap_plan(
+        bundle.requirements,
+        bundle.mappings,
+        explanation=bundle.explanation,
+        gaps=bundle.gaps,
+    )
     by_req = {r.id: r for r in bundle.requirements}
     items: list[GapItemWire] = []
     for item in plan.items:
@@ -787,7 +790,10 @@ def export_artefact(
         body = export_markdown(
             artefact,
             build_gap_plan(
-                bundle.requirements, bundle.mappings, bundle.claims, _RUBRIC
+                bundle.requirements,
+                bundle.mappings,
+                explanation=bundle.explanation,
+                gaps=bundle.gaps,
             ),
         )
     elif artefact == "interview-pack":

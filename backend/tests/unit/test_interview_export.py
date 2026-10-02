@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from tests.support.published_analysis import mappings_fixture, published_scores
 
-from career_assistant.application.scoring.rubric_loader import load_scoring_rubric
 from career_assistant.domain.claims import Claim
 from career_assistant.domain.generation import (
     build_gap_plan,
     build_interview_pack,
     export_markdown,
 )
-from career_assistant.domain.mapping import map_requirements
 from career_assistant.domain.requirements import Requirement
-
-ROOT = Path(__file__).resolve().parents[3]
-RUBRIC = load_scoring_rubric(ROOT / "config" / "scoring_rubric.toml")
 
 
 def _req(id: str, text: str, *, vague: bool = False) -> Requirement:
@@ -50,7 +45,7 @@ def test_interview_pack_sections_from_mapping() -> None:
         _req("culture", "Ownership mindset", vague=True),
     )
     claims = (_claim("c1", "dbt", "Owned dbt models in production."),)
-    mappings = map_requirements(requirements, claims)
+    mappings = mappings_fixture(requirements, claims)
     pack = build_interview_pack(requirements, mappings, claims)
     probe_ids = {p.requirement_id for p in pack.probes}
     assert "dbt" in probe_ids and "cuda" in probe_ids
@@ -69,8 +64,13 @@ def test_markdown_export_matches_gap_plan_content() -> None:
         _req("dbt", "Production dbt"),
     )
     claims = (_claim("c1", "dbt", "Owned dbt models in production."),)
-    mappings = map_requirements(requirements, claims)
-    plan = build_gap_plan(requirements, mappings, claims, RUBRIC)
+    mappings = mappings_fixture(requirements, claims)
+    plan = build_gap_plan(
+        requirements,
+        mappings,
+        explanation=published_scores(requirements, mappings)[0],
+        gaps=published_scores(requirements, mappings)[1],
+    )
     md = export_markdown("gap-plan", plan)
     assert "CUDA" in md or "cuda" in md.lower()
     assert str(int(plan.current_score)) in md or f"{plan.current_score:.0f}" in md

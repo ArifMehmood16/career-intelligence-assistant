@@ -10,6 +10,9 @@ requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi>=0.141,<0.142",
     "httpx>=0.28,<0.29",
+    # Model-call contracts in application/contracts (PLAN 18.2) import it directly;
+    # it was already installed through pydantic-settings and is pinned in the lock.
+    "pydantic>=2.13,<3",
     "pydantic-settings>=2.10,<3",
     "pypdf>=5,<7",
     "python-docx>=1.1,<2",
@@ -20,7 +23,13 @@ dependencies = [
     "psycopg[binary]>=3.2,<4",
     "pgvector>=0.3,<0.5",
     "uvicorn>=0.52,<0.53",
+    # The official MCP SDK, for the stdio server only (PLAN 18.12, ADR 015). 2.2
+    # speaks the 2026-07-28 specification and the 2025-11-25 handshake.
+    "mcp>=2.2,<3",
 ]
+
+[project.scripts]
+career-assistant-mcp = "career_assistant.adapters.mcp.main:main"
 
 # Provider SDKs join these lists at the phase that first uses them.
 

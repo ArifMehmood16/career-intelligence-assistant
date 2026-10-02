@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response, status
+from starlette.concurrency import run_in_threadpool
 
 from career_assistant.api.deps import WorkspaceId
 from career_assistant.api.errors import AppError
@@ -23,6 +24,8 @@ from career_assistant.application.documents.cv import (
     upload_pasted_cv,
 )
 from career_assistant.application.intake.errors import IntakeError
+from career_assistant.application.ports.intake import UploadDocument
+from career_assistant.domain.documents import DocumentKind
 from career_assistant.settings import LimitSettings
 
 router = APIRouter(tags=["cv"])
@@ -103,18 +106,24 @@ async def post_cv(
             data = await upload.read()
             filename = getattr(upload, "filename", None) or "upload"
             media_type = getattr(upload, "content_type", None)
-            view = upload_bytes_cv(
+            view = await run_in_threadpool(
+                upload_bytes_cv,
                 store,
                 workspace_id=workspace_id,
-                data=data,
-                filename=str(filename),
-                declared_media_type=str(media_type) if media_type else None,
-                limits=limits,
+                upload=UploadDocument(
+                    data=data,
+                    filename=str(filename),
+                    kind=DocumentKind.CV,
+                    declared_media_type=str(media_type) if media_type else None,
+                    limits=limits,
+                ),
+                parser=request.app.state.upload_parser,
             )
         else:
             payload = await request.json()
             body = CvPasteRequest.model_validate(payload)
-            view = upload_pasted_cv(
+            view = await run_in_threadpool(
+                upload_pasted_cv,
                 store,
                 workspace_id=workspace_id,
                 text=body.text,

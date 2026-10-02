@@ -18,6 +18,180 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19 — Delivery documentation and publication
+
+- Date: 2026-10-02
+- Commands run: Git status/history/ref and worktree inspection; `git fetch origin
+  --prune`; `gh pr list --state all`; branch rename to
+  feat/phase-19-analysis-delivery; source/document reads and documentation diff review;
+  `git diff --check`; explicit staging and documentation commit `1c9a4e6`;
+  `git push -u origin feat/phase-19-analysis-delivery`; `gh pr create --draft`;
+  `gh pr view 42`; PR artifact attachment; `git merge-base --is-ancestor` and
+  `git rev-list --count` for every cleanup ref; `git branch -d` and remote deletion.
+- Observed result: at the start Phase 18/19 work was unmerged, there were no open
+  PRs and only the active checkout used a branch. README, PLAN/BACKLOG and troubleshooting/limitations
+  docs now distinguish the later successful analysis and recency diagnosis from
+  pending regression and measured release work. [Draft PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
+  is open against main and attached to the chat. Each superseded ref had zero
+  unique commits outside the published delivery head. Five local and four remote
+  branches were deleted; all their work remains in the delivery branch.
+- Decisions made: preserve accumulated commit history in one delivery PR; keep it
+  draft while checks are deferred. Publication/branch cleanup is explicitly
+  authorized; merging remains the human's decision.
+- Verification: documentation/source review and whitespace/ancestry inspection;
+  no local tests/lint/typecheck, benchmark, migration, model call or security scan.
+  GitHub CI started automatically on PR creation; the first observed snapshot was
+  in progress. `gh run list`/`gh run view` subsequently confirmed the creation run
+  on `1c9a4e6` failed lint/typecheck and both integration steps; hermetic tests were
+  skipped. Later heads have no attached checks because the workflow only triggers
+  on opened. Root PLAN/BACKLOG now record failure triage and trigger coverage.
+  Whole-branch whitespace inspection found an inherited trailing blank line in
+  candidate_spans.py; removal changes no behavior. No root gate closed and main
+  was not merged.
+- Carried forward: explicitly resume local checks, review CI results and execute
+  the disposable migration/browser/quality/latency release work before release.
+
+## Phase 19.1 — Recency gap display repair
+
+- Date: 2026-10-02
+- Commands run: branch creation from 5e67682; Spec Kit setup/prerequisite scripts;
+  read-only local HTTP response inspection; Bun calls of actual roleVerdictsSchema
+  against API and same-origin web proxy; targeted `bunx --no-install prettier
+  --write`; source/diff review and local commit. Browser DOM/screenshot inspection
+  used the local synthetic /dev/states gallery.
+- Observed result: ready role publishes 18 verdicts. Before repair, eight gap
+  dimension fields fail client validation as invalid_value. Their fixed value is
+  recency, already supported by the domain. After repair both API and proxy HTTP
+  200 responses pass the client schema: 18 verdicts, 9 gaps, 8 recency gaps.
+  The synthetic gallery renders Evidence recency · current weight 60% and a
+  Match · now 1 / 4 gap. A synthetic screenshot is outside Git.
+- Decisions made: preserve judge anchors and server arithmetic; extend only the
+  frontend gap category/type and show recency percentage weight. API/product docs
+  disagreed with domain code and are corrected. Existing layout/tokens reused;
+  no new visual pattern, backend behavior, model call, DB write or dependency.
+- Verification: focused API/container/panel/gallery regressions authored, not run;
+  tests/lint/typecheck/security and release checks remain deferred. Live diagnosis
+  is not a passing release/quality gate. No raw personal content printed or saved.
+  Source privacy/design review performed; no Sonar scan.
+- Carried forward: refresh or Retry the existing publication after frontend reload;
+  no reanalysis needed. Complete deferred checks when authorized.
+
+## Phase 19.2 — Incomplete judge diagnostics
+
+- Date: 2026-10-02
+- Commands run: branch creation from aae9b24; Spec Kit template/setup/prerequisite
+  scripts; read-only local job HTTP and successful-call accounting SQL reads;
+  non-secret ProviderSettings inspection; targeted `ruff format`; source/diff
+  review and local commit. Official OpenAI reasoning/model documentation fetched.
+- Observed result: 18 requirements searched/handled, three physical judge calls,
+  no successful judge accounting row. Embedding completed 16:06:47 UTC and the
+  job failed 16:09:49 UTC. Configured limit was 60 seconds/two retries. The local
+  ignored configuration now loads 180 seconds/two retries; no default change.
+- Decisions made: suspected timeout mitigation plus fixed transport/judge log
+  categories and numeric counts; retain incomplete-publication safeguard, current
+  model and retry behavior. Do not print exception messages or validation details.
+- Verification: regressions authored, not run. Tests/lint/typecheck/security,
+  benchmark and complete analysis remain deferred. No personal model dispatch,
+  DB mutation or release/quality claim. Main includes inherited consolidation;
+  bounded source diff reviewed against aae9b24. No Sonar scan performed.
+- Carried forward: restart API to load settings, human retry and preceding safe
+  diagnostic events if failure persists. Timeout cause remains inferred.
+
+## Phase 19.2 — OpenAI advert format repair
+
+- Date: 2026-10-02
+- Commands run: branch creation from 9de3d9d; Spec Kit create/setup/prerequisite
+  scripts; `backend/.venv/bin/python /private/tmp/career-openai-diagnostic.py`
+  with tiny synthetic inputs, configured builders and bounded requests; read-only
+  provider/accounting SQL and local status HTTP reads; `ruff format` on touched
+  Python files; source/diff inspection and local commits.
+- Observed result: current gpt-5-mini CV request and text-embedding-3-small embedding
+  request returned 200; the actual advert schema returned 400. Safe current job
+  progress identifies read_advert, one completion attempt and no new CV calls.
+  Keeping defaulted arrays non-nullable and null alternatives unique returned 200;
+  final source conversion also returned 200 with diagnostic mutations removed.
+- Decisions made: preserve original Pydantic/evidence validation and retry policy;
+  add one OpenAI adapter helper for allowlisted failure metadata. No personal text
+  read/dispatched by model diagnostics, no response content printed/saved, no DB
+  mutations or new hosted path. API metadata reads did not rerun analysis.
+- Verification: tests/lint/typecheck, benchmarks, security scan and full analysis
+  remain deferred. Authored regressions are unexecuted. Request acceptance is not
+  a release/quality result; no gate closed. The diagnostic script is temporary.
+- Carried forward: human retry of a new analysis after reload/restart, focused/full
+  regression verification and current synthetic end-to-end/quality release work.
+
+## Phase 19.4 — Synthetic benchmark implementation, execution deferred
+
+- Date: 2026-10-02
+- Commands run: `git fetch origin` (restricted DNS failure, elevated read-only retry
+  succeeded); `git switch -c feat/phase-19-synthetic-benchmark`; Spec Kit template
+  resolver, `setup-plan.sh --json`, `setup-tasks.sh --json` and
+  `check-prerequisites.sh --json --require-spec --require-tasks --include-tasks`;
+  `backend/.venv/bin/ruff format` on the new benchmark modules/test/support files;
+  Git source/diff inspection and local commits.
+- Observed result: feature artifacts resolve and source files are present/formatted.
+  The CLI drives the current application with explicit fixture retrieval, cold/warm
+  caches and content-free physical request accounting. These are implementation
+  observations, not test results or latency measurements.
+- Decisions made: human explicitly retained deferred checks and authorized this
+  slice ahead of earlier gates. Source baseline is the consolidated/adoption branch
+  at `c603f33`; main is behind that dependency work. Offline operation reads no
+  provider settings. Live operation reuses existing factories, egress and execution
+  profiles. Fixture retrieval is labelled and excludes SQL/browser timing.
+- User-reported defect: retirement SQL doubled check-constraint names. Code now
+  uses `op.f()` for full names in both directions; SQL-compilation regression
+  coverage is authored. Repair commit `f32f244`; no personal database action taken.
+- Verification: no tests/lint/typecheck, benchmark/model calls, migrations, browser
+  or security scans. Deferred tasks and all root release gates remain unchecked.
+- Carried forward: focused and full checks, synthetic benchmark execution, observed
+  results in evaluation.md, disposable migration preservation/deletion checks and
+  frozen current-architecture quality/ranking evaluation.
+
+## Phase 19 — Existing-project Spec Kit adoption
+
+- Date: 2026-10-02
+- Commands run: official release metadata read; pinned `uvx ... specify init --help`;
+  initialization in place with Codex skills, Bash scripts and non-interactive options;
+  constitution template resolver. All completed successfully.
+- Observed result: Spec Kit v1.0.13 infrastructure/ten skills installed; constitution
+  1.0.0 records current agreed boundaries. Commit `904a271` contains the scaffold,
+  constitution and upstream attribution. Existing application source is unchanged.
+- Decisions made: adoption uses the current implementation as baseline, feature
+  specs elaborate root milestone items, and completed specs are historical change
+  records. Manual Git remains the repository workflow; no optional extension added.
+- Verification: no tests/lint or application/model runs, under the human's deferral.
+  Installed files are present; fresh-chat skill discovery remains a user step.
+- Carried forward: open the application repository itself in Codex, start a new chat,
+  and choose one bounded PLAN item. Suggested first slice is current synthetic
+  cold/warm duration and physical API-call measurement under 19.4. Existing final
+  verification/migrations remain pending; no implementation started for that slice.
+
+## Phase 19 — Consolidated architecture checkpoint
+
+- Date: 2026-10-02
+- Work recorded: consolidated plan committed as `ecadcaf`; implementation and
+  handoff documentation prepared on `feat/phase-19-consolidated-analysis`.
+- Observed result: one chunk/search/judge analysis replaces v1 runtime selection,
+  extraction/scoring and UI. Each provider has its own construction and model
+  execution profile. Document reading combines formerly separate calls, embeddings
+  are batched, cached indexing avoids model probes, and independent work uses
+  bounded threads. Binary parsing uses a bounded spawned process pool. Progress
+  exposes physical model/embedding attempts, remaining-call estimates and ETA.
+- Decisions made: the human superseded the old v1-before-retirement gate, requested
+  tests/lint at the end, and then requested a stop after docs, commits and push.
+  PLAN/BACKLOG now contain one delivery track. ADR 016 records the decision;
+  API, feature, provider, run, wiring, limitation and threat documentation follow it.
+- Verification state: partial checks ran before the stop-testing instruction. Final
+  edits are unverified; the progress/retirement migrations are defined but unapplied.
+  No live hosted/local-model benchmark or final browser journey was performed.
+- Cleanup: removed dead v1 evaluator and its Make target, PDF reflow heuristics,
+  duplicate frontend views and legacy test fixtures. The superseded architecture
+  branch's work is preserved in the consolidated branch before branch removal.
+- Carried forward: human final checks; disposable PostgreSQL migration verification;
+  current synthetic quality/cold-warm latency evaluation; one browser journey and
+  startup/deployment proof (PLAN 19.4). Ask/MCP hybrid/graph tool wiring remains in
+  BACKLOG. No release gate or measured performance improvement is claimed.
+
 ## Phase 13C.10 — Documentation reconciled with model-first extraction
 
 - Date: 2026-09-22

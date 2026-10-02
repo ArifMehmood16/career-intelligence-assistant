@@ -18,6 +18,7 @@ from career_assistant.application.documents.cv import (
 from career_assistant.application.intake.admission import AdmissionLimits
 from career_assistant.application.intake.errors import IntakeError
 from career_assistant.application.observability.emit import emit_action
+from career_assistant.application.ports.intake import UploadDocument, UploadParser
 from career_assistant.application.ports.persistence import NewDocument, ParseStatus
 from career_assistant.domain.documents import DocumentFormat, DocumentKind, Page, Span
 from career_assistant.logconfig import log_event
@@ -231,27 +232,17 @@ def upload_bytes_cover_letter(
     store: SupportingDocumentStore,
     *,
     workspace_id: str,
-    data: bytes,
-    filename: str,
-    declared_media_type: str | None,
-    limits: AdmissionLimits,
+    upload: UploadDocument,
+    parser: UploadParser,
 ) -> SupportingDocumentView:
-    from career_assistant.parsing.pipeline import parse_document
-
     started = time.perf_counter()
     try:
-        parsed = parse_document(
-            data,
-            filename=filename or "cover-letter",
-            kind=DocumentKind.COVER_LETTER,
-            declared_media_type=declared_media_type,
-            limits=limits,
-        )
+        parsed = parser.parse(upload)
         return _store_parsed_cover_letter(
             store,
             workspace_id=workspace_id,
             parsed=parsed,
-            body=data,
+            body=upload.data,
             started=started,
         )
     except IntakeError as exc:

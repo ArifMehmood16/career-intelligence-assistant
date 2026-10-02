@@ -10,26 +10,19 @@ from datetime import UTC, datetime
 
 from career_assistant.application.documents.cv import CvStore
 from career_assistant.application.observability.emit import emit_action
-from career_assistant.application.ports.errors import EgressNotPermittedError
-from career_assistant.application.ports.extraction import (
-    ClaimExtractionPort,
-    RequirementExtractionPort,
-)
-from career_assistant.application.roles.hermetic_analysis import (
+from career_assistant.application.ports.search import RetrievalTrace
+from career_assistant.application.ports.v2_results import V2RoleResult
+from career_assistant.application.roles.analysis import (
     AnalysisBundle,
-    analyse_hermetic,
     band_label,
     count_statuses,
 )
 from career_assistant.domain.documents import DocumentKind, Page, Span
 from career_assistant.domain.jobs import JobKind, JobState
+from career_assistant.domain.progress import ProgressView
 from career_assistant.domain.prompts import RetrievedSpan
 from career_assistant.domain.ranking import RankableRole, rank_roles
 from career_assistant.logconfig import log_event
-
-ExtractorFactory = Callable[
-    [str], tuple[RequirementExtractionPort, ClaimExtractionPort]
-]
 
 _log = logging.getLogger(__name__)
 
@@ -53,6 +46,9 @@ class RoleView:
     status: str
     updated_at: datetime
     description: str = ""
+    active_job: JobView | None = None
+    # The current architecture once an analysis is published; None before that.
+    analysis_pipeline: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,12 +66,13 @@ class JobView:
     started_at: datetime | None
     finished_at: datetime | None
     error: JobErrorView | None
+    progress: ProgressView | None = None
 
 
 @dataclass
 class InMemoryRoleStore:
     cv_store: CvStore
-    extractor_factory: ExtractorFactory | None = None
+    analyser: Callable[..., AnalysisBundle]
     roles: dict[str, dict[str, RoleView]] = field(default_factory=dict)
     jobs: dict[str, dict[str, JobView]] = field(default_factory=dict)
     analyses: dict[str, dict[str, AnalysisBundle]] = field(default_factory=dict)
@@ -121,6 +118,7 @@ class InMemoryRoleStore:
             band_label=band_label(bundle.explanation.band),
             counts=count_statuses(bundle.mappings),
             status="ready",
+            analysis_pipeline="v2",
             updated_at=now,
             description=description,
         )
@@ -251,6 +249,7 @@ class InMemoryRoleStore:
             band_label=band_label(bundle.explanation.band),
             counts=count_statuses(bundle.mappings),
             status="ready",
+            analysis_pipeline="v2",
             updated_at=now,
             description=role.description,
         )
@@ -327,6 +326,18 @@ class InMemoryRoleStore:
             )
         return tuple(self.bullet_drafts.get(workspace_id, {}).get(role_id, []))
 
+    def result(self, workspace_id: str, role_id: str) -> V2RoleResult | None:
+        bundle = self.analyses.get(workspace_id, {}).get(role_id)
+        return bundle.published_result if bundle is not None else None
+
+    def traces(
+        self, workspace_id: str, role_id: str, requirement_id: str
+    ) -> tuple[RetrievalTrace, ...] | None:
+        result = self.result(workspace_id, role_id)
+        if result is None or not any(item.requirement_id == requirement_id for item in result.verdicts):
+            return None
+        return ()
+
     def require_analysis(self, workspace_id: str, role_id: str) -> AnalysisBundle:
         role = self.get_role(workspace_id, role_id)
         if role is None:
@@ -356,25 +367,8 @@ class InMemoryRoleStore:
         cv_document_id: str,
         jd_text: str,
     ) -> AnalysisBundle:
-        requirement_extractor = None
-        claim_extractor = None
-        if self.extractor_factory is not None:
-            try:
-                requirement_extractor, claim_extractor = self.extractor_factory(
-                    workspace_id
-                )
-            except EgressNotPermittedError as exc:
-                raise RoleOperationRejected(
-                    "egress_not_permitted",
-                    "Hosted provider is not permitted.",
-                    status_code=403,
-                ) from exc
-        return analyse_hermetic(
-            cv_text=cv_text,
-            cv_document_id=cv_document_id,
-            jd_text=jd_text,
-            requirement_extractor=requirement_extractor,
-            claim_extractor=claim_extractor,
+        return self.analyser(
+            cv_text=cv_text, cv_document_id=cv_document_id, jd_text=jd_text
         )
 
     def ranked(

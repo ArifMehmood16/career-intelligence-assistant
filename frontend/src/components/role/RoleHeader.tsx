@@ -1,7 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnalysisProgress } from "@/components/role/AnalysisProgress";
 import {
   incompleteAnalysisDetail,
   incompleteAnalysisTitle,
@@ -20,6 +22,8 @@ export interface RoleHeaderProps {
   failureReason?: string | null;
   onRetry?: () => void;
   onDelete?: () => void;
+  /** Epoch ms when `role` arrived; the progress clock counts from it. */
+  observedAt?: number;
 }
 
 export function RoleHeader({
@@ -30,7 +34,10 @@ export function RoleHeader({
   failureReason = null,
   onRetry,
   onDelete,
+  observedAt,
 }: RoleHeaderProps) {
+  const [fallbackObservedAt] = useState(() => Date.now());
+  const activeJob = role?.activeJob?.progress ? role.activeJob : null;
   const resolved: RoleHeaderState =
     state ?? (loading || !role ? "loading" : "ready");
   const incomplete = isIncompleteAnalysisCode(failureCode);
@@ -90,15 +97,25 @@ export function RoleHeader({
               <p className="text-muted-foreground">{role.company}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <p
-                role="status"
-                aria-live="polite"
-                className="text-muted-foreground"
-              >
-                Analysing
-              </p>
+              {activeJob ? null : (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-muted-foreground"
+                >
+                  Analysing
+                </p>
+              )}
               {deleteControl}
             </div>
+            {activeJob ? (
+              <div className="w-full max-w-xl">
+                <AnalysisProgress
+                  job={activeJob}
+                  observedAt={observedAt ?? fallbackObservedAt}
+                />
+              </div>
+            ) : null}
           </>
         ) : resolved === "failed" && role ? (
           <>

@@ -1,1 +1,0 @@
-"""Relatedness adapters."""

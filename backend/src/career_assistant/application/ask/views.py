@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from career_assistant.application.roles.hermetic_analysis import AnalysisBundle
+from career_assistant.application.roles.analysis import AnalysisBundle
 from career_assistant.domain.ask import RoleAnalysisView
 
 
@@ -21,4 +21,5 @@ def role_analysis_view(
         requirements=bundle.requirements,
         mappings=bundle.mappings,
         span_texts=span_texts,
+        gaps=bundle.gaps,
     )

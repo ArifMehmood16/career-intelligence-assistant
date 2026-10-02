@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from career_assistant.application.providers.model_catalogue import load_model_catalogue
 from career_assistant.main import create_app
 from career_assistant.settings import ProviderSettings
 
@@ -23,7 +24,12 @@ def test_provider_defaults_are_a_local_model_not_the_test_fixture() -> None:
 
     assert settings.completion_provider == "ollama"
     assert settings.embedding_provider == "ollama"
-    assert settings.llm_max_output_tokens == 2000
+    assert settings.analysis_max_concurrent_jobs == 2
+    profile = load_model_catalogue(ROOT / "config" / "models.toml").profile(
+        settings.completion_provider, settings.ollama_completion_model
+    )
+    assert profile.completion_concurrency == 1
+    assert profile.document_output_tokens == 8192
 
 
 def test_the_test_app_factory_still_builds_a_hermetic_app() -> None:
@@ -41,6 +47,7 @@ def test_the_shipped_configuration_example_selects_a_local_model() -> None:
     assert "EMBEDDING_PROVIDER=ollama" in text
     assert "COMPLETION_PROVIDER=hermetic" not in text
     assert "EMBEDDING_PROVIDER=hermetic" not in text
+    assert "PIPELINE_VERSION=" not in text
 
 
 def test_no_dead_extraction_strategy_switch_remains() -> None:

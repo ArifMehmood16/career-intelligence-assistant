@@ -46,8 +46,6 @@ EVENTS = frozenset(
         "sql.role.deleted",
         "sql.conversation.created",
         "sql.cover_letter.delete",
-        "claims.batch",
-        "assessment.batch",
         "action.unknown",
         "event.unknown",
     }

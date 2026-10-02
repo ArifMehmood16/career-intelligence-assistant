@@ -26,6 +26,7 @@ class HermeticEmbeddingAdapter:
     def capabilities(self) -> CapabilityDescriptor:
         return CapabilityDescriptor(
             provider_id=self.provider_id,
+            model_tag=self.model_tag,
             supports_completion=False,
             supports_embedding=True,
             supports_structured_output=False,

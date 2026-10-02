@@ -20,6 +20,11 @@ class JobState(StrEnum):
     FAILED = "failed"
 
 
+# A job in one of these states may still do work. Any other state, or no row at
+# all, means its analysis was stopped and must not call a provider or write.
+LIVE_STATES = frozenset({JobState.QUEUED, JobState.RUNNING})
+
+
 class JobStage(StrEnum):
     PARSING = "parsing"
     EXTRACTING_REQUIREMENTS = "extracting_requirements"

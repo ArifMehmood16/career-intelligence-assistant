@@ -3,11 +3,13 @@ import { useState, type ReactNode } from "react";
 import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
+import { ToolSteps } from "@/components/ask/ToolSteps";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
-import { GapsPanel } from "@/components/role/GapsPanel";
+import { AnalysisProgress } from "@/components/role/AnalysisProgress";
+import { VerdictGapsPanel } from "@/components/role/verdicts/VerdictGapsPanel";
+import { VerdictsPanel } from "@/components/role/verdicts/VerdictsPanel";
 import { LetterPanel } from "@/components/role/LetterPanel";
 import { PreparePanel } from "@/components/role/PreparePanel";
-import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import { ProviderSettings } from "@/components/settings/ProviderSettings";
 import { ComparePanel } from "@/components/workspace/ComparePanel";
@@ -17,18 +19,20 @@ import { RankingPanel } from "@/components/workspace/RankingPanel";
 import { RolesPanel } from "@/components/workspace/RolesPanel";
 import { Button } from "@/components/ui/button";
 import type {
+  AnalysisJob,
   BulletDraft,
   ChatMessage,
   Comparison,
   CoverLetterDraft,
   CvDocument,
   Evidence,
-  GapItem,
   InterviewPack,
+  JobProgress,
   Provider,
   RankedRole,
   Requirement,
   Role,
+  RoleVerdicts,
   SupportingDocument,
 } from "@/types";
 
@@ -56,6 +60,156 @@ export const Route = createFileRoute("/dev/states")({
 });
 
 const noop = () => undefined;
+
+// Fixed so the gallery renders the same times on every load.
+const GALLERY_NOW = Date.UTC(2026, 8, 29, 12, 0);
+
+const judgingProgress: JobProgress = {
+  tasksDone: 4,
+  tasksTotal: 7,
+  fraction: (4 + 5 / 12) / 7,
+  currentTask: "judge",
+  elapsedSeconds: 96,
+  remainingSeconds: 74,
+  modelCallsDone: 5,
+  modelCallsRemaining: 3,
+  embeddingCallsDone: 2,
+  embeddingCallsRemaining: 0,
+  callEstimateComplete: false,
+  queuePosition: null,
+  tasks: [
+    { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "read_cv", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "read_advert", state: "done", unitsDone: 0, unitsTotal: null },
+    { key: "search", state: "done", unitsDone: 12, unitsTotal: 12 },
+    { key: "judge", state: "running", unitsDone: 5, unitsTotal: 12 },
+    { key: "recheck", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
+  ],
+};
+
+const judgingJob: AnalysisJob = {
+  id: "job-judging",
+  kind: "role_analysis",
+  state: "running",
+  stage: "mapping",
+  startedAt: "2026-09-29T11:58:24.000Z",
+  finishedAt: null,
+  error: null,
+  progress: judgingProgress,
+};
+
+const queuedJob: AnalysisJob = {
+  ...judgingJob,
+  id: "job-queued",
+  state: "queued",
+  stage: null,
+  startedAt: null,
+  progress: {
+    ...judgingProgress,
+    tasksDone: 0,
+    fraction: 0,
+    currentTask: null,
+    elapsedSeconds: null,
+    remainingSeconds: 250,
+    queuePosition: 1,
+    tasks: judgingProgress.tasks.map((task) => ({
+      ...task,
+      state: "pending",
+      unitsDone: 0,
+      unitsTotal: null,
+    })),
+  },
+};
+
+const sampleVerdicts: RoleVerdicts = {
+  roleId: "role-harbour",
+  analysisId: "analysis-harbour-2",
+  fitScore: 68.2,
+  band: "partial",
+  gated: true,
+  rubricVersion: "scoring-rubric-v2",
+  leftMachine: false,
+  verdicts: [
+    {
+      requirementId: "req-python",
+      quote: "5+ years of Python in production",
+      statement: "Has five or more years of production Python.",
+      mustHave: true,
+      verdict: "partial",
+      requirementScore: 0.58,
+      match: {
+        score: 3,
+        rationale: "Python services in two roles, both in production.",
+      },
+      seniority: null,
+      experience: {
+        score: 2,
+        rationale: "The dated roles cover about three years.",
+      },
+      unmetConditions: ["five years"],
+      contradiction: false,
+      adjustments: [],
+      evidence: [
+        {
+          chunkId: "chunk-cv-4",
+          documentId: "cv-demo",
+          quote: "Built Python services that serve the pricing API",
+        },
+      ],
+      provider: "ollama",
+      model: "qwen2.5:7b",
+    },
+    {
+      requirementId: "req-kafka",
+      quote: "Kafka or another event stream",
+      statement: "Has worked with Kafka or another event stream.",
+      mustHave: false,
+      verdict: "missing",
+      requirementScore: 0,
+      match: { score: 1, rationale: "Only batch pipelines are described." },
+      seniority: null,
+      experience: null,
+      unmetConditions: ["event streaming"],
+      contradiction: false,
+      adjustments: [],
+      evidence: [],
+      provider: "ollama",
+      model: "qwen2.5:7b",
+    },
+  ],
+  keywordCoverage: {
+    exact: ["Python", "dbt"],
+    alias: ["Postgres"],
+    missing: ["Kafka"],
+  },
+  gapPlan: [
+    {
+      requirementId: "req-kafka",
+      dimension: "match",
+      current: 1,
+      delta: 9.4,
+    },
+    {
+      requirementId: "req-python",
+      dimension: "recency",
+      current: 0.6,
+      delta: 4.1,
+    },
+  ],
+};
+
+const analysingRole: Role = {
+  id: "role-analysing",
+  title: "Machine Learning Engineer",
+  company: "Harbour Labs",
+  fitScore: 0,
+  bandLabel: "Not scored yet",
+  counts: { met: 0, partial: 0, missing: 0 },
+  status: "analysing",
+  updatedAt: "2026-09-29T11:58:00.000Z",
+  activeJob: judgingJob,
+};
 
 const sampleCv: CvDocument = {
   id: "cv-demo",
@@ -255,52 +409,16 @@ const chatNoops = {
   onRetry: noop,
 };
 
-const sampleGapItems: GapItem[] = [
-  {
-    requirementId: "req-missing",
-    requirementText: "Hands-on Terraform for infrastructure as code",
-    type: "must",
-    status: "missing",
-    reason: "no_related_claim",
-    adjacentEvidence: null,
-    scoreDelta: 12,
-    action: "learn_it",
-    canDraftBullet: false,
-  },
-  {
-    requirementId: "req-partial",
-    requirementText: "Owns a production dbt project end to end",
-    type: "must",
-    status: "partial",
-    reason: "adjacent_claim_only",
-    adjacentEvidence: matchedEvidence,
-    scoreDelta: 9,
-    action: "evidence_it",
-    canDraftBullet: true,
-  },
-];
-
 const sampleBulletDraft: BulletDraft = {
   id: "bullet-demo",
   version: 1,
   createdAt: "2026-09-18T12:00:00.000Z",
   requirementId: "req-partial",
-  bullets: [
-    {
-      text: "- Introduced dbt for a subset of warehouse models covering a third of reporting tables.",
-      spanIds: ["span-cv-demo-dbt"],
-      evidence: [
-        {
-          spanId: "span-cv-demo-dbt",
-          documentId: "cv-demo",
-          page: 2,
-          paragraph:
-            "Later I introduced dbt for a subset of the warehouse models, covering roughly a third of the reporting tables before I moved on.",
-          highlight: "covering roughly a third of the reporting tables",
-        },
-      ],
-    },
-  ],
+  bullets: [{
+    text: matchedEvidence.paragraph,
+    spanIds: [matchedEvidence.spanId],
+    evidence: [matchedEvidence],
+  }],
   provenance: {
     provider: "hermetic",
     model: null,
@@ -432,8 +550,14 @@ export const DEV_STATE_SECTION_TITLES = [
   "Roles table: error",
   "Roles table: populated",
   "Roles stacked cards: populated",
-  "Requirement table: all three status groups",
-  "Requirement table: mobile card variant",
+  "Roles table: analysing with progress",
+  "Analysis progress: judging with planned calls",
+  "Analysis progress: queued behind another analysis",
+  "Analysis progress: first analysis, estimating",
+  "Fit: verdicts and keyword coverage",
+  "Fit: no finished analysis",
+  "Gaps: verdicts",
+  "Ask: the agent's tool steps",
   "Evidence panel: matched requirement",
   "Evidence panel: missing requirement",
   "Chat: empty with starter chips",
@@ -446,9 +570,7 @@ export const DEV_STATE_SECTION_TITLES = [
   "Provider badge: hosted",
   "Cover letters card: ready",
   "Role detail tabs",
-  "Gaps panel: ready",
-  "Gaps panel: empty",
-  "Bullet draft: template fallback",
+  "Bullet draft: cited evidence",
   "Prepare panel: ready",
   "Letter panel: refusal next step",
   "Letter panel: generated draft",
@@ -604,27 +726,103 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Requirement table: all three status groups">
-        <RequirementTable
+      <Section title="Roles table: analysing with progress">
+        <RolesPanel
           state="ready"
-          requirements={sampleRequirements}
-          collapsedGroups={[]}
-          onToggleGroup={noop}
-          onSelect={noop}
+          roles={[analysingRole, ...sampleRoles.slice(0, 1)]}
+          sortKey="fit"
+          sortDirection="desc"
+          onSort={noop}
           onRetry={noop}
+          addRoleSlot={null}
           layout="table"
         />
       </Section>
 
-      <Section title="Requirement table: mobile card variant">
-        <RequirementTable
+      <Section title="Analysis progress: judging with planned calls">
+        <AnalysisProgress
+          job={judgingJob}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Analysis progress: queued behind another analysis">
+        <AnalysisProgress
+          job={queuedJob}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Analysis progress: first analysis, estimating">
+        <AnalysisProgress
+          job={{
+            ...judgingJob,
+            progress: {
+              ...judgingProgress,
+              tasksDone: 1,
+              fraction: 1 / 7,
+              currentTask: "read_cv",
+              elapsedSeconds: 12,
+              remainingSeconds: null,
+              tasks: judgingProgress.tasks.map((task, index) => ({
+                ...task,
+                state:
+                  index === 0 ? "done" : index === 1 ? "running" : "pending",
+                unitsDone: 0,
+                unitsTotal: null,
+              })),
+            },
+          }}
+          observedAt={GALLERY_NOW}
+          now={GALLERY_NOW}
+        />
+      </Section>
+
+      <Section title="Fit: verdicts and keyword coverage">
+        <VerdictsPanel
           state="ready"
-          requirements={sampleRequirements}
-          collapsedGroups={[]}
-          onToggleGroup={noop}
-          onSelect={noop}
+          verdicts={sampleVerdicts}
           onRetry={noop}
-          layout="cards"
+          onShowTrace={noop}
+        />
+      </Section>
+
+      <Section title="Fit: no finished analysis">
+        <VerdictsPanel
+          state="incomplete"
+          verdicts={null}
+          onRetry={noop}
+          onShowTrace={noop}
+        />
+      </Section>
+
+      <Section title="Gaps: verdicts">
+        <VerdictGapsPanel
+          state="ready"
+          verdicts={sampleVerdicts}
+          onRetry={noop}
+          onDraftBullet={noop}
+        />
+      </Section>
+
+      <Section title="Ask: the agent's tool steps">
+        <ToolSteps
+          steps={[
+            {
+              name: "search_evidence",
+              arguments: { query: "dbt in production" },
+              found: 2,
+              failed: false,
+            },
+            {
+              name: "get_chunk",
+              arguments: { chunk_id: "c-7" },
+              found: 1,
+              failed: false,
+            },
+          ]}
         />
       </Section>
 
@@ -834,29 +1032,7 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Gaps panel: ready">
-        <GapsPanel
-          state="ready"
-          currentScore={61}
-          items={sampleGapItems}
-          onRetry={noop}
-          onSelectEvidence={noop}
-          onDraftBullet={noop}
-        />
-      </Section>
-
-      <Section title="Gaps panel: empty">
-        <GapsPanel
-          state="empty"
-          currentScore={100}
-          items={[]}
-          onRetry={noop}
-          onSelectEvidence={noop}
-          onDraftBullet={noop}
-        />
-      </Section>
-
-      <Section title="Bullet draft: template fallback">
+      <Section title="Bullet draft: cited evidence">
         <BulletDraftPanel
           state="ready"
           draft={sampleBulletDraft}
