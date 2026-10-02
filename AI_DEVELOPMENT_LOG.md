@@ -29,6 +29,48 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 161 — Repair OpenAI advert schema rejection and expose safe diagnostics
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one agent, no delegation
+- Plan task: human-requested 19.2 defect repair; verification remains under 19.4
+- Prompt intent: debug continued analysis failure after API credits were added;
+  the human supplied logs and made the running local app available.
+- Suggestion: identify the actual failed operation, reproduce its contract using
+  tiny synthetic inputs through existing provider factories/egress, and preserve
+  content-free provider failure diagnostics.
+- Outcome: implemented for review. Workspace metadata confirmed gpt-5-mini and
+  text-embedding-3-small. The new failed job's safe API progress identifies
+  read_advert after one model attempt; cached CV reading made no calls. Synthetic
+  CV/embedding submissions succeeded, while the actual advert contract received
+  HTTP 400 with response_format identified. No personal text was dispatched.
+- Reason: strict conversion unnecessarily added null alternatives to non-nullable
+  defaulted arrays. Keeping arrays as arrays and avoiding duplicate null branches
+  changed the synthetic advert submission to HTTP 200. The final source converter
+  was checked with temporary transport mutations removed. That proves request
+  acceptance, not a complete model answer, successful personal analysis or quality.
+- Changed: strict-schema conversion; shared OpenAI response classifier reused by
+  completion, embeddings and tool calling; regressions covering actual contracts,
+  explicit nulls, hostile/malformed/oversized error payloads and retry semantics.
+  Logs identify model/operation/status plus fixed category and allowlisted codes;
+  unknown strings are discarded. Raw messages and bodies are never logged.
+- Rejected: treating the previous billing diagnosis as this new cause, switching
+  providers, increasing timeouts, weakening evidence validation, rerunning personal
+  documents, or logging raw vendor responses. Numeric-field removal, null-branch
+  deduplication alone and changing only the outer requirements array did not resolve
+  the synthetic rejection; these diagnostic variations are not production fixes.
+- Human validation: pending. Source/spec/diff review and formatting performed;
+  tiny synthetic live diagnosis used the configured egress gate, with restricted
+  networking retried through approved escalations. Read-only SQL looked at provider
+  names/accounting/task counters; local API reads inspected settings/job progress.
+  No database writes, migrations, browser interactions, pytest, lint, typecheck,
+  benchmark or security scan ran. No suite red/green evidence is claimed.
+- Branch: fix/phase-19-openai-request-errors from 9de3d9d, the current implementation
+  dependency; main still holds the older architecture. Spec Kit artifacts link to
+  the existing milestone and record all deferred checks. Root gates stay unchecked.
+- Carried forward: authored regressions/full gates and a complete synthetic analysis;
+  the human can retry a fresh job after the development reloader/restart.
+
 ### 160 — Synthetic cold/warm analysis benchmark implementation
 
 - Date: 2026-10-02

@@ -91,6 +91,19 @@ work. A failed reanalysis keeps the last valid analysis visible.
 
 ## Observability
 
+When an analysis fails, the status endpoint can still return HTTP 200: inspect the
+job's `state` and `error`. A preceding OpenAI `provider.request_failed` event now
+identifies completion/embedding/tool calling, configured model, HTTP status and a
+fixed error category. It retains only allowlisted vendor codes and parameter names,
+never the vendor message or body. `request_format_rejected` with
+`parameter=response_format` identifies a rejected structured response format.
+
+The 2026-10-02 advert-schema repair preserves empty arrays rather than forcing
+nullable types into optional nested collections. After updating, restart the API
+or let its development reloader finish, then start a new analysis. A failed job
+does not resume after an account or code fix. Synthetic request acceptance was
+observed; complete analysis and regression verification remain pending.
+
 - `make run-api` writes INFO events to stderr (`request`, `cv.uploaded`,
   `role.created`, worker stages, batch diagnostics). Lines carry ids, counts,
   durations and safe error codes — never document text, questions, answers, prompts

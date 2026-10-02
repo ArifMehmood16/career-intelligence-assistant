@@ -22,6 +22,11 @@ The first scoped change is
 Its implementation is present; tests/lint, benchmark runs and migrations remain
 pending. Specification quality review proves no application behavior.
 
+The human-requested [OpenAI analysis repair](specs/002-openai-request-errors/spec.md)
+addresses a reproduced advert-format rejection under 19.2. The repaired converter
+received HTTP 200 with a tiny synthetic request; safe rejection diagnostics are
+implemented. Full analysis, tests/lint and the measured release gate remain pending.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer

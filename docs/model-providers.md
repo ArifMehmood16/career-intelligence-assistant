@@ -37,6 +37,12 @@ provider's API enforces the JSON schema. Otherwise the adapter includes the sche
 | Anthropic | `output_config.format`, with the schema adapted to the supported subset of JSON Schema | The schema in the prompt. The configured default, `claude-sonnet-4-0`, is on this path: Anthropic lists structured outputs from Sonnet 4.5 | `stop_reason: max_tokens`, reported as `length` |
 | Hermetic | Scripted, schema-shaped fixtures | — | — |
 
+OpenAI strict mode requires every property. Non-nullable lists with empty-list
+defaults stay arrays: the model returns `[]` rather than a null sentinel. Other
+optional fields may become nullable; fields already allowing null keep one null
+alternative. This repairs the reproduced advert-reading format rejection while
+the original Pydantic contract and evidence checks remain authoritative.
+
 Constraints an API cannot enforce, such as a numeric range, move into the field's
 description. Temperature and seed are sent only when the catalogue says the model
 accepts them.
@@ -65,6 +71,13 @@ key in any shape, including masked. Enabling a hosted provider is an act perform
 the server by someone who has accepted what it means.
 
 ## Rate limits
+
+Rejected OpenAI completion, embedding and tool requests emit
+`provider.request_failed` with provider/model, operation, HTTP status, a fixed error
+category and allowlisted vendor code/parameter. Unknown values become `unknown`;
+raw vendor messages, response bodies, prompts and credentials are never logged.
+The existing HTTP retry classification remains unchanged. A job can be failed
+even when polling its status returns HTTP 200.
 
 Hosted completion and embedding share one process-wide gate. It is selected from
 `leaves_machine` on the capability descriptor, so Ollama and the hermetic fixture

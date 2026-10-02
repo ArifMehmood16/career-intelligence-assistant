@@ -13,10 +13,8 @@ from career_assistant.adapters.providers.call_gate import (
 )
 from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
-from career_assistant.adapters.providers.resilience import (
-    ResiliencePolicy,
-    classify_http_status,
-)
+from career_assistant.adapters.providers.openai.errors import classify_openai_response
+from career_assistant.adapters.providers.resilience import ResiliencePolicy
 from career_assistant.adapters.providers.schema_dialects import (
     drop_strict_mode_nulls,
     openai_strict_schema,
@@ -97,7 +95,9 @@ class OpenAICompletionAdapter:
             )
             if response.status_code >= 400:
                 note(response.headers)
-            classify_http_status(response.status_code, response.headers)
+            classify_openai_response(
+                response, model_tag=self._model_tag, operation="completion"
+            )
             data = json.loads(response.body.decode("utf-8"))
             choice = (data.get("choices") or [{}])[0]
             message = choice.get("message") or {}

@@ -11,6 +11,11 @@ The human also authorized the bounded [19.4 benchmark implementation](specs/001-
 ahead of those checks. The runner and a reported retirement-migration naming repair
 are authored; tests/lint, benchmark execution and migration verification stay pending.
 
+The reported OpenAI failure is scoped in the
+[19.2 request repair](specs/002-openai-request-errors/spec.md): advert format
+conversion and content-free rejection diagnostics. Synthetic request acceptance
+is observed; regression and complete-analysis verification are still open.
+
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.
 

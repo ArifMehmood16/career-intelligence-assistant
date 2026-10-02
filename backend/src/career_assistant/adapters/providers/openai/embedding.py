@@ -12,10 +12,8 @@ from career_assistant.adapters.providers.call_gate import (
     run_hosted,
 )
 from career_assistant.adapters.providers.http_transport import HttpTransport
-from career_assistant.adapters.providers.resilience import (
-    ResiliencePolicy,
-    classify_http_status,
-)
+from career_assistant.adapters.providers.openai.errors import classify_openai_response
+from career_assistant.adapters.providers.resilience import ResiliencePolicy
 from career_assistant.application.ports.errors import (
     ProviderInputTooLargeError,
     ProviderUnavailableError,
@@ -95,7 +93,9 @@ class OpenAIEmbeddingAdapter:
             )
             if response.status_code >= 400:
                 note(response.headers)
-            classify_http_status(response.status_code, response.headers)
+            classify_openai_response(
+                response, model_tag=self._model_tag, operation="embedding"
+            )
             data = json.loads(response.body.decode("utf-8"))
             items = data.get("data")
             if not isinstance(items, list):

@@ -18,6 +18,29 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.2 — OpenAI advert format repair
+
+- Date: 2026-10-02
+- Commands run: branch creation from 9de3d9d; Spec Kit create/setup/prerequisite
+  scripts; `backend/.venv/bin/python /private/tmp/career-openai-diagnostic.py`
+  with tiny synthetic inputs, configured builders and bounded requests; read-only
+  provider/accounting SQL and local status HTTP reads; `ruff format` on touched
+  Python files; source/diff inspection and local commits.
+- Observed result: current gpt-5-mini CV request and text-embedding-3-small embedding
+  request returned 200; the actual advert schema returned 400. Safe current job
+  progress identifies read_advert, one completion attempt and no new CV calls.
+  Keeping defaulted arrays non-nullable and null alternatives unique returned 200;
+  final source conversion also returned 200 with diagnostic mutations removed.
+- Decisions made: preserve original Pydantic/evidence validation and retry policy;
+  add one OpenAI adapter helper for allowlisted failure metadata. No personal text
+  read/dispatched by model diagnostics, no response content printed/saved, no DB
+  mutations or new hosted path. API metadata reads did not rerun analysis.
+- Verification: tests/lint/typecheck, benchmarks, security scan and full analysis
+  remain deferred. Authored regressions are unexecuted. Request acceptance is not
+  a release/quality result; no gate closed. The diagnostic script is temporary.
+- Carried forward: human retry of a new analysis after reload/restart, focused/full
+  regression verification and current synthetic end-to-end/quality release work.
+
 ## Phase 19.4 — Synthetic benchmark implementation, execution deferred
 
 - Date: 2026-10-02
