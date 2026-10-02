@@ -93,17 +93,24 @@ describe("reanalyseRole", () => {
 
 const PROGRESS = {
   tasksDone: 1,
-  tasksTotal: 5,
-  fraction: 0.2,
+  tasksTotal: 7,
+  fraction: 1 / 7,
   currentTask: "read_advert",
   elapsedSeconds: 4,
   remainingSeconds: null,
   queuePosition: null,
+  modelCallsDone: 1,
+  modelCallsRemaining: 4,
+  embeddingCallsDone: 0,
+  embeddingCallsRemaining: 1,
+  callEstimateComplete: false,
   tasks: [
     { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
     { key: "read_advert", state: "running", unitsDone: 0, unitsTotal: null },
     { key: "read_cv", state: "pending", unitsDone: 0, unitsTotal: null },
-    { key: "match", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "search", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "judge", state: "pending", unitsDone: 0, unitsTotal: null },
+    { key: "recheck", state: "pending", unitsDone: 0, unitsTotal: null },
     { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
   ],
 };

@@ -33,7 +33,7 @@ export interface Role {
   analysisPipeline?: AnalysisPipeline | null;
 }
 
-export type AnalysisPipeline = "v1" | "v2";
+export type AnalysisPipeline = "v2";
 
 export type RequirementType = "must" | "desirable";
 export type RequirementStatus = "met" | "partial" | "missing";
@@ -55,13 +55,6 @@ export interface Requirement {
   status: RequirementStatus;
   evidence: Evidence | null;
   signals?: RelatednessSignals | null | undefined;
-}
-
-export interface BreakdownRow {
-  id: "must" | "desirable" | "recency";
-  label: string;
-  value: number;
-  requirementIds: string[];
 }
 
 export interface Citation {
@@ -126,7 +119,6 @@ export type AnalysisTaskKey =
   | "prepare"
   | "read_advert"
   | "read_cv"
-  | "match"
   | "search"
   | "judge"
   | "recheck"
@@ -140,6 +132,10 @@ export interface AnalysisTask {
   state: AnalysisTaskState;
   unitsDone: number;
   unitsTotal: number | null;
+  modelCallsDone?: number | undefined;
+  modelCallsTotal?: number | null | undefined;
+  embeddingCallsDone?: number | undefined;
+  embeddingCallsTotal?: number | null | undefined;
 }
 
 /** Server snapshot; `remainingSeconds` is an estimate and null until it can be made. */
@@ -152,6 +148,11 @@ export interface JobProgress {
   remainingSeconds: number | null;
   queuePosition: number | null;
   tasks: AnalysisTask[];
+  modelCallsDone?: number | undefined;
+  modelCallsRemaining?: number | undefined;
+  embeddingCallsDone?: number | undefined;
+  embeddingCallsRemaining?: number | undefined;
+  callEstimateComplete?: boolean | undefined;
 }
 
 export interface AnalysisJob {
@@ -164,32 +165,6 @@ export interface AnalysisJob {
   error: AnalysisJobError | null;
   /** Absent from the in-memory store and older servers. */
   progress?: JobProgress | null;
-}
-
-export type GapItemReason =
-  | "no_related_claim"
-  | "adjacent_claim_only"
-  | "evidence_too_old"
-  | "evidence_thin";
-
-export type GapItemAction = "evidence_it" | "learn_it" | "accept_it";
-
-export interface GapItem {
-  requirementId: string;
-  requirementText: string;
-  type: RequirementType;
-  status: "partial" | "missing";
-  reason: GapItemReason;
-  adjacentEvidence: Evidence | null;
-  scoreDelta: number;
-  action: GapItemAction;
-  canDraftBullet: boolean;
-}
-
-export interface GapPlan {
-  roleId: string;
-  currentScore: number;
-  items: GapItem[];
 }
 
 export interface DraftProvenance {

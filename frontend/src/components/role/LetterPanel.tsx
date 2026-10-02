@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import {
   citationNumberBySpanId,
   numberLetterCitations,

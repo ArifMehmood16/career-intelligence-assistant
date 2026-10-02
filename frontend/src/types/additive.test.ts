@@ -15,11 +15,10 @@ const typesSource = readFileSync(
 const REQUIRED_EXPORTS = [
   "export type RoleStatus",
   "export interface AnalysisJob",
-  "export interface GapPlan",
-  "export interface GapItem",
+  "export interface RoleVerdicts",
+  "export interface V2Gap",
   "export interface InterviewPack",
   "export interface DraftProvenance",
-  "export interface BulletDraft",
   "export interface CoverLetterDraft",
   "export interface RankedRole",
   "export interface Comparison",

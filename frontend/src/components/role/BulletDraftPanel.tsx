@@ -2,7 +2,7 @@
  * Phase 13.3 — evidence-grounded CV bullet draft surface.
  * Presentational: draft payload and callbacks come from the container.
  */
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BulletDraft, Evidence } from "@/types";
@@ -89,8 +89,8 @@ export function BulletDraftPanel({
           ) : null}
 
           <ul className="space-y-4">
-            {draft.bullets.map((bullet, index) => (
-              <li key={`${draft.id}-${index}`} className="space-y-3">
+            {draft.bullets.map((bullet) => (
+              <li key={`${bullet.spanIds.join(":")}:${bullet.text}`} className="space-y-3">
                 <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                   {bullet.text}
                 </p>

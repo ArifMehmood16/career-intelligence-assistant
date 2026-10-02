@@ -4,7 +4,6 @@
  */
 import type {
   AnalysisJob,
-  BreakdownRow,
   BulletDraft,
   ChatMessage,
   Citation,
@@ -12,12 +11,10 @@ import type {
   CoverLetterDraft,
   CvDocument,
   Evidence,
-  GapPlan,
   InterviewPack,
   Provider,
   ProviderChoice,
   RankedRole,
-  Requirement,
   RetrievalTrace,
   Role,
   RoleVerdicts,
@@ -26,7 +23,6 @@ import type {
 } from "@/types";
 import {
   analysisJobSchema,
-  breakdownRowSchema,
   bulletDraftSchema,
   chatMessageSchema,
   citationSchema,
@@ -35,14 +31,12 @@ import {
   cvDocumentSchema,
   errorEnvelopeSchema,
   evidenceSchema,
-  gapPlanSchema,
   interviewPackSchema,
   providerChoiceSchema,
   providerChoiceUpdateResponseSchema,
   providerSchema,
   rankedRoleSchema,
   reanalyseResponseSchema,
-  requirementSchema,
   retrievalTraceSchema,
   roleCreatedSchema,
   roleSchema,
@@ -340,19 +334,7 @@ export async function getRole(id: string): Promise<Role | null> {
   }
 }
 
-export function getRequirements(roleId: string): Promise<Requirement[]> {
-  return request(`/api/roles/${roleId}/requirements`, {
-    schema: requirementSchema.array(),
-  });
-}
-
-export function getFitBreakdown(roleId: string): Promise<BreakdownRow[]> {
-  return request(`/api/roles/${roleId}/breakdown`, {
-    schema: breakdownRowSchema.array(),
-  });
-}
-
-/** A v2 role's fit. 409 `analysis_incomplete` when it has no v2 analysis. */
+/** The published fit; 409 `analysis_incomplete` until analysis finishes. */
 export function getRoleVerdicts(roleId: string): Promise<RoleVerdicts> {
   return request(`/api/roles/${roleId}/verdicts`, {
     schema: roleVerdictsSchema,
@@ -365,12 +347,6 @@ export function getVerdictTrace(
 ): Promise<RetrievalTrace> {
   return request(`/api/roles/${roleId}/verdicts/${requirementId}/trace`, {
     schema: retrievalTraceSchema,
-  });
-}
-
-export function getGapPlan(roleId: string): Promise<GapPlan> {
-  return request(`/api/roles/${roleId}/gap-plan`, {
-    schema: gapPlanSchema,
   });
 }
 

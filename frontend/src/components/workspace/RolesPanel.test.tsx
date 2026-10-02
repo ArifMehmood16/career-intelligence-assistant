@@ -160,7 +160,7 @@ describe("RolesPanel analysis status", () => {
               unitsDone: 0,
               unitsTotal: null,
             },
-            { key: "match", state: "pending", unitsDone: 0, unitsTotal: null },
+            { key: "search", state: "pending", unitsDone: 0, unitsTotal: null },
             { key: "score", state: "pending", unitsDone: 0, unitsTotal: null },
           ],
         },

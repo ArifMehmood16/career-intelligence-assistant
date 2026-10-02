@@ -1,5 +1,5 @@
 /**
- * Words for a v2 verdict: the judge's 0–4 anchors, and the rules the server applied.
+ * Words for a verdict: the judge's 0–4 anchors, and the rules the server applied.
  * The anchors are the ones in the judge prompt (`judge-anchors-v1`), so a score
  * reads here the way the model was told to give it.
  */

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import {
   currentTaskLine,
+  callsLine,
   formatClock,
   liveTimes,
   queueLine,
@@ -117,6 +118,7 @@ export function AnalysisProgress({
       ? queueLine(progress.queuePosition ?? 0)
       : tasksDoneLine(progress);
   const current = currentTaskLine(progress);
+  const calls = callsLine(progress);
   const showTime = ticking;
 
   return (
@@ -160,6 +162,15 @@ export function AnalysisProgress({
       </div>
       {current ? (
         <p className="text-sm text-muted-foreground">{current}</p>
+      ) : null}
+      {showTime && calls ? (
+        <p className="text-sm text-muted-foreground tabular-nums">{calls}</p>
+      ) : null}
+      {variant === "full" && showTime && calls ? (
+        <p className="text-xs text-muted-foreground">
+          Calls run in parallel where possible. Cached work is skipped; repairs
+          can add calls.
+        </p>
       ) : null}
       {variant === "full" ? (
         <ol aria-label="Analysis tasks" className="space-y-1 pt-1 text-sm">

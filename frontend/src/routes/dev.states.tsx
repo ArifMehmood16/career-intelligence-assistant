@@ -4,14 +4,12 @@ import { ChatView } from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import { ProviderBadge } from "@/components/ProviderBadge";
 import { ToolSteps } from "@/components/ask/ToolSteps";
-import { AnalysisProgress } from "@/components/role/AnalysisProgress";
-import { V2GapsPanel } from "@/components/role/v2/V2GapsPanel";
-import { VerdictsPanel } from "@/components/role/v2/VerdictsPanel";
 import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
-import { GapsPanel } from "@/components/role/GapsPanel";
+import { AnalysisProgress } from "@/components/role/AnalysisProgress";
+import { VerdictGapsPanel } from "@/components/role/verdicts/VerdictGapsPanel";
+import { VerdictsPanel } from "@/components/role/verdicts/VerdictsPanel";
 import { LetterPanel } from "@/components/role/LetterPanel";
 import { PreparePanel } from "@/components/role/PreparePanel";
-import { RequirementTable } from "@/components/role/RequirementTable";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import { ProviderSettings } from "@/components/settings/ProviderSettings";
 import { ComparePanel } from "@/components/workspace/ComparePanel";
@@ -28,7 +26,6 @@ import type {
   CoverLetterDraft,
   CvDocument,
   Evidence,
-  GapItem,
   InterviewPack,
   JobProgress,
   Provider,
@@ -74,6 +71,11 @@ const judgingProgress: JobProgress = {
   currentTask: "judge",
   elapsedSeconds: 96,
   remainingSeconds: 74,
+  modelCallsDone: 5,
+  modelCallsRemaining: 3,
+  embeddingCallsDone: 2,
+  embeddingCallsRemaining: 0,
+  callEstimateComplete: false,
   queuePosition: null,
   tasks: [
     { key: "prepare", state: "done", unitsDone: 0, unitsTotal: null },
@@ -407,52 +409,16 @@ const chatNoops = {
   onRetry: noop,
 };
 
-const sampleGapItems: GapItem[] = [
-  {
-    requirementId: "req-missing",
-    requirementText: "Hands-on Terraform for infrastructure as code",
-    type: "must",
-    status: "missing",
-    reason: "no_related_claim",
-    adjacentEvidence: null,
-    scoreDelta: 12,
-    action: "learn_it",
-    canDraftBullet: false,
-  },
-  {
-    requirementId: "req-partial",
-    requirementText: "Owns a production dbt project end to end",
-    type: "must",
-    status: "partial",
-    reason: "adjacent_claim_only",
-    adjacentEvidence: matchedEvidence,
-    scoreDelta: 9,
-    action: "evidence_it",
-    canDraftBullet: true,
-  },
-];
-
 const sampleBulletDraft: BulletDraft = {
   id: "bullet-demo",
   version: 1,
   createdAt: "2026-09-18T12:00:00.000Z",
   requirementId: "req-partial",
-  bullets: [
-    {
-      text: "- Introduced dbt for a subset of warehouse models covering a third of reporting tables.",
-      spanIds: ["span-cv-demo-dbt"],
-      evidence: [
-        {
-          spanId: "span-cv-demo-dbt",
-          documentId: "cv-demo",
-          page: 2,
-          paragraph:
-            "Later I introduced dbt for a subset of the warehouse models, covering roughly a third of the reporting tables before I moved on.",
-          highlight: "covering roughly a third of the reporting tables",
-        },
-      ],
-    },
-  ],
+  bullets: [{
+    text: matchedEvidence.paragraph,
+    spanIds: [matchedEvidence.spanId],
+    evidence: [matchedEvidence],
+  }],
   provenance: {
     provider: "hermetic",
     model: null,
@@ -585,15 +551,13 @@ export const DEV_STATE_SECTION_TITLES = [
   "Roles table: populated",
   "Roles stacked cards: populated",
   "Roles table: analysing with progress",
-  "Analysis progress: judging (pipeline v2)",
+  "Analysis progress: judging with planned calls",
   "Analysis progress: queued behind another analysis",
   "Analysis progress: first analysis, estimating",
-  "Fit, pipeline v2: verdicts and keyword coverage",
-  "Fit, pipeline v2: no finished analysis",
-  "Gaps, pipeline v2",
+  "Fit: verdicts and keyword coverage",
+  "Fit: no finished analysis",
+  "Gaps: verdicts",
   "Ask: the agent's tool steps",
-  "Requirement table: all three status groups",
-  "Requirement table: mobile card variant",
   "Evidence panel: matched requirement",
   "Evidence panel: missing requirement",
   "Chat: empty with starter chips",
@@ -606,9 +570,7 @@ export const DEV_STATE_SECTION_TITLES = [
   "Provider badge: hosted",
   "Cover letters card: ready",
   "Role detail tabs",
-  "Gaps panel: ready",
-  "Gaps panel: empty",
-  "Bullet draft: template fallback",
+  "Bullet draft: cited evidence",
   "Prepare panel: ready",
   "Letter panel: refusal next step",
   "Letter panel: generated draft",
@@ -777,7 +739,7 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Analysis progress: judging (pipeline v2)">
+      <Section title="Analysis progress: judging with planned calls">
         <AnalysisProgress
           job={judgingJob}
           observedAt={GALLERY_NOW}
@@ -818,7 +780,7 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Fit, pipeline v2: verdicts and keyword coverage">
+      <Section title="Fit: verdicts and keyword coverage">
         <VerdictsPanel
           state="ready"
           verdicts={sampleVerdicts}
@@ -827,7 +789,7 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Fit, pipeline v2: no finished analysis">
+      <Section title="Fit: no finished analysis">
         <VerdictsPanel
           state="incomplete"
           verdicts={null}
@@ -836,8 +798,13 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Gaps, pipeline v2">
-        <V2GapsPanel state="ready" verdicts={sampleVerdicts} onRetry={noop} />
+      <Section title="Gaps: verdicts">
+        <VerdictGapsPanel
+          state="ready"
+          verdicts={sampleVerdicts}
+          onRetry={noop}
+          onDraftBullet={noop}
+        />
       </Section>
 
       <Section title="Ask: the agent's tool steps">
@@ -856,30 +823,6 @@ export function DevStatesPage() {
               failed: false,
             },
           ]}
-        />
-      </Section>
-
-      <Section title="Requirement table: all three status groups">
-        <RequirementTable
-          state="ready"
-          requirements={sampleRequirements}
-          collapsedGroups={[]}
-          onToggleGroup={noop}
-          onSelect={noop}
-          onRetry={noop}
-          layout="table"
-        />
-      </Section>
-
-      <Section title="Requirement table: mobile card variant">
-        <RequirementTable
-          state="ready"
-          requirements={sampleRequirements}
-          collapsedGroups={[]}
-          onToggleGroup={noop}
-          onSelect={noop}
-          onRetry={noop}
-          layout="cards"
         />
       </Section>
 
@@ -1089,29 +1032,7 @@ export function DevStatesPage() {
         />
       </Section>
 
-      <Section title="Gaps panel: ready">
-        <GapsPanel
-          state="ready"
-          currentScore={61}
-          items={sampleGapItems}
-          onRetry={noop}
-          onSelectEvidence={noop}
-          onDraftBullet={noop}
-        />
-      </Section>
-
-      <Section title="Gaps panel: empty">
-        <GapsPanel
-          state="empty"
-          currentScore={100}
-          items={[]}
-          onRetry={noop}
-          onSelectEvidence={noop}
-          onDraftBullet={noop}
-        />
-      </Section>
-
-      <Section title="Bullet draft: template fallback">
+      <Section title="Bullet draft: cited evidence">
         <BulletDraftPanel
           state="ready"
           draft={sampleBulletDraft}

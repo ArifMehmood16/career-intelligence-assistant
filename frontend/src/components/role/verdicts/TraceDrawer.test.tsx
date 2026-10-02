@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
 
 import { TraceDrawer } from "./TraceDrawer";
-import { V2GapsPanel } from "./V2GapsPanel";
+import { VerdictGapsPanel } from "./VerdictGapsPanel";
 
 afterEach(() => {
   cleanup();
@@ -66,9 +66,9 @@ describe("TraceDrawer", () => {
   });
 });
 
-describe("V2GapsPanel", () => {
+describe("VerdictGapsPanel", () => {
   it("orders the gaps by what closing them would add", () => {
-    render(<V2GapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />);
+    render(<VerdictGapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />);
 
     const items = screen.getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Has five or more years of Python.");
@@ -79,7 +79,7 @@ describe("V2GapsPanel", () => {
 
   it("says when nothing is left to close", () => {
     render(
-      <V2GapsPanel
+      <VerdictGapsPanel
         state="ready"
         verdicts={{ ...VERDICTS, gapPlan: [] }}
         onRetry={vi.fn()}
@@ -91,16 +91,16 @@ describe("V2GapsPanel", () => {
 
   it("has loading, error and incomplete states", () => {
     const { rerender, container } = render(
-      <V2GapsPanel state="loading" verdicts={null} onRetry={vi.fn()} />,
+      <VerdictGapsPanel state="loading" verdicts={null} onRetry={vi.fn()} />,
     );
     expect(container.querySelector(".animate-pulse")).toBeTruthy();
-    rerender(<V2GapsPanel state="error" verdicts={null} onRetry={vi.fn()} />);
+    rerender(<VerdictGapsPanel state="error" verdicts={null} onRetry={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     rerender(
-      <V2GapsPanel state="incomplete" verdicts={null} onRetry={vi.fn()} />,
+      <VerdictGapsPanel state="incomplete" verdicts={null} onRetry={vi.fn()} />,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
-      /no finished v2 analysis/i,
+      /no finished analysis/i,
     );
   });
 });

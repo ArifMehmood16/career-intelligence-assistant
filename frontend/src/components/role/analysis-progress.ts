@@ -25,10 +25,6 @@ const TASKS: Record<AnalysisTaskKey, TaskCopy> = {
     active: "Reading the job description",
   },
   read_cv: { label: "Read your CV", active: "Reading your CV" },
-  match: {
-    label: "Match evidence to requirements",
-    active: "Matching evidence to requirements",
-  },
   search: {
     label: "Search your CV for evidence",
     active: "Searching your CV for evidence",
@@ -66,11 +62,29 @@ export function tasksDoneLine(progress: JobProgress): string {
 }
 
 export function currentTaskLine(progress: JobProgress): string | null {
-  const task = progress.tasks.find((t) => t.state === "running");
-  if (!task) return null;
-  const active = TASKS[task.key]?.active ?? task.key;
-  const units = unitsLine(task.key, task.unitsDone, task.unitsTotal);
-  return units ? `${active} · ${units}` : active;
+  const tasks = progress.tasks.filter((t) => t.state === "running");
+  if (tasks.length === 0) return null;
+  return tasks
+    .map((task) => {
+      const active = TASKS[task.key]?.active ?? task.key;
+      const units = unitsLine(task.key, task.unitsDone, task.unitsTotal);
+      return units ? `${active} · ${units}` : active;
+    })
+    .join(" · ");
+}
+
+export function callsLine(progress: JobProgress): string | null {
+  if (progress.modelCallsRemaining === undefined) return null;
+  const model = progress.modelCallsRemaining;
+  const embedding = progress.embeddingCallsRemaining ?? 0;
+  const qualifier = progress.callEstimateComplete ? "About" : "At least";
+  const planned = progress.callEstimateComplete ? "" : "planned ";
+  const models = `${model} ${planned}LLM ${model === 1 ? "call" : "calls"}`;
+  const embeddings =
+    embedding > 0
+      ? ` + ${embedding} embedding ${embedding === 1 ? "call" : "calls"}`
+      : "";
+  return `${qualifier} ${models}${embeddings} left`;
 }
 
 export function formatClock(totalSeconds: number): string {

@@ -2,19 +2,21 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { ApiError, getRoleVerdicts, getVerdictTrace } from "@/api/client";
+import { BulletDraftContainer } from "@/components/role/BulletDraftContainer";
 
 import { TraceDrawer, type TraceState } from "./TraceDrawer";
-import { V2GapsPanel } from "./V2GapsPanel";
+import { VerdictGapsPanel } from "./VerdictGapsPanel";
 import { VerdictsPanel, type VerdictsState } from "./VerdictsPanel";
 
-export interface V2RoleFitContainerProps {
+export interface RoleFitContainerProps {
   roleId: string;
   pane: "fit" | "gaps";
 }
 
-/** A pipeline-v2 role's Fit or Gaps tab, read from the verdict routes. */
-export function V2RoleFitContainer({ roleId, pane }: V2RoleFitContainerProps) {
+/** A role's Fit or Gaps tab, read from the verdict routes. */
+export function RoleFitContainer({ roleId, pane }: RoleFitContainerProps) {
   const [traceFor, setTraceFor] = useState<string | null>(null);
+  const [draftFor, setDraftFor] = useState<string | null>(null);
   const verdictsQuery = useQuery({
     queryKey: ["verdicts", roleId],
     queryFn: () => getRoleVerdicts(roleId),
@@ -41,7 +43,24 @@ export function V2RoleFitContainer({ roleId, pane }: V2RoleFitContainerProps) {
   };
 
   if (pane === "gaps") {
-    return <V2GapsPanel state={state} verdicts={verdicts} onRetry={retry} />;
+    return (
+      <div className="space-y-6">
+        <VerdictGapsPanel
+          state={state}
+          verdicts={verdicts}
+          onRetry={retry}
+          onDraftBullet={setDraftFor}
+        />
+        {draftFor !== null ? (
+          <BulletDraftContainer
+            key={draftFor}
+            roleId={roleId}
+            requirementId={draftFor}
+            onDismiss={() => setDraftFor(null)}
+          />
+        ) : null}
+      </div>
+    );
   }
 
   const traceState: TraceState = traceQuery.isPending

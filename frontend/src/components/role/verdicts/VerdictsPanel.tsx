@@ -16,7 +16,7 @@ export interface VerdictsPanelProps {
 }
 
 /**
- * A pipeline-v2 role's fit: the score from domain code, the judge's three
+ * A role's fit: the score from domain code, the judge's three
  * dimensions with the quotes behind them, and keyword coverage beside the score.
  */
 export function VerdictsPanel({
@@ -49,8 +49,8 @@ export function VerdictsPanel({
   if (state === "incomplete" || verdicts === null) {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        This role has no finished v2 analysis, so there is no fit to show. This
-        is not a fit judgement.
+        This role has no finished analysis, so there is no fit to show. This is
+        not a fit judgement.
       </p>
     );
   }

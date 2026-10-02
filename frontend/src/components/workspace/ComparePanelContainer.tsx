@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { getComparison, getRoles } from "@/api/client";
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import { ComparePanel } from "@/components/workspace/ComparePanel";
 
 export function ComparePanelContainer() {

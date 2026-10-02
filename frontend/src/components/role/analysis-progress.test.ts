@@ -8,6 +8,7 @@ import type { JobProgress } from "@/types";
 
 import {
   currentTaskLine,
+  callsLine,
   formatClock,
   liveTimes,
   queueLine,
@@ -36,6 +37,41 @@ const RUNNING: JobProgress = {
 };
 
 describe("analysis progress copy", () => {
+  it("shows simultaneous document stages", () => {
+    expect(
+      currentTaskLine({
+        ...RUNNING,
+        tasks: [
+          { key: "read_cv", state: "running", unitsDone: 0, unitsTotal: null },
+          {
+            key: "read_advert",
+            state: "running",
+            unitsDone: 0,
+            unitsTotal: null,
+          },
+        ],
+      }),
+    ).toBe("Reading your CV · Reading the job description");
+  });
+
+  it("labels planned calls as an estimate with an incomplete plan", () => {
+    expect(
+      callsLine({
+        ...RUNNING,
+        modelCallsRemaining: 4,
+        embeddingCallsRemaining: 2,
+        callEstimateComplete: false,
+      }),
+    ).toBe("At least 4 planned LLM calls + 2 embedding calls left");
+    expect(
+      callsLine({
+        ...RUNNING,
+        modelCallsRemaining: 1,
+        embeddingCallsRemaining: 0,
+        callEstimateComplete: true,
+      }),
+    ).toBe("About 1 LLM call left");
+  });
   it("counts tasks done out of the total", () => {
     expect(tasksDoneLine(RUNNING)).toBe("4 of 7 tasks done");
   });
@@ -52,7 +88,7 @@ describe("analysis progress copy", () => {
           t.key === "read_cv" ? { ...t, state: "running" } : t,
         ),
       }),
-    ).toBe("Reading your CV");
+    ).toBe("Reading your CV · Judging each requirement · 3 of 12 requirements");
   });
 
   it("labels every task a pipeline can run", () => {

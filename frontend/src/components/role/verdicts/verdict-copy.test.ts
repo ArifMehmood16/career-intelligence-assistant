@@ -11,7 +11,7 @@ import {
   NOT_STATED,
 } from "./verdict-copy";
 
-describe("v2 verdict copy", () => {
+describe("verdict copy", () => {
   it("names each score by the anchor the judge was given", () => {
     expect(anchorLabel("match", 3)).toBe("The requirement as stated");
     expect(anchorLabel("seniority", 0)).toBe("Two or more levels below");

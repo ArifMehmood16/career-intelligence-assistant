@@ -1,5 +1,4 @@
 import type {
-  BreakdownRow,
   ChatMessage,
   CvDocument,
   Provider,
@@ -343,93 +342,6 @@ export const requirementsFixture: Requirement[] = [
     evidence: null,
   },
 ];
-
-export const breakdownFixture: Record<string, BreakdownRow[]> = {
-  "role-northwind": [
-    {
-      id: "must",
-      label: "Must-have coverage",
-      value: 78,
-      requirementIds: ["req-nw-1", "req-nw-2", "req-nw-3", "req-nw-7"],
-    },
-    {
-      id: "desirable",
-      label: "Desirable coverage",
-      value: 80,
-      requirementIds: [
-        "req-nw-4",
-        "req-nw-5",
-        "req-nw-6",
-        "req-nw-8",
-        "req-nw-9",
-      ],
-    },
-    {
-      id: "recency",
-      label: "Recency of evidence",
-      value: 90,
-      requirementIds: ["req-nw-1", "req-nw-2"],
-    },
-  ],
-  "role-kestrel": [
-    {
-      id: "must",
-      label: "Must-have coverage",
-      value: 55,
-      requirementIds: [
-        "req-ks-1",
-        "req-ks-2",
-        "req-ks-3",
-        "req-ks-7",
-        "req-ks-8",
-      ],
-    },
-    {
-      id: "desirable",
-      label: "Desirable coverage",
-      value: 50,
-      requirementIds: [
-        "req-ks-4",
-        "req-ks-5",
-        "req-ks-6",
-        "req-ks-9",
-        "req-ks-10",
-      ],
-    },
-    {
-      id: "recency",
-      label: "Recency of evidence",
-      value: 72,
-      requirementIds: ["req-ks-1", "req-ks-4"],
-    },
-  ],
-  "role-halden": [
-    {
-      id: "must",
-      label: "Must-have coverage",
-      value: 30,
-      requirementIds: [
-        "req-hd-1",
-        "req-hd-2",
-        "req-hd-4",
-        "req-hd-5",
-        "req-hd-6",
-      ],
-    },
-    {
-      id: "desirable",
-      label: "Desirable coverage",
-      value: 22,
-      requirementIds: ["req-hd-3", "req-hd-7", "req-hd-8", "req-hd-9"],
-    },
-    {
-      id: "recency",
-      label: "Recency of evidence",
-      value: 48,
-      requirementIds: ["req-hd-3"],
-    },
-  ],
-};
 
 export const messagesFixture: ChatMessage[] = [
   {

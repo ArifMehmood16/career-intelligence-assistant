@@ -8,11 +8,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ChatView } from "@/components/ask/ChatView";
-import { GapsPanel } from "@/components/role/GapsPanel";
+import { VerdictsPanel } from "@/components/role/verdicts/VerdictsPanel";
+import { VerdictGapsPanel } from "@/components/role/verdicts/VerdictGapsPanel";
+import { VERDICTS } from "@/api/__fixtures__/verdicts";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
 import { CvCard } from "@/components/workspace/CvCard";
 import { RolesPanel } from "@/components/workspace/RolesPanel";
-import type { GapItem, Role } from "@/types";
+import type { Role } from "@/types";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -34,24 +36,6 @@ afterEach(() => {
   cleanup();
 });
 
-const gap: GapItem = {
-  requirementId: "req-1",
-  requirementText: "Production dbt",
-  type: "must",
-  status: "partial",
-  reason: "adjacent_claim_only",
-  adjacentEvidence: {
-    spanId: "span-1",
-    documentId: "doc-1",
-    page: 1,
-    paragraph: "Introduced dbt models.",
-    highlight: "dbt models",
-  },
-  scoreDelta: 9,
-  action: "evidence_it",
-  canDraftBullet: true,
-};
-
 const analysingRole: Role = {
   id: "role-a",
   title: "Analytics Engineer",
@@ -64,25 +48,23 @@ const analysingRole: Role = {
 };
 
 describe("Phase 13.9 accessibility", () => {
-  it("keeps a keyboard path through role tabs and draft controls", async () => {
+  it("keeps a keyboard path through role tabs and retrieval trace controls", async () => {
     const user = userEvent.setup();
-    const onDraft = vi.fn();
+    const onShowTrace = vi.fn();
     const { container } = render(
       <div>
         <RoleDetailTabs
-          value="gaps"
+          value="fit"
           onValueChange={vi.fn()}
-          fit={<p>Fit</p>}
-          gaps={
-            <GapsPanel
+          fit={
+            <VerdictsPanel
               state="ready"
-              currentScore={61}
-              items={[gap]}
+              verdicts={VERDICTS}
               onRetry={vi.fn()}
-              onSelectEvidence={vi.fn()}
-              onDraftBullet={onDraft}
+              onShowTrace={onShowTrace}
             />
           }
+          gaps={<VerdictGapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />}
           prepare={<p>Prepare</p>}
           letter={<p>Letter</p>}
         />
@@ -92,15 +74,15 @@ describe("Phase 13.9 accessibility", () => {
     const tablist = within(container).getByRole("tablist", {
       name: "Role detail sections",
     });
-    const gapsTab = within(tablist).getByRole("tab", { name: "Gaps" });
-    gapsTab.focus();
-    expect(gapsTab).toHaveFocus();
+    const fitTab = within(tablist).getByRole("tab", { name: "Fit" });
+    fitTab.focus();
+    expect(fitTab).toHaveFocus();
 
     await user.keyboard("{ArrowRight}");
-    expect(within(tablist).getByRole("tab", { name: "Prepare" })).toHaveFocus();
+    expect(within(tablist).getByRole("tab", { name: "Gaps" })).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: /draft a bullet/i }));
-    expect(onDraft).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: /show retrieval trace/i }));
+    expect(onShowTrace).toHaveBeenCalledWith("r1");
   });
 
   it("labels upload and announces parsing and analysing progress", () => {

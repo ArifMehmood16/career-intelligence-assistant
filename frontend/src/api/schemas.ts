@@ -39,7 +39,7 @@ export const roleSchema = z
       .lazy(() => analysisJobSchema)
       .nullable()
       .optional(),
-    analysisPipeline: z.enum(["v1", "v2"]).nullable().optional(),
+    analysisPipeline: z.literal("v2").nullable().optional(),
   })
   .passthrough();
 
@@ -65,13 +65,6 @@ export const requirementSchema = z.object({
   status: z.enum(["met", "partial", "missing"]),
   evidence: evidenceSchema.nullable(),
   signals: relatednessSignalsSchema.nullable().optional(),
-});
-
-export const breakdownRowSchema = z.object({
-  id: z.enum(["must", "desirable", "recency"]),
-  label: z.string(),
-  value: z.number(),
-  requirementIds: z.array(z.string()),
 });
 
 export const citationSchema = z.object({
@@ -132,7 +125,6 @@ const analysisTaskKeySchema = z.enum([
   "prepare",
   "read_advert",
   "read_cv",
-  "match",
   "search",
   "judge",
   "recheck",
@@ -147,12 +139,21 @@ export const jobProgressSchema = z.object({
   elapsedSeconds: z.number().nullable(),
   remainingSeconds: z.number().nullable(),
   queuePosition: z.number().int().nullable(),
+  modelCallsDone: z.number().int().nonnegative().optional(),
+  modelCallsRemaining: z.number().int().nonnegative().optional(),
+  embeddingCallsDone: z.number().int().nonnegative().optional(),
+  embeddingCallsRemaining: z.number().int().nonnegative().optional(),
+  callEstimateComplete: z.boolean().optional(),
   tasks: z.array(
     z.object({
       key: analysisTaskKeySchema,
       state: z.enum(["pending", "running", "done", "skipped", "failed"]),
       unitsDone: z.number().int(),
       unitsTotal: z.number().int().nullable(),
+      modelCallsDone: z.number().int().nonnegative().optional(),
+      modelCallsTotal: z.number().int().nonnegative().nullable().optional(),
+      embeddingCallsDone: z.number().int().nonnegative().optional(),
+      embeddingCallsTotal: z.number().int().nonnegative().nullable().optional(),
     }),
   ),
 });
@@ -197,29 +198,6 @@ export const supportingDocumentSchema = z.object({
   pageCount: z.number().int(),
   parsedAt: z.string(),
   createdAt: z.string(),
-});
-
-export const gapItemSchema = z.object({
-  requirementId: z.string(),
-  requirementText: z.string(),
-  type: z.enum(["must", "desirable"]),
-  status: z.enum(["partial", "missing"]),
-  reason: z.enum([
-    "no_related_claim",
-    "adjacent_claim_only",
-    "evidence_too_old",
-    "evidence_thin",
-  ]),
-  adjacentEvidence: evidenceSchema.nullable(),
-  scoreDelta: z.number(),
-  action: z.enum(["evidence_it", "learn_it", "accept_it"]),
-  canDraftBullet: z.boolean(),
-});
-
-export const gapPlanSchema = z.object({
-  roleId: z.string(),
-  currentScore: z.number(),
-  items: z.array(gapItemSchema),
 });
 
 export const draftProvenanceSchema = z.object({

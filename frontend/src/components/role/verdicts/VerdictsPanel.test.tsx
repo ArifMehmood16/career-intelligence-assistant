@@ -1,5 +1,5 @@
 /**
- * PLAN 18.13 — a v2 role's fit: dimension scores with quotes, coverage, states.
+ * PLAN 18.13 — a role's fit: dimension scores with quotes, coverage, states.
  * @vitest-environment jsdom
  */
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -45,11 +45,11 @@ describe("VerdictsPanel states", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
-  it("says so when there is no finished v2 analysis, and is not a score", () => {
+  it("says so when there is no finished analysis, and is not a score", () => {
     panel({ state: "incomplete", verdicts: null });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      /no finished v2 analysis/i,
+      /no finished analysis/i,
     );
     expect(screen.queryByText(/\/ 100/)).toBeNull();
   });

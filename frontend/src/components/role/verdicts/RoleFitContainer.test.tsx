@@ -1,5 +1,5 @@
 /**
- * PLAN 18.13 — the v2 fit reads the verdict routes; a trace loads on demand.
+ * PLAN 18.13 — the fit reads the verdict routes; a trace loads on demand.
  * @vitest-environment jsdom
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TRACE, VERDICTS } from "@/api/__fixtures__/verdicts";
 
-import { V2RoleFitContainer } from "./V2RoleFitContainer";
+import { RoleFitContainer } from "./RoleFitContainer";
 
 afterEach(() => {
   cleanup();
@@ -39,10 +39,10 @@ function stubRoutes(verdicts: () => Response) {
   return calls;
 }
 
-describe("V2RoleFitContainer", () => {
+describe("RoleFitContainer", () => {
   it("shows the verdicts and loads a trace only when asked", async () => {
     const calls = stubRoutes(() => Response.json(VERDICTS));
-    wrap(<V2RoleFitContainer roleId="role-1" pane="fit" />);
+    wrap(<RoleFitContainer roleId="role-1" pane="fit" />);
 
     expect(
       await screen.findByRole("article", {
@@ -61,29 +61,29 @@ describe("V2RoleFitContainer", () => {
     expect(calls).toContain("/api/roles/role-1/verdicts/r1/trace");
   });
 
-  it("treats a 409 as no finished v2 analysis, not as an error", async () => {
+  it("treats a 409 as no finished analysis, not as an error", async () => {
     stubRoutes(() =>
       Response.json(
         {
           error: {
             code: "analysis_incomplete",
-            message: "No v2 analysis.",
+            message: "No finished analysis.",
             correlationId: "c",
           },
         },
         { status: 409 },
       ),
     );
-    wrap(<V2RoleFitContainer roleId="role-1" pane="fit" />);
+    wrap(<RoleFitContainer roleId="role-1" pane="fit" />);
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      /no finished v2 analysis/i,
+      /no finished analysis/i,
     );
   });
 
   it("reads the gaps from the same verdicts", async () => {
     stubRoutes(() => Response.json(VERDICTS));
-    wrap(<V2RoleFitContainer roleId="role-1" pane="gaps" />);
+    wrap(<RoleFitContainer roleId="role-1" pane="gaps" />);
 
     expect(await screen.findByText("+6.5")).toBeInTheDocument();
   });

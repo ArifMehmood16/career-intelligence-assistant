@@ -40,7 +40,7 @@ describe("getRoleVerdicts", () => {
         {
           error: {
             code: "analysis_incomplete",
-            message: "No v2 analysis.",
+            message: "No finished analysis.",
             correlationId: "c",
           },
         },

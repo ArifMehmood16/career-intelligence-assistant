@@ -4,7 +4,7 @@
  */
 import { Link } from "@tanstack/react-router";
 
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { RankedRole } from "@/types";

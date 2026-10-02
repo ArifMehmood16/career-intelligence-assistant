@@ -3,7 +3,7 @@
  * Presentational: role picks and comparison payload come from the container.
  */
 import { StatusMark } from "@/components/StatusMark";
-import type { AsyncState } from "@/components/role/FitBreakdown";
+import type { AsyncState } from "@/components/role/async-state";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -5,14 +5,20 @@ import type { RoleVerdicts } from "@/types";
 import { DIMENSION_LABEL, MAX_SCORE } from "./verdict-copy";
 import type { VerdictsState } from "./VerdictsPanel";
 
-export interface V2GapsPanelProps {
+export interface VerdictGapsPanelProps {
   state: VerdictsState;
   verdicts: RoleVerdicts | null;
   onRetry: () => void;
+  onDraftBullet?: (requirementId: string) => void;
 }
 
-/** A v2 role's gaps: the dimension to raise and what closing it would add. */
-export function V2GapsPanel({ state, verdicts, onRetry }: V2GapsPanelProps) {
+/** A role's gaps: the dimension to raise and what closing it would add. */
+export function VerdictGapsPanel({
+  state,
+  verdicts,
+  onRetry,
+  onDraftBullet,
+}: Readonly<VerdictGapsPanelProps>) {
   if (state === "loading") {
     return <Skeleton className="h-24 w-full" />;
   }
@@ -31,7 +37,7 @@ export function V2GapsPanel({ state, verdicts, onRetry }: V2GapsPanelProps) {
   if (state === "incomplete" || verdicts === null) {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        This role has no finished v2 analysis, so there are no gaps to show.
+        This role has no finished analysis, so there are no gaps to show.
       </p>
     );
   }
@@ -45,9 +51,19 @@ export function V2GapsPanel({ state, verdicts, onRetry }: V2GapsPanelProps) {
   const statements = new Map(
     verdicts.verdicts.map((item) => [item.requirementId, item.statement]),
   );
+  const draftable = new Set(
+    verdicts.verdicts
+      .filter(
+        (item) =>
+          item.verdict === "partial" &&
+          item.evidence.length > 0 &&
+          item.unmetConditions.length > 0,
+      )
+      .map((item) => item.requirementId),
+  );
   return (
-    <section aria-labelledby="v2-gaps-heading" className="space-y-3">
-      <h2 id="v2-gaps-heading" className="text-base font-medium">
+    <section aria-labelledby="verdict-gaps-heading" className="space-y-3">
+      <h2 id="verdict-gaps-heading" className="text-base font-medium">
         Gaps, by what closing each would add to the fit
       </h2>
       <ol className="space-y-2">
@@ -68,6 +84,16 @@ export function V2GapsPanel({ state, verdicts, onRetry }: V2GapsPanelProps) {
             <span className="font-mono tabular-nums">
               +{gap.delta.toFixed(1)}
             </span>
+            {onDraftBullet && draftable.has(gap.requirementId) ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onDraftBullet(gap.requirementId)}
+              >
+                Draft a CV bullet
+              </Button>
+            ) : null}
           </li>
         ))}
       </ol>
