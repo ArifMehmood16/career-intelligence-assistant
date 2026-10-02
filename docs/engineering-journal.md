@@ -18,6 +18,25 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19 — Existing-project Spec Kit adoption
+
+- Date: 2026-10-02
+- Commands run: official release metadata read; pinned `uvx ... specify init --help`;
+  initialization in place with Codex skills, Bash scripts and non-interactive options;
+  constitution template resolver. All completed successfully.
+- Observed result: Spec Kit v1.0.13 infrastructure/ten skills installed; constitution
+  1.0.0 records current agreed boundaries. Commit `904a271` contains the scaffold,
+  constitution and upstream attribution. Existing application source is unchanged.
+- Decisions made: adoption uses the current implementation as baseline, feature
+  specs elaborate root milestone items, and completed specs are historical change
+  records. Manual Git remains the repository workflow; no optional extension added.
+- Verification: no tests/lint or application/model runs, under the human's deferral.
+  Installed files are present; fresh-chat skill discovery remains a user step.
+- Carried forward: open the application repository itself in Codex, start a new chat,
+  and choose one bounded PLAN item. Suggested first slice is current synthetic
+  cold/warm duration and physical API-call measurement under 19.4. Existing final
+  verification/migrations remain pending; no implementation started for that slice.
+
 ## Phase 19 — Consolidated architecture checkpoint
 
 - Date: 2026-10-02

@@ -1,11 +1,15 @@
 # Backlog
 
-Updated 2026-10-02 following the human's consolidation request. Acceptance criteria
-live only in PLAN.md. The old v1 release gate and v1 comparison are superseded;
-historical quality measurements remain in docs/evaluation.md.
+Updated 2026-10-02 following the human's consolidation request. Milestone acceptance
+criteria live in PLAN.md; linked feature specs elaborate only their scoped change.
+The old v1 release gate and v1 comparison are superseded; historical quality
+measurements remain in docs/evaluation.md.
 
 Implementation for 19.1–19.3 is present. Final verification was deferred by the
 human; unchecked items include those checks, not another implementation track.
+
+Development workflow: GitHub Spec Kit is installed for bounded changes to the
+existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.
 
 ## Now — verify one working architecture
 

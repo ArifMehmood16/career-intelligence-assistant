@@ -1,13 +1,22 @@
 # Delivery plan — one career intelligence pipeline
 
 Updated 2026-10-02. This plan replaces the competing v1 release/evaluation and v2
-build tracks. BACKLOG.md lists priority; this file defines acceptance. Completed
-implementation history remains in AI_DEVELOPMENT_LOG.md and dated evaluation rows.
+build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
+Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
+evaluation rows.
 
 **Checkpoint:** 19.1–19.3 implementation is committed for review. The human asked
 to defer tests/lint and stop after documentation, commits and push. Their final
 verification, migrations and 19.4 measurements remain open; no release gate is
 claimed passed.
+
+## Using Spec Kit for the existing project
+
+GitHub Spec Kit v1.0.13 is adopted as a planning layer; see
+[docs/spec-kit.md](docs/spec-kit.md). Each feature spec elaborates one bounded change
+and links to this plan. Its plan/tasks do not replace this roadmap or close a gate.
+The suggested first slice is the synthetic measurement work in 19.4. Adoption does
+not execute that slice, apply migrations or resume deferred tests/lint.
 
 ## Approved direction
 

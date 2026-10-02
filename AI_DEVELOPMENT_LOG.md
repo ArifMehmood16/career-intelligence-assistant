@@ -29,6 +29,35 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 158 — GitHub Spec Kit adoption for the existing project
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6; one delegated read-only adoption review
+- Plan task: development workflow supporting Phase 19; no release gate closed
+- Prompt intent: bring GitHub Spec Kit into this existing project and explain the
+  steps the human needs to use it.
+- Suggestion: initialize official Codex skills and shared infrastructure in place,
+  pin upstream v1.0.13, derive a constitution from current architecture/privacy
+  constraints, and use specs only for the next bounded change.
+- Outcome: accepted within the human's requested scope.
+- Reason: the project already has implementation, ADRs, a delivery plan and backlog.
+  Spec Kit supplies feature-level planning without creating another application or
+  roadmap. Separate provider policies and v1 retirement remain intact.
+- Changed: upstream initialization on a branch based on the current consolidated
+  implementation; ten Codex skills and version manifests; constitution 1.0.0;
+  upstream MIT attribution; existing-project usage/upgrade guide and documentation
+  ownership rules. Suggested first feature is PLAN 19.4's synthetic latency/call
+  measurement, not a retrospective specification of the entire application.
+- Rejected: reinitializing the application, automatically rebuilding all existing
+  feature specs, adding runtime dependencies, or claiming planning proves quality.
+- Human validation: pending. Official release metadata returned v1.0.13; CLI help
+  and initialization succeeded; the constitution template resolver succeeded.
+  Scaffold/constitution commit observed as `904a271`. No tests/lint, live model calls,
+  benchmarks or migrations ran. A fresh chat in the application repository is still
+  needed to discover the newly installed local skills. The permanent management CLI
+  is optional; instructions explain its installation separately from the committed
+  project integration.
+
 ### 157 — Consolidated analysis, fewer calls and bounded concurrency
 
 - Date: 2026-10-02

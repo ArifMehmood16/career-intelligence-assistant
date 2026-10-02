@@ -10,7 +10,10 @@ Instructions the human gives in a session take precedence over this file.
 | Question | Authority |
 |---|---|
 | What are the rules for agents? | `AGENTS.md` (this file) |
-| What does a task require, and when is it done? | `PLAN.md` — tasks, acceptance criteria and exit gates |
+| What does a milestone require, and when is it done? | `PLAN.md` — milestone acceptance and release gates |
+| What does a scoped change require? | `specs/<change>/spec.md`, linked to its root PLAN/BACKLOG item |
+| How is that change designed and executed? | The feature `plan.md` and `tasks.md`; these are not a second roadmap |
+| What constrains Spec Kit plans? | `.specify/memory/constitution.md`, derived from these rules and accepted ADRs |
 | What is still open, and in what order? | `BACKLOG.md` — every open item in one list, each pointing at its `PLAN.md` id |
 | What does the product do? | `docs/features.md`, including "Deliberately not features" |
 | What is the wire format? | `docs/api-contract.md` |
@@ -22,6 +25,25 @@ Instructions the human gives in a session take precedence over this file.
 When a document disagrees with the code, the code is what runs. Say so in your report,
 then either fix the document or raise the defect in `BACKLOG.md`. Never leave the
 disagreement silently in place.
+
+## Spec Kit adoption
+
+GitHub Spec Kit v1.0.13 is installed as repository-local Codex skills. Use
+`$speckit-specify`, clarify when needed, plan, tasks and analyze for one bounded
+change to this existing system. The setup and next steps are in
+[docs/spec-kit.md](docs/spec-kit.md).
+
+Feature specs elaborate the root milestone and must link to its PLAN/BACKLOG item.
+Inspect and reuse existing modules; do not generate a new application, repeat the
+roadmap, restore v1, or treat upstream example setup tasks as work for this codebase.
+Keep completed feature artifacts as historical change records and maintain current
+behavior in the existing product/API/architecture docs. Use the existing manual
+Git workflow; a Git extension is not required.
+
+The human deferred tests/lint until the end. That instruction remains in force until
+changed explicitly: generated validation tasks stay pending, and no template or
+skill may turn deferred verification into a passing gate. Constitution generation
+and planning alone verify no application behavior.
 
 ## Mission
 
