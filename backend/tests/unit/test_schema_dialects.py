@@ -10,11 +10,20 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from career_assistant.adapters.providers.schema_dialects import (
     anthropic_output_schema,
     drop_strict_mode_nulls,
     openai_strict_schema,
 )
+from career_assistant.application.contracts.base import VersionedContract
+from career_assistant.application.contracts.chunking import (
+    CoverLetterChunkResponse,
+    CvChunkResponse,
+    JobChunkResponse,
+)
+from career_assistant.application.contracts.judge import JudgeResponse
 
 _SCHEMA: dict[str, object] = {
     "type": "object",
@@ -147,3 +156,89 @@ def test_optional_nulls_inside_definitions_are_removed() -> None:
 
 def test_text_that_is_not_json_is_returned_unchanged() -> None:
     assert drop_strict_mode_nulls("not json", _SCHEMA) == "not json"
+
+
+def test_defaulted_arrays_stay_arrays_instead_of_becoming_nullable() -> None:
+    schema = {
+        "type": "object",
+        "properties": {"items": {"type": "array", "items": {"type": "string"}}},
+    }
+
+    adapted = openai_strict_schema(schema)
+
+    assert adapted["required"] == ["items"]
+    assert adapted["properties"]["items"]["type"] == "array"
+    assert "required" not in schema
+
+
+def test_explicitly_nullable_arrays_keep_one_null_alternative() -> None:
+    schema = {
+        "type": "object",
+        "properties": {
+            "items": {
+                "anyOf": [
+                    {"type": "array", "items": {"type": "string"}},
+                    {"type": "null"},
+                ]
+            }
+        },
+    }
+
+    adapted = openai_strict_schema(schema)
+
+    assert (
+        adapted["properties"]["items"]["anyOf"]
+        == schema["properties"]["items"]["anyOf"]
+    )
+
+
+@pytest.mark.parametrize(
+    "contract",
+    [CvChunkResponse, JobChunkResponse, CoverLetterChunkResponse, JudgeResponse],
+)
+def test_real_analysis_contract_collections_do_not_acquire_null_types(
+    contract: type[VersionedContract],
+) -> None:
+    original = contract.model_json_schema()
+    adapted = openai_strict_schema(original)
+
+    def inspect(before: object, after: object) -> None:
+        if isinstance(before, dict) and isinstance(after, dict):
+            if before.get("type") == "array":
+                assert after["type"] == "array"
+            if "properties" in before:
+                assert set(after["required"]) == set(before["properties"])
+                assert after["additionalProperties"] is False
+            for key, value in before.items():
+                if key in after:
+                    inspect(value, after[key])
+        elif isinstance(before, list) and isinstance(after, list):
+            for first, second in zip(before, after, strict=False):
+                inspect(first, second)
+
+    inspect(original, adapted)
+    assert contract.model_json_schema() == original
+
+
+def test_empty_advert_requirements_remain_valid_after_strict_conversion() -> None:
+    reply = json.dumps(
+        {
+            "chunks": [
+                {
+                    "first_line": 1,
+                    "last_line": 1,
+                    "kind": "about",
+                    "context": None,
+                    "skills": [],
+                    "tech_terms": [],
+                    "atomic_requirements": [],
+                }
+            ],
+            "taxonomy": [],
+        }
+    )
+
+    restored = drop_strict_mode_nulls(reply, JobChunkResponse.model_json_schema())
+    parsed = JobChunkResponse.model_validate_json(restored)
+
+    assert parsed.chunks[0].atomic_requirements == []

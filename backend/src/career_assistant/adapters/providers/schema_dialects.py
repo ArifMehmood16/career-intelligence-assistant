@@ -31,7 +31,7 @@ _CHILD_SCHEMA_MAPS = ("properties", "$defs", "definitions")
 
 
 def openai_strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
-    """Every property required, optional ones nullable, no extra properties."""
+    """Require every field, preserve arrays, make optional scalars nullable."""
     adapted = copy.deepcopy(schema)
     _walk(adapted, require_all=True)
     return adapted
@@ -120,12 +120,17 @@ def _close_object(node: dict[str, Any], *, require_all: bool) -> None:
 
 def _make_nullable(node: dict[str, Any]) -> None:
     kind = node.get("type")
+    # Defaulted collections can be present as []; wrapping nested collections in
+    # nullable types can make the advert schema unacceptable to OpenAI.
+    if kind in ("array", "null"):
+        return
     if isinstance(kind, str):
         node["type"] = [kind, "null"]
     elif isinstance(kind, list):
         node["type"] = [*kind, "null"] if "null" not in kind else kind
     elif "anyOf" in node:
-        node["anyOf"] = [*node["anyOf"], {"type": "null"}]
+        if {"type": "null"} not in node["anyOf"]:
+            node["anyOf"] = [*node["anyOf"], {"type": "null"}]
     else:
         inner = dict(node)
         node.clear()
