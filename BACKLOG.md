@@ -32,10 +32,10 @@ validation and synthetic gallery diagnosis were observed; regression suites stay
 Development workflow: GitHub Spec Kit is installed for bounded changes to the
 existing codebase; see [the adoption guide](docs/spec-kit.md). Keep one priority list.
 
-The complete Phase 18/19 delivery is collected on `feat/phase-19-analysis-delivery`
-for a human-reviewed PR. Older task branches can be removed only after their
-commits are preserved on that published branch. No release gate is closed by
-committing, publishing or cleaning up branches.
+The complete Phase 18/19 delivery is published in [draft PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
+on `feat/phase-19-analysis-delivery`. Superseded task branches are removed after
+verifying that all their commits are preserved there. `main` awaits human review
+and merge; publication and branch cleanup close no release gate.
 
 ## Now — verify one working architecture
 
