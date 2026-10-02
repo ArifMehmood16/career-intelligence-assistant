@@ -69,7 +69,13 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   repair) and four remote branches (adoption, consolidation, benchmark, former
   recency display head). The active recency branch was renamed to the delivery
   branch. All commits remain in PR #42; no other worktree or open PR used the refs.
-  Main and the delivery branch are retained; no force push, history rewrite or merge.
+  At publication main and the delivery branch were retained; no force push,
+  history rewrite or agent-initiated merge.
+- Subsequent external change: GitHub reported PR #42 merged at `2212790` while
+  final verification was running; its remote branch was also deleted externally.
+  Fetched/pruned remote refs, fast-forwarded local main, proved the delivery branch
+  is an ancestor of main and removed its local ref. Final status docs are prepared
+  on docs/phase-19-merged-checkpoint from updated main; no agent merge performed.
 - Carried forward: explicitly resume deferred checks, then execute the synthetic
   migration/browser/quality/latency release work in PLAN 19.4.
 
