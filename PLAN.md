@@ -4,6 +4,11 @@ Updated 2026-10-02. This plan replaces the competing v1 release/evaluation and v
 build tracks. BACKLOG.md lists priority; this file defines acceptance. Completed
 implementation history remains in AI_DEVELOPMENT_LOG.md and dated evaluation rows.
 
+**Checkpoint:** 19.1–19.3 implementation is committed for review. The human asked
+to defer tests/lint and stop after documentation, commits and push. Their final
+verification, migrations and 19.4 measurements remain open; no release gate is
+claimed passed.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer
@@ -61,8 +66,9 @@ cache reuse and native embeddings; no hosted content leaves through a new path.
       validation and publication remain ordered.
 - [ ] Parse binary documents in a bounded spawned CPU process pool, separate from
       model/database I/O; plain text avoids startup overhead. Stop workers on
-      shutdown/timeout. Keep database connections and provider credentials outside
-      parsing workers.
+      shutdown/timeout. Pass immutable upload data, never database connections or
+      provider objects. Spawned children inherit the host environment; they are not
+      a credential sandbox (see docs/threat-model.md).
 - [ ] Show estimated time and remaining LLM/embedding API calls. Track physical
       attempts, including retries; cached/skipped work consumes zero calls. Label
       undiscovered work and repair uncertainty. Parallel-stage ETA follows overlap;

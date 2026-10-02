@@ -89,9 +89,8 @@ error result that carries only an error code.
   rank by meaning.
 - `skill_experience` returns no years, because the knowledge graph is not wired to
   the tools yet.
-- Roles analysed on pipeline v2 come back with their band and score, but with no
-  requirements, because the tools still read the v1 analysis. Pipeline v1 is the
-  default.
+- Role analyses and gaps now project the current validated verdicts and published
+  score; no legacy requirements/claims tables are needed.
 - Only roles whose analysis is ready are listed.
 - Streamable HTTP and write tools are out of scope. Both need authentication, and
   the specification defines that with OAuth ([ADR 015](adr/015-agents-and-mcp-over-one-tool-registry.md)).

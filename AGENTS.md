@@ -36,27 +36,26 @@ frameworks or services.
 
 ## The invariant
 
-**The model extracts. The domain decides.**
+**The model reads and judges. The server verifies. The domain computes fit.**
 
-- A language model may classify server-issued spans of a job description or CV, may
-  assess retrieved evidence against a requirement's stated criteria, and may phrase an
-  answer.
-- A language model may **not** produce the fit score. The server validates every
-  assessment; a missing or invalid assessment is incomplete, never a match. Domain
-  code calculates the score. A citation proves where text came from and does not
-  prove that the text supports the requirement. See
-  [ADR 011](docs/adr/011-evidence-assessment-contract.md).
-- Every requirement-to-evidence mapping carries the span identifiers that justify it.
-  A mapping with no spans is `missing`, never a guess.
-- An incomplete extraction or assessment is a failed analysis, not a low score. It
-  never publishes a number, a band or a ranking position.
-- If a change would let model output reach the user without passing the span check,
-  stop and raise it. That is an architectural change, not an implementation detail.
-- A provider is chosen, never assumed. The product default is a local Ollama model.
-  The hermetic adapters are the test fixture `make test` selects. The local and
-  hosted adapters are equals behind the same port, and every one of them passes the
-  same contract suite. Any behaviour that only works on one vendor is a bug in the
-  port.
+- The sole running analysis is chunk/search/judge with domain aggregation (ADR 016).
+  Never rebuild the retired classifier/assessor pipeline or selector.
+- Chunks are server-issued line ranges, reconstructed from stored text. Surface
+  fields and evidence quotes must resolve verbatim to stored chunks/spans.
+- The model may judge match, seniority and experience with explicit anchors, and
+  phrase grounded output. It may not emit the fit score. Domain code aggregates
+  validated judgments with the configured rubric.
+- Incomplete chunking or judging fails the analysis and publishes no score/band or
+  ranking position. A citation proves provenance, not semantic support.
+- Fit, gaps, ranking, preparation, drafts, Ask and MCP consume the same validated
+  publication. Shared view value types must not introduce an alternate score path.
+- Ollama, OpenAI and Anthropic have independent provider builders and model profiles.
+  Application code reads injected context/output/concurrency capabilities, never a
+  vendor-name conditional. Hosted egress remains explicitly gated. Hermetic adapters
+  are test fixtures at provider boundaries, executing the same application pipeline.
+- Independent I/O may overlap using bounded threads. CPU-heavy binary parsing uses
+  spawned processes. Do not pass SQL sessions/provider clients into parsing tasks.
+  Progress/accounting/cancellation context must survive thread boundaries.
 
 ## Product scope
 
@@ -213,11 +212,10 @@ Patterns already in the codebase. Extend these rather than inventing a parallel 
 |---|---|---|
 | Ports and adapters | `application/ports/`, `adapters/` | Every external system |
 | Strategy | provider adapters, model and rules extractors, relatedness | Behaviour chosen at runtime |
-| Factory | `adapters/providers/factory.py`, `build_sql_stores` | Building adapters from configuration and the egress gate |
+| Factory | `adapters/providers/factory.py`, provider `builders.py`, `build_sql_stores` | Building adapters from configuration and the egress gate |
 | Decorator | `AccountingCompletion`, `AccountingEmbedding` | Cross-cutting concerns without touching the wrapped adapter |
 | Circuit breaker | `adapters/providers/resilience.py` | Provider failure isolation |
 | Repository and unit of work | `adapters/persistence/` | Transactional persistence and one-transaction hard delete |
-| Null object | `NullAdjudicator` | An optional collaborator without `is None` checks |
 | Value object | frozen dataclasses in `domain/` | Immutable domain data |
 | Container and presentational components | `frontend/src/components/` | Fetching separated from rendering |
 
@@ -252,7 +250,7 @@ Name the pattern in the commit body when you introduce or extend one.
 
 ## Test layers
 
-- **Unit:** parsing, span classification contracts, evidence assessment, mapping,
+- **Unit:** parsing, chunk/requirement contracts, evidence judging, retrieval,
   scoring rubric, prompt construction, intent routing.
 - **Contract:** one suite that every completion adapter and every embedding adapter
   must pass, run against recorded fixtures. No live vendor calls in any default run.
@@ -263,11 +261,11 @@ Name the pattern in the commit body when you introduce or extend one.
 - **End-to-end:** one critical journey — upload CV, add a job description, see the
   mapping, ask a gap question, open a citation — with deterministic providers
   (Playwright, `make test-e2e`, PLAN 16.5).
-- **Evaluation:** extraction, assessment and ranking quality against the labelled
-  fixture set (`make test-evaluation`).
-- **Smoke:** a real local Ollama provider, explicitly enabled, never in default runs.
-  From `backend/`:
-  `RUN_LLM_SMOKE=1 .venv/bin/pytest tests/smoke/test_ollama_pilot.py -m smoke --no-cov -s`.
+- **Evaluation:** current chunking, judgement and ranking quality against the
+  labelled fixture set (PLAN 19.4). The retired v1 evaluator and command are removed.
+- **Live evaluation:** explicitly enabled and synthetic-data-only, never in default
+  runs. Current cold/warm latency and quality evaluation are tracked in PLAN 19.4;
+  the retired Ollama classifier smoke entry point has been removed.
 
 Default tests are deterministic, repeatable and independent of paid APIs or public
 network access.

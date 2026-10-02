@@ -336,9 +336,8 @@ changes none of the earlier ones.
 Continue the existing project. Do not restyle or rewrite earlier screens.
 Data only through src/api/client.ts. Semantic tokens only, no hex, no inline styles.
 
-A role now has analysisPipeline: "v1" | "v2" | null. When it is "v2", the Fit and
-Gaps tabs read getRoleVerdicts(roleId) instead of the v1 routes, and the v1
-requirement, breakdown and gap-plan requests are not sent.
+Every ready role uses the verdict Fit and Gaps view. analysisPipeline is "v2" | null
+for attribution only; there is no pipeline selector or legacy Fit branch.
 
 VERDICTS PANEL (Fit tab, v2)
 Top: fit score in mono "71 / 100 · Partial match". If gated is true, one muted line:
@@ -381,7 +380,7 @@ tools event and are not stored, so keep them for the session.
 Add each new state to /dev/states from props alone.
 ```
 
-**Check:** a v1 role's Fit tab is unchanged; a v2 role sends no v1 fit requests; a 409
+**Check:** every ready role reads validated verdicts; a 409
 reads as "no finished v2 analysis"; every score shows its number and its words.
 
 ---

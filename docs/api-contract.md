@@ -153,7 +153,7 @@ Role {
   updatedAt: string;                          // additive
   fitSummary: string | null;                  // additive; GET /roles/{id} once ready, otherwise null
   activeJob: AnalysisJob | null;              // additive; the queued or running job, with progress
-  analysisPipeline: "v1" | "v2" | null;       // additive; which pipeline produced the published analysis
+  analysisPipeline: "v2" | null;       // additive; which pipeline produced the published analysis
 }
 
 RoleCreated { role: Role; jobId: string }
@@ -195,18 +195,26 @@ JobProgress {
   elapsedSeconds: number | null;  // since the job started; null while queued
   remainingSeconds: number | null;// an estimate; null while it cannot be made
   queuePosition: number | null;   // live analyses ahead; only while queued
+  modelCallsDone: number;
+  modelCallsRemaining: number;    // estimate; repairs can add calls
+  embeddingCallsDone: number;
+  embeddingCallsRemaining: number;
+  callEstimateComplete: boolean;  // false while downstream work is undiscovered
   tasks: {
     key: TaskKey;
     state: "pending" | "running" | "done" | "skipped" | "failed";
     unitsDone: number;
     unitsTotal: number | null;    // requirements searched or judged, rechecks
+    modelCallsDone: number;
+    modelCallsTotal: number | null;
+    embeddingCallsDone: number;
+    embeddingCallsTotal: number | null;
   }[];
 }
 
-TaskKey = "prepare" | "read_advert" | "read_cv" | "match"
+TaskKey = "prepare" | "read_advert" | "read_cv"
         | "search" | "judge" | "recheck" | "score";
-// v1 runs prepare, read_advert, read_cv, match, score.
-// v2 runs prepare, read_cv, read_advert, search, judge, recheck, score.
+// Independent reads may run concurrently; the remaining stages follow dependencies.
 ```
 
 The frontend polls this with react-query while `state` is `queued` or `running`, at a
@@ -219,8 +227,11 @@ output: this job's own pace inside a counted task, otherwise the median duration
 the same task in the workspace's last ten successful analyses on the same pipeline,
 less the time already spent. It is `null` while any unfinished model task has neither,
 which is the case for a workspace's first analysis until judging starts. A queued job
-adds the time left of every live job ahead of it. A failed job shows the task it
-stopped in as `failed`. A queued job lists its pipeline's plan, all `pending`.
+uses the available worker capacity and observed live-job durations. A failed job shows the task it
+stopped in as `failed`. A queued job lists the current plan, all `pending`.
+Parallel read time uses the maximum while reads overlap, otherwise their sum.
+Remaining API counts include physical retry attempts and omit cached/skipped work.
+Unknown downstream work is labelled "at least"; a complete plan is still an estimate.
 
 **Cancellation.** Deleting a role, or the CV, stops its running analysis. Every
 provider call and every progress write first checks the job, so no model call starts
@@ -327,10 +338,9 @@ dropped unless the span still resolves in this workspace.
 
 ---
 
-## Role verdicts (pipeline v2)
+## Role verdicts
 
-Additive (PLAN 18.10, [architecture v2](architecture-v2.md)). These routes read an
-analysis that ran on pipeline `v2`; see `GET /api/settings/pipeline` below.
+These routes read the sole published chunk/verdict analysis.
 
 ```http
 GET /api/roles/{id}/verdicts                            → RoleVerdicts
@@ -338,8 +348,8 @@ GET /api/roles/{id}/verdicts/{requirementId}/trace      → RetrievalTrace
 ```
 
 - `404 role_not_found` — no role with that id in this workspace.
-- `409 analysis_incomplete` — the role has no succeeded v2 analysis (it is still
-  running, it failed, or it ran on v1).
+- `409 analysis_incomplete` — the role has no succeeded current analysis (it is still
+  running, failed or needs reanalysis after retirement).
 - `404 requirement_not_found` — the trace route's `requirementId` names no verdict in
   the role's current v2 analysis.
 
@@ -389,12 +399,11 @@ and is never evidence, and the browser renders it as escaped text. Round 1 exist
 when the judge asked for one corrective rewrite. Traces carry chunk ids and ranks,
 never chunk text. A v2 role's `counts` on
 `GET /api/roles/{id}` count these verdict labels, and its `fitScore` is the v2 score.
-The v1 routes above do not fail on a v2 analysis, but they carry no v2 data:
-requirements is empty, the breakdown rows are zero and the v1 gap plan has
-`currentScore: 0` and no items. Read these v2 routes instead: `Role.analysisPipeline`
-says which pipeline produced a role's analysis, and the web app reads a `"v2"` role's
-Fit and Gaps tabs from here (PLAN 18.13). The TypeScript types are in
-`frontend/src/types/index.ts`.
+Shared requirement/breakdown/gap/preparation/draft routes project these validated
+results and the published score. They no longer depend on retired analysis tables.
+The web app reads Fit/Gaps from verdicts for every ready role. `analysisPipeline`
+remains `"v2"` or null as a compatibility attribution field; it is not a selector.
+The TypeScript types live in `frontend/src/types/index.ts`.
 
 ---
 
@@ -620,24 +629,14 @@ ProviderChoice { answerProviderId; answerModel; indexProviderId; indexModel }
 - Changing `indexProviderId` or `indexModel` invalidates embeddings and returns
   `reindex: { jobId }` as an additive field.
 
-The persisted `answerProviderId` / `answerModel` is what Ask, requirement/claim
-extraction and bullet phrasing actually call. `indexProviderId` stays independent.
+The persisted `answerProviderId` / `answerModel` is what Ask, document reading, judging and bullet phrasing actually call. `indexProviderId` stays independent.
 Answer and draft `provider` / `model` / `leftMachine` come from that completion
 port, not a hard-coded hermetic tag. Call accounting records those identifiers and
 token counts only — never question, CV or prompt text.
 
-```http
-GET /api/settings/pipeline → PipelineSetting
-PUT /api/settings/pipeline → PipelineSetting
-```
-
-```ts
-PipelineSetting { pipelineVersion: "v1" | "v2" }   // v1 when never set
-```
-
-The setting chooses the matching pipeline for the workspace's next analysis. Existing
-analyses are not re-run; use `POST /api/roles/{id}/reanalyse`. The job records the
-pipeline it ran on.
+The pipeline-settings routes and `PIPELINE_VERSION` are removed. Every workspace
+uses the current analysis. Reanalyse legacy roles after the retirement migration;
+original uploads are preserved.
 
 **No key, in any form, is ever accepted or returned by any route.** Not plaintext, not
 masked, not a boolean per key beyond `available`. A redaction test asserts that the

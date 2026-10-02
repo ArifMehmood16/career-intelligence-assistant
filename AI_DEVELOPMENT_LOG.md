@@ -29,6 +29,99 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 157 — Consolidated analysis, fewer calls and bounded concurrency
+
+- Date: 2026-10-02
+- Tool / model: Codex, GPT-6, with three delegated implementation agents
+- Plan task: 19.1–19.3; final verification and measurement remain in 19.4
+- Prompt intent: remove v1, reduce analysis latency and repeated calls, give Ollama,
+  OpenAI and Anthropic separate execution policies, expose time/call estimates,
+  consolidate the plan, commit regularly and remove redundant branches.
+- Suggestion: one validated document response containing chunks, requirements,
+  details and inferred technology relations; provider-specific budgets/builders;
+  batched embeddings and judging; bounded thread pools for independent I/O and
+  spawned processes for binary parsing; physical-attempt progress accounting.
+- Outcome: accepted direction from the human; implementation committed for review.
+- Reason: two executable analysis approaches and repeated model passes duplicated
+  work. Fit, Gaps, Prepare, Letter, ranking, Ask and MCP now read current verdicts
+  and their published score through shared projections. Legacy scoring/extraction,
+  selector, frontend components, evaluation entry point and derived schema are
+  retired. Uploads and current results are retained by the forward migration.
+- Changes to the approach: configured models keep their own operational limits;
+  local concurrency defaults conservatively, hosted rate headers bound paid calls.
+  Cached documents/vectors need no probe where model identity is known. ETA remains
+  unknown without timing history; undiscovered work is labelled. Parser workers
+  inherit the host environment and are not a security sandbox. Supporting letters
+  remain narrative-only, and CV bullet drafting remains available from verdict gaps.
+- Human validation: pending. Earlier focused backend checks and a frontend run
+  preceded the human's request to stop tests/lint. They do not verify the final
+  retirement, provider construction, frontend cleanup and documentation changes.
+  No further tests/lint were run after that request; no migrations were applied and
+  no live-model latency or quality result is claimed. The human then requested a
+  stop after documentation, commits and push; release gates remain open in PLAN.
+
+### 156 — Pipeline version in app.env
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: none — the settings URL stayed on v1 because the workspace row
+  is the switch and nothing in the UI writes it
+- Prompt intent: put the pipeline choice in `config/app.env` so the running
+  workspace uses v2 without a PUT
+- Suggestion: `PIPELINE_VERSION` on provider settings. The production process
+  writes that value onto every workspace at startup, and a workspace created
+  afterwards is inserted with it. A PUT still overrides one workspace until
+  the next process start.
+- Outcome: accepted
+- Reason: the existing row is already `v1` from the database default, so a
+  default that applies only to a missing row would leave the URL and the
+  worker on v1
+- Human validation: not yet reviewed by the human. Focused pytest of
+  `test_provider_defaults`, `test_pipeline_setting` and
+  `test_pipeline_version_sql` exited 0 (8 passed). Ruff and mypy on the
+  touched Python files passed. Full `make test` was not run.
+
+### 155 — Two calls to read a document
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: read-stage batching, ahead of 18.14
+- Prompt intent: stop sending a model call per slice while reading a job
+  description and a CV. A truncated reply was being discarded and both halves
+  sent again.
+- Suggestion: one structure call for line ranges and kinds, then one detail call
+  for the chunks that need a search sentence, technology terms or atomic
+  requirements. A truncated detail reply is retried once. The output guess of 40
+  tokens per line is dropped, so section size follows the input window.
+- Outcome: accepted.
+- Reason: the human had been waiting on Read the job description and Read your CV,
+  and the call pattern was spending the tokens on replies that were thrown away.
+- Human validation: TBD. Observed: focused unit tests for the chunker, hermetic
+  fixture, parallel section calls and the LLM contracts passed. `ruff` and `mypy`
+  were clean on the changed backend modules.
+
+### 154 — Parallel model calls during v2 analysis (PLAN 18.11b)
+
+- Date: 2026-09-29
+- Tool / model: Cursor, Grok 4.7
+- Plan task: 18.11b
+- Prompt intent: overlap v2 analysis model calls that do not need the previous
+  reply, and hold hosted calls inside OpenAI and Anthropic rate-limit headers.
+- Suggestion: a process-wide hosted call gate, a thread-pool fan-out selected by
+  `leaves_machine`, one embedding request per search wave, and parallel first-pass
+  section, judge and rewrite calls. v1, Ask and draft generation stay sequential.
+- Outcome: accepted. The gate reserves an estimate and then trusts the remaining
+  headers rather than subtracting reported usage a second time, because those
+  headers already include the call. A 429 with no `Retry-After` is not retried.
+- Reason: the human asked for parallel calls inside the vendor allowance. No tier
+  is hard-coded, and local and hermetic providers stay one call at a time.
+- Human validation: TBD. Observed:
+  - `make lint`: ruff, format and mypy clean; frontend `tsc --noEmit` and eslint
+    clean.
+  - `make test`: 906 backend tests passed, 3 skipped, coverage 85.17%. 174
+    frontend tests passed.
+  - Not run against a live hosted model.
+
 ### 153 — Pipeline v2 frontend (PLAN 18.13)
 
 - Date: 2026-09-29

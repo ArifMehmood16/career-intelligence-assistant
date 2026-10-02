@@ -18,6 +18,32 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19 — Consolidated architecture checkpoint
+
+- Date: 2026-10-02
+- Work recorded: consolidated plan committed as `ecadcaf`; implementation and
+  handoff documentation prepared on `feat/phase-19-consolidated-analysis`.
+- Observed result: one chunk/search/judge analysis replaces v1 runtime selection,
+  extraction/scoring and UI. Each provider has its own construction and model
+  execution profile. Document reading combines formerly separate calls, embeddings
+  are batched, cached indexing avoids model probes, and independent work uses
+  bounded threads. Binary parsing uses a bounded spawned process pool. Progress
+  exposes physical model/embedding attempts, remaining-call estimates and ETA.
+- Decisions made: the human superseded the old v1-before-retirement gate, requested
+  tests/lint at the end, and then requested a stop after docs, commits and push.
+  PLAN/BACKLOG now contain one delivery track. ADR 016 records the decision;
+  API, feature, provider, run, wiring, limitation and threat documentation follow it.
+- Verification state: partial checks ran before the stop-testing instruction. Final
+  edits are unverified; the progress/retirement migrations are defined but unapplied.
+  No live hosted/local-model benchmark or final browser journey was performed.
+- Cleanup: removed dead v1 evaluator and its Make target, PDF reflow heuristics,
+  duplicate frontend views and legacy test fixtures. The superseded architecture
+  branch's work is preserved in the consolidated branch before branch removal.
+- Carried forward: human final checks; disposable PostgreSQL migration verification;
+  current synthetic quality/cold-warm latency evaluation; one browser journey and
+  startup/deployment proof (PLAN 19.4). Ask/MCP hybrid/graph tool wiring remains in
+  BACKLOG. No release gate or measured performance improvement is claimed.
+
 ## Phase 13C.10 — Documentation reconciled with model-first extraction
 
 - Date: 2026-09-22

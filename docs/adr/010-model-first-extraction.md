@@ -1,5 +1,9 @@
 # ADR 010 — Model-first extraction with server-verified quotes
 
+> Runtime consolidation (2026-10-02): [ADR 016](016-consolidated-parallel-analysis.md)
+> retires the competing v1 runtime and selector. References below describe the
+> decision's history; the current architecture lives in [architecture.md](../architecture.md).
+
 - Status: accepted
 - Date: 2026-09-21
 - Plan: 13C.10

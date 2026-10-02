@@ -28,7 +28,7 @@ caching, and whether it accepts a temperature or a seed — come from
 provider's conservative defaults. Add a row when you configure a new model tag.
 
 Where the model supports it (`native_structured_output` in the catalogue), the
-provider's API enforces the JSON schema. Otherwise the adapter sends what v1 sent.
+provider's API enforces the JSON schema. Otherwise the adapter includes the schema in the prompt.
 
 | Provider | Native structured output | Otherwise | Truncation |
 |---|---|---|---|
@@ -64,6 +64,34 @@ it.
 key in any shape, including masked. Enabling a hosted provider is an act performed on
 the server by someone who has accepted what it means.
 
+## Rate limits
+
+Hosted completion and embedding share one process-wide gate. It is selected from
+`leaves_machine` on the capability descriptor, so Ollama and the hermetic fixture
+never enter it. Their model profiles supply tunable local concurrency; a shared
+local slot gate enforces that cap across concurrent roles and tool calls. `HOSTED_MAX_IN_FLIGHT` (default 4) caps
+how many hosted calls are in flight. That is a burst cap. The account's real
+allowance is read from the last response, and no tier is hard-coded.
+
+| | Remaining | Reset | 429 wait |
+|---|---|---|---|
+| OpenAI | `x-ratelimit-remaining-requests`, `x-ratelimit-remaining-tokens` | `x-ratelimit-reset-requests`, `x-ratelimit-reset-tokens`, as a duration such as `1s` or `6m0s` | `retry-after` or `retry-after-ms` |
+| Anthropic | `anthropic-ratelimit-requests-remaining`, `anthropic-ratelimit-input-tokens-remaining`, `anthropic-ratelimit-output-tokens-remaining` | the matching `*-reset` headers, as an RFC3339 time | `retry-after`, in seconds |
+
+The token bucket is the tighter of whichever token headers the response carried.
+For Anthropic that is the smaller of the input and output buckets. Before a call
+starts, the gate reserves an estimate (`len(prompt) / 4` plus the output cap for a
+completion; the summed text length for an embedding). If the stored remaining
+requests or tokens cannot cover it, the call waits until that header's reset, and
+never longer than 60 seconds. A 429 waits for the vendor's `Retry-After`, with the
+same cap. A 429 that carries no `Retry-After` is not retried: a monthly spend cap
+is that case, and another attempt will not succeed.
+
+Cache reads do not count toward Anthropic's input-token limit for current Sonnet
+models; cache writes do. The first wave of parallel judge batches misses the cache
+and pays full input tokens. The gate, not a serial warm-up, is what keeps that wave
+inside the allowance.
+
 ## Why not just pick one
 
 Committing to local makes the product unusable for a team that wants frontier quality
@@ -76,3 +104,28 @@ Providers differ in structured-output support, context window and rate limits, s
 port carries a capability descriptor and the application degrades deterministically.
 The same labelled dataset is meant to run on every provider, with quality, latency and
 cost side by side; that comparison is PLAN 14.5 and has not been run yet.
+
+## Execution profiles and call reduction
+
+Provider modules independently construct completion, embeddings and tool callers.
+`completion_concurrency`/`embedding_concurrency` bound execution; defaults are 1 for
+Ollama and 4 for hosted providers. `document_output_tokens`/`judge_output_tokens`
+are operational caps, with 0 allowing the model's maximum. `tokens_per_verdict`
+estimates output when packing; `max_document_split_depth` bounds fallback splits.
+The input/output ceilings both constrain requests. Update the row for each real
+model tag instead of inheriting an unknown tag's conservative defaults.
+
+A fitting document returns chunks, details, atomic requirements and technology
+relations in one call. Judging packs all fitting requirements together. Corrective
+judgments batch changed candidates only. CV index locks and known embedding model
+identity eliminate repeated read/probe calls. Ollama embeds arrays through
+[/api/embed](https://docs.ollama.com/api/embed), with truncation disabled; OpenAI
+also accepts input arrays. Counts include physical attempts and retries, while
+remaining calls are explicitly estimates.
+
+The configured `gpt-5-mini` has an explicit catalogue row: published 400,000 context
+and 128,000 maximum output tokens, with 32,768 operational output caps for document
+reading/judging. Reasoning consumes output tokens. The caps are tunable, and no
+live quality/latency measurement is claimed.
+[Official model documentation](https://developers.openai.com/api/docs/models/gpt-5-mini),
+[reasoning-token guidance](https://developers.openai.com/api/docs/guides/reasoning).

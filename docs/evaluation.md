@@ -1,5 +1,12 @@
 # Evaluation
 
+> Current status (2026-10-02): the measurements below are historical results for the
+> retired analysis. The current one-call document reader, capacity-sized judge and
+> parallel executor have not received a live quality/latency evaluation. Tests/lint
+> for final consolidation edits were deferred at the human's request. PLAN 19.4
+> records the remaining measurement gate; retirement is an approved product decision,
+> not evidence that measured quality improved.
+
 Retrieval, extraction and generation quality are claims. This file is where they are
 evidenced. No number appears here that was not observed from a recorded run.
 

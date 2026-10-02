@@ -1,9 +1,13 @@
 # ADR 015 — A bounded agent and an MCP server over one tool registry
 
+> Runtime consolidation (2026-10-02): [ADR 016](016-consolidated-parallel-analysis.md)
+> retires the competing v1 runtime and selector. References below describe the
+> decision's history; the current architecture lives in [architecture.md](../architecture.md).
+
 - Status: accepted (PLAN 18.0, 2026-09-29)
 - Date: 2026-09-29
 - Plan: 18.11–18.12
-- Design: [architecture-v2.md §10–§11](../architecture-v2.md#10-agentic-ask)
+- Design: [architecture.md §10–§11](../architecture.md#10-agentic-ask)
 
 ## Context
 

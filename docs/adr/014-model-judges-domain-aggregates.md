@@ -1,9 +1,13 @@
 # ADR 014 — The model judges three dimensions; the domain aggregates the score
 
+> Runtime consolidation (2026-10-02): [ADR 016](016-consolidated-parallel-analysis.md)
+> retires the competing v1 runtime and selector. References below describe the
+> decision's history; the current architecture lives in [architecture.md](../architecture.md).
+
 - Status: accepted (PLAN 18.0, 2026-09-29)
 - Date: 2026-09-29
 - Plan: 18.7–18.9
-- Design: [architecture-v2.md §8–§9](../architecture-v2.md#8-the-matching-workflow-and-the-model-judge)
+- Design: [architecture.md §8–§9](../architecture.md#8-the-matching-workflow-and-the-model-judge)
 
 ## Context
 

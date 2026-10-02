@@ -4,7 +4,10 @@ Updated 2026-10-02 following the human's consolidation request. Acceptance crite
 live only in PLAN.md. The old v1 release gate and v1 comparison are superseded;
 historical quality measurements remain in docs/evaluation.md.
 
-## Now — finish one working architecture
+Implementation for 19.1–19.3 is present. Final verification was deferred by the
+human; unchecked items include those checks, not another implementation track.
+
+## Now — verify one working architecture
 
 - [ ] [19.1](PLAN.md#191--retire-the-competing-analysis) — retire v1 code, selector,
       legacy result reads and storage; one frontend path.

@@ -18,7 +18,6 @@ make test              # hermetic backend and frontend tests — no database, ke
 make lint              # ruff, mypy strict, tsc, eslint
 make typecheck         # mypy and tsc only
 make test-integration  # PostgreSQL/pgvector tests against TEST_DATABASE_URL
-make test-evaluation   # offline quality baseline on the labelled fixtures
 make run               # migrate, then API and web in two Terminal windows (macOS)
 make run-api           # API only — application events and uvicorn logs here
 make run-web           # web only — Vite logs here
@@ -30,6 +29,21 @@ make run-docker   # copies config/app.env, builds and starts db, api and web
 # Web http://localhost:3000   API http://localhost:8000/docs
 make down         # stop it again
 ```
+
+All workspaces use the chunk/search/judge analysis. The pipeline selector and
+`PIPELINE_VERSION` have been removed. Configure per-model context, output and
+concurrency in `config/models.toml`; restart after editing model configuration.
+`ANALYSIS_MAX_CONCURRENT_JOBS` bounds overlapping role jobs; `HOSTED_MAX_IN_FLIGHT`
+bounds hosted calls. `PARSING_WORKERS` and `PARSING_TIMEOUT_SECONDS` configure the
+separate spawned PDF/DOCX parser pool. Plain text avoids process startup.
+
+The retired v1 evaluation command has been removed. Rebuilding the current
+quality/latency evaluator is tracked in PLAN 19.4.
+
+The new forward migrations add call-progress fields and retire legacy derived
+analysis storage. They preserve original uploads and current chunk/verdict results;
+old analyses must be rerun. Migrations were defined in this change and have not been
+applied to a personal database. Verification is deferred to the human's final checks.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on

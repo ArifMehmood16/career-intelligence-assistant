@@ -12,33 +12,14 @@ Provider resolvers:
 - `none` — no model call
 - `completion_port_for` — workspace `answerProviderId` / `answerModel` through the
   Phase 2 completion factory, egress-checked at construction and call time
-- `analysis_ports_for_choice` — hermetic stays on rules extractors and a
-  null adjudicator so `make test` is offline; any other workspace answer
-  choice uses the quote-verified model extractors (item types classified in
-  the prompt and schema) and one structured evidence assessment for every
-  retrieved requirement, including when lexical and embedding signals agree.
-  A missing or invalid assessment is `assessment_incomplete` and is not a
-  match. The job fails with that code and no fit score is published. Hermetic analysis still uses the null adjudicator and the OR
-  fallback so `make test` stays offline. Cover letters extract as
-  self-authored claims and are not
-  mapped yet. [ADR 011](adr/011-evidence-assessment-contract.md) records the
-  contract those claims will follow: concrete experience can count, with its
-  source shown and duplicates removed; an aspiration does not, and a generated
-  draft must never raise the score. Salary, benefit and logistics items are
-  stored and never mapped. Body under a Benefits or Logistics heading is forced
-  to that kind. A CV span that does not show a responsibility, qualification or
-  outcome is not stored as a claim.
-- `build_embedding_port` — workspace `indexProviderId` / `indexModel` through the
-  Phase 2 embedding factory, egress-checked at construction and call time; used
-  by `SqlAnalysisWorker` to propose mapping candidates. Ask does not retrieve
-  over vectors.
-- `build_structured_port` — used by `SqlAnalysisWorker` only when the workspace
-  pipeline is `v2` (`PUT /api/settings/pipeline`). The workspace answer choice
-  drives the chunker, taxonomist and judge through `V2JobRunner`, wrapped in
-  `AccountingCompletion`; hermetic uses `HermeticStructuredCompleter`. Chunks are
-  embedded through `build_embedding_port`, and hybrid search runs on
-  `SqlSessionHybridSearch`. Only the active CV and the advert are indexed, and
-  retrieval covers CV chunks only; cover letters are not part of a v2 analysis yet. A `v1` workspace (the default) keeps the resolvers above.
+- `build_structured_port` — the workspace answer provider/model constructs the
+  chunker/judge, with model-specific execution budgets and `AccountingCompletion`.
+  `V2JobRunner` is the sole worker path. One document response also supplies inferred
+  technology relationships; no separate taxonomy/extraction/assessment pipeline.
+- `build_embedding_port` — independent workspace index provider/model, batched
+  CV/query vectors, `AccountingEmbedding`, cache identity and hybrid search.
+- `analyse_hermetic` — the same application pipeline with deterministic provider
+  boundaries for test-only in-memory stores. Never a production persistence fallback.
 - `list_provider_catalogue` / `apply_provider_choice` — catalogue and egress
   acknowledgement only; no document text leaves the process
 
@@ -47,7 +28,7 @@ Provider resolvers:
 | GET /api/health | liveness | none | none |
 | GET /api/ready | SettingsReadiness.check | none | SettingsReadiness (database + migrations) |
 | GET /api/cv | get_cv | none | SqlCvStore |
-| POST /api/cv | upload_bytes_cv / upload_pasted_cv | none on admit; analysis_ports_for_choice on queued reanalysis | SqlCvStore; SqlRoleStore enqueue; SqlAnalysisWorker |
+| POST /api/cv | upload_bytes_cv / upload_pasted_cv | none on admit; build_structured_port on queued reanalysis | SqlCvStore; SqlRoleStore enqueue; SqlAnalysisWorker |
 | DELETE /api/cv | delete_cv | none | SqlCvStore (hard delete + dependent roles) |
 | GET /api/cover-letters | list_cover_letters | none | SqlSupportingDocumentStore |
 | POST /api/cover-letters | upload_bytes_cover_letter / upload_pasted_cover_letter | none | SqlSupportingDocumentStore |
@@ -55,10 +36,10 @@ Provider resolvers:
 | GET /api/documents/{document_id}/download | get_downloadable | none | SqlSupportingDocumentStore |
 | GET /api/spans/{span_id} | lookup_workspace_span + resolve_span | none | SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | GET /api/roles | list_roles | none | SqlRoleStore |
-| POST /api/roles | create_role (commit analysing + queued job, 202) | analysis_ports_for_choice and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles | create_role (commit analysing + queued job, 202) | build_structured_port and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/roles/{role_id} | get_role; build_fit_summary when ready | none | SqlRoleStore |
 | DELETE /api/roles/{role_id} | delete_role | none | SqlRoleStore |
-| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | analysis_ports_for_choice and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | build_structured_port and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
 | GET /api/jobs/{job_id} | get_job | none | SqlRoleStore |
 | GET /api/roles/{role_id}/requirements | stored mappings | none | SqlRoleStore |
 | GET /api/roles/{role_id}/breakdown | stored score explanation | none | SqlRoleStore |
@@ -78,8 +59,6 @@ Provider resolvers:
 | GET /api/providers | list_provider_catalogue | list_provider_catalogue | none (server config) |
 | GET /api/settings/providers | get persisted choice | none | SqlProviderSettingsStore |
 | PUT /api/settings/providers | apply_provider_choice | apply_provider_choice + egress | SqlProviderSettingsStore |
-| GET /api/settings/pipeline | PipelineVersionStore.get (v1 when unset) | none | SqlPipelineVersionStore |
-| PUT /api/settings/pipeline | PipelineVersionStore.put | none | SqlPipelineVersionStore |
 
 Call accounting for completion and embeddings goes through `AccountingCompletion`
 / `AccountingEmbedding` into `SqlCallAccountant` / `provider_call_accounting`.
