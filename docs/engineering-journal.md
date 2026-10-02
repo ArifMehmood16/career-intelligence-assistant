@@ -46,8 +46,12 @@ Nothing predicted, nothing rounded up.
   skipped. Later heads have no attached checks because the workflow only triggers
   on opened. Root PLAN/BACKLOG now record failure triage and trigger coverage.
   Whole-branch whitespace inspection found an inherited trailing blank line in
-  candidate_spans.py; removal changes no behavior. No root gate closed and main
-  was not merged.
+  candidate_spans.py; removal changes no behavior. No root gate closed by these
+  observations. During final verification GitHub reported PR #42 externally merged
+  at `2212790` and its remote head deleted. Fetched/pruned remote refs, fast-forwarded
+  local main, checked merged delivery ancestry and deleted its local branch.
+  A documentation follow-up starts from updated main on
+  docs/phase-19-merged-checkpoint; the agent performed no merge.
 - Carried forward: explicitly resume local checks, review CI results and execute
   the disposable migration/browser/quality/latency release work before release.
 
