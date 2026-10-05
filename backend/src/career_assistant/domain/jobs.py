@@ -132,7 +132,7 @@ def recover_stale_running(
     now: datetime,
     running_timeout: timedelta,
 ) -> AnalysisJob:
-    """Deterministic restart policy: stale running jobs fail; fresh ones stay."""
+    """Expired running jobs fail at startup and during normal operation."""
     if job.state is not JobState.RUNNING:
         return job
     if job.started_at is None:
@@ -141,7 +141,7 @@ def recover_stale_running(
             at=now,
             error=JobError(
                 code="stale_running",
-                message="Analysis did not finish before the process stopped.",
+                message="Analysis exceeded its time limit. Try analysing again.",
             ),
         )
     if now - job.started_at >= running_timeout:
@@ -150,7 +150,7 @@ def recover_stale_running(
             at=now,
             error=JobError(
                 code="stale_running",
-                message="Analysis did not finish before the process stopped.",
+                message="Analysis exceeded its time limit. Try analysing again.",
             ),
         )
     return job

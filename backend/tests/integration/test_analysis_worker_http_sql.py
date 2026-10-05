@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -10,6 +12,9 @@ from pydantic import BaseModel, SecretStr
 from sqlalchemy.orm import Session, sessionmaker
 from tests.support.structured_transport import StructuredTransport
 
+from career_assistant.adapters.persistence.analysis_repos import (
+    SqlAnalysisJobRepository,
+)
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
 from career_assistant.adapters.persistence.provider_settings_store import (
@@ -22,11 +27,19 @@ from career_assistant.adapters.providers.hermetic.structured import (
     HermeticStructuredCompleter,
 )
 from career_assistant.application.contracts.chunking import JobChunkResponse
+from career_assistant.application.contracts.judge import JudgeResponse
+from career_assistant.application.ports.errors import ProviderUnavailableError
 from career_assistant.application.ports.structured import (
     StructuredRequest,
     StructuredResult,
 )
-from career_assistant.domain.jobs import JobState, mark_running
+from career_assistant.domain.jobs import (
+    JobError,
+    JobStage,
+    JobState,
+    mark_failed,
+    mark_running,
+)
 from career_assistant.main import create_app
 from career_assistant.settings import ProviderSettings
 
@@ -48,6 +61,29 @@ class _BoomStructured(HermeticStructuredCompleter):
     ) -> StructuredResult[T]:
         if request.contract is JobChunkResponse:
             raise RuntimeError("scripted document failure")
+        return super().complete_structured(request)
+
+
+class _HeldJudge(HermeticStructuredCompleter):
+    def __init__(self, *, fail_after_release: bool) -> None:
+        super().__init__()
+        self.entered = threading.Event()
+        self.release = threading.Event()
+        self.finished = threading.Event()
+        self.fail_after_release = fail_after_release
+        self.judge_calls = 0
+
+    def complete_structured[T: BaseModel](
+        self, request: StructuredRequest[T]
+    ) -> StructuredResult[T]:
+        if request.contract is not JudgeResponse:
+            return super().complete_structured(request)
+        self.judge_calls += 1
+        self.entered.set()
+        assert self.release.wait(timeout=10), "test did not release the provider"
+        self.finished.set()
+        if self.fail_after_release:
+            raise ProviderUnavailableError("scripted late failure")
         return super().complete_structured(request)
 
 
@@ -140,6 +176,58 @@ def test_worker_runs_queued_through_running_to_succeeded(
     assert requirements.json()["verdicts"]
 
 
+@pytest.mark.parametrize("fail_after_release", [False, True])
+def test_running_worker_expires_a_blocked_judge_before_it_returns(
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+    fail_after_release: bool,
+) -> None:
+    provider = _HeldJudge(fail_after_release=fail_after_release)
+    monkeypatch.setattr(
+        "career_assistant.adapters.persistence.analysis_worker.build_structured_port",
+        lambda *_args, **_kwargs: provider,
+    )
+    clock = [datetime(2026, 10, 5, tzinfo=UTC)]
+    worker = SqlAnalysisWorker(_uow_factory(session_factory), clock=lambda: clock[0])
+    client, _ = _sql_app(session_factory, worker=worker)
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    body = client.post(
+        "/api/roles", json={"title": "AE", "company": "Acme", "description": _JD}
+    ).json()
+    job_path = f"/api/jobs/{body['jobId']}"
+    role_path = f"/api/roles/{body['role']['id']}"
+    stop = threading.Event()
+    thread = threading.Thread(
+        target=worker.run_forever, args=(stop,), kwargs={"idle_wait_seconds": 0.01}
+    )
+    thread.start()
+    try:
+        assert provider.entered.wait(timeout=5)
+        assert client.get(job_path).json()["state"] == "running"
+        clock[0] += timedelta(minutes=16)
+        deadline = time.monotonic() + 2
+        expired = client.get(job_path).json()
+        while expired["state"] == "running" and time.monotonic() < deadline:
+            stop.wait(timeout=0.02)
+            expired = client.get(job_path).json()
+        assert expired["state"] == "failed", "expiry must not require worker restart"
+        assert expired["error"]["code"] == "stale_running"
+        assert not provider.finished.is_set()
+        assert client.get(role_path).json()["status"] == "failed"
+        assert client.get(f"{role_path}/verdicts").status_code == 409
+        judge = next(t for t in expired["progress"]["tasks"] if t["key"] == "judge")
+        assert judge["state"] == "failed"
+        assert judge["unitsDone"] == 0
+    finally:
+        stop.set()
+        provider.release.set()
+        thread.join(timeout=5)
+    assert not thread.is_alive()
+    assert client.get(job_path).json()["error"]["code"] == "stale_running"
+    assert client.get(f"{role_path}/verdicts").status_code == 409
+    assert provider.judge_calls == 1
+
+
 def test_worker_failure_marks_failed_without_partial_results(
     session_factory: sessionmaker[Session],
     monkeypatch: pytest.MonkeyPatch,
@@ -173,6 +261,71 @@ def test_worker_failure_marks_failed_without_partial_results(
     assert client.get(f"/api/roles/{role_id}/verdicts").status_code == 409
     with uow_factory() as uow:
         assert uow.v2.result(client.cookies["workspace"], role_id) is None
+
+
+@pytest.mark.parametrize("terminal", ["expired", "succeeded", "deleted"])
+def test_late_worker_failure_preserves_terminal_or_deleted_jobs(
+    session_factory: sessionmaker[Session], terminal: str
+) -> None:
+    client, worker = _sql_app(session_factory)
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    body = client.post(
+        "/api/roles", json={"title": "AE", "company": "Acme", "description": _JD}
+    ).json()
+    claimed = worker.claim_next()
+    assert claimed is not None
+    if terminal == "succeeded":
+        expected = worker.complete(claimed)
+        assert expected.state is JobState.SUCCEEDED
+    elif terminal == "expired":
+        expected = mark_failed(
+            claimed,
+            at=datetime.now(UTC),
+            error=JobError(
+                "stale_running", "Analysis exceeded its running time limit."
+            ),
+        )
+        with _uow_factory(session_factory)() as uow:
+            uow.analysis.fail_job(
+                workspace_id=claimed.workspace_id, role_id=claimed.role_id, job=expected
+            )
+            uow.commit()
+    else:
+        assert client.delete(f"/api/roles/{claimed.role_id}").status_code == 204
+        expected = claimed
+
+    result = worker._record_failure(claimed, JobStage.MAPPING, RuntimeError("late"))
+    assert result == expected
+    with _uow_factory(session_factory)() as uow:
+        saved = uow.jobs.get(claimed.workspace_id, claimed.id)
+    assert saved == (None if terminal == "deleted" else expected)
+    if terminal == "succeeded":
+        assert (
+            client.get(f"/api/roles/{body['role']['id']}/verdicts").status_code == 200
+        )
+
+
+def test_expiry_rechecks_a_job_completed_since_the_running_snapshot(
+    session_factory: sessionmaker[Session], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client, worker = _sql_app(session_factory)
+    client.post("/api/cv", json={"text": _CV, "filename": "cv.txt"})
+    client.post(
+        "/api/roles", json={"title": "AE", "company": "Acme", "description": _JD}
+    )
+    running = worker.claim_next()
+    assert running is not None
+    done = worker.complete(running)
+    assert done.state is JobState.SUCCEEDED
+    # Simulate publication completing after the sweep selected a running row.
+    monkeypatch.setattr(SqlAnalysisJobRepository, "list_running", lambda _: (running,))
+    recovery = SqlAnalysisWorker(
+        _uow_factory(session_factory),
+        clock=lambda: datetime.now(UTC) + timedelta(minutes=16),
+    ).startup()
+    assert recovery.failed_job_ids == ()
+    assert client.get(f"/api/jobs/{done.id}").json()["state"] == "succeeded"
+    assert client.get(f"/api/roles/{done.role_id}/verdicts").status_code == 200
 
 
 def test_reanalyse_returns_analysing_and_queued_before_worker_runs(

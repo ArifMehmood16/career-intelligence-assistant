@@ -17,6 +17,7 @@ from career_assistant.application.ports.errors import (
     ProviderUnavailableError,
 )
 from career_assistant.application.providers.accounting import provider_attempt
+from career_assistant.application.providers.cancellable import check_provider_cancelled
 
 T = TypeVar("T")
 _BACKOFF_CAP_SECONDS = 1.0
@@ -61,6 +62,7 @@ class ResiliencePolicy:
         self.breaker.before_call()
         attempt = 0
         while True:
+            check_provider_cancelled()
             try:
                 with provider_attempt(retry=attempt > 0):
                     result = operation()

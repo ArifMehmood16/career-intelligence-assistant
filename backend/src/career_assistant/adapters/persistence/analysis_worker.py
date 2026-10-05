@@ -40,6 +40,7 @@ from career_assistant.application.scoring.rubric_loader import (
     load_scoring_rubric_v2,
 )
 from career_assistant.domain.jobs import (
+    LIVE_STATES,
     AnalysisJob,
     JobError,
     JobStage,
@@ -60,6 +61,7 @@ _ROOT = Path(__file__).resolve().parents[5]
 _RUBRIC_PATH = _ROOT / "config" / "scoring_rubric.toml"
 _DEFAULT_RUBRIC_V2 = load_scoring_rubric_v2(_RUBRIC_PATH)
 _DEFAULT_TIMEOUT = timedelta(minutes=15)
+_RECOVERY_INTERVAL = timedelta(seconds=5)
 _log = logging.getLogger(__name__)
 
 
@@ -104,23 +106,9 @@ class SqlAnalysisWorker:
         )
 
     def startup(self) -> StartupRecovery:
-        failed: list[str] = []
+        failed = self._recover_expired()
         with self._uow_factory() as uow:
-            for job in uow.jobs.list_running():
-                recovered = recover_stale_running(
-                    job,
-                    now=self._clock(),
-                    running_timeout=self._running_timeout,
-                )
-                if recovered.state is JobState.FAILED:
-                    uow.analysis.fail_job(
-                        workspace_id=job.workspace_id,
-                        role_id=job.role_id,
-                        job=recovered,
-                    )
-                    failed.append(job.id)
             queued = uow.jobs.list_queued()
-            uow.commit()
         log_event(
             _log,
             "worker.startup",
@@ -128,9 +116,40 @@ class SqlAnalysisWorker:
             dispatched_jobs=len(queued),
         )
         return StartupRecovery(
-            failed_job_ids=tuple(failed),
+            failed_job_ids=failed,
             dispatched_job_ids=tuple(job.id for job in queued),
         )
+
+    def _recover_expired(self) -> tuple[str, ...]:
+        failed: list[str] = []
+        now = self._clock()
+        with self._uow_factory() as uow:
+            for job in uow.jobs.list_running():
+                # Publication may have completed since the running snapshot.
+                current = uow.jobs.get_for_update(job.workspace_id, job.id)
+                if current is None:
+                    continue
+                recovered = recover_stale_running(
+                    current,
+                    now=now,
+                    running_timeout=self._running_timeout,
+                )
+                if (
+                    current.state is JobState.RUNNING
+                    and recovered.state is JobState.FAILED
+                ):
+                    uow.analysis.fail_job(
+                        workspace_id=job.workspace_id,
+                        role_id=job.role_id,
+                        job=recovered,
+                    )
+                    failed.append(job.id)
+            uow.commit()
+        if failed:
+            log_event(
+                _log, "worker.expired", failed_jobs=len(failed), code="stale_running"
+            )
+        return tuple(failed)
 
     def claim_next(self) -> AnalysisJob | None:
         with self._uow_factory() as uow:
@@ -171,6 +190,7 @@ class SqlAnalysisWorker:
         self, stop: threading.Event, *, idle_wait_seconds: float = 0.5
     ) -> None:
         self.startup()
+        next_recovery = self._clock() + _RECOVERY_INTERVAL
         pending: set[Future[AnalysisJob]] = set()
         with ThreadPoolExecutor(
             max_workers=self._max_concurrent, thread_name_prefix="role-analysis"
@@ -178,6 +198,9 @@ class SqlAnalysisWorker:
             while not stop.is_set():
                 pending = self._settle(pending)
                 try:
+                    if self._clock() >= next_recovery:
+                        self._recover_expired()
+                        next_recovery = self._clock() + _RECOVERY_INTERVAL
                     while len(pending) < self._max_concurrent and not stop.is_set():
                         claimed = self.claim_next()
                         if claimed is None:
@@ -235,7 +258,11 @@ class SqlAnalysisWorker:
         self, job: AnalysisJob, stage: JobStage, cause: BaseException | None = None
     ) -> AnalysisJob:
         with self._uow_factory() as uow:
-            current = uow.jobs.get(job.workspace_id, job.id) or job
+            current = uow.jobs.get_for_update(job.workspace_id, job.id)
+            if current is None:
+                return job
+            if current.state not in LIVE_STATES:
+                return current
             running = (
                 current
                 if current.state is JobState.RUNNING
