@@ -13,7 +13,6 @@ from pathlib import Path
 import pytest
 
 from career_assistant.application.scoring.rubric_loader import (
-    load_rubric_version,
     load_scoring_rubric_v2,
 )
 from career_assistant.domain.candidate_facts import (
@@ -79,10 +78,9 @@ def _item(
     )
 
 
-def test_the_configured_rubric_is_v2_and_v1_is_untouched() -> None:
+def test_the_configured_rubric_is_the_current_v2_rubric() -> None:
     assert RUBRIC.version == "scoring-rubric-v2"
     assert (RUBRIC.w_match, RUBRIC.w_experience, RUBRIC.w_seniority) == (0.5, 0.3, 0.2)
-    assert load_rubric_version(RUBRIC_PATH) == "scoring-rubric-v1"
 
 
 def test_every_requirement_met_as_stated_recently_scores_100() -> None:

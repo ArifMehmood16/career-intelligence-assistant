@@ -6,8 +6,8 @@ import json
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
-from tests.support.structured_transport import StructuredTransport
 from tests.support.scripted_transport import ScriptedTransport
+from tests.support.structured_transport import StructuredTransport
 
 from career_assistant.adapters.providers.http_transport import HttpResponse
 from career_assistant.main import create_app

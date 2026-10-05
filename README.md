@@ -6,13 +6,16 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-10-02):** one chunk/search/judge analysis with provider-specific
+> **Status (2026-10-05):** one chunk/search/judge analysis with provider-specific
 > execution budgets, batched calls, bounded parallel work and visible call/time
 > estimates. The v1 analysis and selector are retired. OpenAI request-schema and
 > failure-diagnostic repairs are implemented; the frontend now accepts published
 > recency gaps in the detailed Fit/Gaps view. A completed analysis and live response
-> validation were observed. Tests/lint remain deferred, and current model quality
-> and end-to-end latency still need the release checks in [PLAN.md](PLAN.md).
+> validation were observed. PR #43 repairs stale verification fixtures, cancellation,
+> evidence-deletion invalidation, citation history and repeated migrations. Local
+> lint, hermetic and disposable PostgreSQL checks pass. [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
+> passed lint/hermetic, PostgreSQL 16 and Supabase 17 on code head `5b8a585`.
+> Current model quality and end-to-end latency still need the release checks in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and

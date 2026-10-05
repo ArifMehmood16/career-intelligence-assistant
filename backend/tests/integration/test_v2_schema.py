@@ -101,12 +101,16 @@ def test_a_role_without_policies_reads_no_rows(
     probe = f"rls_probe_{uuid.uuid4().hex[:8]}"
     with session_factory() as session:
         session.execute(text(f"CREATE ROLE {probe} NOLOGIN NOBYPASSRLS"))
+        # A managed CREATEROLE user is not a superuser. Grant SET explicitly;
+        # role creation alone grants ADMIN with SET FALSE on PostgreSQL 16+.
+        session.execute(text(f"GRANT {probe} TO CURRENT_USER WITH SET TRUE"))
         session.execute(text(f"GRANT USAGE ON SCHEMA {APP_SCHEMA} TO {probe}"))
         session.execute(
             text(f"GRANT SELECT ON ALL TABLES IN SCHEMA {APP_SCHEMA} TO {probe}")
         )
         owner_sees = _q(session, f"SELECT count(*) FROM {APP_SCHEMA}.chunks")
         session.execute(text(f"SET LOCAL ROLE {probe}"))
+        assert _q(session, "SELECT current_user") == probe
         probe_sees = _q(session, f"SELECT count(*) FROM {APP_SCHEMA}.chunks")
         # Roles and grants are transactional: rolling back leaves nothing behind.
         session.rollback()

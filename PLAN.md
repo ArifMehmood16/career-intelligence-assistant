@@ -1,24 +1,27 @@
 # Delivery plan — one career intelligence pipeline
 
-Updated 2026-10-02. This plan replaces the competing v1 release/evaluation and v2
+Updated 2026-10-05. This plan replaces the competing v1 release/evaluation and v2
 build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
 Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
 evaluation rows.
 
 **Checkpoint:** Phase 18 foundations, the 19.1–19.3 consolidation and subsequent
-provider/display repairs are published in [draft PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
-on `feat/phase-19-analysis-delivery`. Superseded branches are removed with their
-history preserved there; `main` remains unchanged pending human review and merge.
-Local tests/lint remain explicitly deferred. [PR creation CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37036694170)
-failed at lint/typecheck and both integration steps; hermetic tests were skipped.
-Its head was `1c9a4e6`. The workflow currently triggers only on `opened`, so later
-commits have no attached checks. Failure triage and CI coverage of updated PR heads
-remain release work; no passing result is claimed. On 2026-10-02
-the human authorized synthetic benchmark implementation under 19.4 while keeping
-checks deferred. That overrides task ordering only for this bounded slice; earlier
-verification, migration preservation and measured release gates remain open.
-A reported retirement-migration constraint-name failure was repaired in code;
-the repair and benchmark have not been executed or verified.
+provider/display repairs are merged in [PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
+at `2212790`. Superseded task branches and the merged delivery branch are removed;
+their complete history is preserved on `main`. The local main checkout is synced.
+The human explicitly resumed verification to repair [PR #43](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/43).
+Its original creation CI failed lint and test collection. The bounded
+[CI repair](specs/005-pr43-ci-repair/spec.md) aligns current fixtures/contracts,
+repairs response cancellation, evidence-deletion invalidation and citation labels,
+and restores pgvector resolution across repeated migration cycles. Local
+`make lint`, `make test` and `make test-integration` pass on synthetic data;
+[GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548) passed all three jobs
+on code head `5b8a585`. CI now runs on synchronized and reopened PR heads. No personal database or paid model calls were used.
+
+The synthetic benchmark is implemented but unexecuted. Browser journeys, migration
+preservation beyond the covered cases, security/dependency checks and measured
+quality/latency gates remain open. Passing regression checks do not close those
+broader acceptance criteria.
 
 ## Using Spec Kit for the existing project
 
@@ -27,33 +30,34 @@ GitHub Spec Kit v1.0.13 is adopted as a planning layer; see
 and links to this plan. Its plan/tasks do not replace this roadmap or close a gate.
 The first scoped change is
 [synthetic analysis benchmarking](specs/001-synthetic-analysis-benchmark/spec.md).
-Its implementation is present; tests/lint, benchmark runs and migrations remain
-pending. Specification quality review proves no application behavior.
+Its implementation and regression tests pass the local checks; benchmark runs
+and broader migration preservation remain pending. Specification quality review
+proves no application behavior.
 
 The human-requested [OpenAI analysis repair](specs/002-openai-request-errors/spec.md)
 addresses a reproduced advert-format rejection under 19.2. The repaired converter
 received HTTP 200 with a tiny synthetic request; safe rejection diagnostics are
 implemented. The human later reported a complete analysis, confirmed as a ready
-publication by read-only HTTP. Regression suites and the measured release gate
-remain pending.
+publication by read-only HTTP. Its regression tests pass in the local suite;
+the measured release gate remains pending.
 
 The subsequent [incomplete-judging diagnosis](specs/003-judge-failure-diagnostics/spec.md)
 adds content-free timeout/judge diagnostics under 19.2. Read-only timings suggest
 three exhausted 60-second judge attempts; the local ignored limit is now 180 seconds.
 The later completed analysis does not prove that timeout was the original cause;
-regression and release gates remain open.
+regressions pass in the local suite; the release gate remains open.
 
 The human subsequently reported a completed analysis; read-only HTTP confirms a
 ready role and published verdicts. The [19.1 recency display repair](specs/004-recency-gap-display/spec.md)
 aligns the frontend with the domain's existing fourth gap category, which the
 client previously rejected. The same live result now passes client validation
-through API and web proxy; synthetic gallery rendering was inspected. Suites and
-release/quality gates remain pending; no reanalysis or scoring change is needed.
+through API and web proxy; synthetic gallery rendering was inspected. Local
+suites pass; broader release/quality gates remain pending; no reanalysis or scoring change is needed.
 
-Next checkpoint, when checks are explicitly resumed: run the focused regressions
-and full lint/hermetic checks, verify migrations and deletion on disposable
-PostgreSQL, then execute the synthetic browser and quality/latency release work
-below. Successful diagnosis does not tick milestone acceptance boxes.
+Next checkpoint: execute the synthetic browser, security and quality/latency
+release work below. Documentation follow-ups receive their own updated-head CI. Local disposable
+PostgreSQL regression and migration-cycle checks pass; successful checks only
+close the bounded acceptance they actually exercise.
 
 ## Approved direction
 
@@ -139,10 +143,13 @@ evaluation are separate work. No benchmark result is claimed before execution.
       unsupported matches and ranking agreement in docs/evaluation.md. Tune on
       development data only. Hosted measurements need enabled keys and synthetic
       data; no paid or live quality claims from fixture tests.
-- [ ] Verify the retirement/progress migration on disposable PostgreSQL and run the
-      Supabase image CI row. Triage the failed PR creation run and enable CI on PR
-      updates/reopening so the reviewed head is checked. Complete privacy/deletion
-      and dependency/security checks.
+- [x] Repair PR #43's observed collection/lint failures and pass local lint,
+      hermetic and disposable PostgreSQL regression/migration-cycle checks.
+      Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.
+- [x] Observe both database image jobs and lint/hermetic CI on code head `5b8a585`
+      ([run](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)); keep updated-head checks enforced.
+- [ ] Complete the broader retirement/progress migration preservation,
+      privacy/deletion and dependency/security release checks.
 - [ ] Prove one startup/deployment path. Repair Docker configuration or remove its
       supported claim; add one Playwright smoke journey. Keep deployment private
       until authentication exists.

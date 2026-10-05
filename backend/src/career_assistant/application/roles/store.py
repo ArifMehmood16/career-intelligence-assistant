@@ -334,7 +334,9 @@ class InMemoryRoleStore:
         self, workspace_id: str, role_id: str, requirement_id: str
     ) -> tuple[RetrievalTrace, ...] | None:
         result = self.result(workspace_id, role_id)
-        if result is None or not any(item.requirement_id == requirement_id for item in result.verdicts):
+        if result is None or not any(
+            item.requirement_id == requirement_id for item in result.verdicts
+        ):
             return None
         return ()
 

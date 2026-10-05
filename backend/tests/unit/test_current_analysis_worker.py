@@ -3,16 +3,16 @@
 from datetime import UTC, datetime
 from unittest.mock import Mock
 
-from career_assistant.domain.jobs import AnalysisJob
-
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
-from career_assistant.domain.jobs import new_role_analysis_job
+from career_assistant.domain.jobs import AnalysisJob, new_role_analysis_job
 
 
 def test_worker_uses_current_analysis_without_reading_workspace_selector() -> None:
     worker = SqlAnalysisWorker(Mock())
     job = new_role_analysis_job(
-        job_id="job", workspace_id="ws", role_id="role",
+        job_id="job",
+        workspace_id="ws",
+        role_id="role",
         created_at=datetime.now(UTC),
     )
     worker._v2 = Mock()
@@ -28,10 +28,15 @@ def test_worker_overlaps_independent_jobs_with_the_configured_thread_limit() -> 
     stop = threading.Event()
     barrier = threading.Barrier(2, timeout=3)
     worker = SqlAnalysisWorker(Mock(), max_concurrent=2)
-    jobs = tuple(new_role_analysis_job(
-        job_id=f"job-{index}", workspace_id="ws", role_id=f"role-{index}",
-        created_at=datetime.now(UTC),
-    ) for index in range(2))
+    jobs = tuple(
+        new_role_analysis_job(
+            job_id=f"job-{index}",
+            workspace_id="ws",
+            role_id=f"role-{index}",
+            created_at=datetime.now(UTC),
+        )
+        for index in range(2)
+    )
     worker.startup = Mock()
     worker.claim_next = Mock(side_effect=[*jobs, None])
 

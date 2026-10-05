@@ -71,7 +71,10 @@ def build_sql_stores(
         provider_choices=SqlProviderSettingsStore(uow_factory),
         v2_results=SqlV2ResultReader(uow_factory),
         analysis_worker=SqlAnalysisWorker(
-            uow_factory, providers=providers,
-            max_concurrent=providers.analysis_max_concurrent_jobs if providers is not None else 1,
+            uow_factory,
+            providers=providers,
+            max_concurrent=providers.analysis_max_concurrent_jobs
+            if providers is not None
+            else 1,
         ),
     )

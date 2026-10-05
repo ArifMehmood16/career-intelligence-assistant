@@ -1,4 +1,5 @@
 """Worker lifetime types shared by the current analysis adapters."""
+
 from __future__ import annotations
 
 from collections.abc import Callable

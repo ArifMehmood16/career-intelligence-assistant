@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from datetime import UTC
 
 from fastapi import APIRouter, Request, Response, status
@@ -228,7 +228,9 @@ def _assistant_message_wire(
     )
 
 
-def _history_message_wire(message: MemoryMessage) -> ChatMessageWire:
+def _history_message_wire(
+    message: MemoryMessage, span_labels: Mapping[str, str]
+) -> ChatMessageWire:
     created = message.created_at
     if created.tzinfo is None:
         created = created.replace(tzinfo=UTC)
@@ -239,7 +241,9 @@ def _history_message_wire(message: MemoryMessage) -> ChatMessageWire:
         content=message.content,
         kind=message.kind,
         citations=[
-            CitationWire(id=span_id, label=span_id, evidence=None)
+            CitationWire(
+                id=span_id, label=span_labels.get(span_id, span_id), evidence=None
+            )
             for span_id in message.citations
         ],
         model=message.model,
@@ -256,7 +260,14 @@ def get_messages(request: Request, workspace_id: WorkspaceId) -> list[ChatMessag
     if conversation_id is None:
         return []
     history = store.list_history(workspace_id, conversation_id)
-    return [_history_message_wire(_as_memory_message(message)) for message in history]
+    span_labels = {
+        item.span.id: item.span.text[:80]
+        for item in _retrieved_pool(request, workspace_id)
+    }
+    return [
+        _history_message_wire(_as_memory_message(message), span_labels)
+        for message in history
+    ]
 
 
 @router.delete(

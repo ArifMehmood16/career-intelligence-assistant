@@ -1,11 +1,19 @@
 # Threat model
 
-Updated 2026-10-02 for the consolidated analysis. Uploads, questions, retrieved text,
+Updated 2026-10-05 for the consolidated analysis. Uploads, questions, retrieved text,
 model output and drafts remain untrusted. [ADR 016](adr/016-consolidated-parallel-analysis.md)
 records the human-approved architecture. Final migration/security verification is
-pending the human's checks.
+partly covered by passing regression checks; broader release/security work remains
+open in PLAN.md.
 
-## Boundaries and controls
+## Trust boundaries and controls
+
+Personal data in upload/document text, job-description text, model output and
+generated drafts crosses these boundaries only under the controls below.
+`create_app()` supplies in-memory provider-boundary fixtures for hermetic tests;
+`create_production_app()` wires PostgreSQL adapters for the private running app.
+The operational audit recorder is currently in memory; durable audit persistence
+remains open work, distinct from SQL provider-call accounting.
 
 - Browser/API: workspace cookie scoping, request schemas and configured file/question
   caps. No authentication/multi-tenancy: deployment remains private and single-user.
@@ -21,6 +29,7 @@ pending the human's checks.
 - Judge/domain: only retrieved stored chunks may support a judgment. Evidence quotes
   resolve verbatim; server caps and anchored dimensions validate the proposal. The
   domain computes scores/gaps; incomplete judgment publishes no score or rank.
+  Benefit, salary and logistics chunks remain outside scored requirements.
 - Provider/network: server-side keys, configured allowlist, hosted egress enforcement
   at construction and call time, explicit existing user acknowledgement, timeouts,
   circuit breakers and header-driven limits. Independent provider modules adapt their

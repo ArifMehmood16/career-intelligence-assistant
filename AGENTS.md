@@ -40,10 +40,11 @@ Keep completed feature artifacts as historical change records and maintain curre
 behavior in the existing product/API/architecture docs. Use the existing manual
 Git workflow; a Git extension is not required.
 
-The human deferred tests/lint until the end. That instruction remains in force until
-changed explicitly: generated validation tasks stay pending, and no template or
-skill may turn deferred verification into a passing gate. Constitution generation
-and planning alone verify no application behavior.
+The human explicitly resumed tests/lint and integration verification for PR #43's
+CI repair. Follow the verification workflow below; the earlier
+checkpoint's deferral no longer applies to this repair. Record observed checks,
+not template completion, as evidence. Browser, security and measured release
+work still requires its own acceptance evidence.
 
 ## Mission
 

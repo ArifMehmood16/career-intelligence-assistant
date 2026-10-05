@@ -18,6 +18,34 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19 — PR #43 CI repair
+
+- Date: 2026-10-05
+- Commands run: gh pr/run inspection and failed-run logs; Spec Kit setup and
+  prerequisite scripts; pytest collection and focused red/green regressions;
+  Ruff formatting/checks, mypy, TypeScript and ESLint via make lint; full make test;
+  disposable PostgreSQL initdb/pg_ctl/createdb and make test-integration with
+  explicit distinct URLs; repeated migration regression; git diff --check;
+  explicit staging/commit/push; gh pr edit.
+- Observed result: original run 37037340374 stopped at lint and five collection
+  errors. Current local checks pass: 809 backend tests, 169 frontend tests,
+  135 SQL integration tests and the unchanged coverage gate. [GitHub run 37293311548](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548) passed all three jobs on code head 5b8a585. First run 37292814674 passed PostgreSQL 16 and
+  lint/typechecks; Supabase failed exact float read-back and role switching, and
+  hermetic tests found documentation missing from the initial push. Reproduced
+  reduced float precision locally, repaired connection defaults and explicit
+  probe membership, and included the missing docs. All local suites pass again.
+- Problems resolved: stale imports/contracts; missing fixture terms/undated
+  experience; provider responses written after cancellation; scores remaining
+  readable after evidence deletion; UUID-only history citation labels; vector
+  type lookup failing after pgvector moves to extensions during migration cycles.
+- Decisions: retain bounded parallel I/O and allow already-started calls while
+  prohibiting new dispatch after deletion; preserve all gates and synthetic
+  evidence verification. The disposable cluster uses port 55443 and UTF-8;
+  the personal application configuration/database was not used.
+- Carried forward: final documentation-head CI and human PR review/merge;
+  finish separate browser/security/quality/latency release work. No model-quality
+  or complete-release claim follows from these regression checks.
+
 ## Phase 19 — Delivery documentation and publication
 
 - Date: 2026-10-02
@@ -46,8 +74,12 @@ Nothing predicted, nothing rounded up.
   skipped. Later heads have no attached checks because the workflow only triggers
   on opened. Root PLAN/BACKLOG now record failure triage and trigger coverage.
   Whole-branch whitespace inspection found an inherited trailing blank line in
-  candidate_spans.py; removal changes no behavior. No root gate closed and main
-  was not merged.
+  candidate_spans.py; removal changes no behavior. No root gate closed by these
+  observations. During final verification GitHub reported PR #42 externally merged
+  at `2212790` and its remote head deleted. Fetched/pruned remote refs, fast-forwarded
+  local main, checked merged delivery ancestry and deleted its local branch.
+  A documentation follow-up starts from updated main on
+  docs/phase-19-merged-checkpoint; the agent performed no merge.
 - Carried forward: explicitly resume local checks, review CI results and execute
   the disposable migration/browser/quality/latency release work before release.
 

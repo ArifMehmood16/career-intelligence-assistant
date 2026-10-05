@@ -22,7 +22,7 @@ MANIFEST = FIXTURES / "manifest.json"
 DATASET = ROOT / "sample-data" / "evaluation" / "dataset.json"
 RUBRIC = ROOT / "config" / "scoring_rubric.toml"
 
-INVARIANT = "The model extracts. The domain decides."
+INVARIANT = "The model reads and judges. The server verifies. The domain computes fit."
 
 REQUIRED_ADRS = {
     "001-modular-monolith.md": ("modular monolith", "domain", "adapters"),
@@ -168,19 +168,22 @@ def test_evaluation_dataset_stub_matches_documented_shape() -> None:
 
 def test_scoring_rubric_is_configuration_matching_features() -> None:
     assert RUBRIC.is_file(), "config/scoring_rubric.toml must hold starting weights"
-    rubric = tomllib.loads(RUBRIC.read_text(encoding="utf-8"))
+    config = tomllib.loads(RUBRIC.read_text(encoding="utf-8"))
+    assert set(config) == {"v2"}, "only the current rubric is configured"
+    rubric = config["v2"]
     assert rubric["weights"]["must_have"] == 3
     assert rubric["weights"]["desirable"] == 1
-    assert rubric["status"]["met"] == 1.0
-    assert rubric["status"]["partial"] == 0.5
-    assert rubric["status"]["missing"] == 0.0
+    assert rubric["dimension_weights"] == {
+        "match": 0.5,
+        "experience": 0.3,
+        "seniority": 0.2,
+    }
     assert rubric["recency"]["within_2y"] == 1.0
     assert rubric["recency"]["from_2y_to_5y"] == 0.85
     assert rubric["recency"]["over_5y"] == 0.7
     assert rubric["bands"]["strong_match_min"] == 75
     assert rubric["bands"]["partial_match_min"] == 50
-    assert rubric["mapping"]["similarity_floor"] == 0.55
+    assert rubric["gate"]["must_have_match_max"] == 1
     features = FEATURES.read_text(encoding="utf-8")
-    assert "must-have = 3" in features
-    assert "configuration" in features.lower()
-    assert "initial" in features.lower()
+    assert "config/scoring_rubric.toml" in features
+    assert "configured must-have weights" in features

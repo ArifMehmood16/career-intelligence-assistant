@@ -160,10 +160,18 @@ def test_restart_reads_saved_fit_gaps_prepare_and_letter(
     ] == [(view.id, view.fit_score, rank) for view, rank, _tied, _because in second]
     bundle = restarted.require_analysis(workspace_id, role.id)
     assert bundle.explanation.score == saved.explanation.score
-    fit = build_fit_summary(bundle.requirements, bundle.mappings,
-        explanation=bundle.explanation, gaps=bundle.gaps)
-    gaps = build_gap_plan(bundle.requirements, bundle.mappings,
-        explanation=bundle.explanation, gaps=bundle.gaps)
+    fit = build_fit_summary(
+        bundle.requirements,
+        bundle.mappings,
+        explanation=bundle.explanation,
+        gaps=bundle.gaps,
+    )
+    gaps = build_gap_plan(
+        bundle.requirements,
+        bundle.mappings,
+        explanation=bundle.explanation,
+        gaps=bundle.gaps,
+    )
     pack = build_interview_pack(bundle.requirements, bundle.mappings, bundle.claims)
     letter = draft_cover_letter(
         role_title="Analytics Engineer",

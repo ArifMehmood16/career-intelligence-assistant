@@ -74,7 +74,7 @@ def _matrix_rows(text: str) -> list[list[str]]:
     return rows
 
 
-def test_readme_status_matches_observed_phase_13c_behaviour() -> None:
+def test_readme_status_matches_the_consolidated_architecture() -> None:
     for page in README_PAGES:
         text = page.read_text(encoding="utf-8")
         for claim in STALE_README_CLAIMS:
@@ -83,7 +83,7 @@ def test_readme_status_matches_observed_phase_13c_behaviour() -> None:
     assert "docs/production-wiring.md" in readme
     assert "docs/architecture.md" in readme
     assert "docs/model-providers.md" in readme
-    assert "adr/010-model-first-extraction.md" in ARCHITECTURE.read_text(
+    assert "adr/016-consolidated-parallel-analysis.md" in ARCHITECTURE.read_text(
         encoding="utf-8"
     )
     providers = MODEL_PROVIDERS.read_text(encoding="utf-8")
@@ -105,7 +105,7 @@ def test_features_and_threat_model_state_the_scoring_boundary() -> None:
     features = FEATURES.read_text(encoding="utf-8")
     threat = THREAT_MODEL.read_text(encoding="utf-8").lower()
     assert "unscored" in features
-    assert "benefit" in features
+    assert "benefit" in features.lower()
     assert "logistics" in features
     assert "item_type" in threat or "benefit" in threat
     assert "salary" in threat or "logistics" in threat

@@ -1,4 +1,4 @@
-"""The in-memory store analyses on pipeline v1 and says so."""
+"""The hermetic store runs and reports the current single analysis."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from career_assistant.main import create_app
 
 
-def test_an_in_memory_role_reports_pipeline_v1() -> None:
+def test_a_hermetic_role_reports_the_current_pipeline() -> None:
     client = TestClient(create_app())
     client.post(
         "/api/cv",
@@ -18,5 +18,5 @@ def test_an_in_memory_role_reports_pipeline_v1() -> None:
         json={"title": "AE", "company": "Acme", "description": "Requirements\n- dbt\n"},
     ).json()
 
-    assert created["role"]["analysisPipeline"] == "v1"
-    assert client.get("/api/roles").json()[0]["analysisPipeline"] == "v1"
+    assert created["role"]["analysisPipeline"] == "v2"
+    assert client.get("/api/roles").json()[0]["analysisPipeline"] == "v2"

@@ -1,4 +1,5 @@
 """Stable ids for server-owned document citations."""
+
 from __future__ import annotations
 
 import uuid

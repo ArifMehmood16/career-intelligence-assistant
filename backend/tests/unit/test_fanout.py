@@ -22,7 +22,10 @@ def test_parallel_fanout_bounds_threads_and_preserves_input_order() -> None:
         return item * 2
 
     assert map_in_order((1, 2, 3, 4), work, parallel=True, max_workers=2) == [
-        2, 4, 6, 8
+        2,
+        4,
+        6,
+        8,
     ]
     assert peak == 2
 

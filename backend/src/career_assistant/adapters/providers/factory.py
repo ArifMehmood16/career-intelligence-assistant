@@ -209,7 +209,9 @@ def _completion_for(
         )
     )
     if builders.hosted_permission is not None:
-        return _CallTimeEgressCompletion(port, settings=settings, hosted_kind=provider_id)
+        return _CallTimeEgressCompletion(
+            port, settings=settings, hosted_kind=provider_id
+        )
     return port
 
 
@@ -230,7 +232,9 @@ def _embedding_for(
         )
     )
     if builders.hosted_permission is not None:
-        return _CallTimeEgressEmbedding(port, settings=settings, hosted_kind=provider_id)
+        return _CallTimeEgressEmbedding(
+            port, settings=settings, hosted_kind=provider_id
+        )
     return port
 
 

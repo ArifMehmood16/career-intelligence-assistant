@@ -414,11 +414,13 @@ const sampleBulletDraft: BulletDraft = {
   version: 1,
   createdAt: "2026-09-18T12:00:00.000Z",
   requirementId: "req-partial",
-  bullets: [{
-    text: matchedEvidence.paragraph,
-    spanIds: [matchedEvidence.spanId],
-    evidence: [matchedEvidence],
-  }],
+  bullets: [
+    {
+      text: matchedEvidence.paragraph,
+      spanIds: [matchedEvidence.spanId],
+      evidence: [matchedEvidence],
+    },
+  ],
   provenance: {
     provider: "hermetic",
     model: null,

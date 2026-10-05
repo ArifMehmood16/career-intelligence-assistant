@@ -120,6 +120,17 @@ def test_the_combined_fixture_returns_no_inferred_relations() -> None:
     assert outcome.calls == 1
 
 
+def test_plain_advert_and_undated_experience_keep_named_fixture_terms() -> None:
+    advert = _chunk(DocumentKind.JOB_DESCRIPTION, "Need dbt and SQL experience.")
+    cv = _chunk(DocumentKind.CV, "Experience\n- Owned dbt models.")
+
+    assert len(advert.chunks[0].atomic_requirements) == 1
+    terms = advert.chunks[0].atomic_requirements[0].tech_terms
+    assert [term.surface for term in terms] == ["dbt", "SQL"]
+    assert cv.chunks[1].kind == "experience"
+    assert cv.chunks[1].evidence_eligible
+
+
 def test_a_contract_with_no_fixture_is_refused() -> None:
     with pytest.raises(ProviderUnavailableError):
         HermeticStructuredCompleter().complete_structured(

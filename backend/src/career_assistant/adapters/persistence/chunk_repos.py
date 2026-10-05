@@ -16,7 +16,6 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from career_assistant.adapters.persistence.models import SpanRow
-from career_assistant.application.roles.analysis import chunk_span
 from career_assistant.adapters.persistence.models_v2 import ChunkEmbeddingRow, ChunkRow
 from career_assistant.application.ports.chunks import (
     ChunkProvenance,
@@ -24,6 +23,7 @@ from career_assistant.application.ports.chunks import (
     EmbeddingModel,
     StoredChunk,
 )
+from career_assistant.application.roles.analysis import chunk_span
 from career_assistant.domain.chunking import (
     AtomicRequirementProposal,
     Chunk,
@@ -71,11 +71,17 @@ class SqlChunkRepository:
         for item in stored:
             span = chunk_span(item)
             if self._session.get(SpanRow, uuid.UUID(span.id)) is None:
-                self._session.add(SpanRow(
-                    id=uuid.UUID(span.id), workspace_id=ws, document_id=doc,
-                    page_number=span.page_number, start_offset=span.start_offset,
-                    end_offset=span.end_offset, text=span.text,
-                ))
+                self._session.add(
+                    SpanRow(
+                        id=uuid.UUID(span.id),
+                        workspace_id=ws,
+                        document_id=doc,
+                        page_number=span.page_number,
+                        start_offset=span.start_offset,
+                        end_offset=span.end_offset,
+                        text=span.text,
+                    )
+                )
         self._session.flush()
         return stored
 

@@ -102,7 +102,8 @@ def test_a_call_waits_until_the_token_window_resets() -> None:
         )
         == "b"
     )
-    assert slept == [5.0]
+    assert sum(slept) == 5.0
+    assert all(0 < delay <= 1.0 for delay in slept)
 
 
 def test_a_long_reset_is_capped() -> None:
@@ -126,7 +127,8 @@ def test_a_long_reset_is_capped() -> None:
         operation=lambda note: None,
     )
 
-    assert slept == [60.0]
+    assert sum(slept) == 60.0
+    assert all(0 < delay <= 1.0 for delay in slept)
 
 
 def test_one_vendors_window_does_not_block_another() -> None:
@@ -188,7 +190,8 @@ def test_anthropic_uses_the_tighter_token_bucket() -> None:
         operation=lambda note: None,
     )
 
-    assert slept == [4.0]
+    assert sum(slept) == 4.0
+    assert all(0 < delay <= 1.0 for delay in slept)
 
 
 def test_rate_limit_without_retry_after_is_not_retried() -> None:

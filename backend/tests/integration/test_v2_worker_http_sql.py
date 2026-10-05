@@ -7,7 +7,7 @@ import uuid
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.v2_http import analyse, queue_role, sql_app
+from tests.support.v2_http import analyse, sql_app
 
 from career_assistant.adapters.persistence.models import AnalysisJobRow
 from career_assistant.api.deps import WORKSPACE_COOKIE

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 
-from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.call_gate import (
     HostedCallGate,
     RateLimitNote,
     estimate_tokens,
     run_hosted,
 )
+from career_assistant.adapters.providers.execution import execution_profile
 from career_assistant.adapters.providers.http_transport import HttpTransport
 from career_assistant.adapters.providers.openai.errors import classify_openai_response
 from career_assistant.adapters.providers.resilience import ResiliencePolicy

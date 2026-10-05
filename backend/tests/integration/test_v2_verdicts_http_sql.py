@@ -7,7 +7,7 @@ from collections import Counter
 
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.v2_http import SqlApp, analyse, sql_app
+from tests.support.v2_http import SqlApp, analyse, queue_role, sql_app
 
 pytestmark = pytest.mark.integration
 

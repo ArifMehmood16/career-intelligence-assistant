@@ -7,7 +7,7 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
 # Ensure `src` is importable when alembic runs from backend/.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -58,6 +58,10 @@ def run_migrations_online() -> None:
             compare_type=True,
         )
         with context.begin_transaction():
+            # pgvector remains in extensions across downgrade/base cycles.
+            # Keep Alembic's version table in public while resolving VECTOR in
+            # historical migrations and the retirement downgrade.
+            connection.execute(text("SET LOCAL search_path TO public, extensions"))
             context.run_migrations()
 
 
