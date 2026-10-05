@@ -29,6 +29,31 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 166 — Stop expired analyses during normal operation
+
+- Date: 2026-10-05
+- Tool / model: Codex; one agent, no delegation
+- Plan task: 19.3, specs/006-running-analysis-expiry/
+- Prompt intent: diagnose a 20-minute spinner at zero judged requirements; fix
+  the behavior, commit and keep branches/worktrees understandable.
+- Outcome: accepted runtime use of the existing running timeout, locked terminal
+  failure guards, cancellation checks before retries and batch progress guidance.
+  Metadata showed startup-only expiry; a subsequent human analysis succeeded.
+  The original provider hang cause remains unproven. Changing the selected model,
+  fabricating progress and resending personal documents were rejected.
+- Validation observed: behavioral red tests for blocked expiry, late terminal
+  failures, cancelled retries and UI guidance/animation; focused checks green.
+  make lint passed; make test passed (810 backend, 172 frontend; 3 existing skips);
+  all 141 disposable PostgreSQL integration tests passed. Changed-module Bandit
+  and diff whitespace checks passed; Sonar scanner unavailable. Coverage gate
+  unchanged. No personal database writes or paid model development calls.
+- Human-owned decisions: requested stalled-analysis repair and Git consolidation;
+  separately requested requirement filters and refreshed architecture/screenshots.
+  Those UI/documentation follow-ups receive their own scoped change record.
+- Delivery: f6003c7 and a39e583 are green commits in an isolated worktree; move the
+  tested branch to the normal checkout and remove only preserved/redundant refs.
+  No broader Phase 19 acceptance or measured model-quality claim is made.
+
 ### 165 — Repair PR #43 verification and persistence regressions
 
 - Date: 2026-10-05

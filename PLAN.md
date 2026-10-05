@@ -59,6 +59,15 @@ release work below. Documentation follow-ups receive their own updated-head CI. 
 PostgreSQL regression and migration-cycle checks pass; successful checks only
 close the bounded acceptance they actually exercise.
 
+PR #43 is merged at `8333b39`. The human-requested
+[running-analysis expiry repair](specs/006-running-analysis-expiry/spec.md)
+addresses the 20-minute spinner: the existing 15-minute timeout was enforced only
+at startup. Runtime sweeps now fail expired jobs, preserve terminal outcomes and
+stop subsequent retries; the UI explains batch completion and stops failed-task
+animation. Local lint, 810 backend and 172 frontend tests, and all 141 disposable
+PostgreSQL integration tests pass. The original provider wait remains unexplained;
+this repair does not establish model quality or measured release latency.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer
@@ -110,6 +119,11 @@ Exit: contract tests cover one-call documents, large output budgets, batched rep
 cache reuse and native embeddings; no hosted content leaves through a new path.
 
 ## 19.3 — bounded concurrency and useful progress
+
+- [x] Enforce the existing running-job expiry during operation; preserve terminal
+      state against late provider failures/responses, stop subsequent retries and
+      explain batch-completion counts. Synthetic blocked-call, publication-race,
+      cancellation and component regressions pass, with full local checks.
 
 - [ ] Overlap independent document reads and judge batches with bounded threads;
       preserve call-accounting/cancellation context across threads. Dependencies,

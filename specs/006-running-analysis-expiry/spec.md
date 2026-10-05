@@ -29,8 +29,8 @@ Completed/queued states do not show the running-batch explanation.
 ## Requirements
 
 - FR-001: Recover expired running jobs during normal operation, reusing the
-  existing running timeout and safe `stale_running` code; sweep at most five
-  seconds apart while the worker loop and database are available.
+  existing running timeout and safe `stale_running` code; recover on the next
+  five-second sweep plus the worker polling delay while worker/database are available.
 - FR-002: Lock and re-read current job state before expiry/failure persistence;
   terminal outcomes and deleted jobs must survive late worker failures.
 - FR-003: Existing cancellation checks must discard late successful results and

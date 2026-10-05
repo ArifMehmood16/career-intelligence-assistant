@@ -13,6 +13,12 @@ evidence-deletion invalidation, citation history and repeatable migrations.
 The workflow now checks synchronized and reopened heads. [CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
 passed lint/hermetic, PostgreSQL 16 and Supabase 17 on code head `5b8a585`.
 
+PR #43 is merged at `8333b39`. The subsequent human-reported endless spinner is
+addressed by the bounded [runtime expiry repair](specs/006-running-analysis-expiry/spec.md)
+under 19.3: existing timeout enforcement, terminal-state preservation, retry
+cancellation and honest batch guidance. Full local lint/hermetic checks and all
+141 disposable SQL integration tests pass; broader acceptance remains open.
+
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded
 [19.4 benchmark implementation](specs/001-synthetic-analysis-benchmark/spec.md)

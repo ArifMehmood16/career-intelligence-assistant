@@ -15,6 +15,9 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > evidence-deletion invalidation, citation history and repeated migrations. Local
 > lint, hermetic and disposable PostgreSQL checks pass. [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
 > passed lint/hermetic, PostgreSQL 16 and Supabase 17 on code head `5b8a585`.
+> PR #43 is merged. The subsequent stalled-analysis repair enforces the existing
+> 15-minute running limit during operation and explains batched judgment counts;
+> local lint, hermetic and disposable PostgreSQL regressions pass.
 > Current model quality and end-to-end latency still need the release checks in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 

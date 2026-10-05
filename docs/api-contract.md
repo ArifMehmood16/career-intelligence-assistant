@@ -220,6 +220,9 @@ TaskKey = "prepare" | "read_advert" | "read_cv"
 The frontend polls this with react-query while `state` is `queued` or `running`, at a
 fixed interval, and stops on a terminal state. A failed job leaves the role at
 `status: "failed"` with the reason, and `POST /reanalyse` is the retry.
+The worker checks the existing 15-minute running limit during operation, roughly
+every five seconds. Expiry returns `failed` with `stale_running`; no restart is
+required. A failed reanalysis retains the existing last-valid-publication policy.
 
 **Progress.** The worker writes a row per task as it moves (keys, counts and
 timestamps, never document text). `remainingSeconds` is arithmetic, not a model
@@ -232,12 +235,17 @@ stopped in as `failed`. A queued job lists the current plan, all `pending`.
 Parallel read time uses the maximum while reads overlap, otherwise their sum.
 Remaining API counts include physical retry attempts and omit cached/skipped work.
 Unknown downstream work is labelled "at least"; a complete plan is still an estimate.
+Judge/recheck units update on batch completion, so zero handled requirements can
+remain visible while an entire batch is pending. The UI explains this and shows
+the failed task as stopped rather than animating a saved running state.
 
 **Cancellation.** Deleting a role, or the CV, stops its running analysis. Every
 provider call and every progress write first checks the job, so no model call starts
 after the delete. A call already in flight finishes or times out, and its result is
 discarded. A deleted role's job disappears (`404`); a deleted CV leaves the job
 `failed` with `cv_deleted`.
+Running expiry uses the same cooperative cancellation path. Every physical retry
+checks job liveness; terminal outcomes survive late provider failures or responses.
 
 **Incomplete analysis (13D.6a).** An extraction or assessment that does not
 validate is a failed job, not a fit score. The decision uses the existing
