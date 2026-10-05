@@ -75,12 +75,13 @@ function TaskGlyph({ state }: { state: AnalysisTaskState }) {
   }
 }
 
-function TaskRow({ task }: { task: AnalysisTask }) {
+function TaskRow({ task, failed }: { task: AnalysisTask; failed: boolean }) {
+  const state = failed && task.state === "running" ? "failed" : task.state;
   const units = unitsLine(task.key, task.unitsDone, task.unitsTotal);
-  const shown = task.state === "skipped" || task.state === "failed";
+  const shown = state === "skipped" || state === "failed";
   return (
     <li className="flex items-center gap-2">
-      <TaskGlyph state={task.state} />
+      <TaskGlyph state={state} />
       <span className={task.state === "pending" ? "text-muted-foreground" : ""}>
         {taskLabel(task.key)}
       </span>
@@ -88,7 +89,7 @@ function TaskRow({ task }: { task: AnalysisTask }) {
         <span className="text-muted-foreground tabular-nums">{units}</span>
       ) : null}
       <span className={shown ? "text-muted-foreground" : "sr-only"}>
-        {shown ? STATE_WORDS[task.state] : `, ${STATE_WORDS[task.state]}`}
+        {shown ? STATE_WORDS[state] : `, ${STATE_WORDS[state]}`}
       </span>
     </li>
   );
@@ -117,7 +118,7 @@ export function AnalysisProgress({
     job.state === "queued"
       ? queueLine(progress.queuePosition ?? 0)
       : tasksDoneLine(progress);
-  const current = currentTaskLine(progress);
+  const current = ticking ? currentTaskLine(progress) : null;
   const calls = callsLine(progress);
   const showTime = ticking;
 
@@ -163,6 +164,13 @@ export function AnalysisProgress({
       {current ? (
         <p className="text-sm text-muted-foreground">{current}</p>
       ) : null}
+      {job.state === "running" &&
+      (progress.currentTask === "judge" ||
+        progress.currentTask === "recheck") ? (
+        <p className="text-xs text-muted-foreground">
+          Requirement counts update when a batch finishes.
+        </p>
+      ) : null}
       {showTime && calls ? (
         <p className="text-sm text-muted-foreground tabular-nums">{calls}</p>
       ) : null}
@@ -175,7 +183,11 @@ export function AnalysisProgress({
       {variant === "full" ? (
         <ol aria-label="Analysis tasks" className="space-y-1 pt-1 text-sm">
           {progress.tasks.map((task) => (
-            <TaskRow key={task.key} task={task} />
+            <TaskRow
+              key={task.key}
+              task={task}
+              failed={job.state === "failed"}
+            />
           ))}
         </ol>
       ) : null}
