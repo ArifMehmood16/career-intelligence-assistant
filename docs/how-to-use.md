@@ -12,11 +12,18 @@
    your recent analyses, so the first one shows "Estimating time left…" until it
    has something to go on. An analysis the model could not complete shows
    **Analysis incomplete** with a retry, never a fake low score.
+   Judgment counts update when a batch finishes, so they can stay at zero while
+   a whole batch is pending. The existing 15-minute running limit is enforced
+   during operation; an expired job fails visibly without restarting the API.
    Deleting the role, or the CV, stops its analysis: no further model call is made,
    although one already in flight finishes first.
 4. **Open the role** and work the tabs:
    - **Fit** — summary, score breakdown, and every scoreable requirement as met /
-     partial / missing with cited evidence. For a role analysed on pipeline v2, Fit
+     partial / missing with cited evidence. Use **Match status** and
+     **Requirement score** together to focus the list; **Clear filters** restores
+     every requirement. The count shows how many are visible. Filtering preserves
+     the overall fit and evidence. Requirement scores are the stored domain values
+     shown as whole percentages; **Not scored** stays separate from zero. Fit
      shows each requirement's match, seniority and experience scores (0–4, with the
      words the judge was given and its reason), the quotes behind them, keyword
      coverage with terms found only under another name flagged, and a retrieval trace
@@ -39,19 +46,31 @@
 
 ## Screenshots
 
-Captured from the running app by the maintainer (not mocks).
+Refreshed 2026-10-05 from the current app's `/dev/states` component gallery.
+These are rendered synthetic examples of the shipped components, not personal
+documents or measured model outputs. Gallery actions use local fixtures;
+provider availability and scores illustrate UI states rather than this machine's
+configuration. Capture details: [images/README.md](images/README.md).
 
-![Workspace with CV, roles and ranking](images/workspace.jpg)
+![Current workspace roles table with synthetic roles](images/workspace.jpg)
 
-*Workspace — upload a CV and supporting letters, add roles, see fit ranking.*
+*Workspace — completed roles, fit scores and requirement counts.*
 
 ![Settings provider choice](images/settings.jpg)
 
-*Settings — choose the answer and index providers behind the egress gate.*
+*Settings — example answer/index provider choices and availability reasons.*
 
 ![Fit tab with score breakdown and requirements](images/fit.jpg)
 
-*Fit — score breakdown plus every scoreable requirement as missing, partial or met with evidence.*
+*Fit — overall fit, keyword coverage, requirement scores and status/score filters.*
+
+![Requirements filtered to missing with low scores](images/fit-filters.jpg)
+
+*Requirements — Missing combined with 0–24%, without changing overall fit.*
+
+![Current batch analysis progress with synthetic timing](images/analysis-progress.jpg)
+
+*Progress — batches update their counts on completion; timing here is a fixed fixture.*
 
 ![Gaps tab ordered by score impact](images/gaps.jpg)
 
@@ -59,7 +78,7 @@ Captured from the running app by the maintainer (not mocks).
 
 ![Prepare tab interview pack](images/prepare.jpg)
 
-*Prepare — interview probes grounded in met, partial and missing mappings.*
+*Prepare — interview probes and evidence drawn from the published analysis.*
 
 The **Letter** tab generates a grounded cover letter. After generate, citations show
 as `[1]`, `[2]` with the full source passage in the Citations panel on the right.

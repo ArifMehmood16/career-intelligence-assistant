@@ -29,6 +29,37 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 167 — Requirement filters and current architecture documentation
+
+- Date: 2026-10-05
+- Tool / model: Codex; one agent, no delegation
+- Plan task: bounded 19.1 follow-up, specs/007-requirement-filters-docs/
+- Prompt intent: filter requirements by score and missing/met, refresh README,
+  screenshots and technical diagrams, commit/push and simplify branches.
+- Outcome: accepted local combined status/domain-percentage filters, four score
+  ranges and a separate unscored choice, shown counts and clear/reset. Existing
+  overall fit, evidence, order and retrieval actions are preserved. A new
+  publication resets filters. The default score interpretation is the stored
+  requirement percentage, rather than the separate 0–4 match dimension.
+- Validation observed: expected red tests lacked filter controls; 25 focused
+  frontend tests passed after implementation, including range boundaries, zero
+  versus null, combined/empty/clear and publication reset. make lint and make test
+  passed (810 backend, 180 frontend; 3 existing skips; 84.65% backend coverage).
+  Initial streaming tests hit sandbox socket restrictions; permitted local
+  sockets restored the full green gate without test changes. The runtime repair's
+  141 disposable SQL tests remain passing; no additional SQL code changed here.
+- Browser: synthetic gallery interactions verified missing/low, met/high, empty
+  and clear states. Seven JPEGs were captured and visually checked. System,
+  pipeline and job-lifecycle diagrams were reconciled with inspected source;
+  screenshot provenance explicitly excludes personal data and measurements.
+- Delivery: filter commit 2b15940 is pushed. Runtime/filter work is in the normal
+  checkout on fix/phase-19-analysis-usability; synced main is the only other local
+  branch. The temporary worktree and redundant branches were removed only after
+  preserving their commits. Human requested publication; review PR/CI follows.
+- Review limits: branch diff and whitespace reviewed; Sonar scanner unavailable.
+  No new dependencies, public API/scoring changes, personal database writes or
+  paid provider calls. Full browser/security/quality/latency gates remain open.
+
 ### 166 — Stop expired analyses during normal operation
 
 - Date: 2026-10-05

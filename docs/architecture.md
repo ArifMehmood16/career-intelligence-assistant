@@ -1,6 +1,6 @@
 # Architecture — one evidence-bound analysis
 
-Current direction, 2026-10-02. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
+Current behavior, 2026-10-05. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
 and [PLAN 19](../PLAN.md). The retired span-classification/assessment pipeline is
 implementation history, not an alternate runtime or a release dependency.
 
@@ -8,18 +8,25 @@ implementation history, not an alternate runtime or a release dependency.
 
 ```mermaid
 flowchart TD
-  upload[PDF or DOCX upload] --> cpu[Bounded spawned parsing workers]
-  text[Plain text] --> stored[Stored original text]
-  cpu --> stored
-  stored --> cv[Read CV: chunks, details, technology relations]
-  stored --> jd[Read advert: chunks, requirements, technology relations]
-  cv --> index[Graph and batched CV embeddings]
-  jd --> search[One batched query embedding wave and hybrid retrieval]
-  index --> search
-  search --> judge[Capacity-sized judge batches]
-  judge --> correction[Optional one bounded corrective search/judge wave]
-  correction --> score[Validate quotations and compute domain score]
-  score --> views[Fit, gaps, ranking, preparation, drafts, Ask and MCP]
+  binary["Text PDF / DOCX"] --> cpu["Bounded spawned parsing"]
+  plain["Plain text"] --> documents[("Stored originals and parsed text")]
+  cpu --> documents
+  documents --> prepare["Prepare: SQL job and current document versions"]
+  prepare --> cv["Read CV: chunks, facts and technology relations"]
+  prepare --> jd["Read advert: chunks and atomic requirements"]
+  cv --> cvcheck["Verify line coverage and verbatim fields"]
+  jd --> jdcheck["Verify line coverage and verbatim fields"]
+  cvcheck --> index[("Chunks, batched vectors and full-text/graph indexes")]
+  jdcheck --> index
+  index --> search["Batch query embeddings; hybrid CV evidence search"]
+  search --> judge["Capacity-sized judge batches; bounded threads"]
+  judge --> verify["Verify anchors and evidence against retrieved stored chunks"]
+  verify --> correction["Recheck thin evidence: bounded corrective search/judge"]
+  correction --> score["Domain arithmetic: fit, band and gap priorities"]
+  score --> complete{"Complete and current?"}
+  complete -->|yes: locked publication| publication[("One validated analysis publication")]
+  complete -->|no| failed["Failed analysis; no new score or ranking"]
+  publication --> views["Fit / Gaps / ranking / Prepare / Letter / Ask / MCP"]
 ```
 
 Independent reads overlap up to the selected execution profile. Independent judge
@@ -46,8 +53,11 @@ shared draft/citation view types do not introduce another matching/scoring path.
   client or configured API key is passed as a task argument. Plain text stays
   inline. Admission checks precede dispatch; process timeout/shutdown terminates
   workers. Upload routes perform blocking work outside the HTTP event loop.
-- PostgreSQL owns queued jobs and results. Work runs in a bounded in-process job
-  executor. This is a local, single-user monolith rather than a distributed queue.
+- PostgreSQL owns queued jobs, progress and results. HTTP enqueues and returns
+  `202`; the bounded in-process executor claims jobs and publishes atomically.
+  The existing 15-minute total running limit is checked at startup and roughly
+  every five seconds during operation, including while provider calls are pending.
+  This remains a single-user process with SQL-backed jobs, not a distributed queue.
 - A per-document lock prevents concurrent roles indexing the same CV twice inside
   one process. Idle locks are weak references. Multi-process API deployment requires
   a database/advisory lock before it can claim the same deduplication guarantee.
@@ -81,10 +91,45 @@ calls; the UI labels remaining calls and time as estimates. Time uses current pa
 and recent measured stage durations; overlapping reads use the longest remaining
 read while they run together. Without history the estimate stays unknown.
 
-Structured output has bounded validation repair and truncation fallback. Cancelled
-or deleted jobs cannot publish results. Citations resolve server-created spans
+Judge/recheck requirement counts advance when a batch finishes, rather than while
+individual judgments are still pending. The Fit list filters status and the stored
+requirement score locally; overall fit, evidence and published ranking stay intact.
+
+Structured output has bounded validation repair and truncation fallback. Expired,
+cancelled or deleted jobs cannot publish results. Every physical retry checks
+job liveness; failure recording locks and preserves terminal state. Cancellation is
+cooperative: a synchronous HTTP call already sent may retain its worker thread
+until it finishes or its transport times out. Citations resolve server-created spans
 backed by stored chunks. Provenance records provider/model and whether content
 left the machine; operational accounting holds identifiers/counts, never content.
+
+## Job lifecycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> Queued: HTTP accepts the role
+  Queued --> Running: Worker claims the SQL job
+  Running --> Succeeded: Complete, validated, current publication
+  Running --> Failed: Incomplete, provider failure, CV deletion or expiry
+  Queued --> Failed: CV deleted before dispatch
+  Succeeded --> [*]
+  Failed --> [*]
+  note right of Running
+    Bounded threads; short database transactions
+    Progress and physical attempts persisted
+    Existing total running limit: 15 minutes
+  end note
+  note right of Failed
+    Active task stops; no incomplete score
+    Late results and retries cannot revive the job
+    A prior valid publication can remain visible
+  end note
+```
+
+Hard-deleting a role removes its job rows altogether; this is removal, not another
+persisted job state. The read-only job endpoint can return HTTP 200 for a failed job:
+clients inspect state/error and stop polling terminal outcomes. See the
+[API contract](api-contract.md) and [local operations](running-locally.md).
 
 ## Storage and scope
 
@@ -95,7 +140,10 @@ old requirements/claims/mappings/embedding storage and obsolete analysis results
 original documents remain available for current reanalysis.
 
 REST/SSE, the job worker and read-only stdio MCP are entry points into the same
-application services. Hosted calls still require enabled egress and configured keys.
-MCP remains off by default and its client decides where returned text goes. There
-is no authentication/multi-tenancy; deployments remain private and single-user.
+application services. API/worker model calls use separate provider adapters. Local
+Ollama remains local; hosted calls require enabled egress and configured keys. The
+MCP server reads shared SQL-backed workspace tools and does not choose a model
+provider. MCP remains off by default and its client decides where returned text
+goes. There is no authentication/multi-tenancy; deployments remain private and
+single-user.
 Quality and latency are measured only in [evaluation.md](evaluation.md).

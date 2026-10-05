@@ -51,6 +51,12 @@ stored role/date facts with overlapping experience deduplicated. Named-tool skil
 may support an appropriately narrow tool requirement; listed skills cannot prove
 stated delivery depth, leadership or tenure.
 
+The Requirements section filters by Met/Partial/Missing and the stored requirement
+score together. Scores are displayed as whole percentages with four ranges and a
+separate Not scored choice. The shown/total count and Clear filters make the subset
+explicit. Filtering preserves the publication's overall fit, ordering, evidence
+and retrieval actions; a new analysis resets list filters.
+
 Domain scoring applies configured must-have weights, dimension bonuses, recency and
 band/gate rules from `config/scoring_rubric.toml`. The model never supplies the fit
 score. Incomplete analyses publish no score/band/ranking position. Keyword coverage

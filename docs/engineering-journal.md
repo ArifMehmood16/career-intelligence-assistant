@@ -18,6 +18,36 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Requirement filters and documentation refresh
+
+- Date: 2026-10-05
+- Commands run: Spec Kit scope/design/task analysis; focused red/green Vitest;
+  frontend lint/typecheck; make lint; make test; Browser synthetic gallery
+  interactions and screenshots; git diff origin/main...HEAD; git diff --check;
+  git branch/worktree inspection, explicit commits and push.
+- Observed result: red tests lacked the new controls. All 25 focused tests and
+  full lint/typechecks passed. Full tests passed: 810 backend, 180 frontend,
+  3 existing skips, 84.65% backend coverage. The first streaming fixture run
+  could not bind under the sandbox; local socket permission made the full gate
+  pass without modifying tests. Existing runtime repair verification covers
+  all 141 disposable PostgreSQL integration cases; SQL code did not change again.
+- Browser evidence: Missing with 0–24% showed one requirement; Met with 75–100%
+  showed one; Met with 0–24% showed the distinct empty message; Clear filters
+  restored all three. Seven current synthetic JPEGs were visually inspected.
+  README system architecture and detailed pipeline/job-lifecycle diagrams now
+  describe the SQL worker, spawned parsing, provider boundaries and publication.
+- Decisions: filter stored domain scores as displayed whole percentages; keep
+  null separate from zero and preserve overall fit, evidence and order. Reuse
+  existing controls/tokens without a new dependency or API. Document fixture
+  provenance explicitly; screenshots are not model-quality measurements.
+- Delivery: 2b15940 contains filters and tests. The normal checkout is on pushed
+  fix/phase-19-analysis-usability; only main and this active branch remain locally.
+  Temporary worktree and redundant preserved branches were removed. Review PR
+  and current-head CI follow the human's publication request.
+- Review: complete source/test diff and whitespace inspected; Sonar scanner
+  unavailable. No personal data writes or paid provider calls. Broader synthetic
+  browser journeys, security/dependencies and measured release gates remain open.
+
 ## Phase 19.3 — Runtime expiry and batch progress
 
 - Date: 2026-10-05

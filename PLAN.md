@@ -68,6 +68,14 @@ animation. Local lint, 810 backend and 172 frontend tests, and all 141 disposabl
 PostgreSQL integration tests pass. The original provider wait remains unexplained;
 this repair does not establish model quality or measured release latency.
 
+The scoped [requirement filters and documentation](specs/007-requirement-filters-docs/spec.md)
+add combined status/domain-score filtering without changing the publication.
+Current system, pipeline and job-lifecycle diagrams reflect inspected code;
+screenshots are refreshed synthetic component-gallery captures. Browser filter
+interactions and component regressions pass. Work is consolidated in the normal
+checkout on `fix/phase-19-analysis-usability`; only that branch and synced `main`
+remain locally. Broader browser journeys and measured release gates stay open.
+
 ## Approved direction
 
 The human requested immediate v1 retirement, provider-specific execution, fewer
@@ -84,6 +92,9 @@ hosted development checks.
 
 ## 19.1 — retire the competing analysis
 
+- [x] Add combined requirement status/score filters with counts, clear/reset and
+      null-score handling; refresh current architecture diagrams and synthetic
+      screenshots. Component/browser checks preserve overall fit and evidence.
 - [ ] Delete the v1 extractors, span classifier, assessor/adjudicator, matching
       thresholds and production pipeline switch. Keep shared citation and draft
       value types only where current functionality consumes them.
