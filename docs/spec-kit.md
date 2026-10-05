@@ -78,7 +78,10 @@ Those steps create/review planning artifacts. They do not establish a measured
 performance result. When you are ready for implementation, use `$speckit-implement`
 and then `$speckit-converge`; restate any current limits on execution. `converge`
 may inspect/run verification, so do not invoke it as evidence of passing checks
-while validation is still deferred.
+while validation is still deferred. The human has since resumed lint, hermetic
+and integration checks for PR #43; its bounded record is
+[specs/005-pr43-ci-repair/](../specs/005-pr43-ci-repair/spec.md). Benchmark/browser
+and broader release verification remain separate work.
 
 `$speckit-constitution` is available for future governance amendments. The optional
 checklist skill reviews specification quality. Issue creation through

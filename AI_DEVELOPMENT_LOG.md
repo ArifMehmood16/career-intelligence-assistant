@@ -29,6 +29,40 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 165 — Repair PR #43 verification and persistence regressions
+
+- Date: 2026-10-05
+- Tool / model: Codex; one agent, no delegation
+- Plan task: 19.1–19.4 bounded CI repair, specs/005-pr43-ci-repair/
+- Prompt intent: inspect PR #43's failed lint/hermetic, PostgreSQL and Supabase
+  jobs, fix their causes and update the existing PR.
+- Outcome: accepted current-pipeline fixture/import repairs and formatting;
+  preserved active API contracts while removing obsolete v1 expectations.
+  Deterministic provider fixtures now expose named terms and undated experience.
+  Production responses are discarded after cancellation; evidence deletion
+  invalidates cached scores/drafts; history resolves labels from surviving spans;
+  online migrations resolve pgvector in extensions across downgrade/base cycles.
+- Changed: cancellation assertions measure dispatch after deletion, allowing
+  already-started parallel document calls. Restoring retired production helpers,
+  weakening the coverage gate, adding skips and using personal data were rejected.
+- Validation observed: failed creation run 37037340374 and local red regressions;
+  make lint passed, make test passed (809 backend, 169 frontend, 3 existing backend
+  skips; coverage above the unchanged 80% gate), all 135 integration tests passed
+  on a disposable UTF-8 PostgreSQL 17/pgvector cluster. The first updated run
+  37292814674 passed PostgreSQL 16 and lint/typechecks, then exposed managed float
+  precision and RLS role permissions; hermetic documentation changes were missing
+  from that push. Reduced precision was reproduced locally and repaired without
+  relaxing assertions; the RLS probe now grants SET and confirms its identity.
+  Documentation contracts are committed. [Run 37293311548](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
+  passed lint/hermetic and both database image jobs on `5b8a585`.
+  No paid provider calls or personal database writes. Spec Kit documents scope;
+  planning alone is not verification. Broader release/security gates stay open.
+- Delivery: repairs 65c7ca6, documentation contracts 89b1493 and managed-server
+  repair 5b8a585 pushed to existing draft PR #43. The workflow now
+  handles synchronized/reopened review heads. PR title/body updated to the final
+  repair scope; human review/merge remains outstanding. Documentation status is
+  recorded after observed CI success; its final head will be checked again.
+
 ### 164 — Reconcile and publish the Phase 18/19 delivery
 
 - Date: 2026-10-02
