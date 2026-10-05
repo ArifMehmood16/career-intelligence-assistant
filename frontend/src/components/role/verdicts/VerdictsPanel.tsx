@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { RoleVerdicts } from "@/types";
 
 import { KeywordCoveragePanel } from "./KeywordCoveragePanel";
-import { VerdictCard } from "./VerdictCard";
+import { RequirementsPanel } from "./RequirementsPanel";
 import { bandLabel } from "./verdict-copy";
 
 export type VerdictsState = "loading" | "error" | "incomplete" | "ready";
@@ -83,24 +83,11 @@ export function VerdictsPanel({
 
       <KeywordCoveragePanel coverage={verdicts.keywordCoverage} />
 
-      <section aria-labelledby="verdicts-heading" className="space-y-3">
-        <h2 id="verdicts-heading" className="text-base font-medium">
-          Requirements
-        </h2>
-        {verdicts.verdicts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No requirements were found in this job description.
-          </p>
-        ) : (
-          verdicts.verdicts.map((verdict) => (
-            <VerdictCard
-              key={verdict.requirementId}
-              verdict={verdict}
-              onShowTrace={onShowTrace}
-            />
-          ))
-        )}
-      </section>
+      <RequirementsPanel
+        key={verdicts.analysisId}
+        verdicts={verdicts.verdicts}
+        onShowTrace={onShowTrace}
+      />
     </div>
   );
 }

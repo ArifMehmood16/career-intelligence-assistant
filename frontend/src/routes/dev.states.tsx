@@ -8,6 +8,7 @@ import { BulletDraftPanel } from "@/components/role/BulletDraftPanel";
 import { AnalysisProgress } from "@/components/role/AnalysisProgress";
 import { VerdictGapsPanel } from "@/components/role/verdicts/VerdictGapsPanel";
 import { VerdictsPanel } from "@/components/role/verdicts/VerdictsPanel";
+import { RequirementsPanel } from "@/components/role/verdicts/RequirementsPanel";
 import { LetterPanel } from "@/components/role/LetterPanel";
 import { PreparePanel } from "@/components/role/PreparePanel";
 import { RoleDetailTabs } from "@/components/role/RoleDetailTabs";
@@ -161,6 +162,32 @@ const sampleVerdicts: RoleVerdicts = {
       model: "qwen2.5:7b",
     },
     {
+      requirementId: "req-postgresql",
+      quote: "Production PostgreSQL experience",
+      statement: "Operates PostgreSQL databases in production.",
+      mustHave: false,
+      verdict: "met",
+      requirementScore: 1,
+      match: {
+        score: 4,
+        rationale: "Owned the production warehouse and improved reliability.",
+      },
+      seniority: null,
+      experience: null,
+      unmetConditions: [],
+      contradiction: false,
+      adjustments: [],
+      evidence: [
+        {
+          chunkId: "chunk-cv-5",
+          documentId: "cv-demo",
+          quote: "Owned the PostgreSQL warehouse and its production monitoring",
+        },
+      ],
+      provider: "ollama",
+      model: "qwen2.5:7b",
+    },
+    {
       requirementId: "req-kafka",
       quote: "Kafka or another event stream",
       statement: "Has worked with Kafka or another event stream.",
@@ -213,7 +240,7 @@ const analysingRole: Role = {
 
 const sampleCv: CvDocument = {
   id: "cv-demo",
-  filename: "a-mehmood-cv.pdf",
+  filename: "sample-candidate-cv.pdf",
   pageCount: 3,
   parsedAt: "2026-09-12T09:41:00.000Z",
 };
@@ -558,6 +585,8 @@ export const DEV_STATE_SECTION_TITLES = [
   "Analysis progress: first analysis, estimating",
   "Fit: verdicts and keyword coverage",
   "Fit: no finished analysis",
+  "Requirements: missing filter",
+  "Requirements: filters with no matches",
   "Gaps: verdicts",
   "Ask: the agent's tool steps",
   "Evidence panel: matched requirement",
@@ -797,6 +826,22 @@ export function DevStatesPage() {
           verdicts={null}
           onRetry={noop}
           onShowTrace={noop}
+        />
+      </Section>
+
+      <Section title="Requirements: missing filter">
+        <RequirementsPanel
+          verdicts={sampleVerdicts.verdicts}
+          onShowTrace={noop}
+          initialFilters={{ status: "missing", score: "all" }}
+        />
+      </Section>
+
+      <Section title="Requirements: filters with no matches">
+        <RequirementsPanel
+          verdicts={sampleVerdicts.verdicts}
+          onShowTrace={noop}
+          initialFilters={{ status: "met", score: "0-24" }}
         />
       </Section>
 
