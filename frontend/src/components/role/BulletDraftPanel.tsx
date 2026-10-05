@@ -90,7 +90,10 @@ export function BulletDraftPanel({
 
           <ul className="space-y-4">
             {draft.bullets.map((bullet) => (
-              <li key={`${bullet.spanIds.join(":")}:${bullet.text}`} className="space-y-3">
+              <li
+                key={`${bullet.spanIds.join(":")}:${bullet.text}`}
+                className="space-y-3"
+              >
                 <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
                   {bullet.text}
                 </p>

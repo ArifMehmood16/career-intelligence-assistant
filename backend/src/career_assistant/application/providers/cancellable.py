@@ -64,7 +64,9 @@ class CancellableCompletion:
     def complete(self, request: CompletionRequest) -> CompletionResult:
         self._check()
         with cancellation_scope(self._check):
-            return self._inner.complete(request)
+            result = self._inner.complete(request)
+        self._check()
+        return result
 
 
 class CancellableStructured:
@@ -83,7 +85,9 @@ class CancellableStructured:
     ) -> StructuredResult[T]:
         self._check()
         with cancellation_scope(self._check):
-            return self._inner.complete_structured(request)
+            result = self._inner.complete_structured(request)
+        self._check()
+        return result
 
 
 class CancellableEmbedding:
@@ -98,4 +102,6 @@ class CancellableEmbedding:
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
         self._check()
         with cancellation_scope(self._check):
-            return self._inner.embed(request)
+            result = self._inner.embed(request)
+        self._check()
+        return result

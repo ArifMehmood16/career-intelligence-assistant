@@ -16,8 +16,10 @@ from types import TracebackType
 import pytest
 
 from career_assistant.adapters.persistence.analysis_worker import (
-    JobCancelled,
     SqlAnalysisWorker,
+)
+from career_assistant.adapters.persistence.job_guards import (
+    JobCancelled,
     require_documents,
     require_live_job,
 )
@@ -91,7 +93,7 @@ class _LoopWorker(SqlAnalysisWorker):
     def startup(self) -> StartupRecovery:
         return StartupRecovery(failed_job_ids=(), dispatched_job_ids=())
 
-    def process_next(self) -> AnalysisJob | None:
+    def claim_next(self) -> AnalysisJob | None:
         self.turns += 1
         if self.turns == 1:
             raise RuntimeError("foreign key violation")

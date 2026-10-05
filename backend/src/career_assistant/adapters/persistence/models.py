@@ -260,11 +260,14 @@ class AnalysisJobTaskRow(Base):
             name="units",
         ),
         CheckConstraint(
-            "model_calls_done >= 0 AND (model_calls_total IS NULL OR model_calls_done <= model_calls_total)",
+            "model_calls_done >= 0 AND "
+            "(model_calls_total IS NULL OR model_calls_done <= model_calls_total)",
             name="model_calls",
         ),
         CheckConstraint(
-            "embedding_calls_done >= 0 AND (embedding_calls_total IS NULL OR embedding_calls_done <= embedding_calls_total)",
+            "embedding_calls_done >= 0 AND "
+            "(embedding_calls_total IS NULL OR "
+            "embedding_calls_done <= embedding_calls_total)",
             name="embedding_calls",
         ),
     )

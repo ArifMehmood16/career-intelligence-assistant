@@ -273,6 +273,19 @@ class SqlDocumentRepository:
         if row is None:
             return
         if row.kind in _EVIDENCE_KINDS:
+            # Publications and drafts depended on the removed evidence, even if
+            # their quote rows cascade. Never serve the cached score afterwards.
+            for score in self._session.scalars(
+                select(ScoreExplanationRow).where(
+                    ScoreExplanationRow.workspace_id == row.workspace_id
+                )
+            ):
+                score.invalidated = True
+            self._session.execute(
+                delete(GeneratedDraftRow).where(
+                    GeneratedDraftRow.workspace_id == row.workspace_id
+                )
+            )
             # A v2 verdict's rationale may paraphrase any evidence document it read.
             # Chunks, vectors, graph rows, quotes and traces cascade in the
             # database; the verdicts go here and are recomputed on re-analysis.

@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 
-
 class ApiModel(BaseModel):
     """Shared base for every request/response schema exposed under ``/api``."""
 

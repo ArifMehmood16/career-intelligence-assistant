@@ -51,7 +51,7 @@ def test_a_completion_is_checked_before_each_call_and_stops_once_cancelled() -> 
         port.complete(_completion_request())
 
     assert len(inner.requests) == 1
-    assert switch.checks == 2
+    assert switch.checks == 3
     assert port.capabilities == inner.capabilities
 
 
@@ -84,3 +84,18 @@ def test_an_embedding_call_is_not_sent_once_cancelled() -> None:
     with pytest.raises(JobCancelled):
         port.embed(request)
     assert port.capabilities == inner.capabilities
+
+
+def test_a_response_is_discarded_if_the_job_is_cancelled_during_the_call() -> None:
+    switch = _Switch()
+
+    class CancellingCompletion(ScriptedCompletion):
+        def complete(self, request: CompletionRequest):
+            result = super().complete(request)
+            switch.cancelled = True
+            return result
+
+    inner = CancellingCompletion([Reply("late response")])
+    with pytest.raises(JobCancelled):
+        CancellableCompletion(inner, switch).complete(_completion_request())
+    assert len(inner.requests) == 1

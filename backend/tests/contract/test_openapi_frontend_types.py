@@ -29,7 +29,6 @@ _REQUIRED: dict[str, frozenset[str]] = {
         }
     ),
     "Requirement": frozenset({"id", "roleId", "text", "type", "status", "evidence"}),
-    "BreakdownRow": frozenset({"id", "label", "value", "requirementIds"}),
     "Citation": frozenset({"id", "label", "evidence"}),
     "ChatMessage": frozenset(
         {
@@ -181,7 +180,6 @@ _SHARED: dict[str, str] = {
     "Evidence": "EvidenceResponse",
     "Role": "RoleResponse",
     "Requirement": "RequirementWire",
-    "BreakdownRow": "BreakdownRowWire",
     "Citation": "CitationWire",
     "ChatMessage": "ChatMessageWire",
     "Provider": "ProviderResponse",
@@ -195,8 +193,6 @@ _SHARED: dict[str, str] = {
     "KeywordCoverage": "KeywordCoverageWire",
     "RetrievalTrace": "RetrievalTraceWire",
     "TraceHit": "TraceHitWire",
-    "GapPlan": "GapPlanWire",
-    "GapItem": "GapItemWire",
     "DraftProvenance": "DraftProvenanceWire",
     "BulletDraft": "BulletDraftWire",
     "CoverLetterDraft": "CoverLetterDraftWire",
@@ -241,6 +237,17 @@ def test_evidence_requires_span_id_on_both_sides() -> None:
     ts = _parse_ts_interfaces(_TS_TYPES.read_text(encoding="utf-8"))
     assert "spanId" in ts["Evidence"]
     assert "spanId" in _openapi_properties("EvidenceResponse")
+
+
+def test_the_supporting_breakdown_api_retains_its_contract() -> None:
+    assert {"id", "label", "value", "requirementIds"} <= _openapi_properties(
+        "BreakdownRowWire"
+    )
+
+
+def test_supporting_gap_api_models_retain_their_contracts() -> None:
+    for name in ("GapPlan", "GapItem"):
+        assert _REQUIRED[name] <= _openapi_properties(f"{name}Wire")
 
 
 def test_shared_models_agree_on_required_fields() -> None:

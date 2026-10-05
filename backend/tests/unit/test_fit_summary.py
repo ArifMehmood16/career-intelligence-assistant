@@ -87,7 +87,8 @@ def test_fit_summary_when_nothing_is_met() -> None:
     requirements = (_req("cuda", "CUDA kernel authoring", competency="cuda"),)
     mappings = mappings_fixture(requirements, ())
     summary = build_fit_summary(
-        requirements, mappings,
+        requirements,
+        mappings,
         explanation=published_scores(requirements, mappings)[0],
         gaps=published_scores(requirements, mappings)[1],
     )

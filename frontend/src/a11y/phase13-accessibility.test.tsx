@@ -64,7 +64,13 @@ describe("Phase 13.9 accessibility", () => {
               onShowTrace={onShowTrace}
             />
           }
-          gaps={<VerdictGapsPanel state="ready" verdicts={VERDICTS} onRetry={vi.fn()} />}
+          gaps={
+            <VerdictGapsPanel
+              state="ready"
+              verdicts={VERDICTS}
+              onRetry={vi.fn()}
+            />
+          }
           prepare={<p>Prepare</p>}
           letter={<p>Letter</p>}
         />
@@ -81,7 +87,9 @@ describe("Phase 13.9 accessibility", () => {
     await user.keyboard("{ArrowRight}");
     expect(within(tablist).getByRole("tab", { name: "Gaps" })).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: /show retrieval trace/i }));
+    await user.click(
+      screen.getByRole("button", { name: /show retrieval trace/i }),
+    );
     expect(onShowTrace).toHaveBeenCalledWith("r1");
   });
 

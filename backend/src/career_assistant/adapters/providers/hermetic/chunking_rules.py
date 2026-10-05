@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from career_assistant.adapters.providers.hermetic.terms import named_terms
 from career_assistant.application.chunking.sections import is_heading
 from career_assistant.domain.lines import NumberedLine
 from career_assistant.domain.recency import parse_date_range
@@ -123,8 +124,10 @@ def cv_chunks(user: str) -> dict[str, Any]:
             ("skills", "technologies")
         ):
             grouper.add(line, "skills", tech_terms=_terms(line.text))
-        elif mode == "experience" and role is not None:
+        elif mode == "experience":
             grouper.add(line, "experience", role_ref=role)
+        elif mode is None and named_terms(line.text):
+            grouper.add(line, "experience", tech_terms=named_terms(line.text))
         else:
             grouper.add(line, mode if mode in _CV_BODY_KINDS else "other")
     return {"chunks": grouper.chunks}
@@ -184,6 +187,10 @@ def job_chunks(user: str) -> dict[str, Any]:
         }:
             kind = "responsibility" if mode == "responsibility" else "requirement"
             grouper.add(line, kind, atomic_requirements=[_requirement(line.text, mode)])
+        elif mode is None and named_terms(line.text):
+            grouper.add(
+                line, "requirement", atomic_requirements=[_requirement(line.text, mode)]
+            )
         else:
             grouper.add(
                 line, mode if mode in {"benefit", "logistics", "about"} else "other"
@@ -201,5 +208,5 @@ def _requirement(text: str, mode: str | None) -> dict[str, Any]:
         "must_have": not optional,
         "years_expected": float(years.group(1)) if years else None,
         "seniority_expected": None,
-        "tech_terms": [],
+        "tech_terms": named_terms(text),
     }

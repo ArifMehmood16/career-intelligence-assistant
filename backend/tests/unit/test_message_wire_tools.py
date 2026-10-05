@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from career_assistant.api.routes_messages import (
@@ -52,4 +53,13 @@ def test_the_json_answer_lists_the_tool_steps() -> None:
 
 
 def test_history_has_no_tool_steps_because_they_are_not_stored() -> None:
-    assert _history_message_wire(_stored()).tool_steps == []
+    assert _history_message_wire(_stored(), {}).tool_steps == []
+
+
+def test_history_resolves_surviving_sources_and_falls_back_for_deleted_ones() -> None:
+    message = replace(_stored(), citations=("surviving", "deleted"))
+    wire = _history_message_wire(message, {"surviving": "Owned dbt models."})
+    assert [(citation.id, citation.label) for citation in wire.citations] == [
+        ("surviving", "Owned dbt models."),
+        ("deleted", "deleted"),
+    ]

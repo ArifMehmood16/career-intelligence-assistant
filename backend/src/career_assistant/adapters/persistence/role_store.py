@@ -449,7 +449,11 @@ class SqlRoleStore:
             fit_score=fit_score,
             band_label=band_label(band),
             counts=counts,
-            status=(RoleStatus.FAILED.value if result is None and record.status is RoleStatus.READY else record.status.value),
+            status=(
+                RoleStatus.FAILED.value
+                if result is None and record.status is RoleStatus.READY
+                else record.status.value
+            ),
             updated_at=created,
             description=description,
             active_job=_active_job(progress, record.id),

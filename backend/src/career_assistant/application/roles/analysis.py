@@ -88,7 +88,8 @@ def published_bundle(
             raise ValueError("published_evidence_missing")
         if any(
             evidence.document_id != by_id[evidence.chunk_id].document_id
-            or _collapse(evidence.quote) not in _collapse(by_id[evidence.chunk_id].chunk.text)
+            or _collapse(evidence.quote)
+            not in _collapse(by_id[evidence.chunk_id].chunk.text)
             for evidence in item.evidence
         ):
             raise ValueError("published_quote_missing")

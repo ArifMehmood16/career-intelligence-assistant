@@ -168,14 +168,15 @@ def test_an_unknown_requirement_is_not_found() -> None:
     assert response.json()["error"]["code"] == "requirement_not_found"
 
 
-def test_without_a_v2_store_there_are_no_verdicts() -> None:
+def test_the_default_fixture_store_exposes_current_verdicts() -> None:
     client, role_id = _client_with_role(published=False)
 
     verdicts = client.get(f"/api/roles/{role_id}/verdicts")
     trace = client.get(f"/api/roles/{role_id}/verdicts/{REQUIREMENT}/trace")
 
-    assert verdicts.status_code == 409
-    assert verdicts.json()["error"]["code"] == "analysis_incomplete"
+    assert verdicts.status_code == 200
+    assert verdicts.json()["verdicts"]
+    # This id belongs to the injected-reader fixture, not the actual publication.
     assert trace.status_code == 404
 
 

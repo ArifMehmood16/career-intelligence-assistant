@@ -65,6 +65,8 @@ def _fields(body: str) -> dict[str, str]:
 def _first_named(body: str, terms: list[str]) -> tuple[str, str] | None:
     for chunk_id, block in _CHUNK.findall(body):
         text = block.split(_TEXT_MARKER, 1)[-1]
+        if any(word in text.casefold() for word in ("course", "tutorial")):
+            continue
         for term in terms:
             quote = find_term(text, term)
             if quote is not None:

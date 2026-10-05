@@ -1,7 +1,7 @@
 """Deleting the role or the CV stops its analysis: no further provider call.
 
-The delete arrives while the first model call is in flight. That call finishes;
-nothing after it is sent, and nothing is written for the job.
+The delete arrives while document calls are in flight. Already-started calls may
+finish; nothing starts after deletion completes and no response is published.
 """
 
 from __future__ import annotations
@@ -10,9 +10,11 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Event, Lock
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 from pydantic import BaseModel, SecretStr
 from sqlalchemy.orm import Session, sessionmaker
 from tests.support.structured_transport import StructuredTransport
@@ -68,14 +70,14 @@ _JD = """Requirements
 - Must have production dbt experience
 """
 
-Delete = Callable[[TestClient, str], object]
+Delete = Callable[[TestClient, str], Response]
 
 
-def _delete_role(client: TestClient, role_id: str) -> object:
+def _delete_role(client: TestClient, role_id: str) -> Response:
     return client.delete(f"/api/roles/{role_id}")
 
 
-def _delete_cv(client: TestClient, role_id: str) -> object:
+def _delete_cv(client: TestClient, role_id: str) -> Response:
     return client.delete("/api/cv")
 
 
@@ -99,9 +101,12 @@ def _stopped(client: TestClient, delete: Delete, job_id: str, role_id: str) -> N
 class _DeletingTransport:
     """Scripted chat completions; the first one triggers the delete."""
 
-    on_first: Callable[[], object]
+    on_first: Callable[[], Response]
     inner: StructuredTransport = field(default_factory=StructuredTransport)
     completions: int = 0
+    after_delete: int = 0
+    deleted: Event = field(default_factory=Event)
+    lock: Lock = field(default_factory=Lock)
 
     def request(
         self,
@@ -113,9 +118,14 @@ class _DeletingTransport:
         timeout_seconds: float,
     ) -> HttpResponse:
         if "/chat/completions" in url:
-            self.completions += 1
-            if self.completions == 1:
-                self.on_first()
+            with self.lock:
+                self.completions += 1
+                self.after_delete += int(self.deleted.is_set())
+                first = self.completions == 1
+            if first:
+                response = self.on_first()
+                assert response.status_code == 204
+                self.deleted.set()
         return self.inner.request(
             method,
             url,
@@ -171,7 +181,10 @@ def test_hosted_analysis_makes_no_model_call_after_the_delete(
 
     worker.drain()
 
-    assert transport.completions == 1
+    # CV and JD may both have started before the deletion finishes.
+    assert 1 <= transport.completions <= 2
+    assert transport.deleted.is_set()
+    assert transport.after_delete == 0
     _stopped(client, delete, created["jobId"], ids["role"])
 
 
