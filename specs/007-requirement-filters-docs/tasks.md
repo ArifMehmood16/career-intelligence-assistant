@@ -12,7 +12,8 @@
 
 Delivery: PR #44 is merged at ad88781/attached; run 37301152754 passed all three
 jobs on 08ef56b. The human requested a new PR for the checkpoint docs pushed
-after the merge. This documentation receives its own PR-head CI. Broader release
+after the merge: PR #45 is open/attached. This documentation receives its own
+PR-head CI. Broader release
 acceptance remains in PLAN.md.
 
 Dependencies: T001 → T002 → T003 → T004 → T005 → T007; T006 independent of UI;

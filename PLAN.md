@@ -80,7 +80,8 @@ remain locally. Broader browser journeys and measured release gates stay open.
 is merged at `ad88781`. [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `08ef56b`.
 The merge preceded the final plan/log commit; the human requested another PR
-for that remaining documentation. It receives its own PR-head CI.
+for that remaining documentation. [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
+is open and receives its own PR-head CI.
 
 ## Approved direction
 

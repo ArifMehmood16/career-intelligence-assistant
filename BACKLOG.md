@@ -29,7 +29,8 @@ redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stay
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed all three jobs on `08ef56b`. The human requested another PR for the
-remaining plan/log checkpoint. Documentation-head CI remains enforced.
+remaining plan/log checkpoint: [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
+is open. Documentation-head CI remains enforced.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded
