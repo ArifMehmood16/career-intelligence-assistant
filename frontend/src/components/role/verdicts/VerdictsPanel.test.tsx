@@ -30,6 +30,156 @@ function panel(
   );
 }
 
+const BASE_VERDICT = VERDICTS.verdicts[0]!;
+const FILTER_VERDICTS: RoleVerdicts = {
+  ...VERDICTS,
+  verdicts: [
+    BASE_VERDICT,
+    {
+      ...BASE_VERDICT,
+      requirementId: "met",
+      statement: "Met requirement",
+      verdict: "met",
+      requirementScore: 1,
+    },
+    {
+      ...BASE_VERDICT,
+      requirementId: "missing",
+      statement: "Missing requirement",
+      verdict: "missing",
+      requirementScore: 0,
+    },
+    {
+      ...BASE_VERDICT,
+      requirementId: "unscored",
+      statement: "Unscored requirement",
+      requirementScore: null,
+    },
+  ],
+};
+
+describe("Requirement filters", () => {
+  it.each([
+    ["0-24", ["Score 0", "Score 24"]],
+    ["25-49", ["Score 25", "Score 49"]],
+    ["50-74", ["Score 50", "Score 74"]],
+    ["75-100", ["Score 75", "Score 100"]],
+  ])(
+    "filters %s using the displayed score boundaries",
+    async (range, names) => {
+      const scores = [0, 0.24, 0.245, 0.49, 0.5, 0.74, 0.75, 1];
+      panel({
+        verdicts: {
+          ...VERDICTS,
+          verdicts: scores.map((score) => ({
+            ...BASE_VERDICT,
+            requirementId: `score-${score}`,
+            statement: `Score ${Math.round(score * 100)}`,
+            requirementScore: score,
+          })),
+        },
+      });
+      await userEvent.selectOptions(
+        screen.getByRole("combobox", { name: "Requirement score" }),
+        range,
+      );
+      expect(
+        screen
+          .getAllByRole("article")
+          .map((card) => within(card).getByRole("heading").textContent),
+      ).toEqual(names);
+    },
+  );
+
+  it("combines status and score without changing fit or trace actions", async () => {
+    const onShowTrace = vi.fn();
+    panel({ verdicts: FILTER_VERDICTS, onShowTrace });
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Match status" }),
+      "partial",
+    );
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Requirement score" }),
+      "50-74",
+    );
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Showing 1 of 4 requirements",
+    );
+    expect(screen.getByText("71")).toBeInTheDocument();
+    expect(screen.getByText("Requirement score: 50%")).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Show retrieval trace" }),
+    );
+    expect(onShowTrace).toHaveBeenCalledWith("r1");
+  });
+
+  it("keeps zero scores distinct from unscored requirements", async () => {
+    panel({ verdicts: FILTER_VERDICTS });
+    const score = screen.getByRole("combobox", { name: "Requirement score" });
+    await userEvent.selectOptions(score, "0-24");
+    expect(screen.getByRole("article")).toHaveAccessibleName(
+      "Missing requirement",
+    );
+    expect(screen.getByText("Requirement score: 0%")).toBeInTheDocument();
+    await userEvent.selectOptions(score, "unscored");
+    expect(screen.getByRole("article")).toHaveAccessibleName(
+      "Unscored requirement",
+    );
+    expect(
+      screen.getByText("Requirement score: Not scored"),
+    ).toBeInTheDocument();
+  });
+
+  it("explains empty filter results and clears both filters", async () => {
+    panel({ verdicts: FILTER_VERDICTS });
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Match status" }),
+      "met",
+    );
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Requirement score" }),
+      "0-24",
+    );
+    expect(screen.queryByRole("article")).toBeNull();
+    expect(
+      screen.getByText("No requirements match these filters."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No requirements were found/)).toBeNull();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Clear filters" }),
+    );
+    expect(screen.getAllByRole("article")).toHaveLength(4);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Showing 4 of 4 requirements",
+    );
+  });
+
+  it("resets filters when a new analysis publication arrives", async () => {
+    const props = {
+      state: "ready" as const,
+      verdicts: FILTER_VERDICTS,
+      onRetry: vi.fn(),
+      onShowTrace: vi.fn(),
+    };
+    const { rerender } = render(<VerdictsPanel {...props} />);
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Match status" }),
+      "missing",
+    );
+    rerender(
+      <VerdictsPanel
+        {...props}
+        verdicts={{ ...FILTER_VERDICTS, analysisId: "new-analysis" }}
+      />,
+    );
+    expect(screen.getByRole("combobox", { name: "Match status" })).toHaveValue(
+      "all",
+    );
+    expect(screen.getAllByRole("article")).toHaveLength(4);
+  });
+});
+
 describe("VerdictsPanel states", () => {
   it("shows a skeleton while loading", () => {
     const { container } = panel({ state: "loading", verdicts: null });

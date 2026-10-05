@@ -1,6 +1,6 @@
 # Backlog
 
-Updated 2026-10-05 following the human's PR #43 CI repair request. Milestone acceptance
+Updated 2026-10-05 following CI, runtime, requirement-filter and documentation requests. Milestone acceptance
 criteria live in PLAN.md; linked feature specs elaborate only their scoped change.
 The old v1 release gate and v1 comparison are superseded; historical quality
 measurements remain in docs/evaluation.md.
@@ -12,6 +12,19 @@ cover current test contracts/fixtures, cancellation after provider responses,
 evidence-deletion invalidation, citation history and repeatable migrations.
 The workflow now checks synchronized and reopened heads. [CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
 passed lint/hermetic, PostgreSQL 16 and Supabase 17 on code head `5b8a585`.
+
+PR #43 is merged at `8333b39`. The subsequent human-reported endless spinner is
+addressed by the bounded [runtime expiry repair](specs/006-running-analysis-expiry/spec.md)
+under 19.3: existing timeout enforcement, terminal-state preservation, retry
+cancellation and honest batch guidance. Full local lint/hermetic checks and all
+141 disposable SQL integration tests pass; broader acceptance remains open.
+
+The bounded [requirement filters and documentation](specs/007-requirement-filters-docs/spec.md)
+under 19.1 are implemented: combined status/domain-score selection, shown counts,
+clear/reset and unscored handling preserve fit and evidence. Current architecture
+diagrams and synthetic screenshots are refreshed; component and browser checks
+pass. The normal checkout holds the pushed `fix/phase-19-analysis-usability` branch;
+redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stays open.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded

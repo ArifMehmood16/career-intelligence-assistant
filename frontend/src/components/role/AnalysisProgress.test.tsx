@@ -47,6 +47,52 @@ function job(overrides: Partial<AnalysisJob> = {}): AnalysisJob {
 }
 
 describe("AnalysisProgress", () => {
+  it.each(["judge", "recheck"] as const)(
+    "explains batch completion while %s has zero finished requirements",
+    (key) => {
+      render(
+        <AnalysisProgress
+          job={job({
+            progress: {
+              ...PROGRESS,
+              currentTask: key,
+              tasks: PROGRESS.tasks.map((task) =>
+                task.key === key
+                  ? { ...task, state: "running", unitsDone: 0, unitsTotal: 12 }
+                  : { ...task, state: "done" },
+              ),
+            },
+          })}
+          observedAt={0}
+          now={0}
+        />,
+      );
+      expect(
+        screen.getByText("Requirement counts update when a batch finishes."),
+      ).toBeInTheDocument();
+      expect(
+        screen.getAllByRole("listitem")[key === "judge" ? 4 : 5],
+      ).toHaveTextContent("0 of 12");
+    },
+  );
+
+  it("stops stale running task glyphs when the job has failed", () => {
+    const { container } = render(
+      <AnalysisProgress
+        job={job({ state: "failed" })}
+        observedAt={0}
+        now={0}
+      />,
+    );
+    expect(screen.getAllByRole("listitem")[4]).toHaveTextContent(
+      "Stopped here",
+    );
+    expect(container.querySelector(".motion-safe\\:animate-spin")).toBeNull();
+    expect(
+      screen.queryByText("Requirement counts update when a batch finishes."),
+    ).toBeNull();
+  });
+
   it("shows tasks done of total, the running task and both times", () => {
     render(<AnalysisProgress job={job()} observedAt={0} now={0} />);
 

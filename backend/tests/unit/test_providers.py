@@ -32,6 +32,7 @@ from career_assistant.application.ports.errors import (
 )
 from career_assistant.application.ports.types import CallRecord, CompletionRequest
 from career_assistant.application.providers.accounting import CallAccountant
+from career_assistant.application.providers.cancellable import cancellation_scope
 from career_assistant.application.providers.egress import HostedEgressPolicy
 from career_assistant.application.providers.fallback import (
     CompletingWithOptionalFallback,
@@ -140,6 +141,29 @@ def test_retry_only_on_transient_status() -> None:
     )
     assert policy.run(flaky) == "ok"
     assert calls["n"] == 2
+
+
+def test_retry_does_not_dispatch_after_the_analysis_is_cancelled() -> None:
+    attempts = 0
+    cancelled = False
+
+    def check() -> None:
+        if cancelled:
+            raise RuntimeError("analysis_cancelled")
+
+    def operation() -> str:
+        nonlocal attempts, cancelled
+        attempts += 1
+        cancelled = True
+        raise ProviderTransientError("scripted timeout")
+
+    policy = ResiliencePolicy(timeout_seconds=1, max_retries=2, sleep=lambda _: None)
+    with (
+        cancellation_scope(check),
+        pytest.raises(RuntimeError, match="analysis_cancelled"),
+    ):
+        policy.run(operation)
+    assert attempts == 1
 
 
 def test_breaker_opens_after_threshold() -> None:

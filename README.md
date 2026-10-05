@@ -6,31 +6,29 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-10-05):** one chunk/search/judge analysis with provider-specific
-> execution budgets, batched calls, bounded parallel work and visible call/time
-> estimates. The v1 analysis and selector are retired. OpenAI request-schema and
-> failure-diagnostic repairs are implemented; the frontend now accepts published
-> recency gaps in the detailed Fit/Gaps view. A completed analysis and live response
-> validation were observed. PR #43 repairs stale verification fixtures, cancellation,
-> evidence-deletion invalidation, citation history and repeated migrations. Local
-> lint, hermetic and disposable PostgreSQL checks pass. [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)
-> passed lint/hermetic, PostgreSQL 16 and Supabase 17 on code head `5b8a585`.
-> Current model quality and end-to-end latency still need the release checks in [PLAN.md](PLAN.md).
+> **Status (2026-10-05):** one chunk/search/judge analysis, PostgreSQL-backed jobs,
+> provider-specific batching and bounded parallel work. Server checks every cited
+> quote; domain code computes fit. Requirements can be filtered by status and score.
+> Expired running jobs fail visibly without a restart. PR #43 is merged; current
+> repair regressions pass local lint, hermetic and disposable PostgreSQL checks.
+> Model quality, browser journeys and release checks remain open in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
 measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).
 
-![Fit tab with score breakdown and requirements](docs/images/fit.jpg)
+![Current Fit view with score, requirement filters and evidence](docs/images/fit.jpg)
+
+*Synthetic example rendered from the current component gallery; [screenshots and usage](docs/how-to-use.md).*
 
 ## How it works
 
-A naive version of this product asks a model "how good is this candidate for this
-job?" and prints the answer. That is unverifiable and it flatters. This build keeps
-one rule instead: **every statement it makes about a candidate traces to text in a
-real document.** The model reads, classifies and judges; the server checks every
-quote and citation against the stored text; domain code computes the score. When the
-evidence is missing, the product says so rather than filling the gap.
+The CV and job description become server-numbered chunks. The job's requirements
+search the stored CV evidence; a model judges match, experience and seniority in
+capacity-sized batches. The server checks quoted evidence against stored text,
+then domain arithmetic computes requirement scores, overall fit and gap priorities.
+Incomplete work publishes no score. Fit, gaps, ranking, preparation, drafts and
+Ask read the same validated publication.
 
 - How it works: [docs/architecture.md](docs/architecture.md)
 
@@ -38,7 +36,7 @@ evidence is missing, the product says so rather than filling the gap.
 
 | Feature | What it gives you |
 |---|---|
-| **Fit analysis** | Every requirement as met, partial or missing, with match, experience and seniority judgments, quoted CV evidence, retrieval traces and a domain-computed score |
+| **Fit analysis** | Every requirement as met, partial or missing, with match, experience and seniority judgments, quoted CV evidence, retrieval traces and a domain-computed score; filter requirements by Met/Partial/Missing and score |
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |
@@ -56,44 +54,34 @@ One evidence-bound modular monolith with parallel I/O and separate CPU parsing.
 
 ```mermaid
 flowchart LR
-  candidate(["Candidate<br/>(browser)"])
-
-  subgraph machine ["The candidate's machine or private deployment"]
-    mcpc(["MCP client app<br/>Claude Desktop · Cursor"])
-    web["Web app<br/>TanStack Start + React 19"]
-    api["Career Intelligence API<br/>FastAPI · REST + SSE"]
-    mcp["MCP server<br/>stdio · read-only tools"]
-    worker["Analysis worker<br/>in-process job queue"]
-    gate{{"Egress gate"}}
-    ollama["Ollama<br/>local LLM + embeddings"]
+  candidate["Candidate browser"] --> web["TanStack Start / React 19"]
+  subgraph app["Private application: one modular monolith"]
+    web -->|same-origin /api proxy| api["FastAPI: REST and SSE"]
+    api -->|immutable upload bytes| parse["Bounded spawned PDF/DOCX parsing"]
+    parse -->|parsed result only| api
+    api -->|store uploads / enqueue / read| db[("PostgreSQL + pgvector<br/>Documents, SQL jobs, evidence and results")]
+    worker["In-process analysis worker<br/>Bounded threads, progress and expiry"] -->|claim / read / publish| db
+    api --> adapters["Separate provider adapters"]
+    worker --> adapters
+    adapters --> local["Ollama: local completion and embeddings"]
+    adapters --> gate{{"Hosted egress: enabled and keyed"}}
+    mcp["Read-only MCP over stdio"] --> db
   end
-
-  db[("PostgreSQL + pgvector<br/>full-text · graph tables<br/>local 16 or Supabase")]
-  openai["OpenAI API"]
-  anthropic["Anthropic API"]
-  clientllm["The MCP client's own<br/>model provider"]
-
-  candidate -->|HTTPS, same origin| web
-  web -->|/api proxy| api
-  mcpc -->|spawns, JSON-RPC over stdio| mcp
-  api --> worker
-  api --> db
-  worker --> db
-  mcp --> db
-  api --> gate
-  worker --> gate
-  mcp --> gate
-  gate --> ollama
-  gate -.->|only when enabled and keyed| openai
-  gate -.->|only when enabled and keyed| anthropic
-  mcpc -.->|sees every tool result| clientllm
+  gate --> openai["OpenAI"]
+  gate --> anthropic["Anthropic"]
+  client["MCP client"] --> mcp
+  client -.->|client controls tool-result egress| clientmodel["Client's model provider"]
 ```
 
-The API, worker and MCP server are entry points into one modular monolith with ports
-and adapters. One PostgreSQL database holds documents, chunks, vectors, the
-full-text index, the knowledge graph and every judgement, so a hard delete is one
-transaction. Hosted models are unreachable unless the server opens the egress gate
+The API enqueues work in PostgreSQL and returns before analysis finishes. The worker
+claims jobs, overlaps independent I/O, validates judgments and publishes the result.
+The read-only MCP server exposes the same stored workspace through shared tools.
+Documents, chunks, vectors, full-text/graph indexes, judgments, scores and generated
+artifacts share one database, so hard deletion is transactional. Hosted models are
+unreachable unless the server opens the egress gate
 and holds a key ([docs/model-providers.md](docs/model-providers.md)).
+The application gate does not control an MCP client's own model. See the
+[pipeline and job-lifecycle diagrams](docs/architecture.md) for execution boundaries.
 
 ## Quick start
 

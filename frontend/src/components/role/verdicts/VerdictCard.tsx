@@ -1,4 +1,5 @@
 import { TriangleAlert } from "lucide-react";
+import { useId } from "react";
 
 import { StatusMark } from "@/components/StatusMark";
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ function Dimension({
 
 /** One requirement as the judge scored it and the server checked it. */
 export function VerdictCard({ verdict, onShowTrace }: VerdictCardProps) {
-  const headingId = `verdict-${verdict.requirementId}`;
+  const headingId = useId();
   return (
     <article
       aria-labelledby={headingId}
@@ -98,6 +99,13 @@ export function VerdictCard({ verdict, onShowTrace }: VerdictCardProps) {
           <StatusMark status={verdict.verdict} />
         </div>
       </header>
+
+      <p className="text-sm font-mono tabular-nums">
+        Requirement score:{" "}
+        {verdict.requirementScore === null
+          ? "Not scored"
+          : `${Math.round(verdict.requirementScore * 100)}%`}
+      </p>
 
       <div className="space-y-2">
         <Dimension dimension="match" score={verdict.match} />

@@ -18,6 +18,62 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Requirement filters and documentation refresh
+
+- Date: 2026-10-05
+- Commands run: Spec Kit scope/design/task analysis; focused red/green Vitest;
+  frontend lint/typecheck; make lint; make test; Browser synthetic gallery
+  interactions and screenshots; git diff origin/main...HEAD; git diff --check;
+  git branch/worktree inspection, explicit commits and push.
+- Observed result: red tests lacked the new controls. All 25 focused tests and
+  full lint/typechecks passed. Full tests passed: 810 backend, 180 frontend,
+  3 existing skips, 84.65% backend coverage. The first streaming fixture run
+  could not bind under the sandbox; local socket permission made the full gate
+  pass without modifying tests. Existing runtime repair verification covers
+  all 141 disposable PostgreSQL integration cases; SQL code did not change again.
+- Browser evidence: Missing with 0–24% showed one requirement; Met with 75–100%
+  showed one; Met with 0–24% showed the distinct empty message; Clear filters
+  restored all three. Seven current synthetic JPEGs were visually inspected.
+  README system architecture and detailed pipeline/job-lifecycle diagrams now
+  describe the SQL worker, spawned parsing, provider boundaries and publication.
+- Decisions: filter stored domain scores as displayed whole percentages; keep
+  null separate from zero and preserve overall fit, evidence and order. Reuse
+  existing controls/tokens without a new dependency or API. Document fixture
+  provenance explicitly; screenshots are not model-quality measurements.
+- Delivery: 2b15940 contains filters and tests. The normal checkout is on pushed
+  fix/phase-19-analysis-usability; only main and this active branch remain locally.
+  Temporary worktree and redundant preserved branches were removed. Review PR
+  and current-head CI follow the human's publication request.
+- Review: complete source/test diff and whitespace inspected; Sonar scanner
+  unavailable. No personal data writes or paid provider calls. Broader synthetic
+  browser journeys, security/dependencies and measured release gates remain open.
+
+## Phase 19.3 — Runtime expiry and batch progress
+
+- Date: 2026-10-05
+- Commands run: read-only job metadata; Spec Kit setup/prerequisites and scope
+  analysis; focused red/green worker, resilience and component regressions;
+  make lint; make test; make test-integration using two distinct disposable URLs
+  on port 55443; Bandit on the three changed backend modules; git diff --check.
+- Observed result: red blocked-provider tests left the job running past expiry;
+  red terminal tests raised on late failure; red retry test dispatched after
+  cancellation; red component tests lacked batch guidance and retained animation.
+  After repair, 33 focused backend tests, 14 worker SQL tests and 10 progress UI
+  tests passed. Full checks passed: 810 backend tests, 172 frontend tests, all
+  141 PostgreSQL integration tests, unchanged coverage gate, lint/typechecks.
+  Changed-module Bandit passed. Sonar scanner is unavailable; branch source/test
+  diff was reviewed for privacy, bounded concurrency and complexity.
+- Decisions: preserve selected model and existing 15-minute total limit; recover
+  during the live worker loop using existing row locks and domain transitions.
+  An already dispatched HTTP request cannot be forcibly stopped, but its result
+  is discarded and subsequent retries check cancellation. Keep counters honest.
+- Diagnosis limit: metadata confirms missing runtime expiry; it does not prove
+  why the earlier provider request failed to finish. No paid development calls or
+  personal database writes. Broader release/security/latency checks remain open.
+- Commits: f6003c7 worker expiry and a39e583 batch progress. An isolated worktree
+  protected the human's active analysis during implementation; consolidation and
+  branch publication follow the human's request.
+
 ## Phase 19 — PR #43 CI repair
 
 - Date: 2026-10-05

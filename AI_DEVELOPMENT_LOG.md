@@ -29,6 +29,62 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 167 — Requirement filters and current architecture documentation
+
+- Date: 2026-10-05
+- Tool / model: Codex; one agent, no delegation
+- Plan task: bounded 19.1 follow-up, specs/007-requirement-filters-docs/
+- Prompt intent: filter requirements by score and missing/met, refresh README,
+  screenshots and technical diagrams, commit/push and simplify branches.
+- Outcome: accepted local combined status/domain-percentage filters, four score
+  ranges and a separate unscored choice, shown counts and clear/reset. Existing
+  overall fit, evidence, order and retrieval actions are preserved. A new
+  publication resets filters. The default score interpretation is the stored
+  requirement percentage, rather than the separate 0–4 match dimension.
+- Validation observed: expected red tests lacked filter controls; 25 focused
+  frontend tests passed after implementation, including range boundaries, zero
+  versus null, combined/empty/clear and publication reset. make lint and make test
+  passed (810 backend, 180 frontend; 3 existing skips; 84.65% backend coverage).
+  Initial streaming tests hit sandbox socket restrictions; permitted local
+  sockets restored the full green gate without test changes. The runtime repair's
+  141 disposable SQL tests remain passing; no additional SQL code changed here.
+- Browser: synthetic gallery interactions verified missing/low, met/high, empty
+  and clear states. Seven JPEGs were captured and visually checked. System,
+  pipeline and job-lifecycle diagrams were reconciled with inspected source;
+  screenshot provenance explicitly excludes personal data and measurements.
+- Delivery: filter commit 2b15940 is pushed. Runtime/filter work is in the normal
+  checkout on fix/phase-19-analysis-usability; synced main is the only other local
+  branch. The temporary worktree and redundant branches were removed only after
+  preserving their commits. Human requested publication; review PR/CI follows.
+- Review limits: branch diff and whitespace reviewed; Sonar scanner unavailable.
+  No new dependencies, public API/scoring changes, personal database writes or
+  paid provider calls. Full browser/security/quality/latency gates remain open.
+
+### 166 — Stop expired analyses during normal operation
+
+- Date: 2026-10-05
+- Tool / model: Codex; one agent, no delegation
+- Plan task: 19.3, specs/006-running-analysis-expiry/
+- Prompt intent: diagnose a 20-minute spinner at zero judged requirements; fix
+  the behavior, commit and keep branches/worktrees understandable.
+- Outcome: accepted runtime use of the existing running timeout, locked terminal
+  failure guards, cancellation checks before retries and batch progress guidance.
+  Metadata showed startup-only expiry; a subsequent human analysis succeeded.
+  The original provider hang cause remains unproven. Changing the selected model,
+  fabricating progress and resending personal documents were rejected.
+- Validation observed: behavioral red tests for blocked expiry, late terminal
+  failures, cancelled retries and UI guidance/animation; focused checks green.
+  make lint passed; make test passed (810 backend, 172 frontend; 3 existing skips);
+  all 141 disposable PostgreSQL integration tests passed. Changed-module Bandit
+  and diff whitespace checks passed; Sonar scanner unavailable. Coverage gate
+  unchanged. No personal database writes or paid model development calls.
+- Human-owned decisions: requested stalled-analysis repair and Git consolidation;
+  separately requested requirement filters and refreshed architecture/screenshots.
+  Those UI/documentation follow-ups receive their own scoped change record.
+- Delivery: f6003c7 and a39e583 are green commits in an isolated worktree; move the
+  tested branch to the normal checkout and remove only preserved/redundant refs.
+  No broader Phase 19 acceptance or measured model-quality claim is made.
+
 ### 165 — Repair PR #43 verification and persistence regressions
 
 - Date: 2026-10-05

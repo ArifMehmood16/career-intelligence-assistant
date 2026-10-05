@@ -86,8 +86,17 @@ cover letters alongside parsed text and spans. Uploaded cover letters may be que
 and cited. Generated cover letters and final cited chat answers are persisted with
 provenance; partial streamed tokens are not stored as answers. Role analysis is an
 in-process worker over queued PostgreSQL jobs: HTTP returns `202` with `analysing`
-before extraction finishes, and a process restart recovers queued and stale-running
-work. A failed reanalysis keeps the last valid analysis visible.
+before extraction finishes. Startup recovers queued and expired running work;
+the live worker also checks running jobs roughly every five seconds. An analysis
+that exceeds the existing 15-minute total running limit fails with `stale_running`
+without requiring a restart. This is separate from each provider HTTP timeout.
+A failed reanalysis keeps the last valid analysis visible.
+
+Judging and corrective rechecking update requirement counts when a batch finishes.
+`0 of N` can therefore remain unchanged while a whole batch is pending; it is
+not a count of individual provider requests. Failed jobs stop the task spinner.
+Cancellation is cooperative: an HTTP request already sent finishes or times out
+in its thread, but its late response cannot publish and no subsequent retry starts.
 
 ## Observability
 
