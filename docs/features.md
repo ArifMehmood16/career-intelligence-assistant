@@ -1,6 +1,6 @@
 # Features and evidence contract
 
-Current product behavior, 2026-10-02. [Architecture](architecture.md),
+Current product behavior, 2026-10-05. [Architecture](architecture.md),
 [API contract](api-contract.md), [delivery plan](../PLAN.md) and
 [limitations](limitations.md) contain implementation details and open verification.
 
@@ -17,6 +17,9 @@ reanalysis. Deletes remove original bytes and derived data with their citations.
 
 Supporting letters are narrative context for questions/drafts and remain excluded
 from fit scoring. Aspirations and generated drafts never count as evidence.
+The concrete-experience policy in [ADR 011](adr/011-evidence-assessment-contract.md)
+distinguishes experience from aspiration and requires duplicate evidence to be
+deduplicated. Scoring uploaded letter experience remains future work in BACKLOG.
 A role is queued/analysing before the model finishes. Loading, failed, incomplete,
 unscored and a valid zero remain distinct states. Progress shows completed stages,
 physical model/embedding attempts, estimated calls remaining and estimated time.
@@ -30,6 +33,8 @@ chunk kinds and details, technology terms, atomic job requirements and inferred
 technology relationships. The server requires complete line coverage, reconstructs
 text from stored lines, and checks every quoted/surface field verbatim. Bad coverage
 or incomplete judging fails analysis rather than producing a low score.
+Benefits, salary and application logistics are contextual chunks; they do not
+become scored requirements.
 
 CV chunks are embedded in one batch and indexed with full-text/graph evidence.
 Requirements share a query-embedding wave and hybrid retrieval. Judge batches are
