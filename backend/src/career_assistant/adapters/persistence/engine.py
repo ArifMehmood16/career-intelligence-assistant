@@ -34,6 +34,9 @@ def create_db_engine(settings: DatabaseSettings, *, url: str | None = None) -> E
         cursor = dbapi_connection.cursor()  # type: ignore[attr-defined]
         try:
             cursor.execute("SET TIME ZONE 'UTC'")
+            # Managed servers may default to rounded float text. Preserve the
+            # domain score and retrieval values exactly on every read-back.
+            cursor.execute("SET extra_float_digits = 3")
             # Application tables, then pgvector's schema, then public.
             cursor.execute(f"SET search_path TO {SEARCH_PATH}")
             cursor.execute(f"SET statement_timeout = {int(statement_timeout)}")
