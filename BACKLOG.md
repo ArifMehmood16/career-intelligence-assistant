@@ -23,8 +23,14 @@ The bounded [requirement filters and documentation](specs/007-requirement-filter
 under 19.1 are implemented: combined status/domain-score selection, shown counts,
 clear/reset and unscored handling preserve fit and evidence. Current architecture
 diagrams and synthetic screenshots are refreshed; component and browser checks
-pass. The normal checkout holds the pushed `fix/phase-19-analysis-usability` branch;
+pass. The normal checkout holds `docs/phase-19-current-checkpoint` for the final logs;
 redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stays open.
+
+[PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
+is merged at `ad88781`; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
+passed all three jobs on `08ef56b`. The human requested another PR for the
+remaining plan/log checkpoint: [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
+is open. Documentation-head CI remains enforced.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded
