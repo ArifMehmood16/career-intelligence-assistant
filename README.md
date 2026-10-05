@@ -9,8 +9,11 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > **Status (2026-10-05):** one chunk/search/judge analysis, PostgreSQL-backed jobs,
 > provider-specific batching and bounded parallel work. Server checks every cited
 > quote; domain code computes fit. Requirements can be filtered by status and score.
-> Expired running jobs fail visibly without a restart. PR #43 is merged; current
-> repair regressions pass local lint, hermetic and disposable PostgreSQL checks.
+> Expired running jobs fail visibly without a restart. PR #43 is merged;
+> [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
+> contains the runtime, filter and documentation follow-ups. Local checks and
+> [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
+> pass on implementation/documentation head `08ef56b`.
 > Model quality, browser journeys and release checks remain open in [PLAN.md](PLAN.md).
 > This is a private, single-user local tool.
 

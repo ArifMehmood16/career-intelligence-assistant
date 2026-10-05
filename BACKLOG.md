@@ -26,6 +26,10 @@ diagrams and synthetic screenshots are refreshed; component and browser checks
 pass. The normal checkout holds the pushed `fix/phase-19-analysis-usability` branch;
 redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stays open.
 
+[PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
+is open; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
+passed all three jobs on `08ef56b`. Final documentation-head CI remains enforced.
+
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded
 [19.4 benchmark implementation](specs/001-synthetic-analysis-benchmark/spec.md)
