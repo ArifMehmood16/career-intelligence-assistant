@@ -1,104 +1,170 @@
 # How to use it
 
-1. **Start the stack** — see [Quick start](running-locally.md). Open the web app at
-   `http://localhost:3000` (both paths use `WEB_PORT`, default 3000).
-2. **Upload a CV** on Workspace (PDF, DOCX or paste). Optionally upload supporting
-   cover letters — Ask and drafting can cite them; they are not fit evidence today.
-3. **Add a role** with a job description. Analysis runs as a job; wait until the role
-   is `ready`. While it runs, the roles list and the role page show how many tasks
-   are done out of the total, the task running now (for example "Judging each
-   requirement · 5 of 12 requirements"), the elapsed time and an estimate of the time
-   left. A queued analysis shows how many are ahead of it. The estimate comes from
-   your recent analyses, so the first one shows "Estimating time left…" until it
-   has something to go on. An analysis the model could not complete shows
-   **Analysis incomplete** with a retry, never a fake low score.
-   Judgment counts update when a batch finishes, so they can stay at zero while
-   a whole batch is pending. The existing 15-minute running limit is enforced
-   during operation; an expired job fails visibly without restarting the API.
-   Deleting the role, or the CV, stops its analysis: no further model call is made,
-   although one already in flight finishes first.
-4. **Open the role** and work the tabs:
-   - **Fit** — summary, score breakdown, and every scoreable requirement as met /
-     partial / missing with cited evidence. Use **Match status** and
-     **Requirement score** together to focus the list; **Clear filters** restores
-     every requirement. The count shows how many are visible. Filtering preserves
-     the overall fit and evidence. Requirement scores are the stored domain values
-     shown as whole percentages; **Not scored** stays separate from zero. Fit
-     shows green earned-point arrows and red shortfalls from full credit, using
-     each requirement's original weight. These are points toward overall fit, not
-     changes since a previous analysis. Unknown contribution remains unavailable.
-     It also shows each requirement's match, seniority and experience scores (0–4, with the
-     words the judge was given and its reason), the quotes behind them, keyword
-     coverage with terms found only under another name flagged, and a retrieval trace
-     per requirement. **Asked** and **Supported** compare the requested level/depth
-     with the CV evidence. Qualitative experience uses scope/depth rather than
-     invented years; reanalyse to obtain the new contextual judgments. Gaps then lists which score to raise and what closing it would
-     add.
-   - **Gaps** — ordered by score impact; draft a CV bullet only when a cited claim
-     already supports it.
-   - **Prepare** — interview probes, lead-with evidence, thin areas.
-   - **Letter** — generate a grounded cover letter; citations appear as `[1]`, `[2]`
-     with the full source passage in the right-hand glossary.
-5. **Ask** questions about gaps, fit or anything in your documents; citation chips open
-   the source span. When the answer model can call tools, an open question is
-   answered by the agent, and "Found using N tool calls" under the answer shows what
-   it searched. Processing appears immediately before any backend response, then
-   Receiving your answer and Updating the conversation until completion. Stop can
-   cancel while waiting for the first response.
-6. **Settings** — choose the answer and index providers. Hosted providers are offered
-   only when egress is enabled on the server, and choosing one requires acknowledging
-   that document text may leave the machine.
-7. **Optional: MCP** — let Claude Desktop or Cursor read the same workspace,
-   read-only. It is off until you enable it; see [MCP server](mcp.md).
+## Start and choose providers
+
+Follow [Running locally](running-locally.md), then open `http://localhost:3000`
+(`WEB_PORT` defaults to 3000). This is a private, single-user local app.
+
+In **Settings**, choose the **Answer model** and **Index model**. Local models need
+Ollama running with the selected models downloaded. Hosted choices require server
+egress to be enabled, a configured key and your acknowledgement that document text
+may leave the machine. Unavailable cards explain what is missing. Keep credentials
+in server configuration; never paste them into a document or question. See
+[provider configuration](model-providers.md).
+
+## Add evidence and a role
+
+1. On **Workspace**, upload a text PDF or DOCX CV, or paste its text. Scanned-image
+   PDFs are not supported. There is one CV per workspace.
+2. Optionally add supporting cover letters. Ask and drafting can cite them, but
+   they do not count as CV evidence for fit.
+3. Add a role with its title, company and job description. The app stores the
+   advert and queues an analysis. Open the role to follow its progress.
+
+Replacing the CV invalidates results based on the old document. Wait for the new
+analyses before interpreting fit, ranking or generated material.
+
+## Follow the analysis
+
+The seven tasks prepare the documents, read your CV, read the advert, search for CV
+evidence, judge each requirement, recheck thin evidence and score the fit. Independent
+reads can overlap. The progress display shows completed tasks, the current task,
+requirement counts, elapsed time and estimated remaining time/calls. A queued job
+shows how many analyses are ahead of it. First-run estimates can be unknown.
+
+Judgment counts advance when a batch finishes. **0 of 29** can mean the first batch
+is still waiting; it is not a completed zero score. Estimates may change when a
+provider retries or more corrective work is discovered. The existing total running
+limit is 15 minutes; expiry is checked during operation and fails visibly.
+
+A failed or incomplete analysis shows an explanation and retry instead of publishing
+an unsupported score. Check provider availability/configuration, resolve the cause,
+then retry. A failed reanalysis can keep an earlier valid result visible. Deleting
+a role or CV prevents its job from publishing; a provider request already sent can
+finish before its worker thread returns.
+
+## Read Fit and filter requirements
+
+Open a ready role's **Fit** tab. The overall fit comes from domain arithmetic over
+validated judgments; the model does not choose that score. Each requirement shows
+**Met**, **Partial** or **Missing**, its requirement percentage, match/experience/
+seniority judgments and their reasons, cited CV evidence and unmet conditions.
+A dimension that the advert does not specify is labelled accordingly. **Asked** and
+**Supported** compare the requested level/experience with cited CV evidence. Overall
+CV/job context informs new judgments; qualitative expectations use delivery depth
+and scope, never invented years. Reanalyse older results for these explanations.
+
+- Set **Match status** to Missing to focus on gaps, Partial to find thin evidence,
+  or Met to review supported requirements.
+- Combine it with **Requirement score**, for example Missing and **0–24%**.
+  The visible count changes; **Clear filters** restores the full list.
+- Requirement percentages describe individual requirements. They are not points
+  added to the overall fit, and filtering does not change that fit or the ranking.
+- Green up arrows show points earned toward overall fit; red down arrows show
+  the shortfall from full credit, using the original requirement weight. These
+  are contribution shares, not changes since a previous analysis. Older results
+  without this metadata show unavailable values; filters preserve the original shares.
+- **Not scored** is separate from a genuine scored zero. A role without a complete
+  publication has no fit judgment or ranking position.
+- Review quoted evidence and **Show retrieval trace** to understand what was found.
+  Keyword coverage distinguishes exact terms, aliases and absent terms; it is not
+  another fit score. A citation identifies a source passage, so read the passage
+  before relying on the judgment.
+
+## Turn the result into preparation and drafts
+
+- **Gaps** orders opportunities by the potential fit-score increase if the stated
+  dimension improves. A `+20.0` is a possible gain, not points already earned or a
+  guarantee. Draft a CV bullet only where existing cited evidence supports it;
+  copy the draft yourself after checking it. The app does not edit your CV file.
+- **Prepare** shows likely interview probes, evidence to lead with, thin areas and
+  questions to ask. Open the source buttons and export the pack as Markdown.
+- **Letter** offers Plain/Warm tone and an optional honest line about the largest
+  gap. Generate a draft, review `[1]`, `[2]` citations against the source glossary,
+  select earlier generated versions or export Markdown. The app refuses generation
+  when fewer than two must-have requirements are met and directs you to Gaps.
+  Uploaded supporting letters are shown separately from generated versions.
+
+Fit, gaps, ranking, preparation, drafts and grounded questions consume the same
+validated publication. They do not rerun a competing fit calculation.
+
+## Ask grounded questions
+
+Open **Ask** and use a starter question or enter your own. Try “What am I missing for
+this role?” or “Which project best supports the platform requirement?” Citation
+chips open source passages. An answer can say there is not enough evidence rather
+than inventing candidate experience. Provider/model attribution identifies how the
+answer was produced and whether content left the machine.
+
+For open questions, a tool-capable answer model can search the workspace through
+an agent. **Found using N tool calls** lists those steps. Fit/gap/compare/preparation
+questions use the corresponding grounded route. During an active stream, **Stop**
+lets you stop the response. **Processing** appears before the first backend event,
+then **Receiving your answer** and **Updating the conversation** remain visible until
+completion. **Stop** can cancel while waiting for that first response. Only completed
+answers are persisted.
+
+To let an external client read the workspace, enable the optional read-only
+[MCP server](mcp.md). It is off by default. Your MCP client's model and its handling
+of returned document text are configured in that client.
+
+## Reanalyse after an upgrade
+
+The retirement migration preserves uploads and valid current results. It removes
+retired analysis results and associated drafts. A role with no valid current result
+needs a new analysis; a legacy live job ends with “This analysis was retired. Run a
+new analysis.” Original documents remain available, so use the role's retry/reanalysis
+action. Current live jobs retain ownership and valid current results remain usable.
+
+The correction runs when an upgrade crosses retirement revision `c4e8a1d7b902`.
+Already-upgraded databases do not rerun it. Do not downgrade a personal database to
+repeat retirement: deleted historical data is not restored. More details are in
+[local upgrade guidance](running-locally.md).
 
 ## Screenshots
 
-Fit, filter and gap captures refreshed 2026-10-06; Ask processing added the same day.
-Other captures remain from 2026-10-05, all from the current app's `/dev/states` component gallery.
-These are rendered synthetic examples of the shipped components, not personal
-documents or measured model outputs. Gallery actions use local fixtures;
-provider availability and scores illustrate UI states rather than this machine's
-configuration. Capture details: [images/README.md](images/README.md).
+Refreshed 2026-10-06 from this branch's `/dev/states` component gallery. These are
+actual rendered components with synthetic fixtures, not personal documents or
+measured model outputs. Each image shows a separate example; role names, scores,
+provider availability and timings are illustrative. Gallery actions stay local.
+[Capture details and provenance](images/README.md).
 
-![Current workspace roles table with synthetic roles](images/workspace.jpg)
+![Workspace with synthetic completed roles](images/workspace.jpg)
 
-*Workspace — completed roles, fit scores and requirement counts.*
+*Workspace — ready roles, overall fit and requirement counts.*
 
-![Settings provider choice](images/settings.jpg)
+![Answer and index provider choices](images/settings.jpg)
 
-*Settings — example answer/index provider choices and availability reasons.*
+*Settings — availability reasons explain why a provider cannot be selected.*
 
-![Fit tab with score breakdown and requirements](images/fit.jpg)
+![Seven-stage analysis progress](images/analysis-progress.jpg)
 
-*Fit — weighted earned/shortfall points, asked/supported experience and filters.*
+*Progress — requirement batches, completed calls and estimated remaining work.*
 
-![Requirements filtered to missing with low scores](images/fit-filters.jpg)
+![Fit with requirements and keyword coverage](images/fit.jpg)
 
-*Requirements — Missing combined with 0–24%, without changing overall fit.*
+*Fit — earned/shortfall point shares, numeric/qualitative experience and cited evidence.*
 
-![Current batch analysis progress with synthetic timing](images/analysis-progress.jpg)
+![Missing requirements filtered to 0–24 percent](images/fit-filters.jpg)
 
-*Progress — batches update their counts on completion; timing here is a fixed fixture.*
+*Filters — Missing combined with 0–24%, preserving original contribution shares.*
 
-![Gaps tab ordered by score impact](images/gaps.jpg)
+![Gaps ordered by potential score increase](images/gaps.jpg)
 
-*Gaps — ordered by how much the score would move if you closed each gap.*
+*Gaps — potential improvements, including evidence recency.*
 
-![Prepare tab interview pack](images/prepare.jpg)
+![Interview preparation with source evidence](images/prepare.jpg)
 
-*Prepare — interview probes and evidence drawn from the published analysis.*
+*Prepare — probes, cited evidence, thin areas and questions to ask.*
 
-![Ask processing before the first response](images/ask-processing.jpg)
+![Generated cover letter with resolved citation glossary](images/letter.jpg)
 
-*Ask — processing and Stop are visible before any answer event.*
+*Letter — a synthetic cited paragraph, source glossary, export and version history.*
 
-The **Letter** tab generates a grounded cover letter. After generate, citations show
-as `[1]`, `[2]` with the full source passage in the Citations panel on the right.
+![Ask answer with source citation chips](images/ask.jpg)
 
-## What it answers
+*Ask — a synthetic completed answer, citations and provider attribution.*
 
-- "What skills am I missing for this role, and which gap is worth closing first?"
-- "How does my experience align with role #2 versus role #3?"
-- "Which of my projects best evidences the platform engineering requirement?"
-- "What will they probe in interview, and where am I thin?"
-- "Rank these five roles by fit and tell me why the ranking is what it is."
+![Ask processing before the first backend response](images/ask-processing.jpg)
+
+*Ask processing — immediate feedback and Stop while waiting for the backend.*

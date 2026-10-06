@@ -1,6 +1,6 @@
 # Backlog
 
-Updated 2026-10-06 following fit explanation, contextual experience and Ask requests. Milestone acceptance
+Updated 2026-10-06 following retirement verification and merged fit/Ask improvements. Milestone acceptance
 criteria live in PLAN.md; linked feature specs elaborate only their scoped change.
 The old v1 release gate and v1 comparison are superseded; historical quality
 measurements remain in docs/evaluation.md.
@@ -23,8 +23,8 @@ The bounded [requirement filters and documentation](specs/007-requirement-filter
 under 19.1 are implemented: combined status/domain-score selection, shown counts,
 clear/reset and unscored handling preserve fit and evidence. Current architecture
 diagrams and synthetic screenshots are refreshed; component and browser checks
-pass. Work stays in the canonical checkout; redundant preserved branches/worktrees
-are removed. Broader 19.1 acceptance stays open.
+pass. The merged checkpoint branch and redundant preserved worktrees were removed.
+Phase 19.1 acceptance is now verified by spec 009.
 
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
@@ -39,9 +39,9 @@ experience, overall CV/JD context, asked/supported explanations and immediate As
 status. Lint, 818 backend/192 frontend tests and 141 disposable SQL checks pass.
 Synthetic Browser checks preserve point shares through filters and show pending
 Ask. Reanalysis is needed for new contextual judgments; original arithmetic remains.
-[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is open and attached; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
-passed all three jobs on `d579923`. Only synced `main` and
-`feat/phase-19-fit-explanations` remain locally, in one checkout.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is merged at `45ae5c8`; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed all three jobs on `d579923`. Its features are now included in the
+PR #47 branch through a merge from main.
 The merged checkpoint branch was removed after confirming its commits on main.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
@@ -58,9 +58,20 @@ at `2212790`. Superseded task branches and the merged delivery branch are remove
 after verifying that all their commits are preserved on `main`. Publication,
 merge and branch cleanup close no release verification gate.
 
+[Phase 19.1 verification](specs/009-retirement-verification/spec.md) passes populated
+upgrade, current consumer/citation/artifact, invalidation/reanalysis and workspace
+hard-delete regressions. After incorporating merged PR #46, local lint, 818 backend,
+192 frontend and 149 disposable SQL tests pass.
+The migration now ends retired live jobs before erasing their identity; already-applied
+revisions cannot safely recover that erased marker. The normal checkout uses
+`test/phase-19-retirement-verification`; PR #46 is merged and PR #47 includes it.
+There is one checkout. Only merged/preserved branches are cleanup candidates.
+[PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open; [CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818) passed all three jobs
+on 3511aa9. The final checkpoint record receives updated-head checks.
+
 ## Now — verify one working architecture
 
-- [ ] [19.1](PLAN.md#191--retire-the-competing-analysis) — verify v1 retirement,
+- [x] [19.1](PLAN.md#191--retire-the-competing-analysis) — verify v1 retirement,
       current result projections, migration preservation/deletion and Fit/Gaps
       display regressions.
 - [ ] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) — verify

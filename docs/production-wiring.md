@@ -36,12 +36,12 @@ Provider resolvers:
 | GET /api/documents/{document_id}/download | get_downloadable | none | SqlSupportingDocumentStore |
 | GET /api/spans/{span_id} | lookup_workspace_span + resolve_span | none | SqlCvStore, SqlSupportingDocumentStore, SqlRoleStore |
 | GET /api/roles | list_roles | none | SqlRoleStore |
-| POST /api/roles | create_role (commit analysing + queued job, 202) | build_structured_port and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles | create_role (commit analysing + queued job, 202) | build_structured_port and build_embedding_port on the worker, not on the request | SqlRoleStore; SqlAnalysisWorker; UnitOfWorkHybridSearch; SqlDocumentIndexStore; SqlVerdictCache |
 | GET /api/roles/{role_id} | get_role; build_fit_summary when ready | none | SqlRoleStore |
 | DELETE /api/roles/{role_id} | delete_role | none | SqlRoleStore |
-| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | build_structured_port and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; requirement_claim_similarities; SqlEmbeddingCache |
+| POST /api/roles/{role_id}/reanalyse | reanalyse (202) | build_structured_port and build_embedding_port on the worker | SqlRoleStore; SqlAnalysisWorker; UnitOfWorkHybridSearch; SqlDocumentIndexStore; SqlVerdictCache |
 | GET /api/jobs/{job_id} | get_job | none | SqlRoleStore |
-| GET /api/roles/{role_id}/requirements | stored mappings | none | SqlRoleStore |
+| GET /api/roles/{role_id}/requirements | validated chunk/verdict projections | none | SqlRoleStore |
 | GET /api/roles/{role_id}/breakdown | stored score explanation | none | SqlRoleStore |
 | GET /api/roles/{role_id}/gap-plan | build_gap_plan | none | SqlRoleStore |
 | GET /api/roles/{role_id}/verdicts | stored v2 verdicts, fit, keyword coverage and gap plan (409 `analysis_incomplete` without a v2 analysis) | none | SqlV2ResultReader (SqlV2AnalysisRepository) |
@@ -64,3 +64,17 @@ Call accounting for completion and embeddings goes through `AccountingCompletion
 / `AccountingEmbedding` into `SqlCallAccountant` / `provider_call_accounting`.
 It stores provider, model, `left_machine` and token counts — never document,
 question, prompt or embedding text.
+
+## Retirement verification
+
+Phase 19.1 synthetic SQL regressions now cover the publication across role summaries,
+verdicts, requirements, breakdown, gaps, ranking, interview preparation, grounded
+bullets/letters, Ask and the shared MCP tool registry. Current scores and gap deltas
+come from persisted domain components; read-only projections call no provider.
+Invalidated publications receive `analysis_incomplete` and no ranking position.
+Replacement CV evidence is deleted before the new publication is consumed.
+
+The SQL HTTP fixture also injects SQL conversation, supporting-document and provider
+settings stores, so this journey persists chat, artifacts, citations and call accounting.
+Workspace deletion is checked against every mapped workspace-scoped table, with a
+second workspace preserved. Broader durable audit work remains in BACKLOG Later.

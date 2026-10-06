@@ -7,15 +7,16 @@ candidate actually needs — a prioritised gap plan, CV bullets, an interview pa
 cover letter draft — with every claim traceable to the span of text it came from.
 
 > **Status (2026-10-06):** one chunk/search/judge analysis with PostgreSQL-backed
-> jobs and bounded parallel work. Requirements show green earned-point arrows and
-> red shortfalls from full credit. Experience and seniority use overall CV/job
-> context, with asked/supported explanations; reanalyse to obtain new judgments.
-> Ask shows processing immediately, then answering and conversation refresh.
-> [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-> is merged at `0362666`. [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
-> adds this follow-up; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
-> passed all three jobs on `d579923`, alongside local checks. Measured quality, broader browser journeys and release checks
-> remain open in [PLAN.md](PLAN.md). This is a private, single-user local tool.
+> jobs and bounded parallel work. Server checks cited evidence; domain code computes
+> fit. Requirements show green earned points and red shortfalls from full credit.
+> Experience and seniority use overall CV/job context with asked/supported labels;
+> reanalyse to obtain new judgments. Ask shows processing, receiving and history refresh.
+> [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+> is merged at `45ae5c8`. PR #47 adds verified retirement preservation, shared
+> publication/citation/artifact reads and scoped deletion, plus detailed diagrams
+> and refreshed usage/screenshots. Provider/concurrency acceptance, measured quality,
+> full browser journeys and release checks remain open in [PLAN.md](PLAN.md).
+> This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
 measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).
@@ -32,7 +33,9 @@ capacity-sized batches using overall career/job context and explicit numeric or
 qualitative experience expectations. The server checks quoted evidence against stored text,
 then domain arithmetic computes requirement scores, overall fit and gap priorities.
 Incomplete work publishes no score. Fit, gaps, ranking, preparation, drafts and
-Ask read the same validated publication.
+Ask read the same validated publication. Start with the
+[step-by-step guide](docs/how-to-use.md), including filters, source citations,
+analysis failures and reanalysis after an upgrade.
 
 - How it works: [docs/architecture.md](docs/architecture.md)
 
@@ -63,13 +66,18 @@ flowchart LR
     web -->|same-origin /api proxy| api["FastAPI: REST and SSE"]
     api -->|immutable upload bytes| parse["Bounded spawned PDF/DOCX parsing"]
     parse -->|parsed result only| api
-    api -->|store uploads / enqueue / read| db[("PostgreSQL + pgvector<br/>Documents, SQL jobs, evidence and results")]
-    worker["In-process analysis worker<br/>Bounded threads, progress and expiry"] -->|claim / read / publish| db
+    api -->|uploads / SQL queue / current publication reads| db[("PostgreSQL + pgvector<br/>Documents, SQL jobs, evidence and results")]
+    worker["In-process analysis worker<br/>Chunk / search / judge; bounded threads"] -->|claim jobs / persist progress / atomic publication| db
+    web -.->|poll job state and progress| api
+    worker --> verify["Server verifies evidence;<br/>domain computes fit and gaps"]
+    verify -->|only complete, current results| db
     api --> adapters["Separate provider adapters"]
     worker --> adapters
     adapters --> local["Ollama: local completion and embeddings"]
     adapters --> gate{{"Hosted egress: enabled and keyed"}}
-    mcp["Read-only MCP over stdio"] --> db
+    mcp["Read-only MCP over stdio"] --> tools["Shared workspace and publication tools"]
+    api --> tools
+    tools --> db
   end
   gate --> openai["OpenAI"]
   gate --> anthropic["Anthropic"]
@@ -85,7 +93,8 @@ artifacts share one database, so hard deletion is transactional. Hosted models a
 unreachable unless the server opens the egress gate
 and holds a key ([docs/model-providers.md](docs/model-providers.md)).
 The application gate does not control an MCP client's own model. See the
-[pipeline and job-lifecycle diagrams](docs/architecture.md) for execution boundaries.
+[analysis, publication, job-lifecycle and retirement diagrams](docs/architecture.md)
+for execution boundaries.
 
 ## Quick start
 

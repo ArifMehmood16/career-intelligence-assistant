@@ -29,6 +29,88 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 171 — Resolve PR #47 conflicts after PR #46 merge
+
+- Date: 2026-10-06
+- Tool / model: Codex; Browser skill for synthetic screenshot verification.
+- Plan task: same-PR integration follow-up for specs/009-retirement-verification.
+- Prompt intent: resolve PR #47 merge conflicts after the human merged PR #46.
+- Outcome: incorporated origin/main at 45ae5c8 without rebasing or rewriting pushed
+  history. Production code and the gallery merged automatically. Resolved seven
+  documentation files and three binary screenshots while preserving both histories,
+  the retirement gate and fit/context/Ask features. Current docs mark PR #46 merged.
+- Changed/rejected: kept the expanded how-to guide and added score contributions,
+  asked/supported expectations and immediate Ask states. Refreshed Fit/filter/gaps
+  and completed Ask from the merged synthetic gallery; retained Ask processing and
+  the other current captures. Rejected blanket ours/theirs conflict resolution,
+  which would discard accepted work or leave misleading screenshots/status.
+- Validation observed: make lint passes; make test passes 818 backend and 192
+  frontend tests, three existing skips, 84.70% coverage; all 149 disposable PG17
+  integration tests pass. Refreshed images and retained processing image visually
+  checked. No personal database migration or paid provider call.
+- Human-owned decisions: same branch/PR and authorized commit/push retained. This
+  merges main into the feature branch only; human owns merging PR #47 into main.
+  The unrelated untracked npm lockfile remains untouched/uncommitted. Final-head
+  CI will be observed after push; broader release gates remain open.
+
+
+### 170 — Refresh PR #47 architecture, usage and screenshots
+
+- Date: 2026-10-06
+- Tool / model: Codex; Browser skill for synthetic component captures.
+- Plan task: 19.1 documentation follow-up in specs/009-retirement-verification.
+- Prompt intent: update architecture diagram details, how to use the tool and
+  screenshots in the same PR.
+- Outcome: accepted detailed entry-point, analysis, atomic-publication/evidence,
+  job-lifecycle and retirement diagrams; expanded the usage guide for setup,
+  provider choices, progress/failure, requirement filters, gaps, drafts, Ask and
+  reanalysis. Refreshed seven screenshots and added Letter/Ask.
+- Changed: corrected the architecture's broad audit-storage claim to implemented
+  provider-call accounting. The Letter gallery supplies resolved synthetic citation
+  text; its paragraph now describes the cited evidence. The completed Ask gallery
+  confines its sticky composer to its own frame. Production behavior is unchanged.
+- Validation observed: focused gallery Vitest passes; final make lint and make test
+  pass (810 backend, 180 frontend, three existing skips). All nine final JPEGs were
+  visually inspected. Changed documentation links/image paths resolve locally.
+  No new dependency, personal data, model call or personal database migration.
+- Human-owned decisions: same branch/PR, explicit commit/push authorization retained;
+  PR #46 stays independent. Screenshots are synthetic states, not a measured or
+  complete backend browser journey. Human review/merge and remaining release gates
+  stay open. Updated-head CI will be checked after push.
+
+### 169 — Verify populated retirement and shared publication consumers
+
+- Date: 2026-10-06
+- Tool / model: Codex; one read-only research agent required by repository speckit-plan.
+- Plan task: 19.1, specs/009-retirement-verification/.
+- Prompt intent: continue the first open development item, maintaining commits,
+  review PRs, documentation and a comprehensible canonical checkout.
+- Outcome: accepted populated upgrade and shared SQL consumer/deletion regressions.
+  Research found historical v1 jobs were relabelled v2 while still queued/running.
+  Behavioral red checks reproduced that and an analysing role with valid prior results.
+  The migration now ends retired live jobs before identity removal and resolves only
+  affected roles without taking ownership from current jobs.
+- Changed/rejected: retained shared presentation/citation/draft values; deleting by
+  historical naming would break valid consumers. Rejected retrospective origin guesses
+  for already-migrated jobs because the earlier upgrade erased the discriminator.
+  No new service or dependency; PR #46 features remain on their separate branch.
+- Validation observed: full make lint/test and 149 disposable SQL integration tests
+  pass; 810 backend, 180 frontend, three existing skips, 84.65% coverage. Populated
+  originals/current rows, artifact citations, active current jobs, mixed versions,
+  invalidated results, reanalysis and workspace deletion pass. Bandit on the migration
+  reports no findings after fixed schema SQL cleanup. Sonar scanner unavailable.
+- Human-owned decisions: continue the accepted retirement plan and previous explicit
+  commit/push/PR/documentation authorization; human review/merge remains pending.
+  Checks were agent-run, with no claim of human review. No personal data, personal
+  migration, hosted development call or model-quality measurement.
+- Delivery: 1a4e01e, 4252c6c, 7b94331 and edbc145 are green implementation/test commits.
+  Entry 168 belongs to separate open PR #46. README, plan/backlog, architecture,
+  running instructions, production wiring and engineering journal are reconciled.
+  [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open/attached; all three jobs in [CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818)
+  passed on 3511aa9. The disposable server is stopped and the working tree is clean.
+  Final documentation receives its own head CI. Phase 19.2 is next; broader
+  provider/concurrency/browser/security/quality gates stay open.
+
 ### 168 — Fit point explanations, contextual experience and responsive Ask
 
 - Date: 2026-10-06

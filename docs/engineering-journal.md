@@ -18,6 +18,89 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Integrate merged PR #46 into PR #47
+
+- Date: 2026-10-06
+- Trigger: human merged PR #46 at 45ae5c8; GitHub reported PR #47 conflicting.
+- Resolution: git fetch origin; git merge --no-commit origin/main on the existing
+  PR #47 branch. Retained both documentation/development histories, verified
+  retirement completion, score arrows/context/Ask features and expanded usage.
+  Replaced conflicted screenshots with fresh merged-gallery captures; retained the
+  existing processing image and current unaffected captures. No new runtime behavior.
+- Checks: make lint passes; make test passes 818 backend and 192 frontend tests,
+  three existing skips, 84.70% coverage. Explicit disposable database URLs on port
+  55443 isolate make test-integration; all 149 cases pass. Source automatically
+  merges; manual resolution is confined to docs/screenshots. Local link checks and
+  conflict-marker/diff checks precede commit; updated-head CI is checked after push.
+- Boundaries: no force push, history rewrite, paid model invocation or personal
+  migration. Existing untracked frontend/package-lock.json is left untouched.
+  The human still owns PR #47 review/merge. Remaining release gates stay open.
+
+
+## Phase 19.1 — Same-PR documentation and screenshot refresh
+
+- Date: 2026-10-06
+- Scope: user-requested follow-up on PR #47, same canonical checkout/branch.
+- Changes: README system diagram and detailed execution, publication/evidence,
+  lifecycle and retirement diagrams; practical usage guide and nine synthetic
+  screenshots, including new Letter/Ask captures. Corrected audit-storage scope.
+  Gallery-only props/layout adjustments resolve the Letter source glossary and
+  contain the completed chat's sticky composer. No design token or production
+  route/provider/storage change.
+- Commands/results: focused gallery Vitest passes; final make lint passes Ruff,
+  format, mypy, TypeScript and ESLint; make test passes 810 backend and 180 frontend
+  tests, three existing skips. Local links/images resolve. All nine final captures
+  were inspected; clipped initial captures were replaced before staging.
+- SQL integration: no persistence change in this follow-up; the 149 disposable SQL
+  cases passed at the preceding checkpoint. Updated-head CI includes both database
+  jobs again; its outcome will be observed after push, not predicted here.
+- Boundaries: no personal document/provider capture or paid model invocation.
+  Synthetic UI screenshots do not close full backend browser journeys or quality,
+  performance, security and deployment gates. PR #46 remains separate; no merge.
+
+## Phase 19.1 — Populated retirement and publication verification
+
+- Date: 2026-10-06
+- Scope: specs/009-retirement-verification; branch test/phase-19-retirement-verification,
+  created from main 0362666 in the normal single checkout. PR #46 stays separate/open.
+- Commands: Spec Kit resolve/setup/prerequisite and read-only artifact analysis;
+  focused pytest migration/worker/architecture tests; disposable PG17 on port 55443
+  with explicit distinct DATABASE_URL/TEST_DATABASE_URL; make lint, make test,
+  make test-integration; focused post-refactor migration cycles; Bandit on the
+  changed retirement migration; complete source/test diff and git diff --check.
+- Red evidence: old queued jobs remained queued and a role with a valid current
+  publication stayed analysing. Initial seed-version collisions were fixture errors,
+  corrected before this behavioral red evidence. Upgrade now terminalizes only
+  v1 live jobs, resolves roles while their marker exists and preserves v2 live jobs.
+- Green evidence: 16 focused migration/schema/deletion cases and five migration/worker
+  unit cases passed; 10 focused publication/preservation/MCP cases passed. Full lint
+  and typechecks passed; 810 backend tests, 180 frontend tests, three existing skips,
+  84.65% coverage and all 149 disposable SQL integration tests passed. Four focused
+  SQL migration/cycle tests passed after static-SQL refactoring; three preservation
+  tests passed after final fixture scope review.
+- Consumer checks: stored score/components, gap projections and statuses agree;
+  reads call no provider. Ask grounding uses stored score/band. Interview/bullet/letter
+  generation and persisted citations resolve to uploaded text; exports work.
+  Invalidation refuses consumers; reanalysis retains stable JD IDs but removes old
+  CV chunks. Workspace deletion covers all mapped scoped tables and preserves another
+  workspace. Historical upload/current-row snapshots match exactly through upgrade.
+- Review: source inspection finds no executable v1 or production selector; shared
+  score/citation/draft wire values remain useful. Bandit initially flagged seven fixed
+  schema SQL interpolations; literal SQL removes all findings without suppression.
+  Sonar scanner unavailable; manual security/design/diff review completed. No dependency,
+  public API, trust boundary, paid provider or personal-database change.
+- Decisions/limits: preserve the accepted ADR 016 architecture. Do not fail legitimate
+  current jobs by guessing historical origin after applied migration identity erasure.
+  This migration correction protects still-pending upgrades only. Browser release,
+  provider efficiency, concurrency and quality/latency/security gates remain open.
+- Delivery commits: 1a4e01e migration repair and populated regressions; 4252c6c publication
+  consumers/deletion; 7b94331 static SQL; edbc145 workspace-scoped historical fixture.
+  [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open and attached. [CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818)
+  passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on 3511aa9.
+  The disposable server was stopped; one checkout remains with main and the two
+  open PR branches. This final delivery record receives its own updated-head CI.
+  No merge or removal of an unmerged feature branch was performed.
+
 ## Phase 19.1–19.3 — Fit explanations and Ask processing
 
 - Date: 2026-10-06
