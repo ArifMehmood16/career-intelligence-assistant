@@ -323,6 +323,14 @@ export const roleVerdictsSchema = z.object({
       mustHave: z.boolean(),
       verdict: z.enum(["met", "partial", "missing"]),
       requirementScore: z.number().nullable(),
+      scoreImpact: z
+        .object({
+          earned: z.number(),
+          possible: z.number(),
+          shortfall: z.number(),
+        })
+        .nullable()
+        .default(null),
       match: dimensionScoreSchema,
       seniority: dimensionScoreSchema.nullable(),
       experience: dimensionScoreSchema.nullable(),

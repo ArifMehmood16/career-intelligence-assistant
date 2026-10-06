@@ -130,6 +130,7 @@ def analyse_hermetic(
         ),
         coverage=analysis.coverage,
         gaps=analysis.gaps,
+        score_components=analysis.fit.components,
     )
     payload: dict[str, object] = {
         "requirement_scores": [

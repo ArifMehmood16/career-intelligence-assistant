@@ -15,6 +15,7 @@ from career_assistant.api.schemas import (
     KeywordCoverageWire,
     RetrievalTraceWire,
     RoleVerdictsWire,
+    ScoreImpactWire,
     TraceHitWire,
     TraceRoundWire,
     V2GapWire,
@@ -29,6 +30,7 @@ from career_assistant.application.ports.v2_results import (
 )
 from career_assistant.application.roles.store import InMemoryRoleStore
 from career_assistant.domain.judging import ProposedScore
+from career_assistant.domain.scoring_v2 import ScoreImpact, score_impacts
 
 router = APIRouter(tags=["analysis"])
 
@@ -50,7 +52,9 @@ def _dimension(score: ProposedScore | None) -> DimensionScoreWire | None:
     return DimensionScoreWire(score=score.score, rationale=score.rationale)
 
 
-def _verdict_wire(stored: StoredVerdict) -> VerdictWire:
+def _verdict_wire(
+    stored: StoredVerdict, impact: ScoreImpact | None = None
+) -> VerdictWire:
     judged = stored.verdict
     return VerdictWire(
         requirement_id=stored.requirement_id,
@@ -59,6 +63,11 @@ def _verdict_wire(stored: StoredVerdict) -> VerdictWire:
         must_have=stored.must_have,
         verdict=judged.verdict,
         requirement_score=stored.requirement_score,
+        score_impact=None
+        if impact is None
+        else ScoreImpactWire(
+            earned=impact.earned, possible=impact.possible, shortfall=impact.shortfall
+        ),
         match=DimensionScoreWire(
             score=judged.match_score, rationale=judged.match_rationale
         ),
@@ -79,6 +88,7 @@ def _verdict_wire(stored: StoredVerdict) -> VerdictWire:
 
 
 def _verdicts_wire(role_id: str, result: V2RoleResult) -> RoleVerdictsWire:
+    shares = score_impacts(result.score_components)
     return RoleVerdictsWire(
         role_id=role_id,
         analysis_id=result.analysis_id,
@@ -87,7 +97,10 @@ def _verdicts_wire(role_id: str, result: V2RoleResult) -> RoleVerdictsWire:
         gated=result.gated,
         rubric_version=result.rubric_version,
         left_machine=result.left_machine,
-        verdicts=[_verdict_wire(stored) for stored in result.verdicts],
+        verdicts=[
+            _verdict_wire(stored, shares.get(stored.requirement_id))
+            for stored in result.verdicts
+        ],
         keyword_coverage=KeywordCoverageWire(
             exact=list(result.coverage.exact),
             alias=list(result.coverage.alias),

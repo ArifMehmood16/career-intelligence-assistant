@@ -300,6 +300,7 @@ export interface Verdict {
   mustHave: boolean;
   verdict: VerdictLabel;
   requirementScore: number | null;
+  scoreImpact?: { earned: number; possible: number; shortfall: number } | null;
   match: DimensionScore;
   seniority: DimensionScore | null;
   experience: DimensionScore | null;

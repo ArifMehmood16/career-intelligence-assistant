@@ -126,7 +126,7 @@ const queuedJob: AnalysisJob = {
 const sampleVerdicts: RoleVerdicts = {
   roleId: "role-harbour",
   analysisId: "analysis-harbour-2",
-  fitScore: 68.2,
+  fitScore: 54.8,
   band: "partial",
   gated: true,
   rubricVersion: "scoring-rubric-v2",
@@ -139,6 +139,7 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: true,
       verdict: "partial",
       requirementScore: 0.58,
+      scoreImpact: { earned: 34.8, possible: 60, shortfall: 25.2 },
       match: {
         score: 3,
         rationale: "Python services in two roles, both in production.",
@@ -168,6 +169,7 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: false,
       verdict: "met",
       requirementScore: 1,
+      scoreImpact: { earned: 20, possible: 20, shortfall: 0 },
       match: {
         score: 4,
         rationale: "Owned the production warehouse and improved reliability.",
@@ -194,6 +196,7 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: false,
       verdict: "missing",
       requirementScore: 0,
+      scoreImpact: { earned: 0, possible: 20, shortfall: 20 },
       match: { score: 1, rationale: "Only batch pipelines are described." },
       seniority: null,
       experience: null,

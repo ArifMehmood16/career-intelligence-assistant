@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { ArrowDown, ArrowUp, TriangleAlert } from "lucide-react";
 import { useId } from "react";
 
 import { StatusMark } from "@/components/StatusMark";
@@ -106,6 +106,29 @@ export function VerdictCard({ verdict, onShowTrace }: VerdictCardProps) {
           ? "Not scored"
           : `${Math.round(verdict.requirementScore * 100)}%`}
       </p>
+
+      {verdict.scoreImpact ? (
+        <div className="space-y-1 text-sm" aria-label="Score contribution">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono tabular-nums">
+            <span className="inline-flex items-center gap-1 text-met">
+              <ArrowUp aria-hidden="true" className="size-4" />+
+              {verdict.scoreImpact.earned.toFixed(1)} earned points
+            </span>
+            <span className="inline-flex items-center gap-1 text-destructive">
+              <ArrowDown aria-hidden="true" className="size-4" />−
+              {verdict.scoreImpact.shortfall.toFixed(1)} unearned points
+            </span>
+          </div>
+          <p className="text-muted-foreground">
+            {verdict.scoreImpact.possible.toFixed(1)} possible points toward
+            overall fit. Unearned points show the shortfall from full credit.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Score contribution unavailable
+        </p>
+      )}
 
       <div className="space-y-2">
         <Dimension dimension="match" score={verdict.match} />

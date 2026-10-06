@@ -51,6 +51,7 @@ from career_assistant.domain.scoring_v2 import (
     FitScoreV2,
     Gap,
     KeywordCoverage,
+    RequirementScore,
 )
 
 if TYPE_CHECKING:
@@ -116,6 +117,7 @@ class SqlV2AnalysisRepository:
             verdicts=self._verdicts(workspace_id, analysis_id),
             coverage=_coverage(payload["keyword_coverage"]),
             gaps=tuple(_gap(item) for item in payload["gap_plan"]),
+            score_components=_score_components(payload.get("requirement_scores", [])),
         )
 
     def traces(
@@ -400,6 +402,26 @@ def _requirement_scores(fit: FitScoreV2) -> list[dict[str, Any]]:
         }
         for c in fit.components
     ]
+
+
+def _score_components(
+    items: Sequence[Mapping[str, Any]],
+) -> tuple[RequirementScore, ...]:
+    return tuple(
+        RequirementScore(
+            requirement_id=str(item["requirement_id"]),
+            must_have=bool(item["must_have"]),
+            weight=float(item["weight"]),
+            dimension_scores={
+                Dimension(key): int(value)
+                for key, value in item["dimension_scores"].items()
+            },
+            recency_factor=float(item["recency_factor"]),
+            requirement_score=float(item["requirement_score"]),
+            contribution=float(item["contribution"]),
+        )
+        for item in items
+    )
 
 
 def _coverage(item: Mapping[str, Sequence[str]]) -> KeywordCoverage:

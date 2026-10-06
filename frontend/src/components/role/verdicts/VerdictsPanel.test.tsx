@@ -31,6 +31,46 @@ function panel(
 }
 
 const BASE_VERDICT = VERDICTS.verdicts[0]!;
+describe("Published score contribution", () => {
+  it.each([
+    ["met", 10, 0],
+    ["partial", 4, 6],
+    ["missing", 0, 10],
+  ] as const)(
+    "shows earned and unearned points for %s",
+    (verdict, earned, shortfall) => {
+      panel({
+        verdicts: {
+          ...VERDICTS,
+          verdicts: [
+            {
+              ...BASE_VERDICT,
+              verdict,
+              scoreImpact: { earned, possible: 10, shortfall },
+            },
+          ],
+        },
+      });
+      expect(
+        screen.getByText(`+${earned.toFixed(1)} earned points`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(`−${shortfall.toFixed(1)} unearned points`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/10.0 possible points toward overall fit/),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it("does not invent attribution for an older result", () => {
+    panel();
+    expect(
+      screen.getByText("Score contribution unavailable"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/earned points/)).not.toBeInTheDocument();
+  });
+});
 const FILTER_VERDICTS: RoleVerdicts = {
   ...VERDICTS,
   verdicts: [

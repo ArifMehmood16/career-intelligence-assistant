@@ -5,9 +5,9 @@
 - [x] T002 Analyze spec/plan/tasks against .specify/memory/constitution.md.
 
 ## US1 — point attribution
-- [ ] T003 [US1] Red weighted/zero/unavailable tests in backend/tests/unit/test_scoring_v2.py and backend/tests/api/test_verdict_routes.py; round-trip in backend/tests/integration/test_v2_verdicts_http_sql.py.
-- [ ] T004 [US1] Domain point projection in backend/src/career_assistant/domain/scoring_v2.py; read original JSON components in adapters/persistence/v2_analysis_repos.py; extend application/ports/v2_results.py and api/schemas.py/routes_verdicts.py.
-- [ ] T005 [US1] Red arrow/label/filter-preservation tests in frontend/src/components/role/verdicts/VerdictsPanel.test.tsx; implement API/types, cards and synthetic fixtures/gallery, then green focused checks/commit.
+- [x] T003 [US1] Red weighted/zero/unavailable tests in backend/tests/unit/test_scoring_v2.py and backend/tests/api/test_verdict_routes.py; round-trip in backend/tests/integration/test_v2_verdicts_http_sql.py.
+- [x] T004 [US1] Domain point projection in backend/src/career_assistant/domain/scoring_v2.py; read original JSON components in adapters/persistence/v2_analysis_repos.py; extend application/ports/v2_results.py and api/schemas.py/routes_verdicts.py.
+- [x] T005 [US1] Red arrow/label/filter-preservation tests in frontend/src/components/role/verdicts/VerdictsPanel.test.tsx; implement API/types, cards and synthetic fixtures/gallery, then green focused checks/commit.
 
 ## US2 — context and qualitative experience
 - [ ] T006 [US2] Red grounding/null/context/cache tests in backend/tests/unit/test_chunk_plan.py, test_judge_rules.py, test_judge_prompt.py and test_verdict_key.py.

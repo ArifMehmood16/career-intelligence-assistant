@@ -7,7 +7,7 @@ from typing import Protocol
 
 from career_assistant.application.ports.search import RetrievalTrace
 from career_assistant.domain.judging import JudgedVerdict
-from career_assistant.domain.scoring_v2 import Gap, KeywordCoverage
+from career_assistant.domain.scoring_v2 import Gap, KeywordCoverage, RequirementScore
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +42,7 @@ class V2RoleResult:
     verdicts: tuple[StoredVerdict, ...]
     coverage: KeywordCoverage
     gaps: tuple[Gap, ...]
+    score_components: tuple[RequirementScore, ...] = ()
 
 
 class V2ResultReader(Protocol):
