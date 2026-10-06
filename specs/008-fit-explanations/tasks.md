@@ -10,10 +10,10 @@
 - [x] T005 [US1] Red arrow/label/filter-preservation tests in frontend/src/components/role/verdicts/VerdictsPanel.test.tsx; implement API/types, cards and synthetic fixtures/gallery, then green focused checks/commit.
 
 ## US2 — context and qualitative experience
-- [ ] T006 [US2] Red grounding/null/context/cache tests in backend/tests/unit/test_chunk_plan.py, test_judge_rules.py, test_judge_prompt.py and test_verdict_key.py.
-- [ ] T007 [US2] Verified optional experience_expected and overall seniority context in backend/src/career_assistant/domain/chunking.py, application/contracts/chunking.py, chunking/mapping.py/prompts.py and adapters/persistence/chunk_repos.py.
-- [ ] T008 [US2] Immutable document context, cache/budget/prompt anchors in backend/src/career_assistant/domain/judging.py/candidate_facts.py and application/analysis/v2.py, judge/prompt.py/cache.py; preserve recheck and evidence scope; adjust hermetic adapter fixtures to new contracts.
-- [ ] T009 [US2] Persist/expose verified asked expectations in backend/src/career_assistant/adapters/persistence/v2_analysis_repos.py, application/ports/v2_results.py and api; render asked/supported and anchor mode in frontend/src/components/role/verdicts/VerdictCard.tsx/verdict-copy.ts; green checks/commit.
+- [x] T006 [US2] Red grounding/null/context/cache tests in backend/tests/unit/test_chunk_plan.py, test_judge_rules.py, test_judge_prompt.py and test_verdict_key.py.
+- [x] T007 [US2] Verified optional experience_expected and overall seniority context in backend/src/career_assistant/domain/chunking.py, application/contracts/chunking.py, chunking/mapping.py/prompts.py and adapters/persistence/chunk_repos.py.
+- [x] T008 [US2] Immutable document context, cache/budget/prompt anchors in backend/src/career_assistant/domain/judging.py/candidate_facts.py and application/analysis/v2.py, judge/prompt.py/cache.py; preserve recheck and evidence scope; adjust hermetic adapter fixtures to new contracts.
+- [x] T009 [US2] Persist/expose verified asked expectations in backend/src/career_assistant/adapters/persistence/v2_analysis_repos.py, application/ports/v2_results.py and api; render asked/supported and anchor mode in frontend/src/components/role/verdicts/VerdictCard.tsx/verdict-copy.ts; green checks/commit.
 
 ## US3 — Ask processing
 - [x] T010 [US3] Red pending/stream/terminal/cancellation tests in frontend/src/components/ask/ChatView.test.tsx and ChatContainer.test.tsx.

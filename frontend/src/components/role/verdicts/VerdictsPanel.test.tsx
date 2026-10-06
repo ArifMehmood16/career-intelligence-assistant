@@ -352,3 +352,65 @@ describe("KeywordCoveragePanel", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("Experience and seniority expectations", () => {
+  it("shows requested depth and supported work without inventing years", () => {
+    panel({
+      verdicts: {
+        ...VERDICTS,
+        verdicts: [
+          {
+            ...BASE_VERDICT,
+            yearsExpected: null,
+            experienceExpected: "Proven production delivery experience",
+            seniorityExpected: "senior",
+            seniority: {
+              score: 2,
+              rationale:
+                "Owned releases, but no strategic workstream leadership shown.",
+            },
+            experience: {
+              score: 3,
+              rationale: "Delivered and maintained production APIs.",
+            },
+          },
+        ],
+      },
+    });
+    const experience = screen.getByRole("group", { name: "Experience" });
+    expect(
+      within(experience).getByText(
+        /Asked: Proven production delivery experience/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(experience).getByText("Meets the requested scope and depth"),
+    ).toBeInTheDocument();
+    expect(
+      within(experience).getByText(
+        /Supported: Delivered and maintained production APIs/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(experience).queryByText(/Meets the years/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Asked: senior level")).toBeInTheDocument();
+  });
+  it("keeps numeric years separate from qualitative depth", () => {
+    panel({
+      verdicts: {
+        ...VERDICTS,
+        verdicts: [
+          {
+            ...BASE_VERDICT,
+            yearsExpected: 5,
+            experienceExpected: "production experience",
+            experience: { score: 2, rationale: "Three dated years." },
+          },
+        ],
+      },
+    });
+    expect(screen.getByText("Asked: 5 years")).toBeInTheDocument();
+    expect(screen.getByText("At least half the years")).toBeInTheDocument();
+  });
+});

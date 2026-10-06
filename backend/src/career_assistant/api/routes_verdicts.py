@@ -63,6 +63,9 @@ def _verdict_wire(
         must_have=stored.must_have,
         verdict=judged.verdict,
         requirement_score=stored.requirement_score,
+        years_expected=stored.years_expected,
+        seniority_expected=stored.seniority_expected,
+        experience_expected=stored.experience_expected,
         score_impact=None
         if impact is None
         else ScoreImpactWire(

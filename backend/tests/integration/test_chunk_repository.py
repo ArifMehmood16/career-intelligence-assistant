@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 
 import pytest
 from tests.integration.conftest import make_document
@@ -47,7 +48,11 @@ def test_cv_chunks_round_trip_with_roles_terms_and_context(uow: SqlUnitOfWork) -
 
 def test_advert_requirements_round_trip(uow: SqlUnitOfWork) -> None:
     ws, doc = _document(uow, DocumentKind.JOB_DESCRIPTION, JD)
-    chunks = jd_chunks()
+    original = jd_chunks()
+    requirement = replace(
+        original[0].atomic_requirements[0], experience_expected="5+ years of Python"
+    )
+    chunks = (replace(original[0], atomic_requirements=(requirement,)),)
 
     with uow:
         uow.chunks.replace_chunks(ws, doc, chunks, PROVENANCE)

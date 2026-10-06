@@ -125,6 +125,9 @@ def analyse_hermetic(
                 provider_id="hermetic",
                 model_tag="rules-v1",
                 source_chunk_id=item.chunk_id,
+                years_expected=item.packet.years_expected,
+                seniority_expected=item.packet.seniority_expected,
+                experience_expected=item.packet.experience_expected,
             )
             for item in analysis.requirements
         ),

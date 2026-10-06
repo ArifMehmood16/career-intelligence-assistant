@@ -29,6 +29,9 @@ class StoredVerdict:
     provider_id: str
     model_tag: str
     source_chunk_id: str = ""
+    years_expected: float | None = None
+    seniority_expected: str | None = None
+    experience_expected: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

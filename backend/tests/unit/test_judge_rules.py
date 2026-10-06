@@ -134,7 +134,7 @@ def test_a_level_or_years_the_requirement_never_states_must_not_be_scored() -> N
 
     assert _problems(PACKET, verdict) == (
         "seniority: the requirement states no level, so return null",
-        "experience: the requirement states no years, so return null",
+        "experience: the requirement states no experience, so return null",
     )
 
 
@@ -228,3 +228,15 @@ def test_a_problem_names_ids_and_never_repeats_document_text() -> None:
     verdict = _verdict(evidence=(ProposedQuote("c1", "secret words not there"),))
 
     assert all("secret" not in p for p in _problems(PACKET, verdict))
+
+
+def test_qualitative_experience_requires_a_score_but_keeps_evidence_caps() -> None:
+    packet = replace(PACKET, experience_expected="Experience with vector databases")
+    assert _problems(packet, _verdict())
+    accepted = check_verdicts([packet], [_verdict(experience=_score(3))])
+    assert accepted.problems == {}
+    assert accepted.verdicts["r1"].experience_score == 3
+    skills = _verdict(evidence=(ProposedQuote("c2", "pgvector"),), experience=_score(4))
+    capped = check_verdicts([packet], [skills])
+    assert capped.verdicts["r1"].experience_score == 1
+    assert _problems(PACKET, _verdict(experience=_score(3)))

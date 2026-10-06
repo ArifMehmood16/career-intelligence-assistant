@@ -139,6 +139,7 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: true,
       verdict: "partial",
       requirementScore: 0.58,
+      yearsExpected: 5,
       scoreImpact: { earned: 34.8, possible: 60, shortfall: 25.2 },
       match: {
         score: 3,
@@ -175,7 +176,11 @@ const sampleVerdicts: RoleVerdicts = {
         rationale: "Owned the production warehouse and improved reliability.",
       },
       seniority: null,
-      experience: null,
+      experienceExpected: "Production PostgreSQL experience",
+      experience: {
+        score: 3,
+        rationale: "Owned production monitoring and database reliability.",
+      },
       unmetConditions: [],
       contradiction: false,
       adjustments: [],

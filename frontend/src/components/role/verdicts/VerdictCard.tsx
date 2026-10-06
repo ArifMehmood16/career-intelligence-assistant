@@ -38,9 +38,13 @@ function Meter({ score }: { score: number }) {
 function Dimension({
   dimension,
   score,
+  expected,
+  qualitative = false,
 }: {
   dimension: JudgeDimension;
   score: DimensionScore | null;
+  expected?: string | null;
+  qualitative?: boolean;
 }) {
   const label = DIMENSION_LABEL[dimension];
   return (
@@ -58,14 +62,19 @@ function Dimension({
               {score.score} / {MAX_SCORE}
             </span>
             <span className="text-muted-foreground">
-              {anchorLabel(dimension, score.score)}
+              {anchorLabel(dimension, score.score, qualitative)}
             </span>
           </>
         )}
       </p>
+      {expected ? <p className="pl-26 text-sm">Asked: {expected}</p> : null}
       {score !== null && score.rationale ? (
         <p className="pl-26 text-sm text-muted-foreground">
-          <span className="sr-only">The judge&apos;s reason: </span>
+          {dimension === "match" ? (
+            <span className="sr-only">The judge&apos;s reason: </span>
+          ) : (
+            "Supported: "
+          )}
           {score.rationale}
         </p>
       ) : null}
@@ -132,8 +141,27 @@ export function VerdictCard({ verdict, onShowTrace }: VerdictCardProps) {
 
       <div className="space-y-2">
         <Dimension dimension="match" score={verdict.match} />
-        <Dimension dimension="seniority" score={verdict.seniority} />
-        <Dimension dimension="experience" score={verdict.experience} />
+        <Dimension
+          dimension="seniority"
+          score={verdict.seniority}
+          expected={
+            verdict.seniorityExpected
+              ? `${verdict.seniorityExpected} level`
+              : null
+          }
+        />
+        <Dimension
+          dimension="experience"
+          score={verdict.experience}
+          expected={
+            verdict.yearsExpected != null
+              ? `${verdict.yearsExpected} years`
+              : (verdict.experienceExpected ?? null)
+          }
+          qualitative={
+            verdict.yearsExpected == null && Boolean(verdict.experienceExpected)
+          }
+        />
       </div>
 
       {verdict.evidence.length > 0 ? (

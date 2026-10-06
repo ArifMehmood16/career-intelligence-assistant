@@ -301,6 +301,9 @@ export interface Verdict {
   verdict: VerdictLabel;
   requirementScore: number | null;
   scoreImpact?: { earned: number; possible: number; shortfall: number } | null;
+  yearsExpected?: number | null;
+  seniorityExpected?: string | null;
+  experienceExpected?: string | null;
   match: DimensionScore;
   seniority: DimensionScore | null;
   experience: DimensionScore | null;

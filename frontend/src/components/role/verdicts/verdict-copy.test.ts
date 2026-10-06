@@ -20,7 +20,9 @@ describe("verdict copy", () => {
 
   it("says why a dimension has no score", () => {
     expect(NOT_STATED.seniority).toBe("The advert states no level.");
-    expect(NOT_STATED.experience).toBe("The advert states no years.");
+    expect(NOT_STATED.experience).toBe(
+      "The advert states no experience expectation.",
+    );
   });
 
   it("explains each server rule that changed a verdict", () => {

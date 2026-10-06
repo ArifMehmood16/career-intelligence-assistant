@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.lines import NumberedLine
 
-CHUNKING_PROMPT_VERSION = "chunking-v3"
+CHUNKING_PROMPT_VERSION = "chunking-v4"
 
 _STRUCTURE_RULES = """Rules:
 1. Every line number appears in exactly one chunk. List chunks in line order; they
@@ -61,7 +61,12 @@ one per assessable requirement:
 - statement: that single requirement in plain words.
 - must_have: false only when the advert marks it desirable, a bonus or nice to have.
 - years_expected: only when the advert writes a number of years.
-- seniority_expected: only when the requirement or the advert title states a level.
+- experience_expected: copy a qualitative experience expectation from the requirement
+  quote (such as proven production delivery experience), or null. Never invent years.
+- seniority_expected: consider the role and responsibilities across the advert and
+  its title. Set a level only if stated and applicable to this requirement's scope,
+  ownership or leadership; do not attach the role level to every standalone tool.
+
 """
 
 

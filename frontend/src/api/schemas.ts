@@ -323,6 +323,9 @@ export const roleVerdictsSchema = z.object({
       mustHave: z.boolean(),
       verdict: z.enum(["met", "partial", "missing"]),
       requirementScore: z.number().nullable(),
+      yearsExpected: z.number().nullable().default(null),
+      seniorityExpected: z.string().nullable().default(null),
+      experienceExpected: z.string().nullable().default(null),
       scoreImpact: z
         .object({
           earned: z.number(),

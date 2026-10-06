@@ -54,6 +54,8 @@ def _verdict(requirement_id: str, body: str, years: dict[str, float]) -> dict[st
             "score": _experience(held, float(expected), found is not None),
             "rationale": _RATIONALE,
         }
+    elif fields.get("experience_expected", _NULL) != _NULL:
+        verdict["experience"] = {"score": score, "rationale": _RATIONALE}
     return verdict
 
 

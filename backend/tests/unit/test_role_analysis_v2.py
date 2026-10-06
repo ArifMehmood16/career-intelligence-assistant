@@ -6,6 +6,7 @@ search. The judge may refuse; then nothing is scored.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -18,7 +19,9 @@ from tests.support.refusing_structured import RefusingJudge
 from career_assistant.adapters.providers.hermetic.embedding import (
     HermeticEmbeddingAdapter,
 )
+from career_assistant.adapters.providers.hermetic.judging_rules import judge_verdicts
 from career_assistant.adapters.providers.hermetic.structured import (
+    DEFAULT_BUILDERS,
     HermeticStructuredCompleter,
 )
 from career_assistant.application.analysis.v2 import (
@@ -30,6 +33,7 @@ from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
 )
+from career_assistant.application.contracts.judge import JudgeResponse
 from career_assistant.application.indexing.service import DocumentIndexer
 from career_assistant.application.judge.cache import ModelIdentity
 from career_assistant.application.judge.prompt import JudgeLimits
@@ -138,3 +142,35 @@ def test_progress_walks_the_v2_tasks_in_order() -> None:
     assert ("skip", "recheck") in progress.events or "recheck" in entered
     total = len(analysis.requirements)
     assert ("judge", total, total) in progress.events
+
+
+def test_judge_receives_overall_documents_but_not_contact_chunks() -> None:
+    seen: list[str] = []
+
+    def record(user: str):
+        seen.append(user)
+        return judge_verdicts(user)
+
+    structured = HermeticStructuredCompleter(
+        {**DEFAULT_BUILDERS, JudgeResponse: record}
+    )
+    documents = _documents()
+    documents = replace(
+        documents,
+        cv=replace(documents.cv, text="sentinel@example.test\n" + documents.cv.text),
+    )
+    analysis = _analysis(structured).run(documents)
+    assert analysis.fit.publishable
+    assert seen
+    for prompt in seen:
+        assert "sentinel@example.test" not in prompt
+        assert 'document_context id="cv-1"' in prompt
+        assert 'document_context id="jd-1"' in prompt
+        assert "Northwind Analytics" in prompt
+        assert "We need an analytics engineer" in prompt
+    expected = [r for r in analysis.requirements if r.packet.experience_expected]
+    assert expected
+    assert all(
+        analysis.match.verdicts[r.packet.requirement_id].verdict.experience is not None
+        for r in expected
+    )

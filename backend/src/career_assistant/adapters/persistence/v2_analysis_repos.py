@@ -213,7 +213,10 @@ class SqlV2AnalysisRepository:
             seniority_score=verdict.seniority_score,
             experience_score=verdict.experience_score,
             requirement_score=scores.get(requirement_id),
-            payload=verdict_payload(verdict, left_machine=record.left_machine),
+            payload={
+                **verdict_payload(verdict, left_machine=record.left_machine),
+                "experience_expected": requirement.packet.experience_expected,
+            },
             input_hash=record.input_hash,
             provider=record.provider_id,
             model_tag=record.model_tag,
@@ -362,6 +365,9 @@ def _stored(
         provider_id=row.provider,
         model_tag=row.model_tag,
         source_chunk_id=str(item.chunk_id),
+        years_expected=item.years_expected,
+        seniority_expected=item.seniority_expected,
+        experience_expected=row.payload.get("experience_expected"),
     )
 
 

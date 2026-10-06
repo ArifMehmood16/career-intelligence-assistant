@@ -349,6 +349,9 @@ class VerdictWire(ApiModel):
     verdict: str
     requirement_score: float | None
     score_impact: ScoreImpactWire | None = None
+    years_expected: float | None = None
+    seniority_expected: str | None = None
+    experience_expected: str | None = None
     match: DimensionScoreWire
     seniority: DimensionScoreWire | None
     experience: DimensionScoreWire | None

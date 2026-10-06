@@ -19,7 +19,11 @@ from career_assistant.domain.candidate_facts import (
     TermFact,
 )
 from career_assistant.domain.experience import ExperienceFact
-from career_assistant.domain.judging import Candidate, RequirementPacket
+from career_assistant.domain.judging import (
+    Candidate,
+    JudgeDocumentContext,
+    RequirementPacket,
+)
 from career_assistant.domain.recency import DateRange
 
 AS_OF = date(2026, 9, 1)
@@ -195,3 +199,43 @@ def test_the_response_reserve_grows_with_the_batch_not_the_model_maximum() -> No
     )
     batches = judge_batches(packets, large_output, JudgeLimits(), prefix_chars=0)
     assert [len(batch) for batch in batches] == [5]
+
+
+def test_overall_context_is_interpretive_and_precedes_each_packet() -> None:
+    context = JudgeDocumentContext(
+        "cv-1",
+        "Owned production releases.",
+        "jd-1",
+        "Senior engineer: production delivery.",
+    )
+    user = judge_user(replace(FACTS, context=context), [PACKET], as_of=AS_OF)
+    assert user.index("Owned production releases.") < user.index(
+        '<requirement id="r1">'
+    )
+    assert "Senior engineer: production delivery." in user
+    assert '</document_context id="cv-1">' in user
+    assert "context is for interpretation" in JUDGE_SYSTEM
+    assert "qualitative" in JUDGE_SYSTEM
+    assert "experience_expected: null" in user
+
+
+def test_whole_context_counts_toward_batch_capacity() -> None:
+    from career_assistant.application.judge.prompt import render_facts
+
+    context = JudgeDocumentContext("cv-1", "work " * 5000, "jd-1", "senior")
+    facts = replace(FACTS, context=context)
+    packets = [replace(PACKET, requirement_id=f"r{i}") for i in range(4)]
+    small = replace(CAPABILITIES, context_window_tokens=7500)
+    normal = judge_batches(
+        packets,
+        small,
+        JudgeLimits(),
+        prefix_chars=len(render_facts(FACTS, as_of=AS_OF)),
+    )
+    contextual = judge_batches(
+        packets,
+        small,
+        JudgeLimits(),
+        prefix_chars=len(render_facts(facts, as_of=AS_OF)),
+    )
+    assert len(contextual) > len(normal)
