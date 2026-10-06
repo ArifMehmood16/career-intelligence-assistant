@@ -18,6 +18,34 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1–19.3 — Fit explanations and Ask processing
+
+- Date: 2026-10-06
+- Scope: [spec 008](../specs/008-fit-explanations/spec.md), human-requested before
+  broader release gates; Spec Kit research/analyze completed before implementation.
+- Change: original publication weights project earned/possible/shortfall points;
+  accessible green/red arrows; verified qualitative experience and overall CV/JD
+  context in existing judge requests; context-sensitive cache/budget; asked/supported
+  labels. Ask shows immediate processing, receiving and history refresh, with
+  identity guards protecting successive requests after stop.
+- Verification: behavioral red/green regressions; full make lint/test (818 backend,
+  192 frontend, 84.70% coverage, 3 existing skips); 141 disposable PostgreSQL
+  integration tests. No personal database or hosted development call. Bandit on
+  18 changed backend modules reported no findings; manual branch/design/security
+  review completed, Sonar scanner unavailable.
+- Browser: synthetic arrow colors, numeric/qualitative explanations, Missing/low
+  and Met/high filtering preserve point attribution and fit; pending Ask shows Stop.
+  Four current JPEGs were captured and visually checked. Architecture diagram,
+  ADR 014, README, API/product/usage docs and root scope were reconciled with code.
+- Commits: 47d11cd, 53d414e, 5f291ea, 1b76dcc, b45590e.
+- Delivery: PR #45 is merged at 0362666; canonical checkout has synced main plus
+  feat/phase-19-fit-explanations. No worktrees or redundant local branches remain.
+  New PR-head checks follow publication.
+- Carried forward: reanalysis is needed for new judgments; larger interpretive
+  context uses the existing capacity bound and may reduce batch size. No semantic
+  model-quality claim follows from fixtures. Broader browser journeys, dependency/
+  release scans and measured quality/latency remain open under 19.1–19.4.
+
 ## Phase 19.1 — Requirement filters and documentation refresh
 
 - Date: 2026-10-05

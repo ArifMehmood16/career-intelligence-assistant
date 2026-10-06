@@ -36,7 +36,7 @@ frontend/src/{components/ask,components/role/verdicts,api,types,routes/dev.state
   full advert/title, with applicability determined by extraction, never a blanket
   numeric inheritance. Prompt versions invalidate extraction/judge caches.
 - CandidateFacts carries optional immutable JudgeDocumentContext built from stored
-  CV work/role chunks and the JD. render_facts includes it before packets; budget
+  non-contact CV chunks and the JD. render_facts includes it before packets; budget
   and cache include all visible context/facts. Same facts flow through rechecks.
 - Existing numeric/rationale dimensions remain; qualitative anchors apply when
   years are absent. Wire fields expose verified expectations; card labels Asked

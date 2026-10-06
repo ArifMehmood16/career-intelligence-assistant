@@ -20,7 +20,7 @@
 - [x] T011 [US3] Show accessible processing/answering status in frontend/src/components/ask/ChatView.tsx; protect request lifecycle in ChatContainer.tsx; add pending gallery state in frontend/src/routes/dev.states.tsx; green checks/commit.
 
 ## Checkpoint
-- [ ] T012 Full make lint/test and disposable SQL integration, branch review and synthetic Browser checks; update README.md, PLAN.md, BACKLOG.md, docs/features.md, docs/api-contract.md, docs/architecture.md, docs/engineering-journal.md and AI_DEVELOPMENT_LOG.md.
+- [x] T012 Full make lint/test and disposable SQL integration, branch review and synthetic Browser checks; update README.md, PLAN.md, BACKLOG.md, docs/features.md, docs/api-contract.md, docs/architecture.md, docs/engineering-journal.md and AI_DEVELOPMENT_LOG.md.
 - [ ] T013 Explicit commit/push, create/attach review PR, inspect final CI; verify main plus active branch and one checkout.
 
 Dependencies: T001 → T002; each story tests precede its source changes. Stories

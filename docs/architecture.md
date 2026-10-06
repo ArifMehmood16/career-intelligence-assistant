@@ -1,6 +1,6 @@
 # Architecture — one evidence-bound analysis
 
-Current behavior, 2026-10-05. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
+Current behavior, 2026-10-06. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
 and [PLAN 19](../PLAN.md). The retired span-classification/assessment pipeline is
 implementation history, not an alternate runtime or a release dependency.
 
@@ -19,7 +19,9 @@ flowchart TD
   cvcheck --> index[("Chunks, batched vectors and full-text/graph indexes")]
   jdcheck --> index
   index --> search["Batch query embeddings; hybrid CV evidence search"]
-  search --> judge["Capacity-sized judge batches; bounded threads"]
+  index --> context["Non-contact CV and whole JD context; untrusted, budgeted and cached"]
+  context --> judge["Capacity-sized judge batches; bounded threads"]
+  search --> judge
   judge --> verify["Verify anchors and evidence against retrieved stored chunks"]
   verify --> correction["Recheck thin evidence: bounded corrective search/judge"]
   correction --> score["Domain arithmetic: fit, band and gap priorities"]
@@ -36,12 +38,20 @@ atomic requirements and technology relationships come back together. Server-side
 line coverage and verbatim checks run before storage. Relationships represent
 inferred general knowledge and never candidate evidence.
 
-The judge receives retrieved stored chunks and requirement facts. Input and output
+The judge receives retrieved stored chunks, verified numeric/qualitative expectations
+and overall non-contact CV/JD context in its stable prefix. Context aids role-level,
+ownership and delivery-depth interpretation; it cannot introduce supporting citations.
+Input and output
 budgets both determine batch size. The judge may request one better retrieval query
 per requirement, bounded by the analysis rewrite cap; only changed candidate sets
 are rejudged together. A failed/incomplete judgment publishes no fit score.
 Fit is arithmetic over validated judgments. All product views use that result;
 shared draft/citation view types do not introduce another matching/scoring path.
+Earned/possible/shortfall points are a pure projection of the original published
+weights/contributions. No current-rubric or filtered-total recomputation occurs.
+Optional expectations live in existing chunk/verdict JSON; old missing fields remain
+null. Extraction/judge versions and all visible facts/context invalidate caches;
+reanalysis produces the new judgments without changing the aggregation formula.
 
 ## Execution boundaries
 
@@ -130,6 +140,10 @@ Hard-deleting a role removes its job rows altogether; this is removal, not anoth
 persisted job state. The read-only job endpoint can return HTTP 200 for a failed job:
 clients inspect state/error and stop polling terminal outcomes. See the
 [API contract](api-contract.md) and [local operations](running-locally.md).
+
+Ask processing begins before the first SSE event, progresses through receiving and
+saved-history refresh, and clears on terminal outcomes. Request identity guards
+prevent a stopped request's late callbacks from changing a newer request.
 
 ## Storage and scope
 
