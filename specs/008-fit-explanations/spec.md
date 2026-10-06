@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feat/phase-19-fit-explanations`
 **Created**: 2026-10-06
-**Status**: Implemented and locally verified; PR-head CI follows publication
+**Status**: Implemented and verified; PR #46, CI green on d579923
 **Input**: Show green/red score contribution arrows, judge experience/seniority
 in overall CV/JD context, and show processing immediately in Ask.
 Root scope: bounded human-assigned group under PLAN 19.1–19.3 and BACKLOG Now.

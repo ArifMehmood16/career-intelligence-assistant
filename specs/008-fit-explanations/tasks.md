@@ -21,10 +21,13 @@
 
 ## Checkpoint
 - [x] T012 Full make lint/test and disposable SQL integration, branch review and synthetic Browser checks; update README.md, PLAN.md, BACKLOG.md, docs/features.md, docs/api-contract.md, docs/architecture.md, docs/engineering-journal.md and AI_DEVELOPMENT_LOG.md.
-- [ ] T013 Explicit commit/push, create/attach review PR, inspect final CI; verify main plus active branch and one checkout.
+- [x] T013 Explicit commit/push, create/attach review PR, inspect final CI; verify main plus active branch and one checkout.
 
 Dependencies: T001 → T002; each story tests precede its source changes. Stories
 independently verifiable; US1/US2 share API/card files so implemented sequentially.
 US3 independent. All stories precede T012/T013. Research-only agent under Spec Kit;
 root implements. FR001/002 T003–005; FR003–005 T006–009; FR006 T010–011;
 FR007 T003–012; FR008 T001/T002/T012/T013. No unmapped requirement/task.
+
+Delivery evidence: PR #46 attached/open; all three jobs in CI run 37525036496
+passed on d579923. Final checkpoint documentation receives updated-head CI.

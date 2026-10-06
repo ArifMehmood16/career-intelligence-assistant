@@ -39,7 +39,9 @@ experience, overall CV/JD context, asked/supported explanations and immediate As
 status. Lint, 818 backend/192 frontend tests and 141 disposable SQL checks pass.
 Synthetic Browser checks preserve point shares through filters and show pending
 Ask. Reanalysis is needed for new contextual judgments; original arithmetic remains.
-Only synced `main` and `feat/phase-19-fit-explanations` remain locally, in one checkout.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is open and attached; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed all three jobs on `d579923`. Only synced `main` and
+`feat/phase-19-fit-explanations` remain locally, in one checkout.
 The merged checkpoint branch was removed after confirming its commits on main.
 
 The request-schema, judge-diagnostic and recency-display regressions are included

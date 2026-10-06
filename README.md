@@ -12,8 +12,9 @@ cover letter draft — with every claim traceable to the span of text it came fr
 > context, with asked/supported explanations; reanalyse to obtain new judgments.
 > Ask shows processing immediately, then answering and conversation refresh.
 > [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-> is merged at `0362666`. This follow-up passes local lint, hermetic and disposable
-> PostgreSQL checks. Measured quality, broader browser journeys and release checks
+> is merged at `0362666`. [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+> adds this follow-up; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+> passed all three jobs on `d579923`, alongside local checks. Measured quality, broader browser journeys and release checks
 > remain open in [PLAN.md](PLAN.md). This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and

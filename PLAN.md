@@ -90,6 +90,8 @@ successive requests after cancellation. Local lint, 818 backend tests, 192 front
 tests and all 141 disposable SQL integration tests pass. Synthetic Browser checks
 cover arrows, asked/supported explanations, filter preservation and pending Ask.
 Judgment changes require reanalysis; scoring weights/formula are unchanged.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is open and attached; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `d579923`.
 The canonical checkout holds `feat/phase-19-fit-explanations`; the merged checkpoint
 branch was safely removed. No additional worktree or personal database was used.
 
