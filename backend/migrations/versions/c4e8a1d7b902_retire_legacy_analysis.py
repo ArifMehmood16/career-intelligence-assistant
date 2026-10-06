@@ -21,22 +21,22 @@ APP_SCHEMA = "career_assistant"
 
 
 def upgrade() -> None:
-    op.execute(f"""
-        DELETE FROM {APP_SCHEMA}.generated_drafts AS draft
-        USING {APP_SCHEMA}.score_explanations AS score
+    op.execute("""
+        DELETE FROM career_assistant.generated_drafts AS draft
+        USING career_assistant.score_explanations AS score
         WHERE draft.workspace_id = score.workspace_id
           AND draft.role_id = score.role_id
           AND draft.analysis_version = score.analysis_version
           AND COALESCE(score.explanation->>'pipeline_version', '') <> 'v2'
     """)
-    op.execute(f"""
-        DELETE FROM {APP_SCHEMA}.score_explanations
+    op.execute("""
+        DELETE FROM career_assistant.score_explanations
         WHERE COALESCE(explanation->>'pipeline_version', '') <> 'v2'
     """)
-    op.execute(f"""
-        UPDATE {APP_SCHEMA}.roles AS role SET status = 'failed'
+    op.execute("""
+        UPDATE career_assistant.roles AS role SET status = 'failed'
         WHERE role.status = 'ready' AND NOT EXISTS (
-            SELECT 1 FROM {APP_SCHEMA}.score_explanations AS score
+            SELECT 1 FROM career_assistant.score_explanations AS score
             WHERE score.workspace_id = role.workspace_id
               AND score.role_id = role.id
               AND score.analysis_version = role.analysis_version
@@ -59,13 +59,13 @@ def upgrade() -> None:
         type_='check',
         schema=APP_SCHEMA,
     )
-    op.execute(f"""
-        DELETE FROM {APP_SCHEMA}.analysis_job_tasks
+    op.execute("""
+        DELETE FROM career_assistant.analysis_job_tasks
         WHERE job_id IN (
-            SELECT id FROM {APP_SCHEMA}.analysis_jobs WHERE pipeline_version = 'v1'
+            SELECT id FROM career_assistant.analysis_jobs WHERE pipeline_version = 'v1'
         )
     """)
-    op.execute(f"UPDATE {APP_SCHEMA}.analysis_jobs SET pipeline_version = 'v2'")
+    op.execute("UPDATE career_assistant.analysis_jobs SET pipeline_version = 'v2'")
     op.alter_column(
         'analysis_jobs',
         'pipeline_version',
@@ -83,27 +83,27 @@ def upgrade() -> None:
 def _retire_live_jobs() -> None:
     # Resolve roles before the old pipeline marker and live-job state disappear.
     # A concurrent current request retains ownership of its analysing role.
-    op.execute(f"""
-        UPDATE {APP_SCHEMA}.roles AS role
+    op.execute("""
+        UPDATE career_assistant.roles AS role
         SET status = CASE WHEN EXISTS (
-            SELECT 1 FROM {APP_SCHEMA}.score_explanations AS score
+            SELECT 1 FROM career_assistant.score_explanations AS score
             WHERE score.workspace_id = role.workspace_id
               AND score.role_id = role.id
               AND score.analysis_version = role.analysis_version
               AND score.invalidated IS FALSE
         ) THEN 'ready' ELSE 'failed' END
         WHERE role.status = 'analysing' AND EXISTS (
-            SELECT 1 FROM {APP_SCHEMA}.analysis_jobs AS job
+            SELECT 1 FROM career_assistant.analysis_jobs AS job
             WHERE job.workspace_id = role.workspace_id AND job.role_id = role.id
               AND job.pipeline_version = 'v1' AND job.state IN ('queued', 'running')
         ) AND NOT EXISTS (
-            SELECT 1 FROM {APP_SCHEMA}.analysis_jobs AS job
+            SELECT 1 FROM career_assistant.analysis_jobs AS job
             WHERE job.workspace_id = role.workspace_id AND job.role_id = role.id
               AND job.pipeline_version = 'v2' AND job.state IN ('queued', 'running')
         )
     """)
-    op.execute(f"""
-        UPDATE {APP_SCHEMA}.analysis_jobs
+    op.execute("""
+        UPDATE career_assistant.analysis_jobs
         SET state = 'failed', finished_at = CURRENT_TIMESTAMP,
             error_code = 'legacy_analysis_retired',
             error_message = 'This analysis was retired. Run a new analysis.'
