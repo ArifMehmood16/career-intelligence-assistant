@@ -126,9 +126,9 @@ const queuedJob: AnalysisJob = {
 const sampleVerdicts: RoleVerdicts = {
   roleId: "role-harbour",
   analysisId: "analysis-harbour-2",
-  fitScore: 54.8,
+  fitScore: 56.75,
   band: "partial",
-  gated: true,
+  gated: false,
   rubricVersion: "scoring-rubric-v2",
   leftMachine: false,
   verdicts: [
@@ -138,9 +138,9 @@ const sampleVerdicts: RoleVerdicts = {
       statement: "Has five or more years of production Python.",
       mustHave: true,
       verdict: "partial",
-      requirementScore: 0.58,
+      requirementScore: 0.6125,
       yearsExpected: 5,
-      scoreImpact: { earned: 34.8, possible: 60, shortfall: 25.2 },
+      scoreImpact: { earned: 36.75, possible: 60, shortfall: 23.25 },
       match: {
         score: 3,
         rationale: "Python services in two roles, both in production.",
@@ -223,13 +223,13 @@ const sampleVerdicts: RoleVerdicts = {
       requirementId: "req-kafka",
       dimension: "match",
       current: 1,
-      delta: 9.4,
+      delta: 20,
     },
     {
       requirementId: "req-python",
       dimension: "recency",
-      current: 0.6,
-      delta: 4.1,
+      current: 0.7,
+      delta: 15.75,
     },
   ],
 };
