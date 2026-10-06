@@ -1,6 +1,6 @@
 # Features and evidence contract
 
-Current product behavior, 2026-10-05. [Architecture](architecture.md),
+Current product behavior, 2026-10-06. [Architecture](architecture.md),
 [API contract](api-contract.md), [delivery plan](../PLAN.md) and
 [limitations](limitations.md) contain implementation details and open verification.
 
@@ -57,7 +57,23 @@ separate Not scored choice. The shown/total count and Clear filters make the sub
 explicit. Filtering preserves the publication's overall fit, ordering, evidence
 and retrieval actions; a new analysis resets list filters.
 
-Domain scoring applies configured must-have weights, dimension bonuses, recency and
+Each requirement shows green up-arrow earned points and red down-arrow unearned
+points toward the 100-point overall fit. The reference is full credit, not a change
+from an earlier analysis. Shares use the original publication's weights and
+contributions, including recency, and remain fixed through filtering. Missing earns
+zero; full credit has zero shortfall; unavailable historical attribution is labelled.
+Displayed points round to one decimal, so displayed totals may differ slightly.
+
+The judge reads overall non-contact CV context and the job description alongside
+retrieved candidates. Seniority considers stated role scope/ownership rather than
+assuming a title proves every skill. Experience uses numeric years when specified,
+otherwise a verified verbatim qualitative expectation such as production delivery.
+The latter has depth/scope anchors, not fabricated tenure. Asked/Supported labels
+compare the expectation and the judge's rationale. Context is untrusted and cannot
+supply extra citation candidates. Context participates in request budgets/cache keys;
+new extraction/judge versions require reanalysis for new judgments.
+
+Domain scoring applies configured must-have weights, dimension weights, recency and
 band/gate rules from `config/scoring_rubric.toml`. The model never supplies the fit
 score. Incomplete analyses publish no score/band/ranking position. Keyword coverage
 separately identifies exact, alias-only and missing technology names. It never
@@ -97,6 +113,11 @@ untrusted, workspace scoped and bounded. Agent citations require a returned chun
 and a verbatim quote, with one repair then refusal. Tool steps are visible in the
 current session and not persisted. The optional stdio MCP server exposes the same
 registry; its client decides where returned text goes.
+
+Ask displays processing as soon as a question is sent, receiving while the answer
+streams, and updating while saved history reloads. Stop is available before the
+first event; completion, failure and stop clear status. Late events from a stopped
+request cannot clear or overwrite a newer request's processing state.
 
 The shared Ask/MCP search and skill-experience tools still need full hybrid-search/
 knowledge-graph wiring. This remaining retrieval limitation is explicit in BACKLOG.

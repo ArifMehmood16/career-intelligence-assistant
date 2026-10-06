@@ -382,6 +382,10 @@ Verdict {
   requirementId; quote; statement; mustHave: boolean;
   verdict: "met" | "partial" | "missing";
   requirementScore: number | null;
+  scoreImpact: { earned: number; possible: number; shortfall: number } | null;
+  yearsExpected: number | null;
+  seniorityExpected: string | null;
+  experienceExpected: string | null; // verified verbatim qualitative expectation
   match: DimensionScore;
   seniority: DimensionScore | null;
   experience: DimensionScore | null;
@@ -401,6 +405,21 @@ RetrievalTrace {
                     lexicalRank: number | null; exactRank: number | null }[] }[];
 }
 ```
+
+`scoreImpact` projects the original published score components: earned is
+`100 × contribution / totalWeight`, possible is `100 × weight / totalWeight`, and
+shortfall is possible minus earned. Earned shares sum to fit; possible shares sum
+to 100. These are full-credit attribution points, distinct from the gap plan's
+single-dimension lift. Unknown historical metadata returns null, never invented
+zero. UI filtering cannot change the projection. Values are unrounded on the wire.
+
+Expectations are additive nullable fields; older client payloads default missing
+fields to null. Numeric years stay requirement-specific. Experience is scored when
+numeric years or a verified qualitative expectation exists; otherwise it is null.
+Qualitative anchors compare delivery scope/depth. Seniority uses a verified stated
+level in the advert/title. Overall non-contact CV/JD context informs interpretation,
+while supporting quotes must remain in the requirement's retrieved candidates.
+Existing stored judgments stay readable; these judgment changes require reanalysis.
 
 Every evidence quote passed the server's verbatim check against a stored chunk before
 it was saved. Each `rationale`, and a round-1 `queryText`, is the judge's own

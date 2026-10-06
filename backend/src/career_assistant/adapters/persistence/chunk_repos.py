@@ -191,6 +191,7 @@ def _metadata(chunk: Chunk) -> dict[str, Any]:
                 "statement": item.statement,
                 "must_have": item.must_have,
                 "years_expected": item.years_expected,
+                "experience_expected": item.experience_expected,
                 "seniority_expected": item.seniority_expected,
                 "tech_terms": _terms_json(item.tech_terms),
             }
@@ -258,5 +259,6 @@ def _requirement(item: Mapping[str, Any]) -> AtomicRequirementProposal:
         must_have=item["must_have"],
         years_expected=item["years_expected"],
         seniority_expected=item["seniority_expected"],
+        experience_expected=item.get("experience_expected"),
         tech_terms=_terms(item["tech_terms"]),
     )

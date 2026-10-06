@@ -28,6 +28,14 @@ class Candidate:
 
 
 @dataclass(frozen=True, slots=True)
+class JudgeDocumentContext:
+    cv_document_id: str
+    cv_text: str
+    advert_document_id: str
+    advert_text: str
+
+
+@dataclass(frozen=True, slots=True)
 class RequirementPacket:
     requirement_id: str
     quote: str
@@ -37,6 +45,7 @@ class RequirementPacket:
     candidates: tuple[Candidate, ...]
     years_expected: float | None = None
     seniority_expected: str | None = None
+    experience_expected: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,7 +194,14 @@ def _dimension_problems(
 ) -> list[str]:
     checks = (
         ("seniority", "a level", packet.seniority_expected, verdict.seniority),
-        ("experience", "years", packet.years_expected, verdict.experience),
+        (
+            "experience",
+            "years" if packet.years_expected is not None else "experience",
+            packet.years_expected
+            if packet.years_expected is not None
+            else packet.experience_expected,
+            verdict.experience,
+        ),
     )
     found: list[str] = []
     for name, what, expected, scored in checks:

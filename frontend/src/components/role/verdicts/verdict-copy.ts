@@ -1,6 +1,6 @@
 /**
  * Words for a verdict: the judge's 0–4 anchors, and the rules the server applied.
- * The anchors are the ones in the judge prompt (`judge-anchors-v1`), so a score
+ * The anchors are the ones in the judge prompt (`judge-anchors-v2`), so a score
  * reads here the way the model was told to give it.
  */
 import type { JudgeDimension } from "@/types";
@@ -39,7 +39,7 @@ const ANCHORS: Record<JudgeDimension, readonly string[]> = {
 
 export const NOT_STATED: Record<"seniority" | "experience", string> = {
   seniority: "The advert states no level.",
-  experience: "The advert states no years.",
+  experience: "The advert states no experience expectation.",
 };
 
 const ADJUSTMENTS: Record<string, string> = {
@@ -58,7 +58,21 @@ const BANDS: Record<string, string> = {
   limited: "Limited match",
 };
 
-export function anchorLabel(dimension: JudgeDimension, score: number): string {
+const QUALITATIVE_EXPERIENCE = [
+  "None",
+  "Skills list, coursework or hobby only",
+  "Part of the requested scope or depth",
+  "Meets the requested scope and depth",
+  "Clearly exceeds the requested scope",
+];
+
+export function anchorLabel(
+  dimension: JudgeDimension,
+  score: number,
+  qualitative = false,
+): string {
+  if (dimension === "experience" && qualitative)
+    return QUALITATIVE_EXPERIENCE[score] ?? `${score} of ${MAX_SCORE}`;
   return ANCHORS[dimension][score] ?? `${score} of ${MAX_SCORE}`;
 }
 

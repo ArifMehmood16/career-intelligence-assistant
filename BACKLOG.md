@@ -1,6 +1,6 @@
 # Backlog
 
-Updated 2026-10-05 following CI, runtime, requirement-filter and documentation requests. Milestone acceptance
+Updated 2026-10-06 following fit explanation, contextual experience and Ask requests. Milestone acceptance
 criteria live in PLAN.md; linked feature specs elaborate only their scoped change.
 The old v1 release gate and v1 comparison are superseded; historical quality
 measurements remain in docs/evaluation.md.
@@ -23,14 +23,26 @@ The bounded [requirement filters and documentation](specs/007-requirement-filter
 under 19.1 are implemented: combined status/domain-score selection, shown counts,
 clear/reset and unscored handling preserve fit and evidence. Current architecture
 diagrams and synthetic screenshots are refreshed; component and browser checks
-pass. The normal checkout holds `docs/phase-19-current-checkpoint` for the final logs;
-redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stays open.
+pass. Work stays in the canonical checkout; redundant preserved branches/worktrees
+are removed. Broader 19.1 acceptance stays open.
 
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed all three jobs on `08ef56b`. The human requested another PR for the
 remaining plan/log checkpoint: [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is open. Documentation-head CI remains enforced.
+is merged at `0362666`, with all three checks green on `a1f24c2`.
+Documentation-head CI remains enforced.
+
+The bounded [fit explanation and Ask follow-up](specs/008-fit-explanations/spec.md)
+is implemented under 19.1–19.3: stored earned/shortfall points, verified qualitative
+experience, overall CV/JD context, asked/supported explanations and immediate Ask
+status. Lint, 818 backend/192 frontend tests and 141 disposable SQL checks pass.
+Synthetic Browser checks preserve point shares through filters and show pending
+Ask. Reanalysis is needed for new contextual judgments; original arithmetic remains.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is open and attached; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed all three jobs on `d579923`. Only synced `main` and
+`feat/phase-19-fit-explanations` remain locally, in one checkout.
+The merged checkpoint branch was removed after confirming its commits on main.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded

@@ -7,6 +7,7 @@ that is not in the text, such as an invented technology, is dropped and counted.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from career_assistant.domain.chunking import (
@@ -350,3 +351,37 @@ def test_an_instruction_in_the_advert_cannot_add_a_requirement() -> None:
 
     assert plan.chunks == ()
     assert any("Kubernetes expert" in problem for problem in plan.problems)
+
+
+def test_qualitative_experience_is_grounded_and_level_uses_overall_advert() -> None:
+    text = "Senior Engineer\nProven production delivery experience\n"
+    requirement = AtomicRequirementProposal(
+        quote="Proven production delivery experience",
+        statement="Has production delivery experience.",
+        must_have=True,
+        years_expected=5.0,
+        seniority_expected="senior",
+        tech_terms=(),
+        experience_expected="production delivery experience",
+    )
+
+    def checked(item: AtomicRequirementProposal):
+        return validate_chunk_plan(
+            DocumentKind.JOB_DESCRIPTION,
+            number_lines(text),
+            text,
+            [
+                ProposedChunk(1, 1, "other"),
+                ProposedChunk(2, 2, "requirement", atomic_requirements=(item,)),
+            ],
+        )
+
+    plan = checked(requirement)
+    item = plan.chunks[1].atomic_requirements[0]
+    assert item.seniority_expected == "senior"
+    assert item.experience_expected == "production delivery experience"
+    assert item.years_expected is None
+    invented = checked(
+        replace(requirement, experience_expected="ten years of management")
+    )
+    assert invented.chunks[1].atomic_requirements[0].experience_expected is None

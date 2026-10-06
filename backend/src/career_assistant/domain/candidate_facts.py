@@ -15,6 +15,7 @@ from enum import StrEnum
 
 from career_assistant.domain.chunking import Chunk, TechTermProposal
 from career_assistant.domain.experience import ExperienceFact
+from career_assistant.domain.judging import JudgeDocumentContext
 from career_assistant.domain.knowledge_graph import (
     NodeKind,
     Relation,
@@ -50,6 +51,7 @@ class RoleFact:
 class CandidateFacts:
     terms: tuple[TermFact, ...]
     roles: tuple[RoleFact, ...]
+    context: JudgeDocumentContext | None = None
 
 
 _EVIDENCE_RELATIONS = frozenset({Relation.USED, Relation.MENTIONS})

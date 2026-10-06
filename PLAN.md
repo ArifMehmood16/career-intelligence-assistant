@@ -1,6 +1,6 @@
 # Delivery plan — one career intelligence pipeline
 
-Updated 2026-10-05. This plan replaces the competing v1 release/evaluation and v2
+Updated 2026-10-06. This plan replaces the competing v1 release/evaluation and v2
 build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
 Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
 evaluation rows.
@@ -73,15 +73,27 @@ add combined status/domain-score filtering without changing the publication.
 Current system, pipeline and job-lifecycle diagrams reflect inspected code;
 screenshots are refreshed synthetic component-gallery captures. Browser filter
 interactions and component regressions pass. Work is consolidated in the normal
-checkout; only synced `main` and `docs/phase-19-current-checkpoint`
-remain locally. Broader browser journeys and measured release gates stay open.
+checkout; synced `main` and the active task branch are the only local branches. Broader browser journeys and measured release gates stay open.
 
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`. [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `08ef56b`.
 The merge preceded the final plan/log commit; the human requested another PR
 for that remaining documentation. [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is open and receives its own PR-head CI.
+is merged at `0362666`; all three CI jobs passed on `a1f24c2`.
+
+The human subsequently requested [fit explanations and responsive Ask](specs/008-fit-explanations/spec.md)
+under 19.1–19.3 ahead of broader release verification. Stored point contributions
+now explain earned versus unearned fit; verified qualitative experience and overall
+CV/JD context inform new judgments; Ask exposes immediate processing and protects
+successive requests after cancellation. Local lint, 818 backend tests, 192 frontend
+tests and all 141 disposable SQL integration tests pass. Synthetic Browser checks
+cover arrows, asked/supported explanations, filter preservation and pending Ask.
+Judgment changes require reanalysis; scoring weights/formula are unchanged.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is open and attached; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `d579923`.
+The canonical checkout holds `feat/phase-19-fit-explanations`; the merged checkpoint
+branch was safely removed. No additional worktree or personal database was used.
 
 ## Approved direction
 
@@ -98,6 +110,10 @@ execution policy. Hosted egress remains opt-in. No personal documents are used i
 hosted development checks.
 
 ## 19.1 — retire the competing analysis
+
+- [x] Show earned points and full-credit shortfall for each requirement using stored
+      publication weights; green/red arrows with labels, null distinct from zero,
+      and filter-preserving API/component/SQL/Browser checks (spec 008).
 
 - [x] Add combined requirement status/score filters with counts, clear/reset and
       null-score handling; refresh current architecture diagrams and synthetic
@@ -118,6 +134,11 @@ citations and generated-artifact flows still work; schema/deletion tests pass.
 
 ## 19.2 — reduce model/API calls and respect each provider
 
+- [x] Assess verified qualitative experience and seniority using overall CV/JD
+      context in existing judge calls; retain scoped numeric years, evidence caps,
+      context-aware cache/budget checks and asked/supported explanations (spec 008).
+      These regressions prove behavior, not measured model quality.
+
 - [ ] Read each fitting document with one structured response containing line-range
       chunks, details, atomic requirements and technology relationships. Validate
       coverage and verbatim fields before storage; bounded repairs/splits handle
@@ -137,6 +158,10 @@ Exit: contract tests cover one-call documents, large output budgets, batched rep
 cache reuse and native embeddings; no hosted content leaves through a new path.
 
 ## 19.3 — bounded concurrency and useful progress
+
+- [x] Show Ask processing before any response, answering and history refresh;
+      clear status on success/failure/stop and protect a new request against late
+      events from a stopped one. Deferred-response regressions pass (spec 008).
 
 - [x] Enforce the existing running-job expiry during operation; preserve terminal
       state against late provider failures/responses, stop subsequent retries and

@@ -72,6 +72,28 @@ class FitScoreV2:
 
 
 @dataclass(frozen=True, slots=True)
+class ScoreImpact:
+    earned: float
+    possible: float
+    shortfall: float
+
+
+def score_impacts(components: Sequence[RequirementScore]) -> dict[str, ScoreImpact]:
+    """Attribute published fit points against each requirement's full credit."""
+    total = sum(component.weight for component in components)
+    if total <= 0:
+        return {}
+    shares: dict[str, ScoreImpact] = {}
+    for component in components:
+        earned = 100.0 * component.contribution / total
+        possible = 100.0 * component.weight / total
+        shares[component.requirement_id] = ScoreImpact(
+            earned=earned, possible=possible, shortfall=max(0.0, possible - earned)
+        )
+    return shares
+
+
+@dataclass(frozen=True, slots=True)
 class KeywordCoverage:
     exact: tuple[str, ...]
     alias: tuple[str, ...]

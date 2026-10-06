@@ -24,10 +24,15 @@
      every requirement. The count shows how many are visible. Filtering preserves
      the overall fit and evidence. Requirement scores are the stored domain values
      shown as whole percentages; **Not scored** stays separate from zero. Fit
-     shows each requirement's match, seniority and experience scores (0–4, with the
+     shows green earned-point arrows and red shortfalls from full credit, using
+     each requirement's original weight. These are points toward overall fit, not
+     changes since a previous analysis. Unknown contribution remains unavailable.
+     It also shows each requirement's match, seniority and experience scores (0–4, with the
      words the judge was given and its reason), the quotes behind them, keyword
      coverage with terms found only under another name flagged, and a retrieval trace
-     per requirement. Gaps then lists which score to raise and what closing it would
+     per requirement. **Asked** and **Supported** compare the requested level/depth
+     with the CV evidence. Qualitative experience uses scope/depth rather than
+     invented years; reanalyse to obtain the new contextual judgments. Gaps then lists which score to raise and what closing it would
      add.
    - **Gaps** — ordered by score impact; draft a CV bullet only when a cited claim
      already supports it.
@@ -37,7 +42,9 @@
 5. **Ask** questions about gaps, fit or anything in your documents; citation chips open
    the source span. When the answer model can call tools, an open question is
    answered by the agent, and "Found using N tool calls" under the answer shows what
-   it searched.
+   it searched. Processing appears immediately before any backend response, then
+   Receiving your answer and Updating the conversation until completion. Stop can
+   cancel while waiting for the first response.
 6. **Settings** — choose the answer and index providers. Hosted providers are offered
    only when egress is enabled on the server, and choosing one requires acknowledging
    that document text may leave the machine.
@@ -46,7 +53,8 @@
 
 ## Screenshots
 
-Refreshed 2026-10-05 from the current app's `/dev/states` component gallery.
+Fit, filter and gap captures refreshed 2026-10-06; Ask processing added the same day.
+Other captures remain from 2026-10-05, all from the current app's `/dev/states` component gallery.
 These are rendered synthetic examples of the shipped components, not personal
 documents or measured model outputs. Gallery actions use local fixtures;
 provider availability and scores illustrate UI states rather than this machine's
@@ -62,7 +70,7 @@ configuration. Capture details: [images/README.md](images/README.md).
 
 ![Fit tab with score breakdown and requirements](images/fit.jpg)
 
-*Fit — overall fit, keyword coverage, requirement scores and status/score filters.*
+*Fit — weighted earned/shortfall points, asked/supported experience and filters.*
 
 ![Requirements filtered to missing with low scores](images/fit-filters.jpg)
 
@@ -79,6 +87,10 @@ configuration. Capture details: [images/README.md](images/README.md).
 ![Prepare tab interview pack](images/prepare.jpg)
 
 *Prepare — interview probes and evidence drawn from the published analysis.*
+
+![Ask processing before the first response](images/ask-processing.jpg)
+
+*Ask — processing and Stop are visible before any answer event.*
 
 The **Letter** tab generates a grounded cover letter. After generate, citations show
 as `[1]`, `[2]` with the full source passage in the Citations panel on the right.

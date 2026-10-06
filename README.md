@@ -6,16 +6,16 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-10-05):** one chunk/search/judge analysis, PostgreSQL-backed jobs,
-> provider-specific batching and bounded parallel work. Server checks every cited
-> quote; domain code computes fit. Requirements can be filtered by status and score.
-> Expired running jobs fail visibly without a restart. PR #43 is merged;
-> [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
-> merged the runtime, filter and documentation follow-ups at `ad88781`. Local checks and
-> [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
-> pass on implementation/documentation head `08ef56b`.
-> Model quality, browser journeys and release checks remain open in [PLAN.md](PLAN.md).
-> This is a private, single-user local tool.
+> **Status (2026-10-06):** one chunk/search/judge analysis with PostgreSQL-backed
+> jobs and bounded parallel work. Requirements show green earned-point arrows and
+> red shortfalls from full credit. Experience and seniority use overall CV/job
+> context, with asked/supported explanations; reanalyse to obtain new judgments.
+> Ask shows processing immediately, then answering and conversation refresh.
+> [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
+> is merged at `0362666`. [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+> adds this follow-up; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+> passed all three jobs on `d579923`, alongside local checks. Measured quality, broader browser journeys and release checks
+> remain open in [PLAN.md](PLAN.md). This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
 measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).
@@ -28,7 +28,8 @@ measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-bench
 
 The CV and job description become server-numbered chunks. The job's requirements
 search the stored CV evidence; a model judges match, experience and seniority in
-capacity-sized batches. The server checks quoted evidence against stored text,
+capacity-sized batches using overall career/job context and explicit numeric or
+qualitative experience expectations. The server checks quoted evidence against stored text,
 then domain arithmetic computes requirement scores, overall fit and gap priorities.
 Incomplete work publishes no score. Fit, gaps, ranking, preparation, drafts and
 Ask read the same validated publication.
@@ -39,13 +40,13 @@ Ask read the same validated publication.
 
 | Feature | What it gives you |
 |---|---|
-| **Fit analysis** | Every requirement as met, partial or missing, with match, experience and seniority judgments, quoted CV evidence, retrieval traces and a domain-computed score; filter requirements by Met/Partial/Missing and score |
+| **Fit analysis** | Every requirement as met, partial or missing, with match, experience and seniority judgments, quoted CV evidence, retrieval traces and a domain-computed score; filter by status/score, see earned points and shortfalls, and compare asked versus supported experience |
 | **Gap plan** | Every gap ordered by how much the score would move if you closed it, with the nearest thing you already have and what to do about it. Fully deterministic — no model runs here |
 | **CV bullets** | A draft bullet for a gap you can already evidence, built only from claims already in your CV, with the spans it came from |
 | **Interview pack** | What they will probe, the evidence to lead with, where you are thin, and what to ask them |
 | **Cover letter** | A paragraph draft grounded in matched evidence, with numbered citations and a glossary of source passages. Refuses when too little is matched, and says why |
 | **Ranking and compare** | Roles ordered by fit with the deciding requirements named, and two roles side by side. Incomplete analyses are kept out of the ranking |
-| **Ask** | Questions answered by the configured model from the validated analysis, with source citations and the tools used during the current session |
+| **Ask** | Questions answered by the configured model from the validated analysis, with source citations and the tools used during the current session; immediate processing and answering status |
 | **Provider choice** | Local or hosted models, chosen in the UI, behind an egress gate, with every answer recording what produced it |
 
 The rules that keep each one honest are in [docs/features.md](docs/features.md);

@@ -56,6 +56,7 @@ def _requirement(item: AtomicRequirement) -> AtomicRequirementProposal:
         must_have=item.must_have,
         years_expected=item.years_expected,
         seniority_expected=item.seniority_expected,
+        experience_expected=item.experience_expected,
         tech_terms=_terms(item.tech_terms),
     )
 

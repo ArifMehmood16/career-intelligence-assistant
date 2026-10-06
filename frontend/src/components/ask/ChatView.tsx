@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -5,6 +6,12 @@ import { ToolSteps } from "@/components/ask/ToolSteps";
 import type { ChatMessage, Citation } from "@/types";
 
 export type ChatViewState = "loading" | "error" | "ready";
+export type ChatProcessingPhase = "processing" | "answering" | "saving";
+const PROCESSING_LABELS: Record<ChatProcessingPhase, string> = {
+  processing: "Processing your question…",
+  answering: "Receiving your answer…",
+  saving: "Updating the conversation…",
+};
 
 export const STARTER_PROMPTS = [
   "What am I missing for this role?",
@@ -21,6 +28,7 @@ export interface ChatViewProps {
   streamingText: string;
   draft: string;
   sending: boolean;
+  processingPhase?: ChatProcessingPhase;
   sendError?: string | null;
   canClear?: boolean;
   providerNameById: Record<string, string>;
@@ -40,6 +48,7 @@ export function ChatView({
   streamingText,
   draft,
   sending,
+  processingPhase = "processing",
   sendError = null,
   canClear = false,
   providerNameById,
@@ -96,6 +105,20 @@ export function ChatView({
       </div>
 
       <div className="sticky bottom-0 space-y-3 border-t border-border bg-background pt-3 pb-4">
+        {sending ? (
+          <p
+            role="status"
+            aria-label="Question processing"
+            aria-live="polite"
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <LoaderCircle
+              aria-hidden="true"
+              className="size-4 motion-safe:animate-spin"
+            />
+            {PROCESSING_LABELS[processingPhase]}
+          </p>
+        ) : null}
         {sendError ? (
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm text-muted-foreground" role="alert">

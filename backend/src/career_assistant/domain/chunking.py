@@ -44,6 +44,7 @@ class AtomicRequirementProposal:
     years_expected: float | None
     seniority_expected: str | None
     tech_terms: tuple[TechTermProposal, ...]
+    experience_expected: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,7 +164,9 @@ def validate_chunk_plan(
     for proposal in proposals:
         chunk_text = _text_of(proposal, by_number, text)
         problems.extend(_chunk_problems(proposal, chunk_text, limits, headings))
-        accepted, lost = _accept(kind, proposal, chunk_text, by_number, advert_title)
+        accepted, lost = _accept(
+            kind, proposal, chunk_text, by_number, advert_title, text
+        )
         chunks.append(accepted)
         dropped += lost
     if problems:
@@ -243,13 +246,14 @@ def _accept(
     chunk_text: str,
     by_number: Mapping[int, NumberedLine],
     advert_title: str,
+    advert_context: str,
 ) -> tuple[Chunk, int]:
     haystack = _norm(chunk_text)
     terms, lost_terms = _verbatim_terms(proposal.tech_terms, haystack)
     skills = tuple(s for s in proposal.skills if _norm(s) in haystack)
     role, lost_role = _verbatim_role(proposal.role, haystack)
     requirements, lost_requirements = _checked_requirements(
-        proposal.atomic_requirements, haystack, advert_title
+        proposal.atomic_requirements, haystack, f"{advert_title} {advert_context}"
     )
     lost = lost_terms + len(proposal.skills) - len(skills) + lost_role
     chunk = Chunk(
@@ -313,6 +317,12 @@ def _checked_requirements(
             f"{quote} {_norm(advert_title)}", level
         ):
             level = None
+        experience = requirement.experience_expected
+        if experience is not None and (
+            not _norm(experience) or _norm(experience) not in quote
+        ):
+            experience = None
+        lost += (experience is None) != (requirement.experience_expected is None)
         lost += lost_terms
         lost += (years is None) != (requirement.years_expected is None)
         lost += (level is None) != (requirement.seniority_expected is None)
@@ -322,6 +332,7 @@ def _checked_requirements(
                 tech_terms=terms,
                 years_expected=years,
                 seniority_expected=level,
+                experience_expected=experience,
             )
         )
     return tuple(checked), lost

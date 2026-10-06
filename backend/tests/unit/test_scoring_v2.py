@@ -15,6 +15,7 @@ import pytest
 from career_assistant.application.scoring.rubric_loader import (
     load_scoring_rubric_v2,
 )
+from career_assistant.domain import scoring_v2
 from career_assistant.domain.candidate_facts import (
     CandidateFacts,
     Coverage,
@@ -81,6 +82,32 @@ def _item(
 def test_the_configured_rubric_is_the_current_v2_rubric() -> None:
     assert RUBRIC.version == "scoring-rubric-v2"
     assert (RUBRIC.w_match, RUBRIC.w_experience, RUBRIC.w_seniority) == (0.5, 0.3, 0.2)
+
+
+def test_point_shares_use_published_weights_and_reconcile_to_fit() -> None:
+    fit = score_v2(
+        [
+            _item("met", 3),
+            _item("partial", 2, dates=(OLD,)),
+            _item("missing", 0, must_have=False),
+        ],
+        rubric=RUBRIC,
+        as_of=AS_OF,
+    )
+    shares = scoring_v2.score_impacts(fit.components)
+    assert sum(s.earned for s in shares.values()) == pytest.approx(fit.score)
+    assert sum(s.possible for s in shares.values()) == pytest.approx(100)
+    assert shares["missing"].earned == 0
+    assert shares["missing"].shortfall == pytest.approx(100 / 7)
+    assert shares["met"].shortfall == 0
+    assert shares["partial"].earned > 0
+    assert shares["partial"].shortfall > 0
+    for share in shares.values():
+        assert share.earned + share.shortfall == pytest.approx(share.possible)
+
+
+def test_no_components_have_no_attribution_instead_of_zero_points() -> None:
+    assert scoring_v2.score_impacts(()) == {}
 
 
 def test_every_requirement_met_as_stated_recently_scores_100() -> None:

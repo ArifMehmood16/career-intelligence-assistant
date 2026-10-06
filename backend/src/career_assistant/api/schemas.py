@@ -335,6 +335,12 @@ class VerdictEvidenceWire(ApiModel):
     quote: str
 
 
+class ScoreImpactWire(ApiModel):
+    earned: float
+    possible: float
+    shortfall: float
+
+
 class VerdictWire(ApiModel):
     requirement_id: str
     quote: str
@@ -342,6 +348,10 @@ class VerdictWire(ApiModel):
     must_have: bool
     verdict: str
     requirement_score: float | None
+    score_impact: ScoreImpactWire | None = None
+    years_expected: float | None = None
+    seniority_expected: str | None = None
+    experience_expected: str | None = None
     match: DimensionScoreWire
     seniority: DimensionScoreWire | None
     experience: DimensionScoreWire | None

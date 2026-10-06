@@ -23,7 +23,6 @@ from career_assistant.application.judge.prompt import (
 )
 from career_assistant.domain.candidate_facts import CandidateFacts, TermFact
 from career_assistant.domain.judging import Candidate, RequirementPacket
-from career_assistant.domain.knowledge_graph import normalise_term
 from career_assistant.domain.recency import DateRange
 
 
@@ -43,7 +42,6 @@ def verdict_key(
     *,
     as_of: date,
 ) -> str:
-    named = {normalise_term(term) for term in packet.terms}
     inputs = {
         "versions": [
             JUDGE_PROMPT_VERSION,
@@ -57,10 +55,19 @@ def verdict_key(
             packet.statement,
             packet.must_have,
             packet.years_expected,
+            packet.experience_expected,
             packet.seniority_expected,
             list(packet.terms),
         ],
-        "terms": [_term(t) for t in facts.terms if t.term in named],
+        "terms": [_term(t) for t in facts.terms],
+        "context": None
+        if facts.context is None
+        else [
+            facts.context.cv_document_id,
+            _text_hash(facts.context.cv_text),
+            facts.context.advert_document_id,
+            _text_hash(facts.context.advert_text),
+        ],
         "roles": [[r.title, r.employer, r.level, _span(r.dates)] for r in facts.roles],
         "candidates": [_candidate(c) for c in packet.candidates],
     }
@@ -98,3 +105,7 @@ def _span(span: DateRange | None) -> list[str | None] | None:
     if span is None:
         return None
     return [span.start.isoformat(), span.end.isoformat() if span.end else None]
+
+
+def _text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

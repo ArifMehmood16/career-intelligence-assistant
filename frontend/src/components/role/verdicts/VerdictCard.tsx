@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { ArrowDown, ArrowUp, TriangleAlert } from "lucide-react";
 import { useId } from "react";
 
 import { StatusMark } from "@/components/StatusMark";
@@ -38,9 +38,13 @@ function Meter({ score }: { score: number }) {
 function Dimension({
   dimension,
   score,
+  expected,
+  qualitative = false,
 }: {
   dimension: JudgeDimension;
   score: DimensionScore | null;
+  expected?: string | null;
+  qualitative?: boolean;
 }) {
   const label = DIMENSION_LABEL[dimension];
   return (
@@ -58,14 +62,19 @@ function Dimension({
               {score.score} / {MAX_SCORE}
             </span>
             <span className="text-muted-foreground">
-              {anchorLabel(dimension, score.score)}
+              {anchorLabel(dimension, score.score, qualitative)}
             </span>
           </>
         )}
       </p>
+      {expected ? <p className="pl-26 text-sm">Asked: {expected}</p> : null}
       {score !== null && score.rationale ? (
         <p className="pl-26 text-sm text-muted-foreground">
-          <span className="sr-only">The judge&apos;s reason: </span>
+          {dimension === "match" ? (
+            <span className="sr-only">The judge&apos;s reason: </span>
+          ) : (
+            "Supported: "
+          )}
           {score.rationale}
         </p>
       ) : null}
@@ -107,10 +116,52 @@ export function VerdictCard({ verdict, onShowTrace }: VerdictCardProps) {
           : `${Math.round(verdict.requirementScore * 100)}%`}
       </p>
 
+      {verdict.scoreImpact ? (
+        <div className="space-y-1 text-sm" aria-label="Score contribution">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono tabular-nums">
+            <span className="inline-flex items-center gap-1 text-met">
+              <ArrowUp aria-hidden="true" className="size-4" />+
+              {verdict.scoreImpact.earned.toFixed(1)} earned points
+            </span>
+            <span className="inline-flex items-center gap-1 text-destructive">
+              <ArrowDown aria-hidden="true" className="size-4" />−
+              {verdict.scoreImpact.shortfall.toFixed(1)} unearned points
+            </span>
+          </div>
+          <p className="text-muted-foreground">
+            {verdict.scoreImpact.possible.toFixed(1)} possible points toward
+            overall fit. Unearned points show the shortfall from full credit.
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Score contribution unavailable
+        </p>
+      )}
+
       <div className="space-y-2">
         <Dimension dimension="match" score={verdict.match} />
-        <Dimension dimension="seniority" score={verdict.seniority} />
-        <Dimension dimension="experience" score={verdict.experience} />
+        <Dimension
+          dimension="seniority"
+          score={verdict.seniority}
+          expected={
+            verdict.seniorityExpected
+              ? `${verdict.seniorityExpected} level`
+              : null
+          }
+        />
+        <Dimension
+          dimension="experience"
+          score={verdict.experience}
+          expected={
+            verdict.yearsExpected != null
+              ? `${verdict.yearsExpected} years`
+              : (verdict.experienceExpected ?? null)
+          }
+          qualitative={
+            verdict.yearsExpected == null && Boolean(verdict.experienceExpected)
+          }
+        />
       </div>
 
       {verdict.evidence.length > 0 ? (
