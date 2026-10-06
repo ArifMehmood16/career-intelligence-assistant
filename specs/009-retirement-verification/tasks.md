@@ -37,8 +37,8 @@ Independent test: selector/worker/schema guards reject retired execution; popula
 
 ## Phase 6: Validation and checkpoint
 
-- [ ] T012 Run make lint, make test and disposable make test-integration; inspect full branch diff, security/design findings and record evidence in docs/engineering-journal.md.
-- [ ] T013 Update README.md, PLAN.md, BACKLOG.md, docs/production-wiring.md and AI_DEVELOPMENT_LOG.md only for proven retirement acceptance and observed evidence.
+- [x] T012 Run make lint, make test and disposable make test-integration; inspect full branch diff, security/design findings and record evidence in docs/engineering-journal.md.
+- [x] T013 Update README.md, PLAN.md, BACKLOG.md, docs/production-wiring.md and AI_DEVELOPMENT_LOG.md only for proven retirement acceptance and observed evidence.
 - [ ] T014 Push green commits, create/attach review PR, inspect all three final-head CI jobs and record delivery in docs/engineering-journal.md. Do not merge.
 
 ## Dependencies and parallel opportunities

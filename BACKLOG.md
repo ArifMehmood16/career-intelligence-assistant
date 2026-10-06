@@ -1,6 +1,6 @@
 # Backlog
 
-Updated 2026-10-05 following CI, runtime, requirement-filter and documentation requests. Milestone acceptance
+Updated 2026-10-06 following populated retirement and publication verification. Milestone acceptance
 criteria live in PLAN.md; linked feature specs elaborate only their scoped change.
 The old v1 release gate and v1 comparison are superseded; historical quality
 measurements remain in docs/evaluation.md.
@@ -23,14 +23,14 @@ The bounded [requirement filters and documentation](specs/007-requirement-filter
 under 19.1 are implemented: combined status/domain-score selection, shown counts,
 clear/reset and unscored handling preserve fit and evidence. Current architecture
 diagrams and synthetic screenshots are refreshed; component and browser checks
-pass. The normal checkout holds `docs/phase-19-current-checkpoint` for the final logs;
-redundant preserved branches/worktrees are removed. Broader 19.1 acceptance stays open.
+pass. The merged checkpoint branch and redundant preserved worktrees were removed.
+Phase 19.1 acceptance is now verified by spec 009.
 
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`; [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed all three jobs on `08ef56b`. The human requested another PR for the
 remaining plan/log checkpoint: [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is open. Documentation-head CI remains enforced.
+is merged at `0362666`. Documentation-head CI remains enforced.
 
 The request-schema, judge-diagnostic and recency-display regressions are included
 in the passing local suites. The bounded
@@ -46,9 +46,17 @@ at `2212790`. Superseded task branches and the merged delivery branch are remove
 after verifying that all their commits are preserved on `main`. Publication,
 merge and branch cleanup close no release verification gate.
 
+[Phase 19.1 verification](specs/009-retirement-verification/spec.md) passes populated
+upgrade, current consumer/citation/artifact, invalidation/reanalysis and workspace
+hard-delete regressions. Local lint, 810 backend, 180 frontend and 149 SQL tests pass.
+The migration now ends retired live jobs before erasing their identity; already-applied
+revisions cannot safely recover that erased marker. The normal checkout uses
+`test/phase-19-retirement-verification`; `main` and the open PR #46 branch remain
+locally. There is one checkout. Only merged/preserved branches are cleanup candidates.
+
 ## Now — verify one working architecture
 
-- [ ] [19.1](PLAN.md#191--retire-the-competing-analysis) — verify v1 retirement,
+- [x] [19.1](PLAN.md#191--retire-the-competing-analysis) — verify v1 retirement,
       current result projections, migration preservation/deletion and Fit/Gaps
       display regressions.
 - [ ] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) — verify

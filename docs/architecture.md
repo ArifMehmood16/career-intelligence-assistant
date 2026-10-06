@@ -137,7 +137,11 @@ One PostgreSQL/pgvector schema stores original documents, spans/chunks, full-tex
 index, vectors, graph, verdicts, score, generated drafts, chat and operational audit.
 Hard deletion removes originals and derived records. Forward migrations retire the
 old requirements/claims/mappings/embedding storage and obsolete analysis results;
-original documents remain available for current reanalysis.
+original documents remain available for current reanalysis. The retirement upgrade
+ends legacy queued/running jobs before removing their marker, preserves active current
+jobs and restores an earlier valid current publication when available. Populated
+migration and publication-consumer/deletion regressions pass under PLAN 19.1.
+Already-applied retirement revisions cannot recover the old erased job identity.
 
 REST/SSE, the job worker and read-only stdio MCP are entry points into the same
 application services. API/worker model calls use separate provider adapters. Local

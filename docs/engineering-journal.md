@@ -18,6 +18,46 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Populated retirement and publication verification
+
+- Date: 2026-10-06
+- Scope: specs/009-retirement-verification; branch test/phase-19-retirement-verification,
+  created from main 0362666 in the normal single checkout. PR #46 stays separate/open.
+- Commands: Spec Kit resolve/setup/prerequisite and read-only artifact analysis;
+  focused pytest migration/worker/architecture tests; disposable PG17 on port 55443
+  with explicit distinct DATABASE_URL/TEST_DATABASE_URL; make lint, make test,
+  make test-integration; focused post-refactor migration cycles; Bandit on the
+  changed retirement migration; complete source/test diff and git diff --check.
+- Red evidence: old queued jobs remained queued and a role with a valid current
+  publication stayed analysing. Initial seed-version collisions were fixture errors,
+  corrected before this behavioral red evidence. Upgrade now terminalizes only
+  v1 live jobs, resolves roles while their marker exists and preserves v2 live jobs.
+- Green evidence: 16 focused migration/schema/deletion cases and five migration/worker
+  unit cases passed; 10 focused publication/preservation/MCP cases passed. Full lint
+  and typechecks passed; 810 backend tests, 180 frontend tests, three existing skips,
+  84.65% coverage and all 149 disposable SQL integration tests passed. Four focused
+  SQL migration/cycle tests passed after static-SQL refactoring; three preservation
+  tests passed after final fixture scope review.
+- Consumer checks: stored score/components, gap projections and statuses agree;
+  reads call no provider. Ask grounding uses stored score/band. Interview/bullet/letter
+  generation and persisted citations resolve to uploaded text; exports work.
+  Invalidation refuses consumers; reanalysis retains stable JD IDs but removes old
+  CV chunks. Workspace deletion covers all mapped scoped tables and preserves another
+  workspace. Historical upload/current-row snapshots match exactly through upgrade.
+- Review: source inspection finds no executable v1 or production selector; shared
+  score/citation/draft wire values remain useful. Bandit initially flagged seven fixed
+  schema SQL interpolations; literal SQL removes all findings without suppression.
+  Sonar scanner unavailable; manual security/design/diff review completed. No dependency,
+  public API, trust boundary, paid provider or personal-database change.
+- Decisions/limits: preserve the accepted ADR 016 architecture. Do not fail legitimate
+  current jobs by guessing historical origin after applied migration identity erasure.
+  This migration correction protects still-pending upgrades only. Browser release,
+  provider efficiency, concurrency and quality/latency/security gates remain open.
+- Delivery commits: 1a4e01e migration repair and populated regressions; 4252c6c publication
+  consumers/deletion; 7b94331 static SQL; edbc145 workspace-scoped historical fixture.
+  PR creation, final-head CI and disposable-server shutdown are recorded after observation.
+
+
 ## Phase 19.1 — Requirement filters and documentation refresh
 
 - Date: 2026-10-05

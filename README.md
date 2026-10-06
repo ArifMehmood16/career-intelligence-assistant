@@ -6,16 +6,16 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-10-05):** one chunk/search/judge analysis, PostgreSQL-backed jobs,
+> **Status (2026-10-06):** one chunk/search/judge analysis, PostgreSQL-backed jobs,
 > provider-specific batching and bounded parallel work. Server checks every cited
-> quote; domain code computes fit. Requirements can be filtered by status and score.
-> Expired running jobs fail visibly without a restart. PR #43 is merged;
-> [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
-> merged the runtime, filter and documentation follow-ups at `ad88781`. Local checks and
-> [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
-> pass on implementation/documentation head `08ef56b`.
-> Model quality, browser journeys and release checks remain open in [PLAN.md](PLAN.md).
-> This is a private, single-user local tool.
+> quote; domain code computes fit. Phase 19.1 retirement verification passes:
+> populated migrations preserve originals/current results, all result consumers use
+> one publication, and scoped deletion removes stored derived records. Local lint,
+> 810 backend tests, 180 frontend tests and 149 disposable SQL tests pass.
+> Provider efficiency, concurrency acceptance, model quality, browser journeys and
+> release checks remain open in [PLAN.md](PLAN.md). PR #45 is merged; the separate
+> [fit-explanation PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+> is open with green CI. This is a private, single-user local tool.
 
 The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
 measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).

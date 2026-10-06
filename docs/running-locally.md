@@ -44,14 +44,19 @@ count, report destination or explicit live-provider selections. Execution is sti
 deferred. See [measurement scope and commands](evaluation.md#current-analysis-benchmark-plan-194).
 Frozen-label quality evaluation remains open in PLAN 19.4.
 
-The new forward migrations add call-progress fields and retire legacy derived
-analysis storage. They preserve original uploads and current chunk/verdict results;
-old analyses must be rerun. A user-reported attempt to run the retirement revision
-failed because a check-constraint name was prefixed twice. The revision now uses
-Alembic `op.f()` for complete names in both directions. This code repair has not been
-executed by the agent; the human may retry `make db-migrate`. Disposable PostgreSQL
-preservation checks and final verification remain pending; a successful personal
-migration is not claimed.
+The forward migrations add call-progress fields and retire legacy derived analysis
+storage. Original uploads and current chunk/verdict results survive; retired results
+and associated drafts are removed and affected roles require reanalysis. The earlier
+check-constraint naming repair and populated preservation now pass in disposable
+PostgreSQL. Retirement also ends old queued/running jobs before removing their v1
+identity, preserving current jobs and any valid current publication.
+
+That correction applies when crossing retirement revision `c4e8a1d7b902`. It does
+not rerun on databases already at that revision; the earlier upgrade erased job
+identity, so automatic retrospective repair cannot safely distinguish legitimate
+current jobs. Runtime expiry still handles stale running jobs. Do not downgrade a
+personal database to rerun retirement: downgrade restores schema, not deleted data.
+No personal migration or live provider call was performed during verification.
 
 `make run` never starts a database container. It uses `DATABASE_URL` from
 `config/app.env` and defaults to a developer-managed PostgreSQL on

@@ -18,9 +18,10 @@ and restores pgvector resolution across repeated migration cycles. Local
 [GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548) passed all three jobs
 on code head `5b8a585`. CI now runs on synchronized and reopened PR heads. No personal database or paid model calls were used.
 
-The synthetic benchmark is implemented but unexecuted. Browser journeys, migration
-preservation beyond the covered cases, security/dependency checks and measured
-quality/latency gates remain open. Passing regression checks do not close those
+The synthetic benchmark is implemented but unexecuted. Phase 19.1 populated
+retirement preservation and publication/deletion checks now pass. Browser journeys,
+progress acceptance, security/dependency checks and measured quality/latency
+gates remain open. Passing regression checks do not close those
 broader acceptance criteria.
 
 ## Using Spec Kit for the existing project
@@ -31,8 +32,8 @@ and links to this plan. Its plan/tasks do not replace this roadmap or close a ga
 The first scoped change is
 [synthetic analysis benchmarking](specs/001-synthetic-analysis-benchmark/spec.md).
 Its implementation and regression tests pass the local checks; benchmark runs
-and broader migration preservation remain pending. Specification quality review
-proves no application behavior.
+remain pending. Retirement preservation is verified by spec 009. Specification
+quality review proves no application behavior.
 
 The human-requested [OpenAI analysis repair](specs/002-openai-request-errors/spec.md)
 addresses a reproduced advert-format rejection under 19.2. The repaired converter
@@ -54,8 +55,9 @@ client previously rejected. The same live result now passes client validation
 through API and web proxy; synthetic gallery rendering was inspected. Local
 suites pass; broader release/quality gates remain pending; no reanalysis or scoring change is needed.
 
-Next checkpoint: execute the synthetic browser, security and quality/latency
-release work below. Documentation follow-ups receive their own updated-head CI. Local disposable
+Next checkpoint: verify Phase 19.2 provider efficiency and execution contracts,
+then 19.3 concurrency/progress before 19.4 browser, security and measurement work.
+Documentation follow-ups receive their own updated-head CI. Local disposable
 PostgreSQL regression and migration-cycle checks pass; successful checks only
 close the bounded acceptance they actually exercise.
 
@@ -73,15 +75,15 @@ add combined status/domain-score filtering without changing the publication.
 Current system, pipeline and job-lifecycle diagrams reflect inspected code;
 screenshots are refreshed synthetic component-gallery captures. Browser filter
 interactions and component regressions pass. Work is consolidated in the normal
-checkout; only synced `main` and `docs/phase-19-current-checkpoint`
-remain locally. Broader browser journeys and measured release gates stay open.
+checkout; the merged documentation checkpoint branch has been removed. Broader
+browser journeys and measured release gates stay open.
 
 [PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
 is merged at `ad88781`. [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
 passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `08ef56b`.
 The merge preceded the final plan/log commit; the human requested another PR
 for that remaining documentation. [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is open and receives its own PR-head CI.
+is merged at `0362666`.
 
 ## Approved direction
 
@@ -102,19 +104,30 @@ hosted development checks.
 - [x] Add combined requirement status/score filters with counts, clear/reset and
       null-score handling; refresh current architecture diagrams and synthetic
       screenshots. Component/browser checks preserve overall fit and evidence.
-- [ ] Delete the v1 extractors, span classifier, assessor/adjudicator, matching
+- [x] Delete the v1 extractors, span classifier, assessor/adjudicator, matching
       thresholds and production pipeline switch. Keep shared citation and draft
       value types only where current functionality consumes them.
-- [ ] Replace legacy result reads in ranking, preparation, drafts, Ask and MCP with
+- [x] Replace legacy result reads in ranking, preparation, drafts, Ask and MCP with
       projections of validated chunks/verdicts and the published current score.
       A projection must never recalculate fit with retired rules.
-- [ ] Ship one frontend analysis path; remove dead legacy components and queries.
-- [ ] Provide a forward migration that removes retired storage and invalidates old
+- [x] Ship one frontend analysis path; remove dead legacy components and queries.
+- [x] Provide a forward migration that removes retired storage and invalidates old
       analyses for reanalysis. Original uploads and current results survive.
       Define and test migration behavior without migrating a personal database.
 
 Exit: no selectable or executable v1 analysis remains; synthetic upload, fit,
 citations and generated-artifact flows still work; schema/deletion tests pass.
+
+Evidence (2026-10-06): [retirement verification](specs/009-retirement-verification/spec.md)
+adds populated historical upgrades, legacy live-job termination, original/current
+row equality, selector/schema rejection, consumer consistency, source-citation and
+artifact generation, invalidation/reanalysis and scoped hard-deletion checks.
+`make lint`, `make test` (810 backend / 180 frontend) and all 149 disposable SQL tests
+pass. Current frontend Fit/Gaps use `RoleFitContainer` and the verdict publication;
+shared presentation values remain where used. No personal migration or paid call.
+Already-applied retirement revisions cannot recover erased legacy job identities;
+this correction protects upgrades that still cross that revision. Broader release
+and measured model-quality gates remain open.
 
 ## 19.2 — reduce model/API calls and respect each provider
 
@@ -180,8 +193,9 @@ evaluation are separate work. No benchmark result is claimed before execution.
       Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.
 - [x] Observe both database image jobs and lint/hermetic CI on code head `5b8a585`
       ([run](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)); keep updated-head checks enforced.
-- [ ] Complete the broader retirement/progress migration preservation,
-      privacy/deletion and dependency/security release checks.
+- [ ] Complete broader progress migration preservation and dependency/security
+      release checks; retirement preservation and stored-data deletion are verified
+      under 19.1, without claiming a full security audit.
 - [ ] Prove one startup/deployment path. Repair Docker configuration or remove its
       supported claim; add one Playwright smoke journey. Keep deployment private
       until authentication exists.

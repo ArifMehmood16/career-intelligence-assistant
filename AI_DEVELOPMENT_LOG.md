@@ -29,6 +29,37 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 169 — Verify populated retirement and shared publication consumers
+
+- Date: 2026-10-06
+- Tool / model: Codex; one read-only research agent required by repository speckit-plan.
+- Plan task: 19.1, specs/009-retirement-verification/.
+- Prompt intent: continue the first open development item, maintaining commits,
+  review PRs, documentation and a comprehensible canonical checkout.
+- Outcome: accepted populated upgrade and shared SQL consumer/deletion regressions.
+  Research found historical v1 jobs were relabelled v2 while still queued/running.
+  Behavioral red checks reproduced that and an analysing role with valid prior results.
+  The migration now ends retired live jobs before identity removal and resolves only
+  affected roles without taking ownership from current jobs.
+- Changed/rejected: retained shared presentation/citation/draft values; deleting by
+  historical naming would break valid consumers. Rejected retrospective origin guesses
+  for already-migrated jobs because the earlier upgrade erased the discriminator.
+  No new service or dependency; PR #46 features remain on their separate branch.
+- Validation observed: full make lint/test and 149 disposable SQL integration tests
+  pass; 810 backend, 180 frontend, three existing skips, 84.65% coverage. Populated
+  originals/current rows, artifact citations, active current jobs, mixed versions,
+  invalidated results, reanalysis and workspace deletion pass. Bandit on the migration
+  reports no findings after fixed schema SQL cleanup. Sonar scanner unavailable.
+- Human-owned decisions: continue the accepted retirement plan and previous explicit
+  commit/push/PR/documentation authorization; human review/merge remains pending.
+  Checks were agent-run, with no claim of human review. No personal data, personal
+  migration, hosted development call or model-quality measurement.
+- Delivery: 1a4e01e, 4252c6c, 7b94331 and edbc145 are green implementation/test commits.
+  Entry 168 belongs to separate open PR #46. README, plan/backlog, architecture,
+  running instructions, production wiring and engineering journal are reconciled.
+  Phase 19.2 is next; broader provider/concurrency/browser/security/quality gates stay open.
+
+
 ### 167 — Requirement filters and current architecture documentation
 
 - Date: 2026-10-05
