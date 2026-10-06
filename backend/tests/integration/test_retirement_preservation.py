@@ -94,7 +94,15 @@ def upgraded(
     command.downgrade(alembic_config(url), "b2d9c8e4f601")
     try:
         with session_factory() as session:
-            span = str(session.scalar(text(f"SELECT id FROM {SCHEMA}.spans LIMIT 1")))
+            span = str(
+                session.scalar(
+                    text(
+                        f"SELECT id FROM {SCHEMA}.spans "
+                        "WHERE workspace_id=:ws ORDER BY id LIMIT 1"
+                    ),
+                    {"ws": workspace},
+                )
+            )
             invalidated = historical_role(
                 session, workspace, jd, state="succeeded", pipeline="v2"
             )
