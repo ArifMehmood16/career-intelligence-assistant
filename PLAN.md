@@ -131,6 +131,12 @@ and measured model-quality gates remain open. [PR #47](https://github.com/ArifMe
 [CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818) passed all three jobs on 3511aa9.
 Final checkpoint documentation receives its own updated-head checks.
 
+Documentation follow-up requested for the same PR: the system, analysis, publication,
+job-lifecycle and retirement diagrams are reconciled with current code. The usage guide
+covers provider selection, progress/failure, filters, citations, drafts and upgrades;
+nine synthetic component screenshots include Ask and Letter. These captures do not
+close the broader end-to-end browser or measured quality gates below.
+
 ## 19.2 — reduce model/API calls and respect each provider
 
 - [ ] Read each fitting document with one structured response containing line-range

@@ -504,7 +504,7 @@ const sampleCoverLetter: CoverLetterDraft = {
   roleId: "role-kestrel",
   paragraphs: [
     {
-      text: "I am applying for the Analytics Engineer role at Kestrel Systems.",
+      text: "I have written and tuned complex SQL across a 4TB Postgres warehouse, cutting the nightly batch window from six hours to ninety minutes.",
       requirementIds: ["req-met"],
       spanIds: ["span-cv-demo-sql"],
     },
@@ -952,7 +952,7 @@ export function DevStatesPage() {
       </Section>
 
       <Section title="Chat: answered with citations">
-        <div className="h-[420px]">
+        <div className="h-[420px] overflow-auto">
           <ChatView
             state="ready"
             messages={[
@@ -1128,6 +1128,13 @@ export function DevStatesPage() {
           includeGapLine={true}
           generating={false}
           draft={sampleCoverLetter}
+          citations={[
+            {
+              number: 1,
+              spanId: matchedEvidence.spanId,
+              text: matchedEvidence.paragraph,
+            },
+          ]}
           versions={[sampleCoverLetter]}
           refusal={null}
           supportingDocuments={[]}

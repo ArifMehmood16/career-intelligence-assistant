@@ -1,21 +1,31 @@
 # Screenshot provenance
 
-Updated 2026-10-05 using the in-app Browser at `http://localhost:3000/dev/states`.
-Images are JPEG captures of the actual rendered presentational components with
-synthetic fixtures in `frontend/src/routes/dev.states.tsx`. No personal workspace,
-CV/job-description contents, credentials or provider responses were captured.
-Scores and timings are fixture values, not evaluation measurements.
+Refreshed 2026-10-06 on `test/phase-19-retirement-verification` for PR #47 using the
+in-app Browser at `http://localhost:3000/dev/states`. Images are JPEG captures of
+actual rendered components with synthetic props from
+`frontend/src/routes/dev.states.tsx`. No personal workspace, CV/job contents,
+credentials or live provider responses were captured. Each section is a separate
+example; scores and timings are fixtures, not evaluation measurements.
 
-- `fit.jpg`: current Fit, keyword coverage and all three requirement statuses.
-- `fit-filters.jpg`: interactive Missing plus 0–24% score filter, showing one card.
-- `workspace.jpg`: populated synthetic roles table.
-- `settings.jpg`: synthetic provider availability/choice examples.
-- `gaps.jpg`: published gap priorities, including evidence recency.
-- `prepare.jpg`: synthetic interview preparation and source evidence.
-- `analysis-progress.jpg`: fixed-clock batch progress and call estimates.
+- `workspace.jpg`: populated synthetic roles table with fit and requirement counts.
+- `settings.jpg`: answer/index provider choices and unavailable-reason examples.
+- `analysis-progress.jpg`: fixed-clock seven-task judging progress and call estimate.
+- `fit.jpg`: Fit, keyword coverage, evidence and all three requirement statuses.
+- `fit-filters.jpg`: Missing plus 0–24% selection, showing one of three cards.
+- `gaps.jpg`: potential fit-score gains, including evidence recency.
+- `prepare.jpg`: interview probes, cited evidence, thin areas and questions.
+- `letter.jpg`: generated paragraph, resolved source glossary, export and versions.
+- `ask.jpg`: completed answer, source citation chips and provider attribution.
 
-The gallery's example provider dialog and evidence drawer were dismissed before
-capture. Full-page section captures use the browser's default viewport width to
-retain layout and complete labels; the focused filter capture shows its component.
-Images were visually checked after capture. These replace earlier maintainer
-screenshots; current documentation describes their synthetic provenance explicitly.
+The gallery provider dialog and evidence drawer were dismissed before capture.
+Images use the browser's 1280-pixel viewport width and each section's full height,
+so labels and source passages remain complete. The filter was selected through
+its rendered control. All nine images were visually inspected after capture.
+The Letter gallery now supplies its existing synthetic evidence as a resolved
+citation prop; it performs no network lookup or generation. The completed Ask
+fixture confines its sticky composer to its own scroll frame, matching a standalone
+chat layout rather than the gallery page viewport.
+
+These document this PR's components. The separate open PR #46's fit-contribution
+arrows, contextual experience changes and Ask loading changes are not depicted
+as shipped on this branch. There is no claim of a full backend browser journey.

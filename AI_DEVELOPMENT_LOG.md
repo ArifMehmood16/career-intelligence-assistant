@@ -29,6 +29,30 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 170 — Refresh PR #47 architecture, usage and screenshots
+
+- Date: 2026-10-06
+- Tool / model: Codex; Browser skill for synthetic component captures.
+- Plan task: 19.1 documentation follow-up in specs/009-retirement-verification.
+- Prompt intent: update architecture diagram details, how to use the tool and
+  screenshots in the same PR.
+- Outcome: accepted detailed entry-point, analysis, atomic-publication/evidence,
+  job-lifecycle and retirement diagrams; expanded the usage guide for setup,
+  provider choices, progress/failure, requirement filters, gaps, drafts, Ask and
+  reanalysis. Refreshed seven screenshots and added Letter/Ask.
+- Changed: corrected the architecture's broad audit-storage claim to implemented
+  provider-call accounting. The Letter gallery supplies resolved synthetic citation
+  text; its paragraph now describes the cited evidence. The completed Ask gallery
+  confines its sticky composer to its own frame. Production behavior is unchanged.
+- Validation observed: focused gallery Vitest passes; final make lint and make test
+  pass (810 backend, 180 frontend, three existing skips). All nine final JPEGs were
+  visually inspected. Changed documentation links/image paths resolve locally.
+  No new dependency, personal data, model call or personal database migration.
+- Human-owned decisions: same branch/PR, explicit commit/push authorization retained;
+  PR #46 stays independent. Screenshots are synthetic states, not a measured or
+  complete backend browser journey. Human review/merge and remaining release gates
+  stay open. Updated-head CI will be checked after push.
+
 ### 169 — Verify populated retirement and shared publication consumers
 
 - Date: 2026-10-06

@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.1 — Same-PR documentation and screenshot refresh
+
+- Date: 2026-10-06
+- Scope: user-requested follow-up on PR #47, same canonical checkout/branch.
+- Changes: README system diagram and detailed execution, publication/evidence,
+  lifecycle and retirement diagrams; practical usage guide and nine synthetic
+  screenshots, including new Letter/Ask captures. Corrected audit-storage scope.
+  Gallery-only props/layout adjustments resolve the Letter source glossary and
+  contain the completed chat's sticky composer. No design token or production
+  route/provider/storage change.
+- Commands/results: focused gallery Vitest passes; final make lint passes Ruff,
+  format, mypy, TypeScript and ESLint; make test passes 810 backend and 180 frontend
+  tests, three existing skips. Local links/images resolve. All nine final captures
+  were inspected; clipped initial captures were replaced before staging.
+- SQL integration: no persistence change in this follow-up; the 149 disposable SQL
+  cases passed at the preceding checkpoint. Updated-head CI includes both database
+  jobs again; its outcome will be observed after push, not predicted here.
+- Boundaries: no personal document/provider capture or paid model invocation.
+  Synthetic UI screenshots do not close full backend browser journeys or quality,
+  performance, security and deployment gates. PR #46 remains separate; no merge.
+
 ## Phase 19.1 — Populated retirement and publication verification
 
 - Date: 2026-10-06

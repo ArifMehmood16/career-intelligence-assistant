@@ -54,3 +54,9 @@ US1 is the first deliverable and has a demonstrated defect candidate. Commit eac
 PR #47 is open and attached. CI run 37527404818 passed all three jobs on 3511aa9.
 The final documentation checkpoint receives its own head CI before the task report.
 Local test counts and concrete red/green evidence are in docs/engineering-journal.md.
+
+## User-requested documentation follow-up — same PR
+
+- [x] T015 Reconcile README/system and detailed analysis/publication/lifecycle/retirement diagrams with current code; expand docs/how-to-use.md without including separate PR #46 features.
+- [x] T016 Refresh seven synthetic gallery images, add Letter/Ask and record provenance; visually inspect all nine captures. Supply resolved Letter evidence and contain the completed Ask gallery composer.
+- [x] T017 Run focused gallery Vitest, make lint/test and local documentation-link checks; update PLAN and development records. Final-head CI remains part of T014's delivery gate before the task report.

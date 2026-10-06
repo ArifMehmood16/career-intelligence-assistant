@@ -31,7 +31,9 @@ search the stored CV evidence; a model judges match, experience and seniority in
 capacity-sized batches. The server checks quoted evidence against stored text,
 then domain arithmetic computes requirement scores, overall fit and gap priorities.
 Incomplete work publishes no score. Fit, gaps, ranking, preparation, drafts and
-Ask read the same validated publication.
+Ask read the same validated publication. Start with the
+[step-by-step guide](docs/how-to-use.md), including filters, source citations,
+analysis failures and reanalysis after an upgrade.
 
 - How it works: [docs/architecture.md](docs/architecture.md)
 
@@ -62,13 +64,18 @@ flowchart LR
     web -->|same-origin /api proxy| api["FastAPI: REST and SSE"]
     api -->|immutable upload bytes| parse["Bounded spawned PDF/DOCX parsing"]
     parse -->|parsed result only| api
-    api -->|store uploads / enqueue / read| db[("PostgreSQL + pgvector<br/>Documents, SQL jobs, evidence and results")]
-    worker["In-process analysis worker<br/>Bounded threads, progress and expiry"] -->|claim / read / publish| db
+    api -->|uploads / SQL queue / current publication reads| db[("PostgreSQL + pgvector<br/>Documents, SQL jobs, evidence and results")]
+    worker["In-process analysis worker<br/>Chunk / search / judge; bounded threads"] -->|claim jobs / persist progress / atomic publication| db
+    web -.->|poll job state and progress| api
+    worker --> verify["Server verifies evidence;<br/>domain computes fit and gaps"]
+    verify -->|only complete, current results| db
     api --> adapters["Separate provider adapters"]
     worker --> adapters
     adapters --> local["Ollama: local completion and embeddings"]
     adapters --> gate{{"Hosted egress: enabled and keyed"}}
-    mcp["Read-only MCP over stdio"] --> db
+    mcp["Read-only MCP over stdio"] --> tools["Shared workspace and publication tools"]
+    api --> tools
+    tools --> db
   end
   gate --> openai["OpenAI"]
   gate --> anthropic["Anthropic"]
@@ -84,7 +91,8 @@ artifacts share one database, so hard deletion is transactional. Hosted models a
 unreachable unless the server opens the egress gate
 and holds a key ([docs/model-providers.md](docs/model-providers.md)).
 The application gate does not control an MCP client's own model. See the
-[pipeline and job-lifecycle diagrams](docs/architecture.md) for execution boundaries.
+[analysis, publication, job-lifecycle and retirement diagrams](docs/architecture.md)
+for execution boundaries.
 
 ## Quick start
 

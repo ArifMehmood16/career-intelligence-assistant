@@ -83,3 +83,13 @@ As a candidate, I cannot select the retired analysis and deleting my data remove
 - Tests are required for this verification under the repository workflow; existing behavior receives meaningful regression coverage when no red defect is present.
 - This closes only the bounded Phase 19.1 gate. Provider efficiency, concurrency, full browser release, security audits and measured model quality/latency remain separate gates.
 - Open PR 46 contains spec 008; number 009 avoids a future merge collision while this branch starts from current main.
+
+## Same-PR documentation follow-up — 2026-10-06
+
+The user explicitly requested updated architecture diagram details, tool usage and
+screenshots in PR #47. Extend its documentation scope without changing runtime
+architecture: reconcile README and detailed execution/publication/retirement diagrams,
+expand the existing how-to guide, and refresh synthetic gallery captures including
+Ask and Letter. Preserve PR #46's independent feature scope. Acceptance is accurate
+code-backed prose, complete readable diagrams and screenshots, local checks and
+updated-head CI; no personal document or live provider capture is required.
