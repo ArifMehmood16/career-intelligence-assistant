@@ -592,6 +592,7 @@ export const DEV_STATE_SECTION_TITLES = [
   "Evidence panel: matched requirement",
   "Evidence panel: missing requirement",
   "Chat: empty with starter chips",
+  "Chat: processing before response",
   "Chat: streaming",
   "Chat: answered with citations",
   "Chat: insufficient evidence",
@@ -918,6 +919,21 @@ export function DevStatesPage() {
             streamingText=""
             draft=""
             sending={false}
+            providerNameById={providerNameById}
+            {...chatNoops}
+          />
+        </div>
+      </Section>
+
+      <Section title="Chat: processing before response">
+        <div className="h-[420px]">
+          <ChatView
+            state="ready"
+            messages={[]}
+            streamingId={null}
+            streamingText=""
+            draft=""
+            sending={true}
             providerNameById={providerNameById}
             {...chatNoops}
           />
