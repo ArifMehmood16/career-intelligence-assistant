@@ -24,16 +24,16 @@ Independent test: populated historical schema upgraded to head preserves origina
 
 Independent test: one SQL-backed synthetic analysis, stored score compared with every consumer, citations opened, drafts generated, invalidation excludes all result consumers.
 
-- [ ] T007 [US2] Add consistency, citation/artifact and invalidation regressions in backend/tests/integration/test_publication_consumers.py, reusing backend/tests/support/v2_http.py (FR-004/005/008, SC-003).
-- [ ] T008 [US2] Exercise reanalysis and Ask/MCP publication projections using backend/tests/integration/test_publication_consumers.py and existing persistence/API tests, correcting only demonstrated defects in backend/src/career_assistant/ (FR-004/005).
-- [ ] T009 [US2] Run focused checks and commit green consumer regressions for backend/tests/integration/test_publication_consumers.py.
+- [x] T007 [US2] Add consistency, citation/artifact and invalidation regressions in backend/tests/integration/test_publication_consumers.py, reusing backend/tests/support/v2_http.py (FR-004/005/008, SC-003).
+- [x] T008 [US2] Exercise reanalysis and Ask/MCP publication projections using backend/tests/integration/test_publication_consumers.py and existing persistence/API tests, correcting only demonstrated defects in backend/src/career_assistant/ (FR-004/005).
+- [x] T009 [US2] Run focused checks and commit green consumer regressions for backend/tests/integration/test_publication_consumers.py.
 
 ## Phase 5: US3 — permanent retirement and scoped deletion
 
 Independent test: selector/worker/schema guards reject retired execution; populated deletion removes all scoped rows while another workspace remains intact.
 
-- [ ] T010 [US3] Verify worker selection, retired-schema guards and sole frontend path in backend/tests/unit/test_current_analysis_worker.py, backend/tests/integration/test_retirement_preservation.py and frontend/src/ (FR-006).
-- [ ] T011 [US3] Add populated workspace-deletion regression in backend/tests/integration/test_publication_consumers.py covering originals, current/operational tables and unaffected second workspace (FR-007/008, SC-004).
+- [x] T010 [US3] Verify worker selection, retired-schema guards and sole frontend path in backend/tests/unit/test_current_analysis_worker.py, backend/tests/integration/test_retirement_preservation.py and frontend/src/ (FR-006).
+- [x] T011 [US3] Add populated workspace-deletion regression in backend/tests/integration/test_publication_consumers.py covering originals, current/operational tables and unaffected second workspace (FR-007/008, SC-004).
 
 ## Phase 6: Validation and checkpoint
 

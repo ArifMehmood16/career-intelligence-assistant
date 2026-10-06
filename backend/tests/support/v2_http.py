@@ -10,8 +10,17 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
 from career_assistant.adapters.persistence.analysis_worker import SqlAnalysisWorker
+from career_assistant.adapters.persistence.conversation_store import (
+    SqlConversationStore,
+)
 from career_assistant.adapters.persistence.cv_store import SqlCvStore
+from career_assistant.adapters.persistence.provider_settings_store import (
+    SqlProviderSettingsStore,
+)
 from career_assistant.adapters.persistence.role_store import SqlRoleStore
+from career_assistant.adapters.persistence.supporting_store import (
+    SqlSupportingDocumentStore,
+)
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.adapters.persistence.v2_result_reader import SqlV2ResultReader
 from career_assistant.main import create_app
@@ -38,6 +47,11 @@ def sql_app(session_factory: sessionmaker[Session]) -> SqlApp:
             cv_store=cv_store,
             role_store=SqlRoleStore(cv_store=cv_store, uow_factory=uow_factory),
             v2_results=SqlV2ResultReader(uow_factory),
+            conversation_store=SqlConversationStore(uow_factory),
+            provider_choice_store=SqlProviderSettingsStore(uow_factory),
+            supporting_store=SqlSupportingDocumentStore(
+                uow_factory=uow_factory, cv_store=cv_store
+            ),
         )
     )
     return SqlApp(client, SqlAnalysisWorker(uow_factory), uow_factory)

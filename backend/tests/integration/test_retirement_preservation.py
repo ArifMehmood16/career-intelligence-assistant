@@ -94,9 +94,20 @@ def upgraded(
     command.downgrade(alembic_config(url), "b2d9c8e4f601")
     try:
         with session_factory() as session:
-            before = _snapshot(session)
             span = str(session.scalar(text(f"SELECT id FROM {SCHEMA}.spans LIMIT 1")))
-            retired_roles = []
+            invalidated = historical_role(
+                session, workspace, jd, state="succeeded", pipeline="v2"
+            )
+            historical_score(session, workspace, invalidated.role, span, pipeline="v2")
+            session.execute(
+                text(
+                    f"UPDATE {SCHEMA}.score_explanations "
+                    "SET invalidated=TRUE WHERE role_id=:role"
+                ),
+                {"role": invalidated.role},
+            )
+            before = _snapshot(session)
+            retired_roles = [invalidated.role]
             for pipeline in (None, "v1"):
                 old = historical_role(session, workspace, jd, state="succeeded")
                 historical_score(session, workspace, old.role, span, pipeline=pipeline)
