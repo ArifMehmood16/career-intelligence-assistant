@@ -39,7 +39,7 @@ Independent test: selector/worker/schema guards reject retired execution; popula
 
 - [x] T012 Run make lint, make test and disposable make test-integration; inspect full branch diff, security/design findings and record evidence in docs/engineering-journal.md.
 - [x] T013 Update README.md, PLAN.md, BACKLOG.md, docs/production-wiring.md and AI_DEVELOPMENT_LOG.md only for proven retirement acceptance and observed evidence.
-- [ ] T014 Push green commits, create/attach review PR, inspect all three final-head CI jobs and record delivery in docs/engineering-journal.md. Do not merge.
+- [x] T014 Push green commits, create/attach review PR, inspect all three final-head CI jobs and record delivery in docs/engineering-journal.md. Do not merge.
 
 ## Dependencies and parallel opportunities
 
@@ -48,3 +48,9 @@ T001 → T002 → T003 precedes implementation. T004 → T005 → T006, then T00
 ## Implementation strategy
 
 US1 is the first deliverable and has a demonstrated defect candidate. Commit each green slice, retain shared value types, then extend consumer and deletion coverage. Full phase closure follows all evidence; later provider/concurrency/browser/measurement gates remain open.
+
+## Delivery evidence
+
+PR #47 is open and attached. CI run 37527404818 passed all three jobs on 3511aa9.
+The final documentation checkpoint receives its own head CI before the task report.
+Local test counts and concrete red/green evidence are in docs/engineering-journal.md.

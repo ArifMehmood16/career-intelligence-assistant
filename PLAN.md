@@ -127,7 +127,9 @@ pass. Current frontend Fit/Gaps use `RoleFitContainer` and the verdict publicati
 shared presentation values remain where used. No personal migration or paid call.
 Already-applied retirement revisions cannot recover erased legacy job identities;
 this correction protects upgrades that still cross that revision. Broader release
-and measured model-quality gates remain open.
+and measured model-quality gates remain open. [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open;
+[CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818) passed all three jobs on 3511aa9.
+Final checkpoint documentation receives its own updated-head checks.
 
 ## 19.2 — reduce model/API calls and respect each provider
 

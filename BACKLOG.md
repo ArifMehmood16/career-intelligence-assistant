@@ -53,6 +53,8 @@ The migration now ends retired live jobs before erasing their identity; already-
 revisions cannot safely recover that erased marker. The normal checkout uses
 `test/phase-19-retirement-verification`; `main` and the open PR #46 branch remain
 locally. There is one checkout. Only merged/preserved branches are cleanup candidates.
+[PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open; [CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818) passed all three jobs
+on 3511aa9. The final checkpoint record receives updated-head checks.
 
 ## Now — verify one working architecture
 
