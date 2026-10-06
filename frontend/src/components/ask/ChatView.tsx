@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -279,4 +280,3 @@ function MessageBubble({
     </div>
   );
 }
-import { LoaderCircle } from "lucide-react";
