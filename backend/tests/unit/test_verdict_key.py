@@ -13,7 +13,11 @@ from career_assistant.domain.candidate_facts import (
     TermFact,
 )
 from career_assistant.domain.experience import ExperienceFact
-from career_assistant.domain.judging import Candidate, RequirementPacket
+from career_assistant.domain.judging import (
+    Candidate,
+    JudgeDocumentContext,
+    RequirementPacket,
+)
 
 AS_OF = date(2026, 9, 1)
 MODEL = ModelIdentity("ollama", "qwen2.5:7b", model_digest="sha256:aaa")
@@ -81,11 +85,27 @@ def test_every_input_the_verdict_depends_on_changes_the_key() -> None:
     assert len(set(changed)) == len(changed)
 
 
-def test_a_fact_about_a_term_the_requirement_never_names_does_not() -> None:
+def test_all_facts_visible_to_the_judge_change_the_key() -> None:
     other = replace(FACTS, terms=(FACTS.terms[0],))
 
-    assert _key(facts=other) == _key()
+    assert _key(facts=other) != _key()
 
 
 def test_a_model_with_no_digest_still_has_a_key() -> None:
     assert _key(model=replace(MODEL, model_digest=None)) != _key()
+
+
+def test_context_and_qualitative_expectation_invalidate_cached_verdicts() -> None:
+    context = JudgeDocumentContext("cv-1", "production", "jd-1", "senior")
+    facts = replace(FACTS, context=context)
+    assert _key(facts=facts) != _key()
+    assert _key(
+        facts=replace(facts, context=replace(context, cv_text="coursework"))
+    ) != _key(facts=facts)
+    assert _key(
+        facts=replace(facts, context=replace(context, advert_text="junior"))
+    ) != _key(facts=facts)
+    assert (
+        _key(packet=replace(PACKET, experience_expected="production delivery"))
+        != _key()
+    )

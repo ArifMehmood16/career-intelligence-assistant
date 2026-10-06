@@ -60,3 +60,8 @@ Local test counts and concrete red/green evidence are in docs/engineering-journa
 - [x] T015 Reconcile README/system and detailed analysis/publication/lifecycle/retirement diagrams with current code; expand docs/how-to-use.md without including separate PR #46 features.
 - [x] T016 Refresh seven synthetic gallery images, add Letter/Ask and record provenance; visually inspect all nine captures. Supply resolved Letter evidence and contain the completed Ask gallery composer.
 - [x] T017 Run focused gallery Vitest, make lint/test and local documentation-link checks; update PLAN and development records. Final-head CI remains part of T014's delivery gate before the task report.
+
+## Merge integration follow-up
+
+- [x] T018 Incorporate merged PR #46 main; preserve both development histories, retirement acceptance and current features. Refresh conflicted screenshots and reconcile current guide/status.
+- [x] T019 Verify combined make lint/test and disposable SQL integration tests, source preservation, local links and conflict/diff checks. Final-head CI remains required before the task report.

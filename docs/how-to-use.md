@@ -49,7 +49,10 @@ Open a ready role's **Fit** tab. The overall fit comes from domain arithmetic ov
 validated judgments; the model does not choose that score. Each requirement shows
 **Met**, **Partial** or **Missing**, its requirement percentage, match/experience/
 seniority judgments and their reasons, cited CV evidence and unmet conditions.
-A dimension that the advert does not specify is labelled accordingly.
+A dimension that the advert does not specify is labelled accordingly. **Asked** and
+**Supported** compare the requested level/experience with cited CV evidence. Overall
+CV/job context informs new judgments; qualitative expectations use delivery depth
+and scope, never invented years. Reanalyse older results for these explanations.
 
 - Set **Match status** to Missing to focus on gaps, Partial to find thin evidence,
   or Met to review supported requirements.
@@ -57,6 +60,10 @@ A dimension that the advert does not specify is labelled accordingly.
   The visible count changes; **Clear filters** restores the full list.
 - Requirement percentages describe individual requirements. They are not points
   added to the overall fit, and filtering does not change that fit or the ranking.
+- Green up arrows show points earned toward overall fit; red down arrows show
+  the shortfall from full credit, using the original requirement weight. These
+  are contribution shares, not changes since a previous analysis. Older results
+  without this metadata show unavailable values; filters preserve the original shares.
 - **Not scored** is separate from a genuine scored zero. A role without a complete
   publication has no fit judgment or ranking position.
 - Review quoted evidence and **Show retrieval trace** to understand what was found.
@@ -67,7 +74,7 @@ A dimension that the advert does not specify is labelled accordingly.
 ## Turn the result into preparation and drafts
 
 - **Gaps** orders opportunities by the potential fit-score increase if the stated
-  dimension improves. A `+9.4` is a possible gain, not points already earned or a
+  dimension improves. A `+20.0` is a possible gain, not points already earned or a
   guarantee. Draft a CV bullet only where existing cited evidence supports it;
   copy the draft yourself after checking it. The app does not edit your CV file.
 - **Prepare** shows likely interview probes, evidence to lead with, thin areas and
@@ -92,7 +99,10 @@ answer was produced and whether content left the machine.
 For open questions, a tool-capable answer model can search the workspace through
 an agent. **Found using N tool calls** lists those steps. Fit/gap/compare/preparation
 questions use the corresponding grounded route. During an active stream, **Stop**
-lets you stop the response. Only completed answers are persisted.
+lets you stop the response. **Processing** appears before the first backend event,
+then **Receiving your answer** and **Updating the conversation** remain visible until
+completion. **Stop** can cancel while waiting for that first response. Only completed
+answers are persisted.
 
 To let an external client read the workspace, enable the optional read-only
 [MCP server](mcp.md). It is off by default. Your MCP client's model and its handling
@@ -133,11 +143,11 @@ provider availability and timings are illustrative. Gallery actions stay local.
 
 ![Fit with requirements and keyword coverage](images/fit.jpg)
 
-*Fit — validated judgments, evidence, unmet conditions and requirement percentages.*
+*Fit — earned/shortfall point shares, numeric/qualitative experience and cited evidence.*
 
 ![Missing requirements filtered to 0–24 percent](images/fit-filters.jpg)
 
-*Filters — Missing combined with 0–24%, showing one of three requirements.*
+*Filters — Missing combined with 0–24%, preserving original contribution shares.*
 
 ![Gaps ordered by potential score increase](images/gaps.jpg)
 
@@ -154,3 +164,7 @@ provider availability and timings are illustrative. Gallery actions stay local.
 ![Ask answer with source citation chips](images/ask.jpg)
 
 *Ask — a synthetic completed answer, citations and provider attribution.*
+
+![Ask processing before the first backend response](images/ask-processing.jpg)
+
+*Ask processing — immediate feedback and Stop while waiting for the backend.*

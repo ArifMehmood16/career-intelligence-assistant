@@ -77,6 +77,11 @@ class AtomicRequirement(Contract):
     seniority_expected: SeniorityLevel | None = Field(
         default=None, description="Only when the advert or its title states a level."
     )
+    experience_expected: NonEmpty | None = Field(
+        default=None,
+        max_length=600,
+        description="Verbatim experience expectation from the quote, or null.",
+    )
     tech_terms: list[TechTerm] = Field(default_factory=list)
 
 
@@ -108,7 +113,7 @@ class CoverLetterChunkResponse(VersionedContract):
 
 
 class JobChunkResponse(VersionedContract):
-    contract_version = "job-chunks-v2"
+    contract_version = "job-chunks-v3"
     chunks: list[JobChunk] = Field(min_length=1)
     taxonomy: list[TermRelations] = Field(default_factory=list)
 

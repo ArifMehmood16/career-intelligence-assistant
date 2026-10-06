@@ -93,3 +93,11 @@ expand the existing how-to guide, and refresh synthetic gallery captures includi
 Ask and Letter. Preserve PR #46's independent feature scope. Acceptance is accurate
 code-backed prose, complete readable diagrams and screenshots, local checks and
 updated-head CI; no personal document or live provider capture is required.
+
+## Merge integration follow-up — 2026-10-06
+
+After the human merged PR #46, incorporate main at 45ae5c8 into the same PR #47
+branch, preserving both accepted changes and their historical records. Current
+architecture/usage/screenshots must include merged fit/context/Ask behavior alongside
+retirement. Resolve conflicts without rewriting pushed history; verify combined
+lint, hermetic and disposable SQL suites and final-head CI before reporting success.

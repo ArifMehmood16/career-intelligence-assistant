@@ -27,8 +27,29 @@ describe("getRoleVerdicts", () => {
     const result = await getRoleVerdicts("role-1");
 
     expect(result.gapPlan).toEqual(RECENCY_VERDICTS.gapPlan);
-    expect(result.verdicts).toEqual(RECENCY_VERDICTS.verdicts);
+    expect(result.verdicts).toEqual(
+      RECENCY_VERDICTS.verdicts.map((v) => ({
+        ...v,
+        scoreImpact: null,
+        yearsExpected: null,
+        seniorityExpected: null,
+        experienceExpected: null,
+      })),
+    );
     expect(result.fitScore).toBe(RECENCY_VERDICTS.fitScore);
+  });
+
+  it("preserves published attribution and qualitative expectations", async () => {
+    const verdict = {
+      ...VERDICTS.verdicts[0],
+      scoreImpact: { earned: 4, possible: 10, shortfall: 6 },
+      yearsExpected: null,
+      seniorityExpected: "senior",
+      experienceExpected: "Production delivery",
+    };
+    stubFetch(() => Response.json({ ...VERDICTS, verdicts: [verdict] }));
+    const result = await getRoleVerdicts("role-1");
+    expect(result.verdicts[0]).toEqual(verdict);
   });
 
   it("still rejects an unknown gap dimension", async () => {

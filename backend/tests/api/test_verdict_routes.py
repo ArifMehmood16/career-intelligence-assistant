@@ -124,6 +124,7 @@ def test_verdicts_are_returned_in_the_contract_shape() -> None:
         }
     ]
     verdict = body["verdicts"][0]
+    assert verdict["scoreImpact"] is None
     assert verdict["match"] == {
         "score": 2,
         "rationale": "Owned dbt models; production scale is not stated.",

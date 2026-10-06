@@ -188,6 +188,17 @@ def test_a_published_analysis_reads_back_with_its_evidence(
     assert result.rubric_version == RUBRIC.version
     assert result.coverage == analysis.coverage
     assert result.gaps == analysis.gaps
+    assert result.score_components == analysis.fit.components
+    assert any(r.packet.experience_expected for r in analysis.requirements)
+    for requirement in analysis.requirements:
+        stored = next(
+            v
+            for v in result.verdicts
+            if v.requirement_id == requirement.packet.requirement_id
+        )
+        assert stored.experience_expected == requirement.packet.experience_expected
+        assert stored.years_expected == requirement.packet.years_expected
+        assert stored.seniority_expected == requirement.packet.seniority_expected
     published = {v.requirement_id: v for v in result.verdicts}
     assert set(published) == set(analysis.match.verdicts)
     for requirement_id, record in analysis.match.verdicts.items():

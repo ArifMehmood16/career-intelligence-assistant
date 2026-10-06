@@ -126,9 +126,9 @@ const queuedJob: AnalysisJob = {
 const sampleVerdicts: RoleVerdicts = {
   roleId: "role-harbour",
   analysisId: "analysis-harbour-2",
-  fitScore: 68.2,
+  fitScore: 56.75,
   band: "partial",
-  gated: true,
+  gated: false,
   rubricVersion: "scoring-rubric-v2",
   leftMachine: false,
   verdicts: [
@@ -138,7 +138,9 @@ const sampleVerdicts: RoleVerdicts = {
       statement: "Has five or more years of production Python.",
       mustHave: true,
       verdict: "partial",
-      requirementScore: 0.58,
+      requirementScore: 0.6125,
+      yearsExpected: 5,
+      scoreImpact: { earned: 36.75, possible: 60, shortfall: 23.25 },
       match: {
         score: 3,
         rationale: "Python services in two roles, both in production.",
@@ -168,12 +170,17 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: false,
       verdict: "met",
       requirementScore: 1,
+      scoreImpact: { earned: 20, possible: 20, shortfall: 0 },
       match: {
         score: 4,
         rationale: "Owned the production warehouse and improved reliability.",
       },
       seniority: null,
-      experience: null,
+      experienceExpected: "Production PostgreSQL experience",
+      experience: {
+        score: 3,
+        rationale: "Owned production monitoring and database reliability.",
+      },
       unmetConditions: [],
       contradiction: false,
       adjustments: [],
@@ -194,6 +201,7 @@ const sampleVerdicts: RoleVerdicts = {
       mustHave: false,
       verdict: "missing",
       requirementScore: 0,
+      scoreImpact: { earned: 0, possible: 20, shortfall: 20 },
       match: { score: 1, rationale: "Only batch pipelines are described." },
       seniority: null,
       experience: null,
@@ -215,13 +223,13 @@ const sampleVerdicts: RoleVerdicts = {
       requirementId: "req-kafka",
       dimension: "match",
       current: 1,
-      delta: 9.4,
+      delta: 20,
     },
     {
       requirementId: "req-python",
       dimension: "recency",
-      current: 0.6,
-      delta: 4.1,
+      current: 0.7,
+      delta: 15.75,
     },
   ],
 };
@@ -592,6 +600,7 @@ export const DEV_STATE_SECTION_TITLES = [
   "Evidence panel: matched requirement",
   "Evidence panel: missing requirement",
   "Chat: empty with starter chips",
+  "Chat: processing before response",
   "Chat: streaming",
   "Chat: answered with citations",
   "Chat: insufficient evidence",
@@ -918,6 +927,21 @@ export function DevStatesPage() {
             streamingText=""
             draft=""
             sending={false}
+            providerNameById={providerNameById}
+            {...chatNoops}
+          />
+        </div>
+      </Section>
+
+      <Section title="Chat: processing before response">
+        <div className="h-[420px]">
+          <ChatView
+            state="ready"
+            messages={[]}
+            streamingId={null}
+            streamingText=""
+            draft=""
+            sending={true}
             providerNameById={providerNameById}
             {...chatNoops}
           />

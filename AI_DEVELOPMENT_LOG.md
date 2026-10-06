@@ -29,6 +29,31 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 171 — Resolve PR #47 conflicts after PR #46 merge
+
+- Date: 2026-10-06
+- Tool / model: Codex; Browser skill for synthetic screenshot verification.
+- Plan task: same-PR integration follow-up for specs/009-retirement-verification.
+- Prompt intent: resolve PR #47 merge conflicts after the human merged PR #46.
+- Outcome: incorporated origin/main at 45ae5c8 without rebasing or rewriting pushed
+  history. Production code and the gallery merged automatically. Resolved seven
+  documentation files and three binary screenshots while preserving both histories,
+  the retirement gate and fit/context/Ask features. Current docs mark PR #46 merged.
+- Changed/rejected: kept the expanded how-to guide and added score contributions,
+  asked/supported expectations and immediate Ask states. Refreshed Fit/filter/gaps
+  and completed Ask from the merged synthetic gallery; retained Ask processing and
+  the other current captures. Rejected blanket ours/theirs conflict resolution,
+  which would discard accepted work or leave misleading screenshots/status.
+- Validation observed: make lint passes; make test passes 818 backend and 192
+  frontend tests, three existing skips, 84.70% coverage; all 149 disposable PG17
+  integration tests pass. Refreshed images and retained processing image visually
+  checked. No personal database migration or paid provider call.
+- Human-owned decisions: same branch/PR and authorized commit/push retained. This
+  merges main into the feature branch only; human owns merging PR #47 into main.
+  The unrelated untracked npm lockfile remains untouched/uncommitted. Final-head
+  CI will be observed after push; broader release gates remain open.
+
+
 ### 170 — Refresh PR #47 architecture, usage and screenshots
 
 - Date: 2026-10-06
@@ -86,6 +111,50 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   Final documentation receives its own head CI. Phase 19.2 is next; broader
   provider/concurrency/browser/security/quality gates stay open.
 
+### 168 — Fit point explanations, contextual experience and responsive Ask
+
+- Date: 2026-10-06
+- Tool / model: Codex; one read-only research agent required by the repository's
+  Spec Kit plan skill; root implemented and reviewed the change.
+- Plan task: human-assigned bounded 19.1–19.3 follow-up,
+  specs/008-fit-explanations/; specify/plan/tasks/analyze completed before source.
+- Prompt intent: show green/red score contributions, assess experience/seniority
+  in overall CV/JD context, and show processing while Ask waits for the backend.
+- Outcome: accepted original-publication earned/possible/shortfall point shares;
+  additive nullable API fields; labelled arrows; verified qualitative expectations;
+  overall non-contact CV/JD context in the existing judge prefix, budget and cache;
+  asked/supported explanations; immediate processing, receiving and history-refresh
+  status. Kept numeric years explicit, evidence candidates scoped, skills caps,
+  aggregation weights/formula and incomplete-publication policy unchanged.
+- Changed/rejected: red represents full-credit shortfall, not a historical delta.
+  No qualitative years were fabricated, no new judge completion wave/dependency
+  was added, and no personal analysis/provider call was triggered. The context
+  cache includes all facts actually visible to the judge; an old test's narrower
+  term-only cache assumption was corrected. The synthetic gallery now reconciles
+  its weights, score and gap lifts instead of mixing unrelated example numbers.
+- Validation observed: Ask regressions first failed pre-response status and the
+  stop/new-request race; score/API/card tests failed absent attribution; after type
+  scaffolding, six context/grounding/cache/budget behaviors failed as expected.
+  Numeric/qualitative UI regressions failed absent explanations. Focused checks
+  turned green. Full make lint/test passed: 818 backend, 192 frontend, 3 existing
+  skips, 84.70% backend coverage; all 141 disposable PostgreSQL integration tests
+  passed. The additive API defaults required one old fixture expectation update.
+- Browser: synthetic numeric/qualitative explanations, green/red arrow colors,
+  Missing + low score and Met + high score filters preserved original shares and
+  overall fit. Pending Ask showed processing and Stop before an answer. Fit/filter/
+  gaps were recaptured and Ask processing added; all four JPEGs visually checked.
+- Review: branch diff inspected for scope, evidence/privacy, state races and
+  unnecessary complexity. Bandit reported no findings in all 18 changed backend
+  modules. Sonar scanner was unavailable; manual design/security review completed.
+  Dependency/release scans and measured model-quality/latency gates remain open.
+- Delivery: 47d11cd (Ask), 53d414e (point shares), 5f291ea (context), 1b76dcc
+  (coherent gallery) and b45590e (import cleanup). PR #45 is confirmed merged at
+  0362666. Main is synced; one checkout holds feat/phase-19-fit-explanations.
+  The merged docs checkpoint branch was safely removed. [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+  is pushed/open and attached. [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+  passed all three jobs on d579923; this final documentation checkpoint receives
+  its own updated-head CI. The agent performed no merge.
+  Reanalysis is required for new contextual judgments; old results stay readable.
 
 ### 167 — Requirement filters and current architecture documentation
 

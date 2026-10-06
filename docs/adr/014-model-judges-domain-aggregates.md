@@ -29,13 +29,19 @@ can check, reproduced on replay, with every component traceable to text.
 
 1. **The model judges each atomic requirement on three anchored integer scales,
    0–4:** match, seniority and experience. Seniority and experience are `null`
-   exactly when the requirement's verified `seniority_expected` or `years_expected`
-   is null. The judge also returns
+   when their verified expectation is absent. The 2026-10-06 human-requested
+   [spec 008](../../specs/008-fit-explanations/spec.md) extends experience beyond
+   `years_expected`: a verbatim `experience_expected` uses delivery/depth anchors
+   when years are absent. Seniority uses the applicable stated level from overall
+   advert/title context. The judge also returns
    a verdict (`met`, `partial`, `missing`), unmet conditions, a contradiction flag
    and retrieval feedback.
 2. **Every non-zero match score quotes the evidence.** Each quote must appear
    verbatim in a chunk that retrieval gave the judge for that requirement.
-   Seniority and experience are judged against supplied facts.
+   Seniority and experience are judged against supplied facts and overall
+   non-contact CV/JD context. Context is untrusted interpretation only; citation
+   candidates remain requirement-scoped. All visible context/facts affect budget
+   and cache identity. This amendment retains the pure scoring weights/formula.
 3. **The server validates before anything is stored:** complete and unique verdicts,
    cited ids within the candidate set, verbatim quotes, verdict and match score
    consistent (`missing` ⇔ match ≤ 1, `met` ⇒ match ≥ 3), and `null` dimensions
@@ -57,7 +63,8 @@ can check, reproduced on replay, with every component traceable to text.
    `config/scoring_rubric.toml` version `scoring-rubric-v2`.
 6. **Replay is exact.** Verdicts are cached under a hash of prompt and anchor
    versions, provider, model tag and the model digest where the provider exposes
-   one, the requirement and its facts including the `as_of` date, and the ordered
+   one, the requirement, all visible facts and CV/JD context including the `as_of`
+   date, and the ordered
    candidate chunks; search orderings break ties on chunk id. Re-analysing unchanged
    inputs reuses the stored verdict, so `score_stability` on replay is 1.0 by
    construction. Fresh-run variability is measured as `judge_stability` and

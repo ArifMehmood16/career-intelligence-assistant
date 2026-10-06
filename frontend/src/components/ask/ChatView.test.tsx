@@ -1,12 +1,14 @@
 /**
  * @vitest-environment jsdom
  */
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ChatView, STARTER_PROMPTS } from "./ChatView";
 import type { ChatMessage } from "@/types";
+
+afterEach(cleanup);
 
 const noops = {
   onDraftChange: vi.fn(),
@@ -17,6 +19,31 @@ const noops = {
 };
 
 describe("ChatView states", () => {
+  it("shows processing before the first backend event and clears it after stop", async () => {
+    const onStop = vi.fn();
+    const props = {
+      state: "ready" as const,
+      messages: [],
+      streamingId: null,
+      streamingText: "",
+      draft: "",
+      sending: true,
+      providerNameById: {},
+      ...noops,
+      onStop,
+    };
+    const { rerender } = render(<ChatView {...props} />);
+    expect(
+      screen.getByRole("status", { name: "Question processing" }),
+    ).toHaveTextContent("Processing your question");
+    await userEvent.click(screen.getByRole("button", { name: "Stop" }));
+    expect(onStop).toHaveBeenCalledOnce();
+    rerender(<ChatView {...props} sending={false} />);
+    expect(
+      screen.queryByRole("status", { name: "Question processing" }),
+    ).toBeNull();
+  });
+
   it("shows loading and error states", async () => {
     const user = userEvent.setup();
     const onRetry = vi.fn();

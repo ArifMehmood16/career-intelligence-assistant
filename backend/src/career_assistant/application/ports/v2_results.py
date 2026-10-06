@@ -7,7 +7,7 @@ from typing import Protocol
 
 from career_assistant.application.ports.search import RetrievalTrace
 from career_assistant.domain.judging import JudgedVerdict
-from career_assistant.domain.scoring_v2 import Gap, KeywordCoverage
+from career_assistant.domain.scoring_v2 import Gap, KeywordCoverage, RequirementScore
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +29,9 @@ class StoredVerdict:
     provider_id: str
     model_tag: str
     source_chunk_id: str = ""
+    years_expected: float | None = None
+    seniority_expected: str | None = None
+    experience_expected: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +45,7 @@ class V2RoleResult:
     verdicts: tuple[StoredVerdict, ...]
     coverage: KeywordCoverage
     gaps: tuple[Gap, ...]
+    score_components: tuple[RequirementScore, ...] = ()
 
 
 class V2ResultReader(Protocol):

@@ -208,5 +208,6 @@ def _requirement(text: str, mode: str | None) -> dict[str, Any]:
         "must_have": not optional,
         "years_expected": float(years.group(1)) if years else None,
         "seniority_expected": None,
+        "experience_expected": text if "experience" in text.casefold() else None,
         "tech_terms": named_terms(text),
     }

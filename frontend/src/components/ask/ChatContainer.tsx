@@ -9,7 +9,11 @@ import {
   postMessageStream,
 } from "@/api/client";
 import { describeApiError, formatDescribedError } from "@/api/errors";
-import { ChatView, type ChatViewState } from "@/components/ask/ChatView";
+import {
+  ChatView,
+  type ChatProcessingPhase,
+  type ChatViewState,
+} from "@/components/ask/ChatView";
 import { EvidencePanel } from "@/components/EvidencePanel";
 import type { ChatMessage, Citation, ToolStep } from "@/types";
 
@@ -22,6 +26,8 @@ export function ChatContainer() {
   // them for this session after history is refetched.
   const [toolSteps, setToolSteps] = useState<Record<string, ToolStep[]>>({});
   const [sending, setSending] = useState(false);
+  const [processingPhase, setProcessingPhase] =
+    useState<ChatProcessingPhase>("processing");
   const [sendError, setSendError] = useState<string | null>(null);
   const [citation, setCitation] = useState<Citation | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -65,10 +71,16 @@ export function ChatContainer() {
     setSending(false);
   };
 
-  useEffect(() => () => stopStream(), []);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const runStream = async (content: string, clientRequestId?: string) => {
+    if (abortRef.current) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const isCurrent = () =>
+      abortRef.current === controller && !controller.signal.aborted;
     setSending(true);
+    setProcessingPhase("processing");
     setSendError(null);
     const requestId = clientRequestId ?? crypto.randomUUID();
     setLastClientRequestId(requestId);
@@ -89,8 +101,6 @@ export function ChatContainer() {
       optimisticUser,
     ]);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
     let answerId: string | null = null;
 
     try {
@@ -99,7 +109,9 @@ export function ChatContainer() {
         clientRequestId: requestId,
         signal: controller.signal,
         onEvent: (event) => {
+          if (!isCurrent()) return;
           if (event.type === "meta") {
+            setProcessingPhase("answering");
             answerId = event.messageId;
             setStreamingId(event.messageId);
             setStreamingText("");
@@ -133,11 +145,15 @@ export function ChatContainer() {
         },
       });
 
+      if (!isCurrent()) return;
+      setProcessingPhase("saving");
       const history = await getMessages();
+      if (!isCurrent()) return;
       queryClient.setQueryData(["messages"], history);
       setLastFailedContent(null);
       setSendError(null);
     } catch (error) {
+      if (!isCurrent()) return;
       if (error instanceof DOMException && error.name === "AbortError") {
         void queryClient.invalidateQueries({ queryKey: ["messages"] });
       } else if (error instanceof ApiError) {
@@ -148,10 +164,12 @@ export function ChatContainer() {
         void queryClient.invalidateQueries({ queryKey: ["messages"] });
       }
     } finally {
-      abortRef.current = null;
-      setStreamingId(null);
-      setStreamingText("");
-      setSending(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setStreamingId(null);
+        setStreamingText("");
+        setSending(false);
+      }
     }
   };
 
@@ -196,6 +214,7 @@ export function ChatContainer() {
         streamingText={streamingText}
         draft={draft}
         sending={sending}
+        processingPhase={processingPhase}
         sendError={sendError}
         canClear={(messagesQuery.data?.length ?? 0) > 0 && !sending}
         providerNameById={providerNameById}

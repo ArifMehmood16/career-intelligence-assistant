@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 from career_assistant.application.chunking.service import ChunkingRequest
@@ -31,7 +31,7 @@ from career_assistant.application.ports.search import HybridSearchPort
 from career_assistant.application.providers.fanout import map_in_order
 from career_assistant.domain.candidate_facts import candidate_facts
 from career_assistant.domain.chunking import TechTermProposal
-from career_assistant.domain.judging import RequirementPacket
+from career_assistant.domain.judging import JudgeDocumentContext, RequirementPacket
 from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.recency import DateRange
 from career_assistant.domain.scoring_v2 import (
@@ -111,6 +111,9 @@ class RoleAnalysisV2:
             [t for r in requirements for t in r.tech_terms],
             as_of=as_of,
         )
+        facts = replace(
+            facts, context=_document_context(documents, cv.chunks, advert.chunks)
+        )
         search = HybridCandidateSearch(
             workspace_id=ws,
             cv_chunks=cv.chunks,
@@ -181,6 +184,7 @@ def _requirements(advert: Sequence[StoredChunk]) -> tuple[AnalysedRequirement, .
                         candidates=(),
                         years_expected=item.years_expected,
                         seniority_expected=item.seniority_expected,
+                        experience_expected=item.experience_expected,
                     ),
                     chunk_id=stored.chunk_id,
                     position=position,
@@ -220,3 +224,15 @@ def _to_score(
             )
         )
     return items
+
+
+def _document_context(
+    documents: V2Documents, cv: Sequence[StoredChunk], advert: Sequence[StoredChunk]
+) -> JudgeDocumentContext:
+    # Verbatim context supplies interpretation, never more citation candidates.
+    return JudgeDocumentContext(
+        cv_document_id=documents.cv.document_id,
+        cv_text="\n\n".join(s.chunk.text for s in cv if s.chunk.kind != "contact"),
+        advert_document_id=documents.advert.document_id,
+        advert_text="\n\n".join(s.chunk.text for s in advert),
+    )

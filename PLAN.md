@@ -1,6 +1,6 @@
 # Delivery plan — one career intelligence pipeline
 
-Updated 2026-10-05. This plan replaces the competing v1 release/evaluation and v2
+Updated 2026-10-06. This plan replaces the competing v1 release/evaluation and v2
 build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
 Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
 evaluation rows.
@@ -83,7 +83,21 @@ is merged at `ad88781`. [CI run 37301152754](https://github.com/ArifMehmood16/ca
 passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `08ef56b`.
 The merge preceded the final plan/log commit; the human requested another PR
 for that remaining documentation. [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is merged at `0362666`.
+is merged at `0362666`; all three CI jobs passed on `a1f24c2`.
+
+The human subsequently requested [fit explanations and responsive Ask](specs/008-fit-explanations/spec.md)
+under 19.1–19.3 ahead of broader release verification. Stored point contributions
+now explain earned versus unearned fit; verified qualitative experience and overall
+CV/JD context inform new judgments; Ask exposes immediate processing and protects
+successive requests after cancellation. Local lint, 818 backend tests, 192 frontend
+tests and all 141 disposable SQL integration tests pass. Synthetic Browser checks
+cover arrows, asked/supported explanations, filter preservation and pending Ask.
+Judgment changes require reanalysis; scoring weights/formula are unchanged.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is merged at `45ae5c8`; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
+passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `d579923`.
+The canonical checkout holds PR #47's `test/phase-19-retirement-verification` branch,
+which now incorporates main and preserves this feature work. The old merged
+checkpoint branch was safely removed. No additional worktree or personal database was used.
 
 ## Approved direction
 
@@ -100,6 +114,10 @@ execution policy. Hosted egress remains opt-in. No personal documents are used i
 hosted development checks.
 
 ## 19.1 — retire the competing analysis
+
+- [x] Show earned points and full-credit shortfall for each requirement using stored
+      publication weights; green/red arrows with labels, null distinct from zero,
+      and filter-preserving API/component/SQL/Browser checks (spec 008).
 
 - [x] Add combined requirement status/score filters with counts, clear/reset and
       null-score handling; refresh current architecture diagrams and synthetic
@@ -134,10 +152,21 @@ Final checkpoint documentation receives its own updated-head checks.
 Documentation follow-up requested for the same PR: the system, analysis, publication,
 job-lifecycle and retirement diagrams are reconciled with current code. The usage guide
 covers provider selection, progress/failure, filters, citations, drafts and upgrades;
-nine synthetic component screenshots include Ask and Letter. These captures do not
+ten synthetic component screenshots include Ask processing, completed Ask and Letter. These captures do not
 close the broader end-to-end browser or measured quality gates below.
 
+Merge follow-up (2026-10-06): the human merged PR #46 at `45ae5c8`. PR #47 now
+incorporates that main commit, retaining its features and this retirement gate.
+Combined local lint, 818 backend / 192 frontend tests and 149 disposable SQL tests
+pass. Documentation and screenshots describe both changes. Final-head CI is required
+before the resolution report; broader acceptance gates remain open.
+
 ## 19.2 — reduce model/API calls and respect each provider
+
+- [x] Assess verified qualitative experience and seniority using overall CV/JD
+      context in existing judge calls; retain scoped numeric years, evidence caps,
+      context-aware cache/budget checks and asked/supported explanations (spec 008).
+      These regressions prove behavior, not measured model quality.
 
 - [ ] Read each fitting document with one structured response containing line-range
       chunks, details, atomic requirements and technology relationships. Validate
@@ -158,6 +187,10 @@ Exit: contract tests cover one-call documents, large output budgets, batched rep
 cache reuse and native embeddings; no hosted content leaves through a new path.
 
 ## 19.3 — bounded concurrency and useful progress
+
+- [x] Show Ask processing before any response, answering and history refresh;
+      clear status on success/failure/stop and protect a new request against late
+      events from a stopped one. Deferred-response regressions pass (spec 008).
 
 - [x] Enforce the existing running-job expiry during operation; preserve terminal
       state against late provider failures/responses, stop subsequent retries and

@@ -35,7 +35,19 @@ def test_verdicts_show_the_fit_each_verdict_and_its_evidence(
     assert set(body["keywordCoverage"]) == {"exact", "alias", "missing"}
     assert isinstance(body["gapPlan"], list)
     assert body["verdicts"]
+    impacts = [v["scoreImpact"] for v in body["verdicts"]]
+    assert all(impact is not None for impact in impacts)
+    assert sum(i["earned"] for i in impacts) == pytest.approx(body["fitScore"])
+    assert sum(i["possible"] for i in impacts) == pytest.approx(100)
+    for impact in impacts:
+        assert impact["earned"] + impact["shortfall"] == pytest.approx(
+            impact["possible"]
+        )
+    assert any(v["experienceExpected"] for v in body["verdicts"])
     for verdict in body["verdicts"]:
+        if verdict["experienceExpected"]:
+            assert verdict["experience"] is not None
+            assert verdict["experienceExpected"] in verdict["quote"]
         assert verdict["verdict"] in _LABELS
         assert 0 <= verdict["match"]["score"] <= 3
         assert verdict["provider"] == "hermetic"
