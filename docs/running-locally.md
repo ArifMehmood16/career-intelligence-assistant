@@ -3,7 +3,7 @@
 | Path | You need | First commands |
 |---|---|---|
 | Make | Python 3.14, bun, local PostgreSQL 16 with pgvector on port 5432, Ollama | `make setup` then `make run` |
-| Docker | Docker Engine and Compose v2 | `make run-docker` — written but not yet verified end to end (PLAN 16.1) |
+| Docker | Docker Engine and Compose v2 | `make run-docker` — written but not yet verified end to end (PLAN 19.4) |
 
 The running product needs the two local models:
 
@@ -40,8 +40,9 @@ separate spawned PDF/DOCX parser pool. Plain text avoids process startup.
 The retired v1 evaluation command has been removed. `make benchmark` implements
 current cold/warm application timing with synthetic fixture retrieval; it defaults
 offline and needs no database or key. `BENCHMARK_ARGS` passes named cases, repeat
-count, report destination or explicit live-provider selections. Execution is still
-deferred. See [measurement scope and commands](evaluation.md#current-analysis-benchmark-plan-194).
+count, report destination or explicit live-provider selections. Its tests pass;
+the command remains unexecuted under PLAN 19.4. See
+[measurement scope and commands](evaluation.md#current-analysis-benchmark-plan-194).
 Frozen-label quality evaluation remains open in PLAN 19.4.
 
 The forward migrations add call-progress fields and retire legacy derived analysis

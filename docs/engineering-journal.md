@@ -18,6 +18,35 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.2–19.3 — Plan reconciliation and runtime acceptance
+
+- Date: 2026-10-07
+- Trigger: human requested review of remaining done/stale/redundant work before
+  continuing development. Spec Kit record: specs/010-runtime-verification.
+- Audit: provider reading/budgets/native batches/repair/cache/profiles and bounded
+  concurrency were already implemented. Missing acceptance proof concerned real
+  parser failure/shutdown and combined thread cancellation/progress/accounting.
+  Added seven regressions without changing production code or dependencies.
+- Commands/results: provider command in spec quickstart passes 185 tests; runtime
+  command passes 55, including real spawned timeout/crash/close/recreation and both
+  application lifespan branches. Focused lifecycle/context suite passes 13.
+  make lint passes Ruff/format/mypy/TypeScript/ESLint; make test passes 825 backend
+  and 192 frontend tests, three existing skips and reported total coverage 85%.
+  The existing Starlette/AnyIO deprecation warning is unchanged.
+- SQL: no persistence/migration change, so local SQL was not rerun. The unchanged
+  149 SQL contracts passed at spec 009 and final PR #47 CI on both database images.
+  Final-head CI remains enforced for this branch.
+- Disposition: close proven 19.2/19.3 gates; consolidate duplicate browser-smoke
+  work into one complete Playwright journey. Separate unexecuted offline benchmark,
+  current-model quality, progress-migration preservation, security and startup
+  proof. Keep Ask hybrid retrieval/test-provider catalogue work relevant and
+  tool-history/audit retention conditional on user value.
+- Delivery state: PRs 46/47 merged; main synchronized at 6340cd0 before creating
+  one task branch. Human-added npm lock untouched; historical logs preserved.
+- Review: inspect complete branch diff, immutable test-only uploads, bounded cleanup
+  and exact accounting; no new egress/storage/API boundary. Ruff/mypy pass; no
+  SonarQube server scan is claimed. No paid provider call or personal database used.
+
 ## Phase 19.1 — Integrate merged PR #46 into PR #47
 
 - Date: 2026-10-06

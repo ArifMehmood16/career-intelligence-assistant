@@ -29,6 +29,26 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 173 — Reconcile the remaining development plan
+
+- Date: 2026-10-07
+- Tool / model: Codex.
+- Plan task: spec 010 checkpoint; PLAN 19.2–19.3 acceptance and 19.4 audit.
+- Prompt intent: remove stale or redundant pending work before executing the plan.
+- Outcome: closed provider/runtime checkboxes only after existing contracts and
+  new lifecycle/context regressions passed. Replaced stale open-PR/branch status
+  with observed merged delivery, trimmed duplicated delivery history from current
+  roadmap pages and corrected old Docker milestone references.
+- Changed/rejected: consolidated the duplicate browser smoke/full journey request;
+  split offline benchmark execution from model quality and progress migrations
+  from security. Retained genuine 19.4 gates and conditional Later work. Corrected
+  old tests/lint deferral wording while preserving historical feature/log records.
+- Validation observed: local lint and full 825 backend / 192 frontend checks passed
+  before documentation edits. Diff/link/checkbox review confirms shared root gate
+  status and unchanged public contracts. No measurement or new SQL run claimed.
+- Human-owned decisions: review before continuing, one canonical checkout/task
+  branch and authorized commit/push/PR. Human owns merge and live quality testing.
+
 ### 172 — Verify existing provider and runtime acceptance
 
 - Date: 2026-10-07

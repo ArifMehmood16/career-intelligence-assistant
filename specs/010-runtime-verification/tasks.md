@@ -13,7 +13,7 @@ Root: PLAN 19.2–19.3. Tests are explicitly required by this spec.
 
 - [x] T003 [US1] Run existing chunk/judge/cache/embedding/profile/gate contracts
   in `backend/tests/{unit,contract}/`; retain observed results for the root gate.
-- [ ] T004 [US1] Reconcile current delivery and stale/duplicate tasks in
+- [x] T004 [US1] Reconcile current delivery and stale/duplicate tasks in
   `PLAN.md`, `BACKLOG.md`, `README.md` and `docs/spec-kit.md` after proof.
 
 ## Phase 3 — US2: real parser lifecycle proof
@@ -38,10 +38,11 @@ Root: PLAN 19.2–19.3. Tests are explicitly required by this spec.
 
 - [x] T011 Run focused Ruff/mypy plus root `make lint` and `make test`; inspect
   the complete Git diff for privacy, lifecycle and design issues.
-- [ ] T012 Record observed evidence in `docs/engineering-journal.md` and
+- [x] T012 Record observed evidence in `docs/engineering-journal.md` and
   `AI_DEVELOPMENT_LOG.md`; close only proven root gates and update this task list.
 - [ ] T013 Commit/push the sole task branch and open one review PR; observe
-  final-head CI and attach the PR to this chat. Human owns merging.
+  final-head CI and attach the PR to this chat. Human owns merging. This external
+  delivery step is confirmed in the PR timeline after this committed checkpoint.
 
 ## Dependencies and implementation strategy
 
@@ -51,3 +52,13 @@ but this session implements sequentially. T004/T012 gate closure depends on
 T008/T010/T011. T013 follows complete checks and documentation. US1 is the
 audit MVP; US2 and US3 independently add missing acceptance proof. No new app,
 dependency, API, schema or paid measurement is introduced.
+
+## Observed checkpoint (2026-10-07)
+
+Provider suite: 185 pass. Runtime suite: 55 pass, including seven new lifecycle/context
+regressions. Full make lint and make test pass: 825 backend, 192 frontend, three
+existing skips, reported total coverage 85%. No production defect or red fix is
+claimed; the added regressions catch removal of existing cleanup/context behavior.
+Spec/plan/tasks analysis maps all five requirements and four success criteria; no
+constitution conflict, unmapped task, ambiguity or duplication within this slice.
+External PR publication/final-head CI is recorded by the GitHub delivery timeline.

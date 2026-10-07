@@ -1,9 +1,10 @@
 # Evaluation
 
-> Current status (2026-10-02): the measurements below are historical results for the
+> Current status (2026-10-07): the measurements below are historical results for the
 > retired analysis. The current one-call document reader, capacity-sized judge and
-> parallel executor have not received a live quality/latency evaluation. Tests/lint
-> for final consolidation edits were deferred at the human's request. PLAN 19.4
+> parallel executor have not received a live quality/latency evaluation. Provider
+> and runtime acceptance plus full lint/hermetic checks now pass (spec 010); those
+> checks are not measurements of live model quality. PLAN 19.4
 > records the remaining measurement gate; retirement is an approved product decision,
 > not evidence that measured quality improved.
 
@@ -14,10 +15,10 @@ evidenced. No number appears here that was not observed from a recorded run.
 
 Implemented 2026-10-02 in `career_assistant.ops.benchmark`, with its bounded
 [feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Not executed:**
-the human retained their tests/lint/measurement deferral. There is no new performance
-or quality result, and no release checkbox is closed.
+its tests now pass after verification resumed, but the command has not been run.
+There is no new performance or quality result, and the measurement gate stays open.
 
-After verification is resumed, from the repository root:
+Next offline measurement, from the repository root:
 
 ```bash
 make benchmark BENCHMARK_ARGS='--case clean_match --repetitions 3'
@@ -82,8 +83,9 @@ does not enable hosted egress, migrate a database or read uploaded personal data
 
 The old evaluation dataset below remains historical. This runner measures timing
 and accounting only: frozen current-architecture labels, unsupported matches,
-ranking agreement, SQL migration preservation and the browser journey remain open
-19.4 work. Record any future observed numbers here with the saved report's provenance;
+ranking agreement, populated progress-migration preservation and the browser
+journey remain open 19.4 work. Record future observed numbers here with the saved
+report's provenance;
 do not present offline fixture timing as live-model quality or production latency.
 
 ## Dataset
