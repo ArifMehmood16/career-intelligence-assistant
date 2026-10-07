@@ -29,6 +29,22 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 174 — Keep README focused on the product
+
+- Date: 2026-10-07
+- Tool / model: Codex.
+- Plan task: human-requested README edit during same-PR 19.4 continuation.
+- Prompt intent: remove status from README because progress notes feel out of place
+  and make the repository look unfinished.
+- Outcome: removed the dated milestone/PR/test status block and unexecuted benchmark
+  note. Replaced the setup status table with direct prerequisites and retained the
+  app overview, screenshot, architecture, quick start and documentation index.
+- Changed/rejected: progress/release evidence remains in PLAN/BACKLOG and linked
+  operational docs; no unsupported deployment or quality claim was added.
+- Validation observed: README local links resolve; git diff --check passes.
+  Documentation-only edit; no new application tests needed. Same PR #48 retained.
+- Human-owned decision: product-focused README; no status section.
+
 ### 173 — Reconcile the remaining development plan
 
 - Date: 2026-10-07
