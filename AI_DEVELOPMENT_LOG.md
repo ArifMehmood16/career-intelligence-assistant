@@ -29,6 +29,30 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 172 — Verify existing provider and runtime acceptance
+
+- Date: 2026-10-07
+- Tool / model: Codex; repository Spec Kit specify/plan/tasks/analyze workflow.
+- Plan task: PLAN 19.2–19.3, specs/010-runtime-verification.
+- Prompt intent: review remaining plan items for completed, stale or redundant
+  work before continuing development.
+- Outcome: inspected current code, tests and merged PR history. Existing provider
+  acceptance passes 185 focused tests. Runtime research identified missing parser
+  lifecycle and actual thread-context proof; added seven regressions for real
+  timeout/crash termination, pool recreation, idempotent close, both app shutdown
+  paths, concurrent retry accounting and inherited cancellation.
+- Changed/rejected: reused all production code. Rejected rebuilding implemented
+  provider/concurrency features or claiming offline tests as model-quality evidence.
+  No production defect was demonstrated, so no artificial red fix is claimed.
+- Validation observed: focused lifecycle/context tests pass 13 cases; surrounding
+  runtime suite passes 55; make lint passes Ruff/format/mypy/TypeScript/ESLint;
+  make test passes 825 backend and 192 frontend tests, three existing skips,
+  reported total coverage 85%. Read-only research used synthetic unit tests only.
+- Human-owned decisions: continue development and reconcile the plan; standing
+  commit/push/PR authority retained. No live provider calls, personal uploads,
+  database migration or new dependency. Human-added npm lock stays untouched.
+  Broader release gates and final-head CI remain separate from this local proof.
+
 ### 171 — Resolve PR #47 conflicts after PR #46 merge
 
 - Date: 2026-10-06
