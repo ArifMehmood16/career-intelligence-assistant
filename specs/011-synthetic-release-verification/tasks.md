@@ -30,9 +30,9 @@ zero paid calls, persisted cited outputs and cleanup of its own workspace.
 Independent acceptance: fresh isolated DB migrates before API readiness; packaged
 runtime contains required TOML/source/migration resources; browser uses migrated SQL.
 
-- [ ] T010 [US2] Demonstrate current image resource failure and add migration-before-server regression in backend/tests/unit/test_serve.py (FR-003/SC-002).
-- [ ] T011 [US2] Repair root build context/resources in backend/Dockerfile, compose.yaml and .dockerignore; add migration-first entry point in backend/src/career_assistant/ops/serve.py (FR-003).
-- [ ] T012 [US2] Build/run fresh isolated private services; observe readiness, analysis and shutdown; update docs/running-locally.md and docs/architecture.md (SC-002).
+- [x] T010 [US2] Demonstrate current image resource failure and add migration-before-server regression in backend/tests/unit/test_serve.py (FR-003/SC-002).
+- [x] T011 [US2] Repair root build context/resources in backend/Dockerfile, compose.yaml and .dockerignore; add migration-first entry point in backend/src/career_assistant/adapters/persistence/startup.py (FR-003).
+- [x] T012 [US2] Build/run fresh isolated private services; observe readiness, analysis and shutdown; update docs/running-locally.md and docs/architecture.md (SC-002).
 
 ## US3 — Honest release evidence
 

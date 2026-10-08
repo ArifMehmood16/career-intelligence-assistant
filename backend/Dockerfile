@@ -2,12 +2,12 @@
 # The runtime image contains no pip, no compiler and no development tools.
 FROM python:3.14-slim-bookworm AS build
 
-WORKDIR /app
+WORKDIR /app/backend
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-COPY pyproject.toml requirements.lock ./
-COPY src ./src
+COPY backend/pyproject.toml backend/requirements.lock ./
+COPY backend/src ./src
 
 RUN python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r requirements.lock \
@@ -17,20 +17,23 @@ FROM python:3.14-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app/backend/src"
 
 RUN useradd --system --create-home --uid 10001 career
 
 COPY --from=build /opt/venv /opt/venv
+COPY backend/src /app/backend/src
+COPY backend/alembic.ini /app/backend/alembic.ini
+COPY backend/migrations /app/backend/migrations
+COPY config/models.toml config/scoring_rubric.toml /app/config/
 
-WORKDIR /app
+WORKDIR /app/backend
 USER career
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=6 \
-    CMD python -c "import urllib.request as u, sys; sys.exit(0 if u.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status == 200 else 1)"
+    CMD python -c "import urllib.request as u, sys; sys.exit(0 if u.urlopen('http://127.0.0.1:8000/api/ready', timeout=2).status == 200 else 1)"
 
-# `alembic upgrade head &&` joins this command at PLAN.md phase 4, when there is
-# a schema to migrate. Until then the API owns no database.
-CMD ["uvicorn", "career_assistant.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "career_assistant.adapters.persistence.startup"]

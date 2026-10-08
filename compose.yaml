@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-career}
       POSTGRES_DB: ${POSTGRES_DB:-career_assistant}
     ports:
-      - "${POSTGRES_HOST_PORT:-5433}:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-career} -d ${POSTGRES_DB:-career_assistant}"]
       interval: 2s
@@ -23,14 +23,14 @@ services:
 
   api:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-career}:${POSTGRES_PASSWORD:-career}@db:5432/${POSTGRES_DB:-career_assistant}
 
       # Providers. Hermetic needs nothing; hosted needs the gate open and a key.
       COMPLETION_PROVIDER: ${COMPLETION_PROVIDER:-hermetic}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-hermetic}
-      EXTRACTION_STRATEGY: ${EXTRACTION_STRATEGY:-rules}
       ALLOW_HOSTED_PROVIDERS: ${ALLOW_HOSTED_PROVIDERS:-false}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_COMPLETION_MODEL: ${OLLAMA_COMPLETION_MODEL:-}
@@ -81,7 +81,7 @@ services:
       DOCUMENT_RETENTION_DAYS: ${DOCUMENT_RETENTION_DAYS:-30}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -96,7 +96,7 @@ services:
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
       PORT: "3000"
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy
@@ -105,7 +105,7 @@ services:
     image: ollama/ollama:latest
     profiles: ["ollama"]
     ports:
-      - "${OLLAMA_HOST_PORT:-11434}:11434"
+      - "127.0.0.1:${OLLAMA_HOST_PORT:-11434}:11434"
     volumes:
       - ollama_data:/root/.ollama
 

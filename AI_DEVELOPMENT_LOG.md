@@ -29,6 +29,26 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 178 — Package runtime resources and migrate before serving
+
+- Date: 2026-10-08; Codex; PLAN 19.4 startup; spec 011 US2.
+- Red observed: built prior API image with no network/personal config; importing
+  main failed because config/scoring_rubric.toml was absent after wheel installation.
+- Fix: allowlisted root context, explicit source/TOML/Alembic packaging and source
+  PYTHONPATH preserve resource ancestry. Persistence startup migrates before exec
+  of the fixed Python/uvicorn command; readiness gates web startup. Published Compose
+  ports bind loopback; frontend context excludes personal env files.
+- Validation: two startup tests and architecture guard pass; full make lint and
+  827 backend/195 frontend tests pass (three existing skips; reported coverage 85%).
+  Fresh API and full Compose stack reach readiness, complete queued synthetic analysis
+  through the production frontend proxy and expose verdicts; final build serves local
+  fonts. Final API shutdown exits 0. No personal migration or hosted provider call.
+- Changed: full checks caught SQLAlchemy outside the persistence boundary; moved the
+  entry point into that existing boundary instead of weakening its architecture test.
+- Human-owned scope: remaining release verification on the existing PR #48; private
+  startup only, no authentication or public deployment claim.
+
+
 ### 177 — Submit job-file contents and retain retry input
 
 - Date: 2026-10-08; Codex; PLAN 19.4 browser defect; spec 011 US1.

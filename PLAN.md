@@ -187,7 +187,7 @@ completed 36 observations with zero physical requests on 2026-10-07.
       retirement preservation/deletion already pass; do not repeat them as new work.
 - [ ] Complete dependency/security release checks. Stored-data deletion is verified
       under 19.1 and is not a full security audit.
-- [ ] Prove one startup/deployment path. Repair Docker configuration or remove its
+- [x] Prove one startup/deployment path. Repair Docker configuration or remove its
       supported claim. Keep deployment private until authentication exists.
 
 Exit: observed results, reproducible startup and one complete current journey. An
