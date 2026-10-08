@@ -9,7 +9,8 @@ Current product behavior, 2026-10-06. [Architecture](architecture.md),
 ## Workspace and documents
 
 Upload one CV, optional supporting cover letters and multiple job descriptions.
-Plain text, text PDF and DOCX are accepted after content inspection and configured
+CV and supporting-letter files accept plain text, text PDF and DOCX after content
+inspection and configured
 byte/page/character caps. Binary parsing uses bounded spawned CPU workers; plain
 text stays lightweight. Raw uploads and parsed text remain in PostgreSQL. Scanned
 images/OCR are outside scope. Replacing a CV invalidates affected analyses and queues

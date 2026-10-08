@@ -18,12 +18,11 @@ are merged. Main was synchronized at `6340cd0` before the sole current task bran
 [CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
 Updated-head CI remains enforced; the human owns merging.
 
-**Next genuine work: 19.4.** The benchmark exists and its tests pass, but the
-command remains unexecuted. A full synthetic browser journey, frozen-label model
-quality/latency evaluation, populated progress-migration preservation,
-dependency/security checks and one reproducible startup path remain open.
-The duplicate browser smoke request is consolidated below. Retired v1 comparison
-and repeated implementation of verified provider/concurrency features are superseded.
+**Remaining work: 19.4.** Offline benchmark execution, the synthetic browser journey,
+populated progress-migration preservation and private startup now have observed
+acceptance evidence. Frozen-label local-model measurement and scoped security
+review remain open, with updated-head CI required. Retired v1 comparison and
+repeated implementation of verified provider/concurrency features are superseded.
 No live quality improvement is inferred from passing fixture checks.
 
 ## Using Spec Kit for the existing project
@@ -167,7 +166,7 @@ This is fixture retrieval; PostgreSQL/browser latency and frozen-label quality
 evaluation are separate work. The [offline run](docs/evaluation.md#current-analysis-benchmark-plan-194)
 completed 36 observations with zero physical requests on 2026-10-07.
 
-- [ ] Implement and run one reusable synthetic Playwright journey: upload CV, add
+- [x] Implement and run one reusable synthetic Playwright journey: upload CV, add
       role, wait, inspect fit/source citation, prepare, draft and ask. Fix broken
       current features. This also satisfies the former duplicate browser-smoke task.
 - [x] Execute the existing offline synthetic benchmark and record timing/accounting

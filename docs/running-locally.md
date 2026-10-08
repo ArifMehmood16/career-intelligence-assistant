@@ -3,7 +3,7 @@
 | Path | You need | First commands |
 |---|---|---|
 | Make | Python 3.14, bun, local PostgreSQL 16 with pgvector on port 5432, Ollama | `make setup` then `make run` |
-| Docker | Docker Engine and Compose v2 | `make run-docker` — written but not yet verified end to end (PLAN 19.4) |
+| Docker | Docker Engine and Compose v2 | `make run-docker` |
 
 The running product needs the two local models:
 
@@ -81,6 +81,14 @@ with the local instance. Both paths use the same Alembic migrations and PostgreS
 repositories. SQLite and filesystem-backed uploads are not fallbacks. Which store
 each route uses is listed in [docs/production-wiring.md](production-wiring.md).
 
+The API image is built from the repository root with an allowlisted context. It
+contains public model/rubric TOML, source and Alembic resources; `config/app.env`,
+private uploads and development tooling are excluded. Its persistence startup entry
+point runs migrations before replacing itself with uvicorn. Migration failure stops
+startup with a safe error type; `/api/ready` checks the database and migration head.
+Compose waits for API readiness before starting web. Published ports bind to
+127.0.0.1; deployments still require authentication before untrusted access.
+
 In Compose, Ollama sits behind a profile so a default `up` downloads no model:
 
 ```bash
@@ -103,6 +111,29 @@ Judging and corrective rechecking update requirement counts when a batch finishe
 not a count of individual provider requests. Failed jobs stop the task spinner.
 Cancellation is cooperative: an HTTP request already sent finishes or times out
 in its thread, but its late response cannot publish and no subsequent retry starts.
+
+## Browser acceptance
+
+The reusable Chromium journey uses the production SQL worker and real same-origin
+frontend proxy with hermetic provider fixtures. It checks CV and `.txt` advert
+upload, analysis, requirement filters/contributions, retrieval/source evidence,
+Prepare, saved Letter, cited Ask/reloaded history, deletion and no external browser
+requests. It does not measure model quality.
+
+```bash
+cd e2e
+bun install --frozen-lockfile
+bunx playwright install chromium
+cd ..
+E2E_DATABASE_URL='postgresql+psycopg://USER:PASSWORD@127.0.0.1:PORT/career_assistant_e2e' make test-e2e
+```
+
+Create that dedicated disposable database first. The launcher rejects non-loopback
+hosts and names without `_e2e`, migrates only that database and runs the API from an
+empty temporary directory with hosted keys/gate disabled. It uses API port 18002
+and web port 13001 and refuses existing servers. Test workspaces use shipped synthetic
+fixtures; failure traces/screenshots stay ignored. PR CI runs this journey separately
+from hermetic and PostgreSQL/Supabase integration checks.
 
 ## Observability
 

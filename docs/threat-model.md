@@ -75,3 +75,16 @@ host/backup exposes stored personal data; private network, TLS where needed, enc
 storage and backup policy remain deployment responsibilities. Operational audit may
 be fail-open during outages. There is no malware sandbox, public log API, employer
 fairness review, shared-user authorization or public deployment support in this build.
+
+## Browser assets and container startup (2026-10-08)
+
+The synthetic browser regression found Google Fonts requests despite local provider
+selection. Font styles/binaries now come from the application origin, retaining the
+same families/weights and original licenses. The real journey asserts zero external
+browser requests; this is scoped evidence, not a general security claim.
+
+Build contexts exclude personal environment files and runtime COPY is explicit.
+Compose ports bind only to loopback. Migrations must succeed before API startup;
+readiness checks database/schema, with safe startup errors and no raw SQL payload.
+Dedicated browser tests reject non-loopback/non-`_e2e` database URLs and existing
+servers; hosted credentials/gate are disabled independently of user settings.

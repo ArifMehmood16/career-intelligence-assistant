@@ -29,6 +29,24 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 181 — Verify the complete browser journey and keep font requests local
+
+- Date: 2026-10-08; Codex; PLAN 19.4 browser acceptance; spec 011 US1.
+- Outcome: Bun-managed Playwright runner starts existing API/worker and frontend
+  proxy against only a dedicated loopback *_e2e database, refuses server reuse,
+  clears personal provider configuration and cleans up children. Journey verifies
+  file intake, Fit filters/evidence, Prepare source, persisted cited draft and
+  streamed Ask/reload/history deletion before deleting its synthetic CV.
+- Red observed: the external-request assertion caught Google Fonts fetches after
+  every product flow completed. Bundled the same five original font files with
+  original OFL licenses/provenance; removed external stylesheet/preconnect links.
+- Validation: complete Chromium journey passes; zero external requests. e2e
+  typecheck and audit pass; full lint and 827 backend/195 frontend checks pass.
+  SQL suite passes all 150 tests. A new isolated CI job enforces the journey.
+- Human-owned scope: finish remaining verification on PR #48. No paid model calls,
+  real uploads, altered design tokens or public deployment claim.
+
+
 ### 180 — Synchronize both retained frontend locks
 
 - Date: 2026-10-08; Codex; PLAN 19.4 dependency verification; spec 011 T004.

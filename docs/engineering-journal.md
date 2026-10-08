@@ -18,6 +18,33 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Browser, startup and populated progress acceptance
+
+- Date: 2026-10-08. Commands: make lint; make test; make test-integration with
+  distinct disposable application/test URLs on port 55444; make test-e2e with a
+  dedicated loopback *_e2e database; e2e bun run typecheck and bun audit.
+- Observed: lint passes; 827 backend and 195 frontend tests pass, three existing
+  skips, reported coverage 85%; all 150 SQL tests pass. Browser journey passes:
+  upload, text-file role, Fit filters/evidence, Prepare quote, persisted cited draft,
+  streamed Ask/source, reload and own workspace cleanup. Zero external browser requests.
+- Defects: job-file control submitted its filename and discarded retry input;
+  focused red assertions reproduced both. Original API image import failed with
+  missing scoring_rubric.toml. Packaging now preserves TOML/source/migrations and
+  startup migrates before serving; full fresh Compose stack reaches ready and
+  completes analysis through the production web proxy. Final API shutdown exits 0.
+- Browser regression initially completed product flows but caught Google Fonts
+  egress. Self-host the same licensed faces/weights, preserving original OFL notices;
+  the external-request assertion now passes. No new design tokens or typography.
+- Progress migration: real populated c1 -> b2 upgrade preserves documents, jobs,
+  task timestamps/counts, scores, drafts and citations; added counters default to
+  zero/unknown and reject invalid counts. Test finally restores migration head.
+- Tooling: Playwright is a test-only dependency because DOM component checks cannot
+  prove browser/proxy/SQL persistence. CI adds an isolated synthetic browser job;
+  failure artifacts contain only test fixtures and expire after seven days.
+- Carried forward: local-model quality and final scoped security results. No paid
+  providers, personal database migration or SonarQube server scan claimed.
+
+
 ## Phase 19.4 — Offline benchmark evidence
 
 - Date: 2026-10-08; measurement executed 2026-10-07.
