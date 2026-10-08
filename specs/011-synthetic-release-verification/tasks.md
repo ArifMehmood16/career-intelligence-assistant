@@ -39,8 +39,8 @@ runtime contains required TOML/source/migration resources; browser uses migrated
 Independent acceptance: safe reproducible reports, populated SQL preservation and
 triaged scans, no fixture-time or historical-model claims as current quality.
 
-- [ ] T013 [US3] Add populated c1 -> b2 upgrade preservation/default/constraint test in backend/tests/integration/test_call_progress_migration.py using raw historical columns and finally restore head (FR-005/SC-003).
-- [ ] T014 [US3] Run new migration test and full SQL suite on disposable TEST_DATABASE_URL; record exact evidence in docs/engineering-journal.md (SC-003).
+- [x] T013 [US3] Add populated c1 -> b2 upgrade preservation/default/constraint test in backend/tests/integration/test_call_progress_migration.py using raw historical columns and finally restore head (FR-005/SC-003).
+- [x] T014 [US3] Run new migration test and full SQL suite on disposable TEST_DATABASE_URL; record exact evidence in docs/engineering-journal.md (SC-003).
 - [ ] T015 [US3] Freeze explicitly current synthetic expectations in sample-data/evaluation/ before model execution; document development-only scope in docs/evaluation.md (FR-004).
 - [ ] T016 [US3] Extend only existing benchmark/report code under backend/src/career_assistant/ops/ where required to record unsupported matches/ranking agreement, with focused tests in backend/tests/ (FR-004/SC-004).
 - [ ] T017 [US3] Run available local Ollama models using shipped synthetic fixtures and explicit closed hosted gate; save safe model/prompt/input/call/duration/quality provenance in docs/evaluation-results/ (FR-004/SC-004).

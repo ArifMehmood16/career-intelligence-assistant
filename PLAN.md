@@ -183,7 +183,7 @@ completed 36 observations with zero physical requests on 2026-10-07.
       Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.
 - [x] Observe both database image jobs and lint/hermetic CI on code head `5b8a585`
       ([run](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)); keep updated-head checks enforced.
-- [ ] Prove populated progress-migration preservation. Empty migration cycles and
+- [x] Prove populated progress-migration preservation. Empty migration cycles and
       retirement preservation/deletion already pass; do not repeat them as new work.
 - [ ] Complete dependency/security release checks. Stored-data deletion is verified
       under 19.1 and is not a full security audit.

@@ -29,6 +29,22 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 179 — Prove populated progress-migration preservation
+
+- Date: 2026-10-08; Codex; PLAN 19.4 progress preservation; spec 011 US3.
+- Outcome: regression downgrades only disposable test DB to c1f7a2d94e08, seeds
+  pending/running/done/skipped task rows with counts, unknown totals and timestamps,
+  then upgrades b2d9c8e4f601. Historical tasks, jobs, original documents, scores,
+  generated drafts and citations remain identical; model/embedding counters default
+  to 0/unknown and reject negative done/total or excess done values. Finally restores head.
+- Validation: focused migration test and all 150 SQL tests pass on pgvector/PG16
+  at loopback port 55444 with separate application/test DB names. No production
+  migration change was needed; this verifies existing behavior rather than claiming
+  an artificial red defect. Full source lint/type/unit checks also pass.
+- Boundary: shipped synthetic documents only, no user DB or paid providers. Both
+  PostgreSQL CI image jobs remain required on the updated PR head.
+
+
 ### 178 — Package runtime resources and migrate before serving
 
 - Date: 2026-10-08; Codex; PLAN 19.4 startup; spec 011 US2.
