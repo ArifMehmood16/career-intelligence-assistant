@@ -52,6 +52,11 @@ class QualityLabels(BaseModel):
                 case.jd_sha256,
             ):
                 raise ValueError("quality_fixture_fingerprint_mismatch")
+            if any(
+                normalize(item.quote) not in normalize(case.jd_text)
+                for item in label.requirements
+            ):
+                raise ValueError("quality_label_quote_not_in_fixture")
         for label in self.cases:
             quotes = [normalize(item.quote) for item in label.requirements]
             if len(set(quotes)) != len(quotes):

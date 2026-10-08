@@ -29,6 +29,17 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 183 — Reject mislabeled fixture quotes before measurement
+
+- Date: 2026-10-08; Codex; PLAN 19.4 evaluation guard.
+- Outcome: reject labels whose clauses are absent from the fingerprinted fixture;
+  validate duplicate cases/clauses and same-CV distinct-job ranking assumptions.
+- Red observed: invented-quote test failed with DID NOT RAISE ValueError before
+  the quote guard. All 24 benchmark/quality tests now pass, with Ruff/mypy passing.
+- Boundary: validation only, no model or production analysis changes. The first
+  local run used clean 7a07a6e before this additional guard; no result is rewritten.
+
+
 ### 182 — Freeze current-judge development labels and honest metrics
 
 - Date: 2026-10-08; Codex; PLAN 19.4 local measurement; spec 011 T015/T016.

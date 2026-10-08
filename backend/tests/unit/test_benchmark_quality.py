@@ -114,3 +114,42 @@ def test_quality_command_records_safe_metrics_with_no_default_schema_change(
     assert ordinary["schema_version"] == "analysis-benchmark-v1"
     assert "quality" not in ordinary
     assert "quality" not in ordinary["observations"][0]
+
+
+@pytest.mark.parametrize(
+    "mutation,code",
+    [
+        ("duplicate_case", "duplicate_label_case"),
+        ("duplicate_quote", "duplicate_requirement_label"),
+        ("invented_quote", "quality_label_quote_not_in_fixture"),
+        ("different_cv", "ranking_requires_distinct_jobs_for_same_cv"),
+        ("same_job", "ranking_requires_distinct_jobs_for_same_cv"),
+        ("unknown_job", "ranking_requires_distinct_jobs_for_same_cv"),
+    ],
+)
+def test_invalid_label_sets_are_rejected(mutation: str, code: str) -> None:
+    dataset = load_dataset(["partial_match"])
+    labels, _ = load_quality(dataset)
+    first, second = labels.cases
+    if mutation == "duplicate_case":
+        labels = labels.model_copy(update={"cases": (first, first)})
+    elif mutation == "duplicate_quote":
+        first = first.model_copy(
+            update={"requirements": (first.requirements[0], first.requirements[0])}
+        )
+        labels = labels.model_copy(update={"cases": (first, second)})
+    elif mutation == "invented_quote":
+        requirement = first.requirements[0].model_copy(
+            update={"quote": "An invented requirement"}
+        )
+        first = first.model_copy(update={"requirements": (requirement,)})
+        labels = labels.model_copy(update={"cases": (first, second)})
+    elif mutation == "different_cv":
+        second = second.model_copy(update={"cv_sha256": "0" * 64})
+        labels = labels.model_copy(update={"cases": (first, second)})
+    else:
+        lower = "partial_match" if mutation == "same_job" else "unknown"
+        rank = labels.rankings[0].model_copy(update={"lower": lower})
+        labels = labels.model_copy(update={"rankings": (rank,)})
+    with pytest.raises(ValueError, match=code):
+        run_benchmark(BenchmarkConfig(), dataset, quality_labels=labels)
