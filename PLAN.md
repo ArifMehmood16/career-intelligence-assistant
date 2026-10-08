@@ -9,7 +9,9 @@ are verified. Spec 011 adds observed browser/startup/progress-migration acceptan
 scoped security review and honest synthetic measurements. Local `make lint` and
 `make test` pass (838 backend / 195 frontend, three existing skips); all 150 SQL
 cases and the complete browser journey pass. Dependency patches are audited;
-Playwright is a test-only dependency. No personal database or paid provider call.
+Playwright is a test-only dependency. The human-authorized configured OpenAI
+synthetic run now supplies current measurement evidence; no personal documents or
+application database were used. Quality limits remain explicit in docs/evaluation.md.
 
 [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
 and [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47)
@@ -21,13 +23,13 @@ Updated-head CI remains enforced; the human owns merging.
 PR #48 checkpoint `99c86d1` passes all four jobs, including the new synthetic
 browser journey, in [CI run 37761425946](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37761425946).
 
-**Remaining work: 19.4.** Offline benchmark execution, the synthetic browser journey,
-populated progress-migration preservation and private startup now have observed
-acceptance evidence. Scoped security findings are reviewed. Local 7B/14B synthetic
-attempts failed chunk validation before judging; successful unsupported-match and
-ranking measurements remain open. Updated-head CI stays required. Retired v1
-comparison and repeated provider/concurrency implementation are superseded.
-No live quality improvement is inferred from fixture checks or failed attempts.
+**19.4 acceptance evidence is recorded.** Offline and configured OpenAI synthetic
+measurements, the browser journey, populated progress preservation, private startup
+and scoped security review have observed evidence. The OpenAI run succeeds without
+relaxing validation; local 7B/14B chunk failures remain recorded. Clause-alignment
+gaps and unmeasured unsupported-met rates prevent a calibrated quality claim.
+Updated-head CI remains required before merge. Retired v1 comparison and repeated
+provider/concurrency implementation are superseded. Follow-ups live in BACKLOG.md.
 
 ## Using Spec Kit for the existing project
 
@@ -176,12 +178,15 @@ completed 36 observations with zero physical requests on 2026-10-07.
 - [x] Execute the existing offline synthetic benchmark and record timing/accounting
       provenance in docs/evaluation.md. Fixture timing proves neither model quality
       nor SQL/browser latency; no paid provider request is needed.
-- [ ] Measure the current one-call/judge architecture on frozen synthetic labels.
+- [x] Measure the current one-call/judge architecture on frozen synthetic labels.
       Record provider/model/prompt versions, physical calls, cold/warm duration,
       unsupported matches and ranking agreement in docs/evaluation.md. Tune on
       development data only. Hosted measurements need enabled keys and synthetic
       data; no paid or live quality claims from fixture tests. Local 7B/14B attempts
       are recorded in docs/evaluation.md; both failed chunking before judging.
+      The separately authorized configured OpenAI run completes cold/warm judging;
+      original reports and alignment/null-rate limits are recorded. This is
+      measurement execution, not a calibrated quality threshold or production pass.
 - [x] Repair PR #43's observed collection/lint failures and pass local lint,
       hermetic and disposable PostgreSQL regression/migration-cycle checks.
       Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.

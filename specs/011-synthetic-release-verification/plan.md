@@ -73,3 +73,12 @@ Then startup/upload red regressions and fixes, migration preservation, browser
 journey, security repairs/scans and local measurement. Run affected focused checks
 per commit, full lint/unit/SQL/e2e before checkpoint; update PR #48 and observe CI.
 Keep unavailable/unobserved gates visibly open. Human owns merge.
+
+## Authorized continuation — 2026-10-08
+
+After local models failed structural chunk validation, the human explicitly asked
+to use OpenAI already configured in the project directory. Run existing benchmark
+with explicit OpenAI provider selections; ProviderSettings loads model tags and
+hosted authorization/key from the normal project environment. Use only the same
+frozen synthetic fixtures/labels and record actual off-machine attribution. No
+provider implementation, prompt, secret file or production database change.

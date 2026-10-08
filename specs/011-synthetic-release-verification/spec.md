@@ -2,7 +2,7 @@
 
 **Branch**: `test/phase-19-runtime-verification` (same PR #48 by human instruction)
 **Created**: 2026-10-07
-**Status**: Verification implementation delivered; root model-quality gate remains open
+**Status**: Verification and authorized hosted measurement delivered; updated-head CI required before merge
 **Input**: Continue remaining PLAN 19.4 work in PR #48; README must describe the
 product without development status. Reuse spec 001 for the existing benchmark.
 
@@ -50,6 +50,8 @@ reproducible commands and provenance. Fixture timing never becomes a model-quali
 - **FR-004**: Execute existing offline benchmark, save safe provenance/results;
   separately measure available local models against explicitly frozen current labels
   and record duration/calls/unsupported matches/ranking agreement and limits.
+  Human authorization on 2026-10-08 extends this to configured OpenAI from the
+  project directory after local failures; preserve frozen inputs and validators.
 - **FR-005**: Prove historical task/job/document values survive the additive progress
   migration, with new defaults and constraints, in a dedicated disposable database.
 - **FR-006**: Audit dependencies/source/secrets, repair actionable findings and record
@@ -63,7 +65,7 @@ reproducible commands and provenance. Fixture timing never becomes a model-quali
 - **SC-002**: Fresh startup reaches readiness and its migrated schema supports analysis.
 - **SC-003**: Historical task values are unchanged; new counters default to 0/unknown
   and reject negative/excess completed counts.
-- **SC-004**: Saved offline/local reports identify frozen inputs and actual models;
+- **SC-004**: Saved offline/local and explicitly authorized hosted reports identify frozen inputs and actual models;
   failed/incomplete measurements expose no successful score.
 - **SC-005**: Applicable lint/unit/SQL/browser checks pass; scan results are fully
   triaged without broad suppression or an absolute security/readiness claim.

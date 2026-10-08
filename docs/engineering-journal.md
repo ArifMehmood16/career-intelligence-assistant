@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Configured OpenAI measurement continuation
+
+- Date: 2026-10-08. Human requested configured OpenAI from the project directory
+  after isolated local failures. Ran existing quality/live benchmark from root;
+  exact command and safe original report are in docs/evaluation.md.
+- Observed: process exits 0; every frozen cold/warm observation succeeds with
+  complete verdicts. Configured gpt-5-mini/text-embedding-3-small attribution shows
+  off-machine synthetic input, fallback false; original source clean 46650d0.
+  Report bytes, label-file hash, provider attribution and transport totals checked.
+- Decision: close root measurement execution, which has no numeric quality
+  threshold. Keep clause-alignment gaps, null unsupported-met rates and narrow
+  ranking sample explicit in evaluation.md; human calibration remains future work.
+  Do not retune labels/prompts, relax validators or erase local failure reports.
+- Scope: no application server/database or private uploads used. Normal settings
+  loaded, no secret file modified. This report is model/application work with
+  fixture retrieval, not SQL/browser latency or an end-to-end hosted deployment.
+- Delivery: continue same PR #48/branch. Production source unchanged; prior full
+  checks and four green CI jobs at 46650d0 remain applicable. Observe updated-head
+  CI after committing this evidence before declaring the delivery checkpoint.
+
+
 ## Phase 19.4 — Delivery checkpoint
 
 - Date: 2026-10-08. Same PR #48 title/description updated to final scope; pushed

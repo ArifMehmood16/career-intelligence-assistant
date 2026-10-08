@@ -1,10 +1,11 @@
 # Evaluation
 
-> Current status (2026-10-08): offline current-pipeline timing and two synthetic
-> local-model attempts are recorded below. Both local attempts failed chunking
-> before judging, so unsupported-match and ranking quality remain unmeasured.
-> Historical results later in this document describe the retired analysis and
-> cannot establish current quality. PLAN 19.4 retains the open measurement gate.
+> Current status (2026-10-08): the human-authorized configured OpenAI run below
+> completes both frozen synthetic cases cold and warm. PLAN 19.4's measurement
+> execution is complete; this is not a calibrated quality pass. Partial-case clause
+> alignment is incomplete and unsupported-met rates remain null. Earlier local
+> attempts failed before judging. Historical results later in this document
+> describe the retired analysis and cannot establish current quality.
 
 Retrieval, extraction and generation quality are claims. This file is where they are
 evidenced. No number appears here that was not observed from a recorded run.
@@ -180,14 +181,88 @@ instructions. The same 7B cases still failed before judging, so that prompt chan
 was rejected and reverted. It is not a successful measurement or a shipped prompt
 version; the two original reports above remain unchanged.
 
-Next: diagnose local-model structural chunk failures on development fixtures,
-retain complete-line/citation validation, then obtain successful judged observations
-before claiming unsupported-match/ranking quality. Human calibration of the frozen
-development expectations is still required before setting a release threshold.
+These local-model structural failures remain unresolved. The separately authorized
+OpenAI continuation below supplies successful judged observations without changing
+validation, labels or prompts. Human calibration of the frozen development
+expectations is still required before setting a release threshold.
 
 The browser,
 populated progress migration and private startup now have separate acceptance
 evidence in the engineering journal; none establish live model quality.
+
+### Observed configured OpenAI run — 2026-10-08
+
+The human explicitly requested using OpenAI already configured in the project
+directory. The [original safe report](evaluation-results/openai-2026-10-08.json)
+was captured at clean revision `46650d0f44d4ec8b4bd241f3594e152149514483`, timestamp
+`2026-10-08T10:25:20.963132+00:00`. From the repository root, the actual command was:
+
+```bash
+backend/.venv/bin/python -m career_assistant.ops.benchmark \
+  --quality --live --provider openai --embedding-provider openai \
+  --output /private/tmp/career-pr48-openai-20261008.json
+```
+
+Normal project provider settings selected `gpt-5-mini` and
+`text-embedding-3-small`, timeout 180 seconds and two allowed transport retries.
+Hosted access was already enabled with a configured key; the command did not
+change secrets or settings. Actual attribution records both OpenAI models and
+`leaves_machine=true`: only the shipped synthetic fixtures were sent off-machine.
+Fallback was disabled. This uses the production application pipeline with fixture
+retrieval/caches, without an application database, binary intake, queue or browser;
+it is not a hosted end-to-end or production-latency result.
+
+The command exited 0. One cold/warm repetition for each frozen partial/poor case,
+analysis date 2026-09-01, produced four successful observations, complete verdicts
+and domain-computed scores. The original report preserves raw floating-point scores.
+
+- Partial match: cold 77.091 seconds, score 35.00, seven extracted requirements,
+  three completion and three embedding HTTP attempts. Warm 1.845 seconds, same
+  score/verdicts, zero completion and two embedding attempts; seven of seven
+  verdict lookups hit the cache, with two document hits and four reused vectors.
+- Poor match: cold 69.293 seconds, score 0.00, five requirements, three completion
+  and two embedding HTTP attempts. Warm 0.405 seconds, same score/verdicts, zero
+  completion and one embedding attempt; five of five verdict lookups hit, with
+  two document hits and four reused vectors.
+
+Total physical attempts: six completion, eight embedding and zero metadata.
+These are observed attempts, not token costs or a billing estimate. Each cold run
+made one judge request after two document-chunk requests. Single-observation
+p50/p95 values in the report repeat those durations and establish no latency
+percentile distribution. Warm observations reuse judgments and are not independent
+model-quality samples; queries still make real embedding requests.
+
+Frozen-label observations are deliberately narrower than successful execution:
+
+- Partial match: five of six expected clauses align, four labels are correct,
+  one expected clause is unmatched, and two extracted requirements are unlabelled.
+  Agreement is 4/6 (66.67%) using all expected clauses as the denominator; no
+  duplicates or missing verdicts. The strict quote matcher exposes segmentation
+  differences; the metadata-only report cannot establish whether the unmatched
+  requirement is semantically omitted or equivalently split.
+- Poor match: all five expected clauses align and all five labels are correct
+  (100% agreement), with no unmatched, unlabelled or duplicate requirements and
+  no missing verdicts.
+- Neither case has a labelled `met` prediction. Both report unsupported-met count
+  zero with **rate null**, not a measured zero-error rate. The partial case's one
+  `met` prediction is unlabelled and cannot establish semantic support from these
+  metrics. Do not claim zero unsupported positive judgments.
+- The partial job scores above the poor job for the same CV, agreeing with the
+  single frozen ordering in cold and warm groups (one eligible/agreed pair in
+  each). The cached warm result is not a second independent ranking sample.
+
+The report records unchanged `chunking-v4`, `judge-prompt-v2`, `judge-anchors-v2`,
+`cv-chunks-v2`, `job-chunks-v3`, `judge-v1` and `scoring-rubric-v2`, plus actual
+capabilities and all input/label/configuration fingerprints. Frozen label file
+SHA-256 remains `ad8d59faaac664f9b5b7a3e66681d013cf7544bec4e1ef4674de86a5c0521455`.
+No label, model profile, prompt or validation rule was tuned for this run.
+
+This closes the PLAN 19.4 requirement to execute and record current synthetic
+measurements and their limits, which defines no numeric quality threshold. It does
+not establish calibrated accuracy, citation semantic support, local-model
+compatibility, production retrieval quality or public deployment readiness.
+Future quality acceptance needs human-reviewed labels, clause-alignment review,
+labelled positive predictions and broader independent cases/repetitions.
 
 ## Dataset
 

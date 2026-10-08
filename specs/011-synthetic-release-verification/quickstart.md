@@ -15,3 +15,20 @@ Checkpoint: `make lint`, `make test`, browser journey, startup and release scans
 Record actual commands/results and open blockers in existing engineering/evaluation docs.
 Local model runs use shipped synthetic fixtures and explicit local provider tags.
 Hosted requests are outside this instruction unless separately authorized.
+
+## Separately authorized configured OpenAI validation
+
+The human authorized this continuation on 2026-10-08. From the repository root,
+use the normal project settings/key and an unused output destination:
+
+```bash
+backend/.venv/bin/python -m career_assistant.ops.benchmark \
+  --quality --live --provider openai --embedding-provider openai \
+  --output /private/tmp/career-pr48-openai-20261008.json
+```
+
+Do not reuse that occupied output path. The hosted gate/key must already be set;
+the command does not enable egress. Only frozen shipped synthetic cases are used,
+with fixture retrieval and no application database. Inspect actual attribution,
+failed observations, alignment gaps and null rates before drawing conclusions.
+The original observed report and limits are in ../../docs/evaluation.md.

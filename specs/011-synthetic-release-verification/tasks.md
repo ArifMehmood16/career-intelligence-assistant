@@ -69,7 +69,7 @@ Deliver the offline evidence first, then each passing regression/fix increment.
 No fresh scaffolding beyond the missing test runner. Open tasks remain unchecked;
 failed/incomplete model runs are reported honestly and never publish invented scores.
 
-Observed measurement limit (2026-10-08): T017 executed and saved both local runs,
+Earlier local measurement checkpoint (2026-10-08, before hosted authorization): T017 executed and saved both local runs,
 but both failed chunk validation before judging. SC-004 is satisfied by honest
 failure reports; the root PLAN 19.4 quality gate remains open until successful
 unsupported-match/ranking observations exist. No validation relaxation shipped; an ineffective later prompt experiment was reverted.
@@ -77,3 +77,19 @@ unsupported-match/ranking observations exist. No validation relaxation shipped; 
 Delivery observed: PR #48 checkpoint 99c86d1 passed all four jobs in CI run
 37761425946 (lint/hermetic, PostgreSQL, Supabase and synthetic browser). Existing
 PR description updated; no merge. Subsequent checkpoint edits are documentation only.
+
+## Human-authorized hosted continuation — 2026-10-08
+
+The human requested configured OpenAI validation from the project directory after
+local-model attempts failed. Retain frozen fixtures/labels and existing provider
+factories/gate; do not change project secrets, prompts or production stores.
+
+- [x] T022 Run the existing quality benchmark from repository root with OpenAI completion/embedding providers and the configured model tags; inspect safe original results (FR-004/SC-004).
+- [x] T023 Save observed report/provenance and update docs/evaluation.md, PLAN.md/BACKLOG.md and the engineering/AI logs; close only proven acceptance (FR-007).
+- [ ] T024 Commit/push the continuation on the existing PR #48 and observe updated-head CI without merging (FR-001/SC-005).
+
+Observed hosted continuation: configured OpenAI completes all frozen cold/warm
+observations at clean 46650d0; original report is saved unchanged. Root measurement
+execution is complete, with alignment gaps and null unsupported-met rates disclosed
+in docs/evaluation.md. No semantic accuracy threshold is asserted. T024 remains
+open until updated-head CI is observed.

@@ -29,6 +29,28 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 188 — Validate configured OpenAI without changing frozen expectations
+
+- Date: 2026-10-08; Codex; PLAN 19.4; spec 011 authorized hosted continuation.
+- Prompt intent: use OpenAI already configured in the project directory instead
+  of isolated local mode, or retry Qwen. Selected the configured OpenAI option.
+- Accepted: run the existing synthetic live benchmark from the repository root
+  through normal provider factories/settings. Save original safe report at clean
+  46650d0, record actual hosted attribution and unchanged prompt/label versions.
+- Observed: command exits 0 with all cold/warm observations complete and warm
+  verdict reuse. Detailed measurements and their alignment/null-rate limits are
+  confined to docs/evaluation.md. Root measurement execution is complete; no
+  calibrated semantic-quality pass is claimed and local failures stay unresolved.
+- Rejected: changing labels, weakening coverage/citations, tuning prompts post hoc,
+  treating unlabelled positives/null rates as supported zero-error evidence, or
+  presenting fixture retrieval as production SQL/browser latency.
+- Validation: original report bytes/provenance/label hash and transport totals
+  checked. Production code/settings/secrets unchanged; prior full regression and
+  four green CI jobs at 46650d0 apply to source. Updated-head CI remains required.
+- Human authorization: explicit paid OpenAI synthetic validation and existing PR
+  #48 commit/push scope. No personal documents/database, new branch/PR or merge.
+
+
 ### 187 — Deliver the verification checkpoint on the existing PR
 
 - Date: 2026-10-08; Codex; PLAN 19.4; spec 011 delivery.
