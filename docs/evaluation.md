@@ -97,12 +97,47 @@ Only live mode loads existing provider settings; hosted requests still require
 disabled so a failed hosted run cannot become a fixture measurement. The command
 does not enable hosted egress, migrate a database or read uploaded personal data.
 
-The old evaluation dataset below remains historical. This runner measures timing
-and accounting only: frozen current-architecture labels, unsupported matches,
-ranking agreement, populated progress-migration preservation and the browser
-journey remain open 19.4 work. Record future observed numbers here with the saved
-report's provenance;
-do not present offline fixture timing as live-model quality or production latency.
+### Frozen current-judge development labels
+
+The historical dataset below does not define current truth. Spec 011 adds
+`sample-data/evaluation/current-judge-labels.json`, version
+`current-judge-development-v1`, frozen before any local-model execution. Eleven
+full requirement clauses cover the adjacent-skills CV against the partial-match
+and poor-match jobs; the ranking expectation compares these two jobs for that
+same CV. These agent-authored development expectations require human calibration
+before use as a release-quality threshold. No prompts were tuned against the labels.
+
+`--quality` selects these two cases by default and emits `analysis-benchmark-v2`;
+ordinary benchmark reports retain v1. Input SHA-256 values must match frozen labels
+before model work. The report fingerprints both canonical label values and the
+original label file. Quality calculation occurs after the timed analysis interval.
+
+Quote matching normalizes whitespace, bullet prefix, case and final full stop;
+it preserves punctuation such as C++. It does not infer equivalent clauses or
+silently discard changed segmentation. Per observation, report expected/matched,
+unmatched/unlabelled/duplicate requirements, absent verdicts and correct labels.
+Agreement divides unique correct judgments by **all expected requirements**;
+unmatched or duplicate clauses cannot improve it. Unsupported `met` counts fully
+supported predictions against a labelled `partial` or `missing` expectation.
+Its rate divides by labelled `met` predictions, and is null when none exist.
+Unlabelled predictions remain visible and are excluded from that denominator.
+
+Ranking agreement compares strict score ordering for the same CV, grouped by
+repetition and cold/warm state. Both jobs must have successful published scores;
+failed/skipped/missing results yield no eligible comparison. Ties do not satisfy
+an expected strict ordering. Failure remains failure even if partial diagnostic
+quality counts are available. These narrow metrics do not measure citation
+semantic support, broad extraction accuracy or production retrieval quality.
+
+```bash
+make benchmark BENCHMARK_ARGS='--quality'
+# Explicit synthetic local model work; keep hosted egress disabled.
+make benchmark BENCHMARK_ARGS='--quality --live --provider ollama --embedding-provider ollama --completion-model qwen2.5:7b --embedding-model nomic-embed-text:latest'
+```
+
+Local execution results will be recorded here only after observation. The browser,
+populated progress migration and private startup now have separate acceptance
+evidence in the engineering journal; none establish live model quality.
 
 ## Dataset
 

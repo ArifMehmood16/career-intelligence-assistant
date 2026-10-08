@@ -1,0 +1,70 @@
+{
+  "version": "current-judge-development-v1",
+  "basis": "Agent-authored synthetic development expectations, frozen before model execution; not human-calibrated release labels.",
+  "cases": [
+    {
+      "case_id": "partial_match",
+      "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+      "jd_sha256": "cd3ab9f6e5b35e98ba9ca0a8811845838e20f8ad947d827130d1a4ef10bfc305",
+      "requirements": [
+        {
+          "quote": "Hands-on dbt in a production warehouse.",
+          "expected": "missing"
+        },
+        {
+          "quote": "Experience operating scheduled pipelines (Airflow or equivalent).",
+          "expected": "partial"
+        },
+        {
+          "quote": "Strong SQL and the ability to define trustworthy product metrics.",
+          "expected": "partial"
+        },
+        {
+          "quote": "Comfort collaborating with product managers on experiment readouts.",
+          "expected": "partial"
+        },
+        {
+          "quote": "Prior work with feature stores or ML feature tables.",
+          "expected": "missing"
+        },
+        {
+          "quote": "Experience mentoring junior analysts.",
+          "expected": "missing"
+        }
+      ]
+    },
+    {
+      "case_id": "poor_match",
+      "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+      "jd_sha256": "f3773d3ee5dd91d7e2d65793c10bdb3ea3022eb1ba00f2f879177cf78a56e491",
+      "requirements": [
+        {
+          "quote": "Production C++ experience on real-time perception pipelines.",
+          "expected": "missing"
+        },
+        {
+          "quote": "Deep learning for object detection on edge devices (CUDA).",
+          "expected": "missing"
+        },
+        {
+          "quote": "Hands-on ROS2 and lidar calibration.",
+          "expected": "missing"
+        },
+        {
+          "quote": "Published work or patents in simultaneous localisation and mapping (SLAM).",
+          "expected": "missing"
+        },
+        {
+          "quote": "Safety certification experience for autonomous mobile robots.",
+          "expected": "missing"
+        }
+      ]
+    }
+  ],
+  "rankings": [
+    {
+      "higher": "partial_match",
+      "lower": "poor_match"
+    }
+  ]
+}

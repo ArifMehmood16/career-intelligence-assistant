@@ -29,6 +29,24 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 182 — Freeze current-judge development labels and honest metrics
+
+- Date: 2026-10-08; Codex; PLAN 19.4 local measurement; spec 011 T015/T016.
+- Outcome: freeze eleven synthetic clauses for one CV/two jobs before model calls.
+  Extend the existing benchmark with opt-in quality reports; original v1 output
+  stays unchanged. Fingerprints reject fixture drift before work. Metrics expose
+  missing/unlabelled/duplicate extraction and absent judgments; unsupported met
+  rates use labelled predictions only. Ranking excludes failed scores and ties.
+- Red observed: metric stubs failed three assertions for unsupported matches,
+  duplicate extraction and eligible ranking, while fixture-drift rejection passed.
+- Validation: all 18 benchmark/quality tests pass; Ruff and strict mypy pass. The
+  offline quality command exercises report wiring with zero physical requests and
+  serializes no fixture text. No live result is claimed yet.
+- Human-owned boundary: assigned release verification on PR #48. These are explicit
+  agent-authored development expectations, not human-calibrated release thresholds;
+  no tuning or retired-model comparison is inferred.
+
+
 ### 181 — Verify the complete browser journey and keep font requests local
 
 - Date: 2026-10-08; Codex; PLAN 19.4 browser acceptance; spec 011 US1.
