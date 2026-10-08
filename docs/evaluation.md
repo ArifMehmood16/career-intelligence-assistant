@@ -1,12 +1,10 @@
 # Evaluation
 
-> Current status (2026-10-07): the measurements below are historical results for the
-> retired analysis. The current one-call document reader, capacity-sized judge and
-> parallel executor have not received a live quality/latency evaluation. Provider
-> and runtime acceptance plus full lint/hermetic checks now pass (spec 010); those
-> checks are not measurements of live model quality. PLAN 19.4
-> records the remaining measurement gate; retirement is an approved product decision,
-> not evidence that measured quality improved.
+> Current status (2026-10-08): offline current-pipeline timing and two synthetic
+> local-model attempts are recorded below. Both local attempts failed chunking
+> before judging, so unsupported-match and ranking quality remain unmeasured.
+> Historical results later in this document describe the retired analysis and
+> cannot establish current quality. PLAN 19.4 retains the open measurement gate.
 
 Retrieval, extraction and generation quality are claims. This file is where they are
 evidenced. No number appears here that was not observed from a recorded run.
@@ -135,7 +133,53 @@ make benchmark BENCHMARK_ARGS='--quality'
 make benchmark BENCHMARK_ARGS='--quality --live --provider ollama --embedding-provider ollama --completion-model qwen2.5:7b --embedding-model nomic-embed-text:latest'
 ```
 
-Local execution results will be recorded here only after observation. The browser,
+### Observed local attempts — 2026-10-08
+
+Saved original reports:
+[qwen2.5:7b](evaluation-results/local-qwen7b-2026-10-08.json) at clean `7a07a6e`, and
+[qwen2.5:14b](evaluation-results/local-qwen14b-2026-10-08.json) at clean `f7344a9`.
+Each used the same frozen partial/poor labels, one cold/warm repetition, analysis
+date 2026-09-01 and local `nomic-embed-text:latest` selection. Both commands exited
+1: two failed cold observations and two skipped warm observations per model.
+No score, band, verdict-quality result or eligible ranking pair was produced.
+
+7B failed cold attempts took 42.098 and 38.187 seconds; 14B took 94.364 and 85.863
+seconds. Each cold attempt made two completion HTTP attempts and one model-metadata
+request; zero embedding attempts. The current CV chunk plan remained invalid after
+its bounded repair, so judging never started. A separate synthetic 14B diagnostic
+confirmed `chunking_incomplete` with two remaining structural problems; no model
+payload was logged. These are **failure durations**, not successful latency results.
+Warm p50/p95 and ranking agreement correctly remain null. Do not interpret absent
+unsupported-match counts as zero errors or the reports as a quality pass.
+
+The reports record actual completion digests, execution capabilities, source,
+fixture/label/rubric/model-config hashes and chunk/judge prompt/contract versions.
+The 14B model uses its existing conservative default profile (8,192 context / 4,096
+output); 7B uses its configured 32,768 / 8,192 profile. No prompts, profiles or labels
+were tuned during these measurements. Hosted egress and fallback were explicitly
+disabled, keys blank, timeout 180 seconds and transport retries zero. Runs used an
+empty temporary cwd and isolated environment, so personal env files were not loaded.
+
+Commands actually run, from an empty temporary directory, for each MODEL value
+`qwen2.5:7b` and `qwen2.5:14b` (using distinct unused absolute OUTPUT paths):
+
+```bash
+env -i PATH="$PATH" HOME="$PWD" ALLOW_HOSTED_PROVIDERS=false \
+  OPENAI_API_KEY= ANTHROPIC_API_KEY= PROVIDER_ALLOW_LOCAL_FALLBACK=false \
+  PROVIDER_TIMEOUT_SECONDS=180 PROVIDER_MAX_RETRIES=0 \
+  OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  /absolute/repo/backend/.venv/bin/python -m career_assistant.ops.benchmark \
+  --quality --live --provider ollama --embedding-provider ollama \
+  --completion-model "$MODEL" --embedding-model nomic-embed-text:latest \
+  --output "$OUTPUT"
+```
+
+Next: diagnose local-model structural chunk failures on development fixtures,
+retain complete-line/citation validation, then obtain successful judged observations
+before claiming unsupported-match/ranking quality. Human calibration of the frozen
+development expectations is still required before setting a release threshold.
+
+The browser,
 populated progress migration and private startup now have separate acceptance
 evidence in the engineering journal; none establish live model quality.
 

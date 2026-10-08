@@ -20,10 +20,11 @@ Updated-head CI remains enforced; the human owns merging.
 
 **Remaining work: 19.4.** Offline benchmark execution, the synthetic browser journey,
 populated progress-migration preservation and private startup now have observed
-acceptance evidence. Scoped security
-review is recorded below. Local-model measurement remains open, with updated-head CI required. Retired v1 comparison and
-repeated implementation of verified provider/concurrency features are superseded.
-No live quality improvement is inferred from passing fixture checks.
+acceptance evidence. Scoped security findings are reviewed. Local 7B/14B synthetic
+attempts failed chunk validation before judging; successful unsupported-match and
+ranking measurements remain open. Updated-head CI stays required. Retired v1
+comparison and repeated provider/concurrency implementation are superseded.
+No live quality improvement is inferred from fixture checks or failed attempts.
 
 ## Using Spec Kit for the existing project
 
@@ -176,7 +177,8 @@ completed 36 observations with zero physical requests on 2026-10-07.
       Record provider/model/prompt versions, physical calls, cold/warm duration,
       unsupported matches and ranking agreement in docs/evaluation.md. Tune on
       development data only. Hosted measurements need enabled keys and synthetic
-      data; no paid or live quality claims from fixture tests.
+      data; no paid or live quality claims from fixture tests. Local 7B/14B attempts
+      are recorded in docs/evaluation.md; both failed chunking before judging.
 - [x] Repair PR #43's observed collection/lint failures and pass local lint,
       hermetic and disposable PostgreSQL regression/migration-cycle checks.
       Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.

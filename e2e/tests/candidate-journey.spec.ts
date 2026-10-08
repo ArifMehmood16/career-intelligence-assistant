@@ -83,6 +83,8 @@ test("candidate completes analysis, reads sources, drafts and asks with persiste
   page.on("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Delete history", exact: true }).click();
   await page.getByRole("link", { name: "Workspace", exact: true }).click();
+  await page.getByRole("button", { name: `Delete ${title}`, exact: true }).click();
+  await expect(page.getByRole("link", { name: title, exact: true })).toHaveCount(0);
   await page.getByRole("region", { name: "CV", exact: true }).getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByRole("region", { name: "CV", exact: true })).toContainText("Upload your CV");
   expect(externalRequests).toEqual([]);

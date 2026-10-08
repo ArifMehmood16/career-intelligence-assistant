@@ -43,7 +43,7 @@ triaged scans, no fixture-time or historical-model claims as current quality.
 - [x] T014 [US3] Run new migration test and full SQL suite on disposable TEST_DATABASE_URL; record exact evidence in docs/engineering-journal.md (SC-003).
 - [x] T015 [US3] Freeze explicitly current synthetic expectations in sample-data/evaluation/ before model execution; document development-only scope in docs/evaluation.md (FR-004).
 - [x] T016 [US3] Extend only existing benchmark/report code under backend/src/career_assistant/ops/ where required to record unsupported matches/ranking agreement, with focused tests in backend/tests/ (FR-004/SC-004).
-- [ ] T017 [US3] Run available local Ollama models using shipped synthetic fixtures and explicit closed hosted gate; save safe model/prompt/input/call/duration/quality provenance in docs/evaluation-results/ (FR-004/SC-004).
+- [x] T017 [US3] Run available local Ollama models using shipped synthetic fixtures and explicit closed hosted gate; save safe model/prompt/input/call/duration/quality provenance in docs/evaluation-results/ (FR-004/SC-004).
 - [x] T018 [US3] Run dependency/source/redacted tracked-file secret scans; narrowly triage findings and repair actionable defects in existing modules, record scoped results in docs/threat-model.md and docs/engineering-journal.md (FR-006/SC-005).
 
 ## Checkpoint
@@ -68,3 +68,8 @@ edits to shared docs, locks or Git state.
 Deliver the offline evidence first, then each passing regression/fix increment.
 No fresh scaffolding beyond the missing test runner. Open tasks remain unchecked;
 failed/incomplete model runs are reported honestly and never publish invented scores.
+
+Observed measurement limit (2026-10-08): T017 executed and saved both local runs,
+but both failed chunk validation before judging. SC-004 is satisfied by honest
+failure reports; the root PLAN 19.4 quality gate remains open until successful
+unsupported-match/ranking observations exist. No validation/prompt tuning was made.

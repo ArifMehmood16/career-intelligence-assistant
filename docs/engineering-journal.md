@@ -18,6 +18,27 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Local model attempts and final regression checks
+
+- Date: 2026-10-08. Exact isolated commands and safe original reports are in
+  docs/evaluation.md. Shipped synthetic adjacent CV/partial and poor jobs only;
+  frozen labels preceded calls. Hosted gate/fallback false, keys blank, no personal
+  dotenv or database used. Models qwen2.5:7b and qwen2.5:14b, local nomic selection.
+- Observed: both commands exit 1. Each model has two failed cold and two skipped
+  warm observations; chunk validation still fails after repair. A metadata-only
+  diagnostic confirms two remaining structural problems. No score/band, successful
+  quality count or ranking comparison; the root model-quality gate remains open.
+- No prompt/profile/label tuning or complete-line validation relaxation. Failure
+  reports retain physical calls, source/input/label/prompt/model provenance; no
+  raw response, prompt or exception payload was logged or saved.
+- Final checks: make lint passes; make test passes 838 backend/195 frontend,
+  three existing skips, 85.22% coverage. Disposable SQL suite passes 150. Full
+  browser rerun passes after adding explicit role deletion before CV deletion.
+- Branch review: inspected changed startup/build, browser, intake, benchmark and
+  dependency code for unrelated changes, egress and unnecessary abstractions.
+  Same branch/PR #48; no extra branch, worktree, force push or merge.
+
+
 ## Phase 19.4 — Scoped security review
 
 - Date: 2026-10-08. Commands: make security-dependencies security-secrets;

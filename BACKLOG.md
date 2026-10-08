@@ -30,7 +30,9 @@ Updated-head CI remains enforced and merging is human-owned.
 - [ ] [19.4](PLAN.md#194--prove-the-current-product) — offline benchmark, complete
       synthetic browser journey, populated progress preservation and private startup
       verified; scoped security findings reviewed. Remaining: frozen current-model
-      measurement and updated-head CI. One Playwright journey covers the former duplicate smoke task.
+      measurement and updated-head CI. Local 7B/14B attempts failed structural chunk
+      validation before judging; repair on development fixtures without weakening
+      complete-line/citation validation, then rerun frozen quality measurements. One Playwright journey covers the former duplicate smoke task.
 
 The retired v1 comparison/release track is superseded. CI repair, empty migration
 cycles and retirement checks are complete; they are not new pending work. The

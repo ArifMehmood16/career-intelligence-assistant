@@ -29,6 +29,23 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 185 — Record failed local measurements without fabricating quality
+
+- Date: 2026-10-08; Codex; PLAN 19.4 measurement; spec 011 T017.
+- Outcome: run frozen shipped synthetic inputs on installed local Qwen 7B and 14B
+  from clean 7a07a6e/f7344a9 with blank keys/closed hosted gate and empty cwd.
+  Save original safe reports; both fail chunk validation before judging, warm runs
+  skipped and quality/ranking values absent. Diagnostic reports two structural
+  problems only, without model payload. Root quality gate remains open.
+- Rejected: treating failed/absent measurements as zero unsupported matches,
+  weakening complete-line validation, or claiming historical/fixture model quality.
+- Validation: full lint and 838 backend/195 frontend tests pass, three existing
+  skips; all 150 SQL tests pass. Browser rerun passes with explicit synthetic role
+  removal as well as CV/history cleanup. Updated PR CI remains required.
+- Human-owned scope: continue remaining verification on the same PR #48, maintain
+  both synchronized locks; no paid call, personal upload or database migration.
+
+
 ### 184 — Triage source heuristics and scan only tracked release inputs
 
 - Date: 2026-10-08; Codex; PLAN 19.4 security; spec 011 T018.
