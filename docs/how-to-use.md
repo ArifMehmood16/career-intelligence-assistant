@@ -18,8 +18,11 @@ in server configuration; never paste them into a document or question. See
    PDFs are not supported. There is one CV per workspace.
 2. Optionally add supporting cover letters. Ask and drafting can cite them, but
    they do not count as CV evidence for fit.
-3. Add a role with its title, company and job description. The app stores the
-   advert and queues an analysis. Open the role to follow its progress.
+3. Add a role with its title and company, then paste the job description or select
+   a plain-text `.txt` file. For PDF/DOCX adverts, copy their text into **Paste text**.
+   The app stores the advert contents and queues an analysis. Open the role to
+   follow its progress. Unreadable/empty files show an error; unsuccessful submissions
+   retain your form values so you can retry.
 
 Replacing the CV invalidates results based on the old document. Wait for the new
 analyses before interpreting fit, ranking or generated material.

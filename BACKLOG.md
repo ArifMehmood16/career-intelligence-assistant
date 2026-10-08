@@ -38,6 +38,9 @@ its fixture timing does not close the current-model measurement gate.
 
 ## Later — relevant or conditional follow-ups
 
+- Add server-side PDF/DOCX job-description upload if needed. The current role API
+  accepts description text; the UI supports pasted text and `.txt` file contents.
+
 - Wire shared Ask/MCP evidence-search and skill-experience tools to hybrid search
   and the knowledge graph. Still relevant: `application/ask/registry.py` currently
   ranks evidence using token overlap.

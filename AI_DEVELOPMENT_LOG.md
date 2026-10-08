@@ -29,6 +29,21 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 177 — Submit job-file contents and retain retry input
+
+- Date: 2026-10-08; Codex; PLAN 19.4 browser defect; spec 011 US1.
+- Red observed: content test received role.txt instead of description text; retry
+  input test received cleared fields. Fixed test cleanup before interpreting failures.
+- Green: FileReader reads supported .txt contents with bounded size, empty/binary
+  rejection, safe read errors and cancellation on replacement/unmount. Submit uses
+  text, keeps input while awaiting backend success and resets on controlled close.
+- Validation: three component regressions pass; frontend lint/typecheck pass.
+- Documentation: how-to-use explains pasted/.txt descriptions; binary advert intake
+  remains an explicit later server feature, never a filename-as-description fallback.
+- Boundary: existing JSON API unchanged, escaped text only, no new dependency/egress.
+  Human assigned current-feature repair and continued same PR #48.
+
+
 ### 176 — Patch audited dependency findings
 
 - Date: 2026-10-08; Codex; PLAN 19.4 security acceptance.

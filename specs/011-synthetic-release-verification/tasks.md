@@ -19,8 +19,8 @@ Same branch/PR #48 by human instruction. No new application or v1 path.
 Independent acceptance: one real browser/proxy/SQL/worker journey, synthetic data,
 zero paid calls, persisted cited outputs and cleanup of its own workspace.
 
-- [ ] T005 [US1] Write a failing content-submission regression in frontend/src/components/workspace/AddRoleDialog.test.tsx for the job-file control (FR-003).
-- [ ] T006 [US1] Repair text-file reading/error state in frontend/src/components/workspace/AddRoleDialog.tsx; explicitly restrict to supported text files and record binary limitation in docs/how-to-use.md (FR-003).
+- [x] T005 [US1] Write a failing content-submission regression in frontend/src/components/workspace/AddRoleDialog.test.tsx for the job-file control (FR-003).
+- [x] T006 [US1] Repair text-file reading/error state in frontend/src/components/workspace/AddRoleDialog.tsx; explicitly restrict to supported text files and record binary limitation in docs/how-to-use.md (FR-003).
 - [ ] T007 [US1] Add Bun-managed test-only Playwright runner/config and isolated production-wiring server setup in e2e/; require a loopback database ending _e2e and refuse existing servers (FR-002).
 - [ ] T008 [US1] Implement the CV/role/Fit/evidence/Prepare/draft/Ask/reload journey in e2e/tests/candidate-journey.spec.ts (FR-002/SC-001).
 - [ ] T009 [US1] Run the journey and fix demonstrated defects with focused regressions in their existing modules; record results in docs/engineering-journal.md (SC-001/SC-005).
