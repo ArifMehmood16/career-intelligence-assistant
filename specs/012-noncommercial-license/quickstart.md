@@ -1,20 +1,20 @@
-# Licensing validation guide
+# Apache 2.0 validation guide
 
-Review the eight human-provided scenarios against LICENSE: personal learning,
-internal business tools, closed-source modifications and free unmonetised public
-products are allowed; selling containing products, subscriptions/paid services,
-ads/sponsorship and removal of original credit are not allowed by the public grant.
-External monetisation needs prior written permission, including for modified code.
+Compare LICENSE byte-for-byte with the official Apache License 2.0 plain text:
+https://www.apache.org/licenses/LICENSE-2.0.txt
+Check standard copyright/patent grants, redistribution terms and contribution
+section remain unchanged. No commercial approval, royalty or extra UI-credit term.
 
-Check paid internal worker administration versus paid tool-based client services,
-retained copyright versus ownership of contributors' additions, negotiated fees
-versus automatic revenue claims, and preservation of valid earlier licence grants.
-Check attribution locations in NOTICE/README/CONTRIBUTING/docs/licensing.md; confirm
-there is no source-publication or per-output credit requirement. Current summaries
-must call this custom source-available licensing, not unchanged PolyForm.
+Review current README/NOTICE/CONTRIBUTING/licensing guide: personal/internal use,
+paid services, sales and closed-source modifications are allowed under Apache
+terms. Preserve relevant copyright and NOTICE attribution with standard placement
+options; identify changes as section 4 requires. Creator credit names Arif Mehmood
+as this project's original creator without claiming exclusive rights in the idea.
+Contributors retain copyright, submit under section 5 and give standard grants;
+no assignment/CLA. Preserve valid earlier grants and third-party licences.
 
-Check local Markdown links and git diff --check. Compare existing third-party
-notices with origin/main byte-for-byte. Inspect staged paths; do not stage/reset
-frontend/package-lock.json or alter runtime code/settings/dependencies.
-No text-matching test proves legal enforceability. Existing PR CI runs ordinary
-regressions without paid provider calls. Update PR #49 without merging.
+Check local Markdown file links and git diff --check. Compare the four existing
+third-party notices against origin/main bytes and preserve the unrelated npm lock
+working copy. Inspect the complete branch diff and stage only intended files.
+No executable tests claim legal enforceability. Update existing PR #49, observe CI
+on the pushed head and leave merging to the human.

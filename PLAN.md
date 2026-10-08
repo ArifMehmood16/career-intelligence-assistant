@@ -216,13 +216,13 @@ Do not rebuild retired approaches to satisfy old tests or measurement plans.
 Human-authorized follow-up after PR #48 merged, separate from application phases.
 [Spec 012](specs/012-noncommercial-license/spec.md) records the bounded change.
 
-- [x] Adopt a custom Arif Mehmood Source-Available License 1.0 permitting learning,
-      internal business use regardless of profitability, closed-source changes and
-      free unmonetised public products. External monetisation requires prior written
-      permission. Retain notices and provide accessible external product/documentation
-      credit. Preserve third-party/contributor rights and valid earlier grants;
-      separate fees/revenue sharing require agreement, with no automatic entitlement.
-      The latest human policy supersedes earlier unmerged licensing checkpoints.
-      Exit: eight requested scenarios covered by explicit terms, consistent current
-      guidance, resolving local links, branch whitespace and unchanged third-party
-      notices; no claim of professional legal review or automatic royalty entitlement.
+- [x] Adopt unchanged Apache License 2.0 for open-source collaboration and reuse,
+      including commercial and closed-source use. Credit Arif Mehmood as original
+      project creator in README/NOTICE, with attribution governed by standard
+      redistribution terms. Preserve contributor ownership, standard grants,
+      third-party terms and valid earlier grants; no extra commercial approval,
+      royalty, UI-credit requirement or claim to exclusive ownership of an idea.
+      The human's open-source choice supersedes earlier restrictive checkpoints.
+      Exit: byte-identical official licence, consistent current guidance, resolving
+      local links, branch whitespace and unchanged third-party notices; no runtime
+      or dependency change. Observe updated-head CI on the existing PR before merge.

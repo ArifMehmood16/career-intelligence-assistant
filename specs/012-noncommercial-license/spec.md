@@ -1,80 +1,71 @@
-# Feature Specification: Internal use and external monetisation permission
+# Feature Specification: Open-source reuse with creator attribution
 
 **Branch**: `docs/phase-19-noncommercial-license`
 **Created**: 2026-10-08
-**Status**: Revised custom policy implemented and locally verified; PR CI required
-**Input**: Human permits internal business use, closed-source modifications and
-free unmonetised public products. External monetisation requires separate written
-permission. Preserve Arif Mehmood's copyright and visible attribution. This latest
-policy supersedes the initial strict custom draft and the PolyForm continuation.
+**Status**: Apache 2.0 implemented and locally verified; updated-head CI required
+**Input**: Human chose open source to encourage contribution, with recognition that
+Arif Mehmood started/created this project. This supersedes earlier noncommercial
+and custom source-available policies on the same unmerged PR.
 
 Root: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08) and
-[BACKLOG](../../BACKLOG.md#now--prove-the-current-product). Legal-text/documentation
+[BACKLOG](../../BACKLOG.md#now--prove-the-current-product). Licensing/documentation
 scope only; no application architecture change or professional legal review.
 
 ## User Scenarios & Testing
 
-### US1 — Learn, build and use internally (P1)
+### US1 — Use and contribute without a commercial permission gate (P1)
 
-A person or organisation runs, copies, forks and modifies the software for learning
-or internal operations, including in a profitable company. They may keep changes
-closed-source. A free public product is permitted if it is not monetised.
-Acceptance: express permissions cover these uses; retaining attribution does not
-require publishing source. Internal productivity, cost savings and ordinary
-business profits do not require a separate licence.
+People and businesses may learn, run, fork, modify, distribute and monetise the
+software under unchanged Apache License 2.0. Modifications may remain closed-source
+subject to its terms. Independent check: official licence bytes and matching
+current summaries, including patent grant and contribution provisions.
+Acceptance: no custom noncommercial clause, royalty or permission requirement.
 
-### US2 — Reserve external monetisation and retain ownership (P1)
+### US2 — Recognise the creator and preserve attribution (P1)
 
-Selling software containing covered code, subscriptions, paid hosted/API services,
-paid tool-based client analysis, and advertising/sponsorship of an otherwise free
-product require prior written permission. Modification or renaming does not avoid
-this boundary. Ordinary internal administration by a paid worker is allowed.
-Acceptance: commercial permission may negotiate fees/revenue share, but creates
-no automatic entitlement to another person's revenue or original additions.
+README and NOTICE identify Arif Mehmood as the project's original creator. Relevant
+copyright and NOTICE attribution are retained when redistributing as required by
+Apache section 4. Independent check: name, project link and accurate description
+of standard notice placement choices.
+Acceptance: no mandatory About screen, credit on every output, endorsement, or
+claim to exclusive ownership of the general idea or contributors' original work.
 
-### US3 — Share with credit and contribute with clear rights (P2)
+### US3 — Contribute under the same recognised terms (P2)
 
-Copies retain LICENSE/NOTICE and original copyright. Externally distributed or
-hosted user-facing products show Arif Mehmood's name and project/licence links in
-an accessible About, Credits or Legal location; accompanying public documentation
-also retains credit. Contributors keep their copyright and offer their changes
-under the same terms, without an assignment or additional monetisation grant.
-Acceptance: third-party terms, independent work, statutory exceptions and valid
-prior licence grants remain intact. No source publication or per-output credit.
+Intentionally submitted contributions use Apache 2.0 unless explicitly stated
+otherwise, consistent with section 5. Contributors keep copyright; no assignment
+or extra CLA is introduced. Third-party materials retain their own terms.
+Acceptance: licence guidance accurately describes copyright and patent grants,
+commercial permission, third-party scope and valid earlier grants.
 
 ## Requirements
 
-- **FR-001**: Write a clearly named custom source-available licence, allowing
-  personal/learning use, internal business use regardless of profitability,
-  closed-source modifications and free unmonetised external products/services.
-- **FR-002**: Define external monetisation and require prior written permission
-  for sales, subscriptions, paid services and advertising/sponsorship-supported
-  products, including modified versions. Distinguish internal business benefits.
-- **FR-003**: Preserve original copyright and require retained notices plus
-  accessible external product/documentation attribution to Arif Mehmood.
-- **FR-004**: Preserve contributor/third-party rights, independent ideas and work,
-  statutory exceptions, valid earlier grants and warranty/liability boundaries.
-  Claim no automatic ownership, royalty, revenue share or assignment.
-- **FR-005**: Align README, NOTICE, contribution/licensing guidance and root
-  acceptance with this policy; identify it as custom, not unchanged PolyForm.
+- **FR-001**: Replace custom LICENSE with unchanged official Apache License 2.0;
+  allow commercial/paid/closed-source reuse under its standard conditions.
+- **FR-002**: Credit Arif Mehmood as original project creator in README and NOTICE;
+  preserve relevant copyright and attribution through standard section 4 terms.
+- **FR-003**: Align contribution guidance with Apache section 5, retained contributor
+  copyright and standard grants, without extra paperwork or owner-only rights.
+- **FR-004**: Preserve third-party terms, statutory exceptions and valid earlier
+  grants. Claim no exclusive ownership of ideas, automatic royalties or endorsement.
+- **FR-005**: Align current licensing guidance, PLAN/BACKLOG and bounded spec records;
+  retain earlier policy checkpoints as history, not current restrictions.
 - **FR-006**: Change no runtime code, dependencies, lockfiles, settings or private
-  data. Record observed checks and deliver on existing PR #49 without merging.
+  data. Record observed checks; deliver through existing PR #49 without merging.
 
 ## Success Criteria
 
-- **SC-001**: Review all eight human-provided use cases against explicit licence
-  clauses; current summaries agree on permissions, attribution and revenue limits.
-- **SC-002**: Existing third-party licence/notice files remain byte-for-byte intact.
-- **SC-003**: Documentation links and branch whitespace pass; only intended files
-  are committed and the unrelated npm lock working copy is preserved.
+- **SC-001**: LICENSE matches official Apache 2.0 bytes; current summaries agree
+  with commercial/closed-source permissions, notice placement and standard grants.
+- **SC-002**: All four existing third-party licence/notice files remain unchanged.
+- **SC-003**: Local links and branch whitespace pass; only intended files are
+  committed, preserving the unrelated npm lock working copy. Observe new-head CI.
 
 ## Edge cases and assumptions
 
-Paid staff/contractors may operate an organisation's private internal tools on its
-behalf. Charging external clients for the tool's analysis/functionality is a paid
-service requiring permission; ordinary internal administration does not become
-restricted merely because the organisation sells unrelated goods or services.
-The licence governs covered software, not ownership of user inputs or outputs.
-Earlier valid grants cannot be retroactively revoked by this policy revision.
-Additional external monetisation rights require the necessary rights holders'
-permission; no royalty rate or future commercial agreement is invented here.
+Creator credit documents the origin of this project, not a claim that nobody else
+has independently conceived a similar idea. Apache 2.0 preserves relevant legal
+notices on redistribution but does not require credit in every product UI or
+hosted output. No additional attribution condition is added. Contributor copyright
+stays with its holder; standard copyright/patent grants still apply. Earlier valid
+licence grants continue on their own terms for versions offered under them.

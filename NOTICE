@@ -1,17 +1,12 @@
+Career Intelligence Assistant
 Copyright (c) 2026 Arif Mehmood
+
+Originally created by Arif Mehmood.
 Project: https://github.com/ArifMehmood16/career-intelligence-assistant
 
-The original project code and documentation are offered under the custom Arif
-Mehmood Source-Available License 1.0 in LICENSE. Internal business use and
-closed-source modifications are permitted. External monetisation requires
-separate written permission. Contributors retain copyright in their additions.
-
-External product credit:
-Includes software by Arif Mehmood, used under the Arif Mehmood Source-Available
-License 1.0.
-
-Retain the project URL above and a link or reference to LICENSE with that credit
-in the locations specified by LICENSE.
+Licensed under the Apache License, Version 2.0; see LICENSE.
+Contributors retain copyright in their original contributions.
+This NOTICE is informational and does not modify the licence.
 
 Separately identified third-party materials retain their own licences and notices.
 The bundled fonts retain SIL Open Font License 1.1; see frontend/public/fonts/.

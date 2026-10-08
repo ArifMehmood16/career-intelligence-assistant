@@ -18,6 +18,30 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Licensing policy — Apache 2.0 and original creator attribution
+
+- Date: 2026-10-08. Human chose open-source collaboration with recognition that
+  Arif Mehmood started/created this project. Adopt unchanged Apache 2.0, removing
+  prior commercial restrictions; credit original creator in README and NOTICE.
+- Observed commands: .specify/scripts/bash/check-prerequisites.sh --json
+  --require-spec --require-tasks --include-tasks resolves feature 012. Read-only
+  requirement/task consistency review passes before implementation. curl downloads
+  official Apache text; cmp LICENSE /private/tmp/career-apache-2.0.txt passes.
+  Official text: 11,358 bytes, SHA-256
+  cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.
+  Python validation confirms four unchanged third-party notices, 72 resolving
+  local links and the preserved npm lock working copy. git diff --check passes.
+- Review: standard commercial/closed-source permissions, copyright/patent grants,
+  section 4 notice options and section 5 contribution terms preserved. No royalty,
+  commercial approval, copyright assignment, exclusive idea claim or extra CLA.
+  No runtime change or executable tests purporting to prove legal enforceability.
+- Documentation: README, NOTICE, CONTRIBUTING, licensing guide, current spec/plan/
+  tasks/research/validation/checklist and root PLAN/BACKLOG reflect the new policy.
+  Historical draft checkpoints retained; earlier valid grants stay applicable.
+- Delivery: same PR #49 and branch; no merge. Prior e2f6844 passed all four jobs
+  in run 37774572919; observe CI on the new pushed head and record it in the PR.
+
+
 ## Licensing policy — Internal business use and external monetisation
 
 - Date: 2026-10-08. Latest human policy permits internal use in profitable companies,

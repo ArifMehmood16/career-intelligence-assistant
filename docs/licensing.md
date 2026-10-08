@@ -1,77 +1,61 @@
-# Licensing, ownership and commercial permission
+# Open-source licensing and creator attribution
 
-The project uses the custom [Arif Mehmood Source-Available License 1.0](../LICENSE),
-with attribution in [NOTICE](../NOTICE). This page explains its terms; the full
-LICENSE controls. It replaces the earlier proposed PolyForm policy for copies
-offered under this licence. It is source-available, with restrictions on external
-monetisation, rather than an unrestricted open-source licence.
+Career Intelligence Assistant was originally created by
+[Arif Mehmood](https://github.com/ArifMehmood16). The project is open source under
+the unchanged [Apache License 2.0](../LICENSE), with original copyright and creator
+credit in [NOTICE](../NOTICE). This page explains the standard licence; it adds
+no conditions. The full LICENSE controls.
 
-## Permitted uses
+## Use and collaboration
 
-- Personal use, learning, research, copying, forks and collaboration.
-- Internal business tools, including in profitable companies. Paid employees and
-  contractors may develop, maintain and operate a private internal deployment on
-  the organisation's behalf. Internal productivity, cost savings and profits from
-  ordinary business activities do not require a separate commercial agreement.
-- Modifications kept closed-source. You do not have to publish your changes.
-- Public products or services offered free to users, provided they are unmonetised.
+Apache 2.0 permits personal and internal business use, copying, modification,
+distribution and commercial reuse under its terms. People may sell products,
+charge for hosted services or subscriptions, and earn advertising or sponsorship
+revenue without separate permission or royalties to the original creator.
+Modifications may remain closed-source; Apache 2.0 does not require publishing
+them. It includes copyright and limited contributor patent grants, with the
+standard patent-litigation termination provision. It grants no general right to
+use the creator's trademarks or imply endorsement.
+See the [official Apache FAQ](https://www.apache.org/foundation/license-faq.html).
 
-For example, a company's private career-development tool is allowed, as is a free
-community application without monetisation. Using the tool privately to administer
-a consultancy is allowed; selling clients the tool's analysis as a service needs
-separate permission. Inputs and outputs are not assigned to the owner by this
-licence; the paid-service restriction concerns how the software is used.
+Contributions intentionally submitted for inclusion are under Apache 2.0 unless
+explicitly stated otherwise, as section 5 provides. Contributors retain copyright
+and give the standard licence grants. The project requires no additional CLA or
+copyright assignment; see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-## Uses requiring written permission
+## Preserving the creator credit
 
-Before monetising an external offering, contact [Arif Mehmood, the repository
-owner](https://github.com/ArifMehmood16) for express written permission for rights
-he controls. This includes selling products containing the code, subscriptions,
-paid access or APIs, paid tool-based analysis/services, and advertising,
-sponsorship or affiliate revenue tied to a product that is free to its users.
-Modified, combined and renamed versions still need permission for covered code.
-Nonprofit status does not exempt an externally monetised offering.
+The README and NOTICE record Arif Mehmood as the project's original creator. When
+redistributing the software or covered derivatives, follow Apache section 4:
 
-A separate agreement can negotiate a fixed fee, recurring fee or revenue share.
-No amount or percentage is set here. Required rights holders must authorise the
-use, including contributors where their rights are needed. The public licence
-does not automatically give Arif ownership of someone else's business, royalties
-or the right to take their revenue. Permitted internal use incurs no automatic
-fee. Suspected infringement and any remedies require assessment; revenue does not
-automatically become the owner's property. [UK IPO licensing guidance](https://www.gov.uk/copyright/license-and-sell-your-copyright)
-distinguishes licensing from assignment. Obtain legal advice for an agreement
-or enforcement claim; this custom text has not received professional legal review.
+- Give recipients a copy of the licence.
+- Mark modified files with prominent notices that you changed them.
+- Retain relevant copyright, patent, trademark and attribution notices in the
+  source form of distributed derivatives, as section 4(c) requires.
+- Include a readable copy of relevant NOTICE attribution in one of section 4(d)'s
+  permitted locations: a distributed NOTICE file, accompanying source or
+  documentation, or a generated display where such notices normally appear.
 
-## Where credit must appear
+A redistributed NOTICE should retain the project's original creator credit where
+it remains relevant. You may add your own attribution alongside it. NOTICE is
+informational and does not change the licence. Apache does not require a particular
+About screen, splash screen, credit on every output, or notice merely because an
+unmodified copy runs as a hosted service. Keeping visible creator credit in a
+public product's documentation is welcome, subject to the actual licence terms.
 
-Keep original copyright and attribution. Include LICENSE and NOTICE with shared
-copies or substantial portions, including modified and compiled distributions.
-Externally distributed or hosted user-facing products must show this credit in an
-accessible About, Credits or Legal location, with the project URL and a link or
-reference to the licence:
+## Ownership, ideas and third-party materials
 
-> Includes software by Arif Mehmood, used under the Arif Mehmood Source-Available
-> License 1.0.
+Arif Mehmood retains copyright in the original work he owns. Open-source permission
+does not assign that copyright to users, and contributor additions remain their
+owners' work. The creator statement records this project's origin; it makes no
+claim to exclusive ownership of the general idea or independently written tools.
+Copyright distinguishes protected expression from ideas; see the
+[Copyright Office FAQ](https://www.copyright.gov/help/faq/faq-protect.html).
 
-For a service without a visual interface, accessible documentation or a legal
-notice is sufficient. Accompanying public product documentation, if provided,
-must retain the same credit and references. There is no required splash screen,
-per-output attribution or source-publication obligation. Identify modifications
-as your own without implying the original author's endorsement.
-
-## Ownership and earlier versions
-
-Arif Mehmood retains copyright in the original work he owns, including copied
-portions in modified versions. Permission to use and modify it does not transfer
-ownership. Contributors keep their original additions; see
-[CONTRIBUTING.md](../CONTRIBUTING.md). Arif does not automatically own an entire
-fork or independently written implementation of the same idea. [UK IPO ownership
-guidance](https://www.gov.uk/guidance/ownership-of-copyright-works) explains rights
-where multiple authors are involved.
-
-This licence grants no patent or trademark rights. Dependencies, fonts, Spec Kit
-and other separately identified third-party materials retain their own licences.
-Statutory exceptions and valid earlier grants are preserved. Changing this
-repository's licence cannot withdraw rights already validly granted for earlier
-versions, including copies offered under PolyForm; those versions remain subject
-to their earlier grants. New custom conditions do not apply retroactively.
+Dependencies, fonts, vendored Spec Kit and other separately identified materials
+retain their own licences and notices. Existing third-party notices are preserved.
+Earlier valid licence grants continue on their own terms for versions offered
+under them. The current Apache grant removes the previous proposed commercial
+permission gate for copies now offered under Apache 2.0; older policy checkpoints
+in the development logs are historical. No automatic royalty or revenue share
+is created by open-source use.

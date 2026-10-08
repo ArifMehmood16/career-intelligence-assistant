@@ -1,4 +1,4 @@
-# Tasks: Noncommercial reuse and collaboration
+# Tasks: Licensing and creator attribution
 
 Root: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08).
 Spec: [spec.md](spec.md). Documentation-only, one actual Git branch and PR.
@@ -92,3 +92,31 @@ specifies accessible external attribution. Four third-party notices unchanged;
 72 local Markdown links resolve and branch whitespace passes. No runtime changes.
 Delivery: commit/push and update existing PR #49; observe CI on the updated head.
 The PR records delivery/check results without predicting them in this local record.
+
+## Human-selected open-source continuation — 2026-10-08
+
+T001–T015 remain historical licensing checkpoints. The human now chooses open
+source with original project creator recognition. Current spec.md supersedes the
+earlier restrictions; reuse the same PR #49 and branch.
+
+- [x] T016 Review official Apache 2.0, revise spec/plan/research/validation guide
+  and perform read-only requirement/task analysis (FR-001–FR-006).
+- [x] T017 [US1] Replace LICENSE with unchanged Apache 2.0 (FR-001).
+- [x] T018 [US2] Credit Arif Mehmood in README/NOTICE and describe standard
+  preservation/placement without custom conditions or exclusive idea claims
+  (FR-002/FR-004).
+- [x] T019 [US3] Align contributor/licensing guidance and current PLAN/BACKLOG
+  with commercial permission, standard grants and retained copyright (FR-003–FR-005).
+- [x] T020 Compare official bytes, review scenarios/links/whitespace/third-party
+  bytes/lock hash/scoped diff, and record actual local evidence (FR-006, SC-001–SC-003).
+
+Execution: T016 -> T017 -> T018 -> T019 -> T020. Commit/push/update existing PR #49
+and observe updated-head CI; delivery results belong in the PR after observation.
+
+Observed Apache continuation: LICENSE matches the official 11,358-byte text,
+SHA-256 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.
+README/NOTICE credit the original creator; section 4 notice options, section 5
+contribution terms, commercial/closed-source use and patent grant remain intact.
+Four third-party notices unchanged; 72 local links resolve; whitespace passes;
+unrelated npm lock hash unchanged. Current quality checklist reflects the latest
+policy. No runtime tests added for legal wording. Updated-head CI remains required.

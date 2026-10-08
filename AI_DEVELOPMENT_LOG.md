@@ -29,6 +29,34 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 192 — Open source under Apache 2.0 with creator credit
+
+- Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.
+- Human decision: choose open source to encourage contributions and recognise
+  Arif Mehmood as the project's creator. This supersedes previous noncommercial
+  and custom source-available restrictions; commercial reuse is now permitted.
+- Accepted: unchanged official Apache License 2.0, informational NOTICE with
+  original creator/copyright/project URL, visible README byline and aligned
+  contributor/licensing guidance. Preserve section 4 attribution placement,
+  section 5 incoming terms, patent grant and contributor copyright; no extra CLA.
+- Rejected: custom external-monetisation permission/royalty gates, mandatory product
+  UI credit and exclusive ownership of a general idea. Standard notice preservation
+  documents project origin without promising credit on every screen or output.
+- Observed local checks: Spec Kit prerequisites and read-only requirement/task
+  coverage review pass. curl downloaded official Apache plain text; cmp confirms
+  unchanged 11,358 bytes, SHA-256
+  cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.
+  Python validation confirms four third-party notices unchanged, 72 resolving
+  local links and unchanged unrelated npm working-copy hash. git diff --check
+  passes; current guidance/scenarios reviewed against Apache sections 2–5.
+- Scope: licensing, README, current bounded spec/PLAN/BACKLOG and factual logs.
+  Earlier records remain historical. No runtime, dependencies, provider, secrets
+  or personal-data change; no professional legal review or wording tests claimed.
+- Delivery: same branch and PR #49, no merge/new checkout. Prior head e2f6844 passed
+  all four jobs in run 37774572919; updated-head results are recorded in the PR
+  after observation, without treating old CI as proof of the new revision.
+
+
 ### 191 — Allow internal business use; reserve external monetisation
 
 - Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.

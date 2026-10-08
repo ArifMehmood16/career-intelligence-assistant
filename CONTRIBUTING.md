@@ -1,30 +1,24 @@
 # Contributing
 
 Questions, bug reports, documentation fixes and code contributions are welcome.
-Read [LICENSE](LICENSE) and [NOTICE](NOTICE) before using or submitting code.
-The custom Arif Mehmood Source-Available License 1.0 permits learning, internal
-business use, closed-source changes and free unmonetised public products/services.
-External monetisation requires separate written permission. Keep original credit
-and follow the licence's external product/documentation attribution requirements.
+Career Intelligence Assistant was originally created by Arif Mehmood and is open
+source under the [Apache License 2.0](LICENSE). Read [NOTICE](NOTICE) for creator
+attribution and third-party scope. Commercial use and closed-source modifications
+are permitted under the licence's standard conditions.
 
 ## Contribution terms
 
-By intentionally submitting a contribution for inclusion, you agree to make it
-available under the same [LICENSE](LICENSE), unless a different written agreement
-is expressly accepted. You retain copyright in your contribution. Submission does
-not transfer ownership or grant an additional right to monetise external products
-or services containing your work; the public licence's internal business and
-other permissions already apply.
-
-Licensing an externally monetised offering containing contributors' work must
-secure the additional permissions required from the relevant rights holders.
-No automatic revenue share, royalty or copyright assignment is created by this
-guide. See [licensing and ownership](docs/licensing.md).
+Unless you explicitly state otherwise, contributions intentionally submitted for
+inclusion are offered under Apache License 2.0, as described in section 5. You
+retain copyright in your contribution and grant the licence's standard copyright
+and applicable patent permissions. Contributing does not assign your copyright
+to the maintainer. No separate contributor agreement is required by this project.
 
 Submit only material you have the right to contribute, and identify third-party
-code, licences and notices. Keep existing attribution. Do not submit personal CVs,
-private job documents, API keys or other sensitive data; use the synthetic fixtures
-in `sample-data/` for examples and tests.
+code, licences and notices. Preserve relevant attribution and follow Apache's
+redistribution conditions. See [licensing and attribution](docs/licensing.md).
+Do not submit personal CVs, private job documents, API keys or other sensitive
+data; use the synthetic fixtures in `sample-data/` for examples and tests.
 
 ## Making a change
 
@@ -33,5 +27,5 @@ focused, explain the resulting behaviour, and include relevant validation. Setup
 is in [README.md](README.md) and [docs/running-locally.md](docs/running-locally.md);
 engineering conventions and the workflow are in [AGENTS.md](AGENTS.md).
 
-This page explains contribution terms; the full LICENSE and applicable third-party
-terms control the permissions they grant. No source-publication duty is added.
+The full LICENSE and applicable third-party terms control the permissions they
+grant. This guide adds no commercial approval or source-publication requirement.

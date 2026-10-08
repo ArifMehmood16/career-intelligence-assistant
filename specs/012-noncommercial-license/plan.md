@@ -1,4 +1,4 @@
-# Implementation Plan: Permit internal use; reserve external monetisation
+# Implementation Plan: Apache 2.0 with project creator credit
 
 **Actual Git branch**: `docs/phase-19-noncommercial-license` | **Date**: 2026-10-08
 **Spec**: [spec.md](spec.md)
@@ -6,36 +6,33 @@ Root: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08).
 
 ## Summary and technical context
 
-The latest human policy permits internal business use and closed-source changes,
-which unchanged PolyForm Noncommercial does not expressly provide for all
-businesses. Write independently named custom terms and replace current summaries.
-Allow learning, internal business operations and free unmonetised public products;
-reserve external monetisation for prior written permission. Define attribution in
-copies, external products and accompanying public documentation.
+The human prioritises open-source collaboration and creator recognition. Adopt
+unchanged Apache License 2.0 and a separate informational NOTICE naming Arif
+Mehmood as original project creator. Add a visible README byline and align current
+contribution/licensing guidance. Commercial use, paid services and closed-source
+modifications are allowed subject to standard Apache terms; no permission gate.
 No runtime, package metadata, database, dependency or infrastructure changes.
 
 ## Constitution check — before and after design
 
-Pass: bounded human-authorized licensing scope; architecture, providers and privacy
-unchanged. No executable tests claiming to prove legal enforceability. Preserve
-and exclude the unrelated npm lock change. Reuse spec 012 and existing PR #49;
-latest human direction supersedes both earlier unmerged policy checkpoints.
+Pass: bounded human-authorized policy change; architecture/providers/privacy
+unchanged. No executable tests pretending to prove legal enforceability. Preserve
+and exclude the unrelated npm lock change. Reuse existing spec 012/PR #49/branch;
+latest human direction supersedes the previous restrictive policy checkpoints.
 
 ## Structure and decisions
 
-LICENSE: independently written custom source-available terms, explicit internal
-permission and external monetisation boundary, attribution, rights limitations and
-warranty disclaimer. NOTICE: owner identity and third-party scope. README: concise
-permissions and guide link. CONTRIBUTING: same-licence submissions without copyright
-assignment or an additional external monetisation grant. docs/licensing.md:
-concrete allowed/restricted examples, attribution, ownership and negotiated fees.
-Keep historical log entries; current PLAN/BACKLOG/spec acceptance reflects the
-latest policy. No data model, API contract or new source directory is needed.
+LICENSE: byte-identical official Apache 2.0. NOTICE: original copyright, project
+creator and URL, informational licence/third-party scope. README: creator byline
+and concise licence summary. CONTRIBUTING: Apache section 5 incoming terms and
+retained copyright, no assignment/extra CLA. docs/licensing.md: permitted reuse,
+standard notice options and limits of creator recognition. Preserve historical
+logs; current PLAN/BACKLOG/spec reflect final scope. No new data model or API.
 
 ## Execution
 
-Revise spec/plan/tasks/research; perform read-only consistency review before editing
-licence documents. Review eight human scenarios, internal paid-worker/client-service
-boundary, attribution, closed-source rights and valid earlier grants. Check links,
-whitespace, third-party bytes and explicit staged scope. Commit/push/update existing
-PR #49 and observe updated-head CI. Do not merge or create a commercial contract.
+Revise spec/plan/research/tasks and perform read-only consistency review. Download
+and compare official bytes; replace current licensing documents. Review commercial,
+closed-source, attribution/patent/contribution terms and independent-idea limits.
+Check links/whitespace, third-party bytes, lock hash and intended staged scope.
+Commit/push/update existing PR #49, observe new-head CI; do not merge.
