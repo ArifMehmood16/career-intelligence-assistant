@@ -18,6 +18,26 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Licensing policy — Noncommercial reuse and collaboration
+
+- Date: 2026-10-08. Human requested learning/use/forks/modification/collaboration
+  rights, reserving commercial gain from original/modified code for written permission.
+- Change: custom LICENSE, matching README and CONTRIBUTING, plus linked spec 012
+  and root acceptance records. Commercial purpose controls, including indirect
+  benefits, valuable commercial favors, free business use and modified copies.
+  Preserve third-party terms, contributor ownership and independent ideas/work.
+- Observed checks: read-only spec/plan/tasks consistency review; Python-based local
+  Markdown link validation and byte comparison of tracked third-party notices
+  against origin/main; full licence/diff review; git diff --check passes.
+  General-purpose tool costs do not alone commercialise otherwise permitted use.
+- Scope: documentation/legal text only, no runtime code, dependencies, models,
+  settings or private data changes. No new tests that merely match legal text and
+  no claim of legal enforceability or professional legal review.
+- Git: PR #48 already merged at dd91343; one new docs/phase-19-noncommercial-license
+  branch from fetched main, no extra checkout or merge. An unrelated working-tree
+  frontend/package-lock.json modification is preserved and excluded from staging.
+
+
 ## Phase 19.4 — Configured OpenAI measurement continuation
 
 - Date: 2026-10-08. Human requested configured OpenAI from the project directory

@@ -29,6 +29,31 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 189 — Permit noncommercial reuse while reserving commercial rights
+
+- Date: 2026-10-08; Codex; human-requested licensing follow-up; spec 012.
+- Accepted: replace proprietary no-reuse terms with custom noncommercial copyright
+  permissions for learning, use, copying, forks, modifications, sharing, hosting
+  and collaboration. Commercial/indirect gain, internal business use, paid services
+  and valuable commercial favors require explicit prior written owner permission,
+  including for modified or renamed covered code.
+- Boundaries: retain attribution, third-party terms, contributor ownership,
+  statutory exceptions and valid prior grants. Ideas and independent expression
+  are not claimed as code. Ordinary learning/credit and incidental general-purpose
+  infrastructure/model costs do not automatically become prohibited commerce.
+- Documentation: aligned README, added contributor terms, root PLAN/BACKLOG and
+  bounded Spec Kit record. No implicit copyright assignment or commercial grant
+  from accepting a contribution. Application code and provider settings unchanged.
+- Observed validation: scenario/wording and full diff review, local-link checks,
+  whitespace check and byte comparison of all four tracked third-party notices.
+  No new executable tests for licence wording; no professional legal review claimed.
+- Rejected: standard open-source labelling for commercial restrictions, claiming
+  control over third-party licences or ideas, and including an unrelated npm lock
+  modification that appeared during the session. That working copy is preserved.
+- Human-owned decision: the requested reuse/commercial boundary; final legal
+  enforceability and any future written commercial permission remain human-owned.
+
+
 ### 188 — Validate configured OpenAI without changing frozen expectations
 
 - Date: 2026-10-08; Codex; PLAN 19.4; spec 011 authorized hosted continuation.

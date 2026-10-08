@@ -210,3 +210,16 @@ One CV per workspace; candidate use only; English text PDF/DOCX/plain text;
 no OCR, multi-user auth, auto-apply, job-board ingestion, distributed queue, or
 model-emitted fit score. Supporting letters remain narrative-only for scoring.
 Do not rebuild retired approaches to satisfy old tests or measurement plans.
+
+## Licensing policy — 2026-10-08
+
+Human-authorized follow-up after PR #48 merged, separate from application phases.
+[Spec 012](specs/012-noncommercial-license/spec.md) records the bounded change.
+
+- [x] Permit learning, noncommercial use, forks, modifications, redistribution and
+      collaboration with attribution; require explicit prior written permission
+      for direct/indirect commercial use of original or modified covered code.
+      Keep README/contribution terms consistent, preserve third-party licences
+      and contributor ownership, and distinguish general ideas from copied code.
+      Exit: scenario review, resolving local links, clean branch whitespace and
+      unchanged third-party licence bytes; no claim of professional legal review.

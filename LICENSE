@@ -1,24 +1,138 @@
-PROPRIETARY LICENSE
+ARIF MEHMOOD NONCOMMERCIAL SOURCE LICENSE
+Version 1.0 — 8 October 2026
 
-Copyright (c) 2026 Arif Mehmood. All rights reserved.
+Copyright (c) 2026 Arif Mehmood.
+All rights not expressly granted below are reserved.
 
-This source code, documentation, assets, and related materials (collectively, the
-"Software") are proprietary intellectual property owned by Arif Mehmood.
+1. Scope and acceptance
 
-No license or permission is granted to any person or entity to use, copy, modify,
-merge, publish, distribute, sublicense, sell, host, deploy, create derivative works
-from, train or evaluate machine-learning models using, or otherwise exploit the
-Software, in whole or in part, without prior written permission from the copyright
-owner.
+"Software" means the original source code, documentation, assets and related
+materials released under this License by their copyright holders, including
+covered portions contained in copies, modifications and derivative works.
+Separately licensed third-party materials are excluded as explained in section 7.
 
-Access to or viewing of the Software does not grant any intellectual-property rights.
-Any rights required solely for GitHub to host and display the repository, or for
-GitHub users to view or fork a public repository through GitHub's functionality, are
-governed by GitHub's Terms of Service and do not grant permission for any further use.
+By exercising permissions granted by this License, you accept its conditions.
+"You" includes an individual or an organisation exercising those permissions.
+Each copyright holder releasing their work under this License grants only the
+rights they own or are authorised to license.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT OWNER BE
-LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE
-USE OR OTHER DEALINGS IN THE SOFTWARE.
+2. Permission for noncommercial use
+
+Subject to this License, you are granted worldwide, royalty-free, non-exclusive
+copyright permission to access, run, study, copy, duplicate, fork, modify, adapt,
+build upon, combine, host and redistribute the Software in source or compiled
+form, solely for Noncommercial Purposes.
+
+"Noncommercial Purposes" means personal, educational, research, charitable,
+community, collaborative or other nonprofit purposes that are not intended for
+or directed towards commercial advantage, revenue, profit, financial compensation
+or other commercial benefit for you or any other person or organisation.
+
+You may learn from the Software, experiment, contribute improvements, make and
+share modified versions, and provide free noncommercial access. Ordinary learning,
+noncommercial collaboration and acknowledgement of authorship do not, by themselves,
+constitute prohibited commercial benefit.
+
+Paying for general-purpose computing, internet access or model services needed
+for an otherwise permitted noncommercial use does not, by itself, make that use
+commercial. This does not permit selling the Software, paid services based on it,
+or paid hosting or support of the Software itself.
+
+3. Commercial use requires prior written permission
+
+No commercial rights are granted by this License. Before any commercial use of
+any covered Software, you must obtain explicit prior written permission from
+Arif Mehmood for the rights he controls, and from any other copyright holder whose
+permission is required. Permission must expressly cover the proposed use.
+
+Commercial use includes, without limitation:
+
+(a) Selling, licensing for a fee, renting, leasing or otherwise monetising the
+    Software or a product, bundle or derivative work containing it.
+(b) Offering the Software as a paid hosted service, subscription, API, platform,
+    integration or other paid access, whether or not a copy is distributed.
+(c) Using the Software to operate or support a business, a commercial product or
+    service, paid consulting, paid development, paid support or other paid work,
+    including internal business use and services offered free to their users.
+(d) Using the Software to obtain advertising revenue, affiliate income, commercial
+    sponsorship, sales leads, promotional advantage or another direct or indirect
+    commercial gain.
+(e) Receiving or soliciting payment, fees, access-linked donations, goods, services,
+    barter, preferential business treatment or valuable commercial favors in
+    exchange for providing, using, hosting, modifying, distributing or supporting
+    the Software, including charges described as cost recovery rather than profit.
+
+A free price, absence of realised profit, nonprofit or charitable registration,
+or use of an intermediary does not exempt an otherwise commercial activity.
+These restrictions apply equally to unmodified and modified Software and to
+covered portions in forks, renamed projects, translations, adaptations,
+combinations and derivative works. Changing the name, language, interface or
+structure does not grant commercial rights in the covered Software.
+
+4. Attribution and redistribution conditions
+
+Every copy or substantial portion of the Software that you distribute must retain
+this License and applicable copyright, attribution and third-party notices.
+Clearly identify your modifications and do not misrepresent their authorship or
+imply endorsement by Arif Mehmood or another contributor.
+
+When providing a permitted hosted version, make the copyright notice and this
+License reasonably accessible to users, for example through an About or licence
+link. You may share source or compiled versions for Noncommercial Purposes.
+
+Covered Software in redistributed or modified versions remains subject to this
+License. You may not remove its commercial restrictions, offer commercial
+sublicences, or relicense covered Software under terms that grant commercial use.
+Recipients receive the same noncommercial permissions directly under this License
+from the applicable copyright holders. You cannot grant rights you do not hold.
+
+5. Separate permissions and reserved rights
+
+A separate written commercial agreement may grant additional rights only within
+its stated scope. Silence, public availability, a fork, a star, an issue response,
+a contribution or acceptance of a pull request is not commercial permission.
+Contact Arif Mehmood, the repository owner, to request a commercial agreement.
+
+No ownership, trademark, endorsement or patent rights are granted by this License.
+This License does not override a valid separate or pre-existing permission or
+restrict rights and exceptions that applicable law does not allow to be restricted.
+
+6. Ideas and independent work
+
+You may learn from and build independently on the general ideas and concepts
+shown by this project. This License does not claim ownership of ideas, methods or
+independently written implementations that do not copy protected expression from
+the Software. Copying or adapting covered code, documentation or assets remains
+subject to this License, including its commercial restrictions.
+
+7. Third-party materials and contributions
+
+Dependencies, fonts, vendored tools and other separately identified third-party
+materials remain governed by their own licences and notices. In particular, the
+bundled fonts retain their SIL Open Font License terms, and the vendored Spec Kit
+materials retain their upstream MIT terms. This License does not replace, restrict
+or expand the rights granted by those third parties.
+
+Contributors retain copyright in their contributions. Contributions intentionally
+submitted for inclusion under this License are made available under the same
+noncommercial terms unless a different written agreement is expressly accepted.
+Submission does not assign copyright or automatically grant anyone a separate
+commercial licence to that contribution. Any commercial agreement must secure
+all permissions required for the work it covers.
+
+8. Termination
+
+Permissions granted to you by this License terminate automatically if you breach
+its conditions. You must then stop exercising those permissions unless the
+applicable copyright holders expressly reinstate them in writing. Termination of
+your permissions does not terminate the permissions of compliant recipients.
+
+9. Disclaimer of warranty and limitation of liability
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS", WITHOUT
+WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO
+EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE OR OTHER DEALINGS.
+NOTHING IN THIS LICENSE EXCLUDES LIABILITY THAT CANNOT LAWFULLY BE EXCLUDED.

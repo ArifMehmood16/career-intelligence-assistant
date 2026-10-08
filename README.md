@@ -109,4 +109,10 @@ Every command, the database topology, Compose and logging:
 
 ## Licence
 
-Proprietary — see [LICENSE](LICENSE).
+Source-available under the [Arif Mehmood Noncommercial Source License](LICENSE).
+You may use, study, copy, fork, modify, share and collaborate for noncommercial
+purposes with attribution. Commercial use or gain—including selling, paid hosting
+or services, internal business use, and commercial payment or favors—requires
+Arif Mehmood's explicit prior written permission, including for modified versions.
+Third-party components retain their own licences. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for contribution terms; the full LICENSE controls.
