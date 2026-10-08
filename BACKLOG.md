@@ -1,15 +1,16 @@
 # Backlog
 
-Updated 2026-10-07 after reviewing all remaining PLAN items against current code,
-acceptance tests and merged history. PLAN.md owns acceptance; linked specs elaborate
+Updated 2026-10-08 from current code, observed acceptance tests and merged history. PLAN.md owns acceptance; linked specs elaborate
 bounded changes. Historical delivery records live in the AI log and engineering journal.
 
 19.1 retirement, 19.2 provider efficiency and 19.3 concurrency/progress are verified.
-[Runtime verification](specs/010-runtime-verification/spec.md) reuses existing code
-and adds missing lifecycle/context proof. Local lint, 825 backend tests and 192
-frontend tests pass; three existing backend skips remain. The unchanged 149 SQL
-contracts passed at the retirement checkpoint and on both final PR #47 CI images.
-No live provider quality or production latency claim follows from these checks.
+[Runtime verification](specs/010-runtime-verification/spec.md) adds missing
+lifecycle/context proof; [release verification](specs/011-synthetic-release-verification/spec.md)
+adds browser/startup/populated-progress evidence and scoped security review.
+Local lint, 838 backend tests, 195 frontend tests and all 150 disposable SQL cases
+pass; three existing backend skips remain. The complete browser journey passes.
+Local model attempts failed before judging; no quality or production latency pass
+is inferred from these fixture checks.
 
 PRs [46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) and
 [47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) are merged.
@@ -17,7 +18,9 @@ Main was clean and synchronized at `6340cd0` before the single current branch
 `test/phase-19-runtime-verification`. There is one checkout; no checkpoint branch
 is needed. Final PR #47 head `7ff3ac4` passed all three jobs in
 [CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
-Updated-head CI remains enforced and merging is human-owned.
+PR #48 checkpoint `99c86d1` passes all four jobs in
+[CI run 37761425946](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37761425946),
+including the new browser journey. Updated-head CI remains enforced and merging is human-owned.
 
 ## Now — prove the current product
 

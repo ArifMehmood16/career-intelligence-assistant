@@ -50,7 +50,7 @@ triaged scans, no fixture-time or historical-model claims as current quality.
 
 - [x] T019 Run full lint/unit/SQL/browser checks via Makefile and inspect complete branch diff; no weakened tests or unrelated changes (SC-005).
 - [x] T020 Update current docs/PLAN.md/BACKLOG.md and AI_DEVELOPMENT_LOG.md from observed checks only; keep README.md product-focused (FR-007).
-- [ ] T021 Commit reviewable passing steps, push existing branch and update PR #48; observe its updated-head CI without merging (FR-001/SC-005).
+- [x] T021 Commit reviewable passing steps, push existing branch and update PR #48; observe its updated-head CI without merging (FR-001/SC-005).
 
 ## Dependencies and execution
 
@@ -72,4 +72,8 @@ failed/incomplete model runs are reported honestly and never publish invented sc
 Observed measurement limit (2026-10-08): T017 executed and saved both local runs,
 but both failed chunk validation before judging. SC-004 is satisfied by honest
 failure reports; the root PLAN 19.4 quality gate remains open until successful
-unsupported-match/ranking observations exist. No validation/prompt tuning was made.
+unsupported-match/ranking observations exist. No validation relaxation shipped; an ineffective later prompt experiment was reverted.
+
+Delivery observed: PR #48 checkpoint 99c86d1 passed all four jobs in CI run
+37761425946 (lint/hermetic, PostgreSQL, Supabase and synthetic browser). Existing
+PR description updated; no merge. Subsequent checkpoint edits are documentation only.

@@ -1,14 +1,15 @@
 # Delivery plan — one career intelligence pipeline
 
-Updated 2026-10-07 after reviewing the remaining work against code, tests and
+Updated 2026-10-08 from reviewed code, observed acceptance checks and
 merged history. BACKLOG.md owns priority; this file owns milestone acceptance.
 Historical delivery details remain in AI_DEVELOPMENT_LOG.md and the engineering journal.
 
 **Current checkpoint:** 19.1 retirement and 19.2–19.3 provider/runtime acceptance
-are verified. Existing implementations were reused; spec 010 adds the missing
-parser lifecycle and actual thread cancellation/accounting regressions. Local
-`make lint` and `make test` pass (825 backend / 192 frontend, three existing skips).
-No personal database, paid provider call or new dependency was used.
+are verified. Spec 011 adds observed browser/startup/progress-migration acceptance,
+scoped security review and honest synthetic measurements. Local `make lint` and
+`make test` pass (838 backend / 195 frontend, three existing skips); all 150 SQL
+cases and the complete browser journey pass. Dependency patches are audited;
+Playwright is a test-only dependency. No personal database or paid provider call.
 
 [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
 and [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47)
@@ -17,6 +18,8 @@ are merged. Main was synchronized at `6340cd0` before the sole current task bran
 `7ff3ac4` passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 in
 [CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
 Updated-head CI remains enforced; the human owns merging.
+PR #48 checkpoint `99c86d1` passes all four jobs, including the new synthetic
+browser journey, in [CI run 37761425946](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37761425946).
 
 **Remaining work: 19.4.** Offline benchmark execution, the synthetic browser journey,
 populated progress-migration preservation and private startup now have observed

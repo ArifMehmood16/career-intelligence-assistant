@@ -29,6 +29,20 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 187 — Deliver the verification checkpoint on the existing PR
+
+- Date: 2026-10-08; Codex; PLAN 19.4; spec 011 delivery.
+- Outcome: retain one task branch/checkout and PR #48; update PR description and
+  reconcile current plan/backlog counts, security scope and model-measurement limit.
+  README stays product-focused. All spec implementation tasks have observed proof;
+  the root quality gate remains open rather than being closed by failed model runs.
+- Validation: all four CI jobs pass at 99c86d1 in run 37761425946, including new
+  Chromium journey. Complete branch whitespace check passes and 106 local Markdown
+  links resolve. All owned temporary services/disposable DB volumes are removed.
+- Human-owned decision: PR review/merge and eventual calibrated model-quality
+  threshold. No extra PR/branch, force push, paid egress or personal data change.
+
+
 ### 186 — Reject an ineffective coverage-prompt experiment
 
 - Date: 2026-10-08; Codex; PLAN 19.4 local measurement limit.

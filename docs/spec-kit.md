@@ -160,5 +160,7 @@ still needs the project reload described above.
 No application tests, lint, model benchmarks or migrations were run for the original
 adoption, following the human's instruction. Verification subsequently resumed:
 retirement acceptance (spec 009), provider/runtime acceptance (spec 010) and full
-lint/hermetic checks pass. Benchmark/browser/security/startup and current model
-quality gates remain separate in PLAN 19.4. Workflow adoption alone closes no gate.
+lint/hermetic checks pass. Spec 011 records offline execution, browser/startup/
+populated-progress acceptance and scoped security review. Original local-model
+attempts failed before judging; successful current-model quality remains open in
+PLAN 19.4. Workflow adoption alone closes no gate.
