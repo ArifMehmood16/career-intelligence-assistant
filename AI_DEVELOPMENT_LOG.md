@@ -29,6 +29,23 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 186 — Reject an ineffective coverage-prompt experiment
+
+- Date: 2026-10-08; Codex; PLAN 19.4 local measurement limit.
+- Finding: metadata-only synthetic 7B diagnostic identifies numbered CV lines 4/8
+  absent from both initial/repaired plans. No quote, prompt or response is logged.
+- Rejected: a temporary explicit adjacency/no-gap prompt clarification did not
+  produce a completed analysis on either frozen case. Reverted it in full rather
+  than shipping an unproven prompt/version or weakening line validation. Frozen
+  labels and original measurement reports remain unchanged; quality stays open.
+- Validation: 66 focused chunk/index/benchmark tests passed during the experiment;
+  previous full checks apply to restored production source. All four PR CI jobs
+  passed on e9221dd, including the new real browser journey; final delivery is next.
+- Review correction: complete branch diff caught original OFL CRLF/trailing spaces;
+  normalize formatting only, preserving all license words and original font bytes.
+  Repository remains one task branch and one checkout with no redundant refs.
+
+
 ### 185 — Record failed local measurements without fabricating quality
 
 - Date: 2026-10-08; Codex; PLAN 19.4 measurement; spec 011 T017.

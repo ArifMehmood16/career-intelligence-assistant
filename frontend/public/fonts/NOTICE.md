@@ -2,7 +2,8 @@
 
 Unmodified font binaries from the existing Google Fonts stylesheet.
 Inter and IBM Plex Mono retain their SIL Open Font License 1.1; see the
-accompanying license files. Family names and configured weights are unchanged.
+accompanying license files. License wording is preserved; line endings and trailing
+whitespace are normalized. Family names and configured weights are unchanged.
 
 Downloaded 2026-10-08. Sources and SHA-256 checksums:
 

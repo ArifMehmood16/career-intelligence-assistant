@@ -75,4 +75,5 @@ Synthetic fixtures only. Installed local Ollama may be used without paid egress;
 hosted measurements still require explicit authorization and keys. E2E gets one
 Bun-managed test-only Playwright dependency because no browser runner exists.
 Dependency fixes may extend existing version ranges when the patched release is
-outside them; compatibility must be tested. Preserve the human-added npm lock.
+outside them; compatibility must be tested. Preserve and synchronize the human-added npm lock by explicit human instruction
+on 2026-10-08; Bun remains the application tooling.

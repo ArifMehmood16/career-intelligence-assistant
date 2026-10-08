@@ -147,8 +147,9 @@ No score, band, verdict-quality result or eligible ranking pair was produced.
 seconds. Each cold attempt made two completion HTTP attempts and one model-metadata
 request; zero embedding attempts. The current CV chunk plan remained invalid after
 its bounded repair, so judging never started. A separate synthetic 14B diagnostic
-confirmed `chunking_incomplete` with two remaining structural problems; no model
-payload was logged. These are **failure durations**, not successful latency results.
+confirmed `chunking_incomplete` with two remaining structural problems; a second
+metadata-only 7B diagnostic identified numbered CV lines 4 and 8 omitted in both
+the initial and repaired plans. No model payload was logged. These are **failure durations**, not successful latency results.
 Warm p50/p95 and ranking agreement correctly remain null. Do not interpret absent
 unsupported-match counts as zero errors or the reports as a quality pass.
 
@@ -173,6 +174,11 @@ env -i PATH="$PATH" HOME="$PWD" ALLOW_HOSTED_PROVIDERS=false \
   --completion-model "$MODEL" --embedding-model nomic-embed-text:latest \
   --output "$OUTPUT"
 ```
+
+A bounded development experiment added explicit adjacent-range/no-gap coverage
+instructions. The same 7B cases still failed before judging, so that prompt change
+was rejected and reverted. It is not a successful measurement or a shipped prompt
+version; the two original reports above remain unchanged.
 
 Next: diagnose local-model structural chunk failures on development fixtures,
 retain complete-line/citation validation, then obtain successful judged observations

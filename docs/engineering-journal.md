@@ -28,7 +28,9 @@ Nothing predicted, nothing rounded up.
   warm observations; chunk validation still fails after repair. A metadata-only
   diagnostic confirms two remaining structural problems. No score/band, successful
   quality count or ranking comparison; the root model-quality gate remains open.
-- No prompt/profile/label tuning or complete-line validation relaxation. Failure
+- Original reports precede tuning. A later bounded adjacency/coverage prompt
+  clarification still failed on both cases and was fully reverted. No profile/label
+  change or complete-line validation relaxation shipped. Failure
   reports retain physical calls, source/input/label/prompt/model provenance; no
   raw response, prompt or exception payload was logged or saved.
 - Final checks: make lint passes; make test passes 838 backend/195 frontend,

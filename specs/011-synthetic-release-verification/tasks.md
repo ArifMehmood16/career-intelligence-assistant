@@ -48,8 +48,8 @@ triaged scans, no fixture-time or historical-model claims as current quality.
 
 ## Checkpoint
 
-- [ ] T019 Run full lint/unit/SQL/browser checks via Makefile and inspect complete branch diff; no weakened tests or unrelated changes (SC-005).
-- [ ] T020 Update current docs/PLAN.md/BACKLOG.md and AI_DEVELOPMENT_LOG.md from observed checks only; keep README.md product-focused (FR-007).
+- [x] T019 Run full lint/unit/SQL/browser checks via Makefile and inspect complete branch diff; no weakened tests or unrelated changes (SC-005).
+- [x] T020 Update current docs/PLAN.md/BACKLOG.md and AI_DEVELOPMENT_LOG.md from observed checks only; keep README.md product-focused (FR-007).
 - [ ] T021 Commit reviewable passing steps, push existing branch and update PR #48; observe its updated-head CI without merging (FR-001/SC-005).
 
 ## Dependencies and execution
