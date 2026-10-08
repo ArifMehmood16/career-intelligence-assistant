@@ -2,7 +2,7 @@
 
 **Branch**: `test/phase-19-runtime-verification` (same PR #48 by human instruction)
 **Created**: 2026-10-07
-**Status**: Verification and authorized hosted measurement delivered; updated-head CI required before merge
+**Status**: Verification and authorized hosted measurement delivered; evidence-head CI green, merge human-owned
 **Input**: Continue remaining PLAN 19.4 work in PR #48; README must describe the
 product without development status. Reuse spec 001 for the existing benchmark.
 

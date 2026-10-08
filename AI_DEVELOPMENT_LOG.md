@@ -45,8 +45,10 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   treating unlabelled positives/null rates as supported zero-error evidence, or
   presenting fixture retrieval as production SQL/browser latency.
 - Validation: original report bytes/provenance/label hash and transport totals
-  checked. Production code/settings/secrets unchanged; prior full regression and
-  four green CI jobs at 46650d0 apply to source. Updated-head CI remains required.
+  checked; changed-document links and complete branch whitespace check pass.
+  Production code/settings/secrets unchanged. Pushed evidence commit 929ee26 and
+  observed all four CI jobs pass in run 37764143176. Delivery-record edits follow
+  on the same branch; updated-head checks remain enforced before merge.
 - Human authorization: explicit paid OpenAI synthetic validation and existing PR
   #48 commit/push scope. No personal documents/database, new branch/PR or merge.
 

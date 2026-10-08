@@ -86,10 +86,12 @@ factories/gate; do not change project secrets, prompts or production stores.
 
 - [x] T022 Run the existing quality benchmark from repository root with OpenAI completion/embedding providers and the configured model tags; inspect safe original results (FR-004/SC-004).
 - [x] T023 Save observed report/provenance and update docs/evaluation.md, PLAN.md/BACKLOG.md and the engineering/AI logs; close only proven acceptance (FR-007).
-- [ ] T024 Commit/push the continuation on the existing PR #48 and observe updated-head CI without merging (FR-001/SC-005).
+- [x] T024 Commit/push the continuation on the existing PR #48 and observe updated-head CI without merging (FR-001/SC-005).
 
 Observed hosted continuation: configured OpenAI completes all frozen cold/warm
 observations at clean 46650d0; original report is saved unchanged. Root measurement
 execution is complete, with alignment gaps and null unsupported-met rates disclosed
-in docs/evaluation.md. No semantic accuracy threshold is asserted. T024 remains
-open until updated-head CI is observed.
+in docs/evaluation.md. No semantic accuracy threshold is asserted. T024 observed:
+evidence commit 929ee26 pushed to PR #48 and all four jobs passed in CI run
+37764143176. No merge; subsequent delivery-record edits are documentation only,
+with updated-head checks still enforced.

@@ -34,9 +34,11 @@ Nothing predicted, nothing rounded up.
 - Scope: no application server/database or private uploads used. Normal settings
   loaded, no secret file modified. This report is model/application work with
   fixture retrieval, not SQL/browser latency or an end-to-end hosted deployment.
-- Delivery: continue same PR #48/branch. Production source unchanged; prior full
-  checks and four green CI jobs at 46650d0 remain applicable. Observe updated-head
-  CI after committing this evidence before declaring the delivery checkpoint.
+- Delivery: pushed evidence commit 929ee26 to the same PR #48/branch and observed
+  all four jobs pass in CI run 37764143176: lint/hermetic, PostgreSQL, Supabase and
+  synthetic browser. Original committed report verified byte-for-byte; changed
+  document links and complete branch whitespace check pass. Delivery-record edits
+  follow on the same branch, with updated-head checks enforced before merge.
 
 
 ## Phase 19.4 — Delivery checkpoint

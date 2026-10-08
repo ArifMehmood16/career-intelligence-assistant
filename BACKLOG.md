@@ -20,8 +20,8 @@ Main was clean and synchronized at `6340cd0` before the single current branch
 `test/phase-19-runtime-verification`. There is one checkout; no checkpoint branch
 is needed. Final PR #47 head `7ff3ac4` passed all three jobs in
 [CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
-PR #48 checkpoint `99c86d1` passes all four jobs in
-[CI run 37761425946](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37761425946),
+PR #48 hosted-evidence checkpoint `929ee26` passes all four jobs in
+[CI run 37764143176](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37764143176),
 including the new browser journey. Updated-head CI remains enforced and merging is human-owned.
 
 ## Now — prove the current product

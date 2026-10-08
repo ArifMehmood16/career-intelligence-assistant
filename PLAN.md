@@ -20,8 +20,9 @@ are merged. Main was synchronized at `6340cd0` before the sole current task bran
 `7ff3ac4` passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 in
 [CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
 Updated-head CI remains enforced; the human owns merging.
-PR #48 checkpoint `99c86d1` passes all four jobs, including the new synthetic
-browser journey, in [CI run 37761425946](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37761425946).
+PR #48 hosted-evidence checkpoint `929ee26` passes all four jobs, including the
+synthetic browser journey, in [CI run 37764143176](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37764143176).
+Subsequent delivery-record edits are documentation only; checks stay enforced.
 
 **19.4 acceptance evidence is recorded.** Offline and configured OpenAI synthetic
 measurements, the browser journey, populated progress preservation, private startup
