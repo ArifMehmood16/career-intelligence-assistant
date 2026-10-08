@@ -29,6 +29,23 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 184 — Triage source heuristics and scan only tracked release inputs
+
+- Date: 2026-10-08; Codex; PLAN 19.4 security; spec 011 T018.
+- Outcome: all dependency audits and redacted tracked-file secret scan pass.
+  Trivy confirms both synchronized frontend locks have no HIGH/CRITICAL findings.
+  All 22 Bandit findings are narrowly reviewed by source/group in threat model;
+  no suppression or finding-free Bandit claim. Its nonzero status is retained.
+- Control: containerized Make targets consume git archive HEAD rather than the
+  personal working directory; secrets output is redacted and Trivy uses vuln only.
+  Python/frontend/e2e audits run before visible source findings.
+- Validation: make security-dependencies security-secrets passes on f7344a9.
+  Full tests pass 838 backend/195 frontend, three existing skips, 85.22% coverage;
+  quality module reports 100%. No SonarQube server or image-OS scan is claimed.
+- Human-owned decision: maintain both frontend locks and complete assigned release
+  evidence on PR #48; private operation only, no unconditional security guarantee.
+
+
 ### 183 — Reject mislabeled fixture quotes before measurement
 
 - Date: 2026-10-08; Codex; PLAN 19.4 evaluation guard.

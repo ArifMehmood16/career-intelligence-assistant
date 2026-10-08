@@ -44,7 +44,7 @@ triaged scans, no fixture-time or historical-model claims as current quality.
 - [x] T015 [US3] Freeze explicitly current synthetic expectations in sample-data/evaluation/ before model execution; document development-only scope in docs/evaluation.md (FR-004).
 - [x] T016 [US3] Extend only existing benchmark/report code under backend/src/career_assistant/ops/ where required to record unsupported matches/ranking agreement, with focused tests in backend/tests/ (FR-004/SC-004).
 - [ ] T017 [US3] Run available local Ollama models using shipped synthetic fixtures and explicit closed hosted gate; save safe model/prompt/input/call/duration/quality provenance in docs/evaluation-results/ (FR-004/SC-004).
-- [ ] T018 [US3] Run dependency/source/redacted tracked-file secret scans; narrowly triage findings and repair actionable defects in existing modules, record scoped results in docs/threat-model.md and docs/engineering-journal.md (FR-006/SC-005).
+- [x] T018 [US3] Run dependency/source/redacted tracked-file secret scans; narrowly triage findings and repair actionable defects in existing modules, record scoped results in docs/threat-model.md and docs/engineering-journal.md (FR-006/SC-005).
 
 ## Checkpoint
 

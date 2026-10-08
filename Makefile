@@ -1,4 +1,4 @@
-.PHONY: help config setup lock format lint typecheck test test-integration test-e2e benchmark security verify run run-api run-web run-docker down logs db-check db-migrate db-create
+.PHONY: help config setup lock format lint typecheck test test-integration test-e2e benchmark security security-dependencies security-secrets security-source verify run run-api run-web run-docker down logs db-check db-migrate db-create
 
 PYTHON ?= python3
 BACKEND_VENV = backend/.venv
@@ -95,13 +95,22 @@ benchmark:
 	@test -x $(BACKEND_BIN)/python || (echo "Run make setup first." && exit 1)
 	$(BACKEND_BIN)/python -m career_assistant.ops.benchmark $(BENCHMARK_ARGS)
 
-security:
-	$(BACKEND_BIN)/bandit -r backend/src
+# Scanners receive the committed tracked tree, never ignored env files or uploads.
+# Bandit runs last and retains its nonzero status for reviewed heuristic findings.
+security: security-dependencies security-secrets security-source
+
+security-dependencies:
 	$(BACKEND_BIN)/pip-audit -r backend/requirements.lock
 	$(BACKEND_BIN)/pip-audit -r backend/requirements-dev.lock
-	cd $(FRONTEND) && bun audit --production
-	docker run --rm -v "$(CURDIR):/src" -w /src ghcr.io/gitleaks/gitleaks:latest detect --source /src --no-git --verbose --config /src/.gitleaks.toml
-	docker run --rm -v "$(CURDIR):/src" aquasec/trivy:latest fs --skip-dirs /src/frontend/node_modules --skip-dirs /src/backend/.venv --severity HIGH,CRITICAL --exit-code 1 /src
+	cd $(FRONTEND) && bun audit
+	cd e2e && bun audit
+	git archive HEAD | docker run --rm -i --entrypoint /bin/sh aquasec/trivy:latest -c 'scan_dir=$$(mktemp -d); tar -xf - -C "$$scan_dir" && trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "$$scan_dir"'
+
+security-secrets:
+	git archive HEAD | docker run --rm -i --entrypoint /bin/sh ghcr.io/gitleaks/gitleaks:latest -c 'scan_dir=$$(mktemp -d); tar -xf - -C "$$scan_dir" && gitleaks detect --source "$$scan_dir" --no-git --redact --config "$$scan_dir/.gitleaks.toml"'
+
+security-source:
+	$(BACKEND_BIN)/bandit -r backend/src
 
 verify: lint test security
 

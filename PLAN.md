@@ -20,8 +20,8 @@ Updated-head CI remains enforced; the human owns merging.
 
 **Remaining work: 19.4.** Offline benchmark execution, the synthetic browser journey,
 populated progress-migration preservation and private startup now have observed
-acceptance evidence. Frozen-label local-model measurement and scoped security
-review remain open, with updated-head CI required. Retired v1 comparison and
+acceptance evidence. Scoped security
+review is recorded below. Local-model measurement remains open, with updated-head CI required. Retired v1 comparison and
 repeated implementation of verified provider/concurrency features are superseded.
 No live quality improvement is inferred from passing fixture checks.
 
@@ -184,8 +184,9 @@ completed 36 observations with zero physical requests on 2026-10-07.
       ([run](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)); keep updated-head checks enforced.
 - [x] Prove populated progress-migration preservation. Empty migration cycles and
       retirement preservation/deletion already pass; do not repeat them as new work.
-- [ ] Complete dependency/security release checks. Stored-data deletion is verified
-      under 19.1 and is not a full security audit.
+- [x] Complete dependency/security release checks. Stored-data deletion is verified
+      under 19.1 and is not a full security audit. Dependency/secret scans pass;
+      all 22 visible Bandit heuristics are reviewed in docs/threat-model.md.
 - [x] Prove one startup/deployment path. Repair Docker configuration or remove its
       supported claim. Keep deployment private until authentication exists.
 

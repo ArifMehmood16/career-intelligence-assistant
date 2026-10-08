@@ -88,3 +88,52 @@ Compose ports bind only to loopback. Migrations must succeed before API startup;
 readiness checks database/schema, with safe startup errors and no raw SQL payload.
 Dedicated browser tests reject non-loopback/non-`_e2e` database URLs and existing
 servers; hosted credentials/gate are disabled independently of user settings.
+
+## Scoped dependency and source review (2026-10-08)
+
+Both Python locks pass pip-audit; frontend and test-runner Bun audits report no
+known advisories. The human requested retaining both frontend lockfiles: all npm
+package versions now match Bun, and npm audit reports zero advisories. Trivy's
+HIGH/CRITICAL filesystem dependency scan reports zero findings for both frontend
+locks. These are point-in-time package checks, not image-OS or supply-chain guarantees.
+
+Gitleaks reports zero findings on a tracked-file snapshot with its existing
+placeholder allowlist and redacted output. `make security` now feeds only the
+committed `git archive HEAD` to containerized scanners, excluding personal ignored
+configuration/uploads and private Git history. Commit intended changes before this
+scan. Dependency audits use working locks; Bandit reads working backend source.
+
+Bandit reports **22 findings: three medium and nineteen low**, all reviewed below.
+No suppressions or baseline filters were added. Its source target and overall
+`make security` retain a nonzero exit while these heuristics remain visible; do not
+report Bandit as finding-free. No SonarQube server scan was available or claimed.
+
+- B608, graph_repos.py `_RELATED_SQL` and search_repos.py `_SEARCH_SQL` (two medium,
+  low confidence): interpolations are only repository constants APP_SCHEMA and
+  inferred-edge provenance. User terms, UUIDs, embedding values, limits and weights
+  enter bound parameters. No document/question content enters SQL construction.
+- B104, persistence/startup.py (one medium): container server intentionally binds
+  all container interfaces; Compose publishes API/web/database only on loopback.
+  The image is for private operation. Authentication remains a prerequisite for
+  untrusted exposure, and this does not approve public deployment.
+- B606, persistence/startup.py (one low): execv uses the absolute current Python
+  executable and a fixed uvicorn argument vector after successful migration.
+  No upload, question or provider output chooses a command or argument.
+- B101 (twelve low): role_store.py create/reanalyse/session, unit_of_work.py
+  exit/commit/rollback, routes_cv.py response conversions, documents/cv.py and
+  documents/supporting.py parsed conversions, ask/service.py agent dispatch and
+  settings.py hostname accessor. These assert internal adapter/type/lifecycle
+  invariants after existing creation, parser, agent-selection or settings validation.
+  They are not authentication, workspace authorization, egress or input-validation
+  controls; disabling assertions cannot bypass those independent controls.
+- B105, domain/groundedness.py (one low): `PASS = "pass"` is a result enum, not a
+  password or credential.
+- B404/B603/B607, ops/benchmark.py (five low): subprocess imports and two fixed Git
+  commands inspect source revision/dirty state with a five-second timeout, captured
+  output and no shell. Arguments are constant and cwd is repository-owned. PATH is
+  trusted operator environment, never uploaded or model-generated content. The
+  harness does not execute documents or provider output.
+
+These reviewed heuristics do not justify broad exclusions for future findings.
+A changed SQL template, command source, validation role or deployment exposure
+requires a fresh review. Synthetic local-model quality remains a separate limit.

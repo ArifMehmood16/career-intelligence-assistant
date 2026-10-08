@@ -18,6 +18,29 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Scoped security review
+
+- Date: 2026-10-08. Commands: make security-dependencies security-secrets;
+  backend/.venv/bin/bandit -r backend/src -f json; npm audit --json from frontend.
+- Observed: both Python lock audits pass; full frontend Bun audit (446 packages)
+  and browser-runner Bun audit (26 packages) pass; npm audit reports zero advisories.
+  Trivy HIGH/CRITICAL dependency scan finds none; redacted Gitleaks finds none.
+  Container scans use committed tracked files at f7344a9, including runner/fonts
+  and both synchronized frontend locks, excluding ignored configuration/uploads.
+- Source: Bandit reports 22 findings (three medium, nineteen low), reviewed in
+  docs/threat-model.md by exact site/group. Constant SQL templates, private container
+  bind, fixed command vectors, internal invariants and result enum are justified.
+  No suppression/baseline was added; Bandit and aggregate make security remain
+  nonzero. No SonarQube or image-OS scan claim.
+- Control repair: make security container inputs now come from git archive HEAD;
+  Gitleaks redacts instead of verbose source output, Trivy explicitly scans
+  vulnerabilities only. Commit intended changes before this tracked-source scan.
+- Compatibility: latest make test passes 838 backend and 195 frontend tests,
+  three existing skips, reported coverage 85.22%; new quality module has 100%
+  statement/branch coverage. Earlier make lint and 150 SQL/browser checks pass.
+- Carried forward: local-model measurement results and updated-head CI.
+
+
 ## Phase 19.4 — Browser, startup and populated progress acceptance
 
 - Date: 2026-10-08. Commands: make lint; make test; make test-integration with
