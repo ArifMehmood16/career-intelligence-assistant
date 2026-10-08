@@ -27,14 +27,14 @@ Updated-head CI remains enforced and merging is human-owned.
       reading/budgets/batching/repair/cache/profile contracts; no duplicate implementation.
 - [x] [19.3](PLAN.md#193--bounded-concurrency-and-useful-progress) — bounded threads,
       real spawned-parser cleanup, cancellation, retry accounting and honest progress.
-- [ ] [19.4](PLAN.md#194--prove-the-current-product) — execute the existing offline
-      benchmark, implement/run the complete synthetic browser journey, measure frozen
+- [ ] [19.4](PLAN.md#194--prove-the-current-product) — offline benchmark executed; implement/run the complete synthetic browser journey, measure frozen
       current-model labels, prove progress-migration preservation, run security checks
       and verify startup. One Playwright journey covers the former duplicate smoke task.
 
 The retired v1 comparison/release track is superseded. CI repair, empty migration
 cycles and retirement checks are complete; they are not new pending work. The
-benchmark's implementation/tests are complete while its command is still unexecuted.
+offline benchmark has 36 successful observations and zero physical requests;
+its fixture timing does not close the current-model measurement gate.
 
 ## Later — relevant or conditional follow-ups
 

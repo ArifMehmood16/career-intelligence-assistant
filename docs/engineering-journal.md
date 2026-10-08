@@ -18,6 +18,20 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Offline benchmark evidence
+
+- Date: 2026-10-08; measurement executed 2026-10-07.
+- Command: make benchmark BENCHMARK_ARGS='--repetitions 3 --output /private/tmp/career-analysis-offline-20261007.json'.
+- Observed: 36 successful synthetic observations, zero physical provider requests,
+  clean source 9c2f27e, fixture-only retrieval. Safe report saved under
+  docs/evaluation-results/offline-2026-10-07.json; cache/call/timing provenance verified.
+- Decision: close offline execution only; local model quality, SQL/browser latency,
+  startup, populated progress preservation and security need separate evidence.
+- Continuation: specs/011-synthetic-release-verification defines 21 linked tasks;
+  seven requirements/five success criteria covered, all five specification checklist
+  items pass, no blocking consistency finding. No extension hooks installed.
+
+
 ## Phase 19.2–19.3 — Plan reconciliation and runtime acceptance
 
 - Date: 2026-10-07

@@ -14,11 +14,27 @@ evidenced. No number appears here that was not observed from a recorded run.
 ## Current analysis benchmark (PLAN 19.4)
 
 Implemented 2026-10-02 in `career_assistant.ops.benchmark`, with its bounded
-[feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Not executed:**
-its tests now pass after verification resumed, but the command has not been run.
-There is no new performance or quality result, and the measurement gate stays open.
+[feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Offline execution observed 2026-10-07:**
+[Saved report](evaluation-results/offline-2026-10-07.json) records 36 successful
+observations: six shipped pairs, three cold/warm repetitions, no failures and zero
+physical completion, embedding or metadata requests. Source was clean revision
+`9c2f27e208b85184ae6308fc70f9397ff752c908`; inputs, rubric/model fingerprints,
+frozen analysis date and prompt versions are in the report. Fixture providers were
+`rules-v1` and `lexical-hash-v1`; fallback was disabled.
 
-Next offline measurement, from the repository root:
+Command actually run:
+
+```bash
+make benchmark BENCHMARK_ARGS='--repetitions 3 --output /private/tmp/career-analysis-offline-20261007.json'
+```
+
+Per-pair cold p50 ranged from 1.575 to 1.970 ms; warm p50 from 0.622 to 0.872 ms.
+The clean-match warm run reused two documents, nine vectors and all six verdicts,
+with zero structured operations and one search embedding operation. These are
+fixture observations, not production latency or model-quality measurements. This
+closes only offline execution; frozen-label local-model quality remains open.
+
+To reproduce another offline measurement, from the repository root:
 
 ```bash
 make benchmark BENCHMARK_ARGS='--case clean_match --repetitions 3'

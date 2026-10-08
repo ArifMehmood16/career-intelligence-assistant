@@ -41,7 +41,7 @@ The retired v1 evaluation command has been removed. `make benchmark` implements
 current cold/warm application timing with synthetic fixture retrieval; it defaults
 offline and needs no database or key. `BENCHMARK_ARGS` passes named cases, repeat
 count, report destination or explicit live-provider selections. Its tests pass;
-the command remains unexecuted under PLAN 19.4. See
+the offline run completed 36 observations with zero physical requests. See
 [measurement scope and commands](evaluation.md#current-analysis-benchmark-plan-194).
 Frozen-label quality evaluation remains open in PLAN 19.4.
 

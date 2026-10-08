@@ -29,6 +29,22 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 175 — Record offline benchmark and remaining release tasks
+
+- Date: 2026-10-08 (benchmark observed 2026-10-07).
+- Tool / model: Codex; repository Spec Kit tasks/analyze/implement workflow.
+- Plan task: PLAN 19.4; same PR #48 per human instruction.
+- Intent: explain uncommitted planning files and continue remaining acceptance.
+- Outcome: completed spec 011's task list; all seven requirements and five success
+  criteria covered. Five checklist items pass; no blocking analysis findings or hooks.
+  Saved the already observed 36-success offline report and closed only that gate.
+- Validation: verified statuses, zero physical attempts, cache reuse, clean source
+  provenance and report scope; diff/linked documentation reviewed. No new model call.
+- Rejected: treating millisecond fixture timing as model quality or product latency.
+  README retains product focus; npm lock preserved; no personal DB was touched.
+- Human-owned decision: continue remaining group using the same PR and branch.
+
+
 ### 174 — Keep README focused on the product
 
 - Date: 2026-10-07

@@ -164,12 +164,13 @@ Measurement tooling checkpoint: `make benchmark` drives the current analysis wit
 named synthetic fixtures, cold/warm application caches, physical request accounting
 and attribution. Explicit live mode reuses provider factories and the egress gate.
 This is fixture retrieval; PostgreSQL/browser latency and frozen-label quality
-evaluation are separate work. No benchmark result is claimed before execution.
+evaluation are separate work. The [offline run](docs/evaluation.md#current-analysis-benchmark-plan-194)
+completed 36 observations with zero physical requests on 2026-10-07.
 
 - [ ] Implement and run one reusable synthetic Playwright journey: upload CV, add
       role, wait, inspect fit/source citation, prepare, draft and ask. Fix broken
       current features. This also satisfies the former duplicate browser-smoke task.
-- [ ] Execute the existing offline synthetic benchmark and record timing/accounting
+- [x] Execute the existing offline synthetic benchmark and record timing/accounting
       provenance in docs/evaluation.md. Fixture timing proves neither model quality
       nor SQL/browser latency; no paid provider request is needed.
 - [ ] Measure the current one-call/judge architecture on frozen synthetic labels.

@@ -1,0 +1,4231 @@
+{
+  "schema_version": "analysis-benchmark-v1",
+  "measured_at": "2026-10-07T17:24:53.374110+00:00",
+  "measurement_kind": "fixture",
+  "scope": "application_cache_cold_warm_with_fixture_retrieval",
+  "configuration": {
+    "repetitions": 3,
+    "as_of": "2026-09-01",
+    "live": false,
+    "provider": "hermetic",
+    "embedding_provider": "hermetic",
+    "completion_model": null,
+    "embedding_model": null
+  },
+  "source": {
+    "revision": "9c2f27e208b85184ae6308fc70f9397ff752c908",
+    "dirty": false
+  },
+  "runtime": {
+    "python": "3.14.4",
+    "platform": "Darwin"
+  },
+  "fingerprints": {
+    "manifest_sha256": "0c6f604f05a380fd5dcdcd60e28baea42f3ff8648018ead41889d44440245772",
+    "rubric_sha256": "ce49907224bd1d565f4d290ebfcf7b11994c6229506e0a9a39f7e1032eb9770d",
+    "models_sha256": "880b5c3c5aec20666be942d322b5f4f87ecfe5052347ed38430eec710aa13b4d",
+    "cases": [
+      {
+        "case_id": "clean_match",
+        "cv_sha256": "d0e4e20d2c53bae2ec2e28d52dd574d196273daf8419d808b48d4c7e88eb5084",
+        "jd_sha256": "a53bfc4b48487dea084f490e077c05f0e97b97153f47b8a0a0f79f59fb1d0509"
+      },
+      {
+        "case_id": "partial_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "cd3ab9f6e5b35e98ba9ca0a8811845838e20f8ad947d827130d1a4ef10bfc305"
+      },
+      {
+        "case_id": "poor_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "f3773d3ee5dd91d7e2d65793c10bdb3ea3022eb1ba00f2f879177cf78a56e491"
+      },
+      {
+        "case_id": "vague_seniority",
+        "cv_sha256": "d0e4e20d2c53bae2ec2e28d52dd574d196273daf8419d808b48d4c7e88eb5084",
+        "jd_sha256": "ee67da412dc54d5a018a5eb27cd9686a03ea0f5c16811d9cae2ba1090eaed9aa"
+      },
+      {
+        "case_id": "injection_attempt",
+        "cv_sha256": "d0e4e20d2c53bae2ec2e28d52dd574d196273daf8419d808b48d4c7e88eb5084",
+        "jd_sha256": "0cac0bb271c62796f0f37bfbecd813462601f4d2188fac0dbf8bbcf4644c5fb1"
+      },
+      {
+        "case_id": "recency_decay",
+        "cv_sha256": "3a7e17e98bc979a2e7119bcaae1c5fdf6142e18c5a8e0e67350b983ea7cb59eb",
+        "jd_sha256": "6cbab1231f0b76cbd180b3206da921707affc331bdb3208a8031844674b8ba74"
+      }
+    ]
+  },
+  "prompts": {
+    "chunking": "chunking-v4",
+    "judge": "judge-prompt-v2",
+    "judge_anchors": "judge-anchors-v2",
+    "cv_contract": "cv-chunks-v2",
+    "job_contract": "job-chunks-v3",
+    "judge_contract": "judge-v1",
+    "rubric": "scoring-rubric-v2"
+  },
+  "observations": [
+    {
+      "case_id": "clean_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.003354708998813294,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "e454ec0d-d5a4-51f6-97f4-f98ee34a8fdc",
+        "731fc69a-cfd8-5ce9-94a2-2c28661a9a04",
+        "439d772c-f1fd-5276-8463-ec235f50a494",
+        "8d7d44c9-2517-59fa-b6af-bc6a7d404cbc",
+        "f9663174-114c-5b6f-a712-55a1dafc7a5c",
+        "baeb6a94-fee5-5351-a43d-03b03a2d5db7"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "clean_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0008718339995539282,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "e454ec0d-d5a4-51f6-97f4-f98ee34a8fdc",
+        "731fc69a-cfd8-5ce9-94a2-2c28661a9a04",
+        "439d772c-f1fd-5276-8463-ec235f50a494",
+        "8d7d44c9-2517-59fa-b6af-bc6a7d404cbc",
+        "f9663174-114c-5b6f-a712-55a1dafc7a5c",
+        "baeb6a94-fee5-5351-a43d-03b03a2d5db7"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "clean_match",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.001969750002899673,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "511b85a6-e239-535e-97c2-ec3c1c0d12f3",
+        "f72c04b8-bd4d-56c7-b6b5-7637391f3558",
+        "23bb53a9-de65-5548-b071-21e2a5a91ac7",
+        "d6075ef9-3a83-5260-8358-51a6a78581ae",
+        "d54e11ca-b9bd-57ae-a1e6-b086f20f0586",
+        "3a5e1137-df40-5e08-ac5a-87af4c167131"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "clean_match",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0008126659995468799,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "511b85a6-e239-535e-97c2-ec3c1c0d12f3",
+        "f72c04b8-bd4d-56c7-b6b5-7637391f3558",
+        "23bb53a9-de65-5548-b071-21e2a5a91ac7",
+        "d6075ef9-3a83-5260-8358-51a6a78581ae",
+        "d54e11ca-b9bd-57ae-a1e6-b086f20f0586",
+        "3a5e1137-df40-5e08-ac5a-87af4c167131"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "clean_match",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.001967833002709085,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "26a1945f-7e2a-56d2-b162-9238f06bb08b",
+        "396d3257-a487-5fd6-8ba6-02c561827bba",
+        "675a9d58-2174-51db-8394-e9a76fd5c17f",
+        "279df085-2c57-5222-8918-39a12766b4cb",
+        "c4879568-95e7-5866-b818-cce3ab708288",
+        "f341380f-1428-55d2-bb0c-179748de7f43"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "clean_match",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0008969170012278482,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "26a1945f-7e2a-56d2-b162-9238f06bb08b",
+        "396d3257-a487-5fd6-8ba6-02c561827bba",
+        "675a9d58-2174-51db-8394-e9a76fd5c17f",
+        "279df085-2c57-5222-8918-39a12766b4cb",
+        "c4879568-95e7-5866-b818-cce3ab708288",
+        "f341380f-1428-55d2-bb0c-179748de7f43"
+      ],
+      "incomplete_count": 0,
+      "score": 56.16071428571428,
+      "band": "partial",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0019224579991714563,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "17d916aa-10d4-518f-bca1-bdf66286478f",
+        "6232017a-a421-5f93-a97f-6d01edbc9930",
+        "e01389c7-d978-565e-9062-b68169944184",
+        "84b58551-f8a8-51c8-9bdc-0641c195566c",
+        "d413f0d0-608f-5eb0-9344-856f51f3b98a",
+        "891e7695-974d-50ec-8899-0c20e8c39e72"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007626669976161793,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "17d916aa-10d4-518f-bca1-bdf66286478f",
+        "6232017a-a421-5f93-a97f-6d01edbc9930",
+        "e01389c7-d978-565e-9062-b68169944184",
+        "84b58551-f8a8-51c8-9bdc-0641c195566c",
+        "d413f0d0-608f-5eb0-9344-856f51f3b98a",
+        "891e7695-974d-50ec-8899-0c20e8c39e72"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018259579992445651,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "63fe141f-3209-58b8-9056-0abda850a91b",
+        "2558a73f-ce50-567c-8e4a-6b8cd91e3217",
+        "7e6f0cd5-b48b-5bff-b07d-90220bf87fa0",
+        "1db1d243-ade1-5ff7-af79-d7ad697c9f88",
+        "15b07009-94cb-5194-8d20-d3fff0590c88",
+        "67a881ef-f95c-5d08-beb6-8196c83f0f3e"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007644170000276063,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "63fe141f-3209-58b8-9056-0abda850a91b",
+        "2558a73f-ce50-567c-8e4a-6b8cd91e3217",
+        "7e6f0cd5-b48b-5bff-b07d-90220bf87fa0",
+        "1db1d243-ade1-5ff7-af79-d7ad697c9f88",
+        "15b07009-94cb-5194-8d20-d3fff0590c88",
+        "67a881ef-f95c-5d08-beb6-8196c83f0f3e"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018451670002832543,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "1fec5828-79c3-51bd-b7dd-bbdbcb8e34c7",
+        "22d7469e-4559-5a72-8c66-23bd17834e70",
+        "25d2b0a0-99a5-5a4f-97dc-4b0a52c47eb3",
+        "137f416e-b58f-59c7-9b35-4c86b9218f69",
+        "28c2e90a-5505-57d9-bf82-b7f68b498332",
+        "944e0b70-2ca3-516e-bd40-a78161f89bce"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007607080005982425,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "1fec5828-79c3-51bd-b7dd-bbdbcb8e34c7",
+        "22d7469e-4559-5a72-8c66-23bd17834e70",
+        "25d2b0a0-99a5-5a4f-97dc-4b0a52c47eb3",
+        "137f416e-b58f-59c7-9b35-4c86b9218f69",
+        "28c2e90a-5505-57d9-bf82-b7f68b498332",
+        "944e0b70-2ca3-516e-bd40-a78161f89bce"
+      ],
+      "incomplete_count": 0,
+      "score": 36.42857142857142,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0016181669998331927,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "8ec257b2-4ceb-567a-967a-73c74a16a299",
+        "3f3c0f4b-644f-5e62-adda-46919ace4476",
+        "3eeb3399-9d82-527c-8208-39b774b52dfe",
+        "2c6819c7-7c0d-541b-8490-1d019d97db71",
+        "7b2db8a1-7840-50c8-8f93-b7adab04e53c"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006277909997152165,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "8ec257b2-4ceb-567a-967a-73c74a16a299",
+        "3f3c0f4b-644f-5e62-adda-46919ace4476",
+        "3eeb3399-9d82-527c-8208-39b774b52dfe",
+        "2c6819c7-7c0d-541b-8490-1d019d97db71",
+        "7b2db8a1-7840-50c8-8f93-b7adab04e53c"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0015753750012663659,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "d033a519-ffc5-57b2-9fa8-7e1149afe6d6",
+        "816d76df-ace0-50f6-82c0-7c23a1e91495",
+        "45007d9a-2013-5be0-9ab8-16de9f833b5d",
+        "ee5f1293-5f9a-5f67-8381-1455c7d5c278",
+        "d2678c10-ddc7-5b5f-a18e-86add20e6209"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006220000032044481,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "d033a519-ffc5-57b2-9fa8-7e1149afe6d6",
+        "816d76df-ace0-50f6-82c0-7c23a1e91495",
+        "45007d9a-2013-5be0-9ab8-16de9f833b5d",
+        "ee5f1293-5f9a-5f67-8381-1455c7d5c278",
+        "d2678c10-ddc7-5b5f-a18e-86add20e6209"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0015651670000806917,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "a5f69566-5a27-509c-a635-e71c508c3faf",
+        "2cdd4cf7-f408-5470-bfad-30ba68bfe69f",
+        "6cf24467-5b87-56a4-acbb-6593895bb36a",
+        "5172cc5e-1906-5fa7-9b66-43232b88182b",
+        "c71eb561-d3d6-5917-83d3-1931507e8614"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006157919997349381,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 8,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "a5f69566-5a27-509c-a635-e71c508c3faf",
+        "2cdd4cf7-f408-5470-bfad-30ba68bfe69f",
+        "6cf24467-5b87-56a4-acbb-6593895bb36a",
+        "5172cc5e-1906-5fa7-9b66-43232b88182b",
+        "c71eb561-d3d6-5917-83d3-1931507e8614"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018013750013778917,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "b16aa92a-2c37-52cf-b549-82f18d1d1417",
+        "f94b8f44-b1d5-590b-ab80-58dde6a3c774",
+        "c48321a0-3661-53e8-b319-23b92561d2df",
+        "b1480bc0-2978-502a-86b8-37d60ed04198",
+        "e90fb8b0-e009-5fde-aa78-78ccb3752f6f"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.000689959000737872,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "b16aa92a-2c37-52cf-b549-82f18d1d1417",
+        "f94b8f44-b1d5-590b-ab80-58dde6a3c774",
+        "c48321a0-3661-53e8-b319-23b92561d2df",
+        "b1480bc0-2978-502a-86b8-37d60ed04198",
+        "e90fb8b0-e009-5fde-aa78-78ccb3752f6f"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0017552499994053505,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "f8f4c2a2-769b-588b-a6ad-5b4480d31bf1",
+        "43d013af-dbba-53a6-8f1d-226a9187b787",
+        "e5c0f186-47b3-5dca-ad9b-ff9f7955fa16",
+        "9b2d51f2-45de-51d3-8eaf-13a328ed56da",
+        "3571c648-ed37-536a-b6ae-e6f376c907a3"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006728330008627381,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "f8f4c2a2-769b-588b-a6ad-5b4480d31bf1",
+        "43d013af-dbba-53a6-8f1d-226a9187b787",
+        "e5c0f186-47b3-5dca-ad9b-ff9f7955fa16",
+        "9b2d51f2-45de-51d3-8eaf-13a328ed56da",
+        "3571c648-ed37-536a-b6ae-e6f376c907a3"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0016781659978732932,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "92e9ac61-1063-5e0f-8134-e39a822d3761",
+        "ac50081f-f732-5b45-b3d4-c31f61bf0fa5",
+        "3a612b2f-0af8-5150-af7b-f53d60128d88",
+        "25dd2c9b-db8b-5d45-9c7a-8c7361035984",
+        "9b7b4f96-f006-58be-9359-805502b802ce"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "vague_seniority",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006574170001840685,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "92e9ac61-1063-5e0f-8134-e39a822d3761",
+        "ac50081f-f732-5b45-b3d4-c31f61bf0fa5",
+        "3a612b2f-0af8-5150-af7b-f53d60128d88",
+        "25dd2c9b-db8b-5d45-9c7a-8c7361035984",
+        "9b7b4f96-f006-58be-9359-805502b802ce"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018113750011252705,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "266a46b1-f8cd-544a-8b65-4539d7ecd0a0",
+        "7ae99049-7cc6-5bc9-8ae4-a8104ba5df2d",
+        "0bdfa9b3-94d8-51f7-bc04-12752f2a14cf",
+        "3f18480a-7a59-5391-92b6-95578b86f770",
+        "cd8c62ac-2224-5b17-aa5f-97c491c0886a"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007615419999638107,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "266a46b1-f8cd-544a-8b65-4539d7ecd0a0",
+        "7ae99049-7cc6-5bc9-8ae4-a8104ba5df2d",
+        "0bdfa9b3-94d8-51f7-bc04-12752f2a14cf",
+        "3f18480a-7a59-5391-92b6-95578b86f770",
+        "cd8c62ac-2224-5b17-aa5f-97c491c0886a"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018227500004286412,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "8a832106-55b2-5710-9743-bfe178576984",
+        "e35723c0-47ab-5ebc-ba65-8b8d70fbc38a",
+        "bc29b206-fe51-529c-8d14-07177327ac1d",
+        "133645d7-bca4-5a4b-b262-2643290b7f70",
+        "0780a2fa-11ee-5486-b12d-54f5eca3a0e0"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006988749992160592,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "8a832106-55b2-5710-9743-bfe178576984",
+        "e35723c0-47ab-5ebc-ba65-8b8d70fbc38a",
+        "bc29b206-fe51-529c-8d14-07177327ac1d",
+        "133645d7-bca4-5a4b-b262-2643290b7f70",
+        "0780a2fa-11ee-5486-b12d-54f5eca3a0e0"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0017372090005665086,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "74b0dc66-bd25-5986-b959-2c7712173dd6",
+        "77ba9266-f2fe-5c98-9e2d-8e6095a1d726",
+        "25b9a92b-0094-5e7e-94bc-06fddd29117b",
+        "6cee3d15-abb5-554c-96d2-cf6ad1165b40",
+        "6b4d818f-78f9-53a7-8705-d470da8fc5f2"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "injection_attempt",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0006908329996804241,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "74b0dc66-bd25-5986-b959-2c7712173dd6",
+        "77ba9266-f2fe-5c98-9e2d-8e6095a1d726",
+        "25b9a92b-0094-5e7e-94bc-06fddd29117b",
+        "6cee3d15-abb5-554c-96d2-cf6ad1165b40",
+        "6b4d818f-78f9-53a7-8705-d470da8fc5f2"
+      ],
+      "incomplete_count": 0,
+      "score": 46.36363636363636,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.001876208003523061,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "4bc443ed-c8ca-5282-b238-fc848e2041e2",
+        "713f3f10-ceae-5a8c-a5ba-cabb573bd02a",
+        "32c9b7cd-9b4b-5f8c-8490-f9092949db9c",
+        "dcb1e416-ce51-5cc0-9b71-30883f04668d",
+        "650ce5d5-27a4-5d22-81a2-14b6677ef5b9",
+        "8f18a2b1-c240-5c6f-9742-01409e348a21"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0008527499994670507,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "4bc443ed-c8ca-5282-b238-fc848e2041e2",
+        "713f3f10-ceae-5a8c-a5ba-cabb573bd02a",
+        "32c9b7cd-9b4b-5f8c-8490-f9092949db9c",
+        "dcb1e416-ce51-5cc0-9b71-30883f04668d",
+        "650ce5d5-27a4-5d22-81a2-14b6677ef5b9",
+        "8f18a2b1-c240-5c6f-9742-01409e348a21"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 2,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0018593749991850927,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "7e957c6e-83a7-57af-9a7b-a933e4846d16",
+        "5da9d955-cadf-52ce-929d-6feefc9fede8",
+        "1786814b-d902-5fb2-a4bb-5f0a95a66b5f",
+        "5eac70d7-2bce-53d0-91aa-dcfeb9ac396a",
+        "c00a74df-2756-5a4d-bf20-01bdaef33878",
+        "6e6d0321-7210-56c9-b9e8-1273c053da69"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 2,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007753750032861717,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "7e957c6e-83a7-57af-9a7b-a933e4846d16",
+        "5da9d955-cadf-52ce-929d-6feefc9fede8",
+        "1786814b-d902-5fb2-a4bb-5f0a95a66b5f",
+        "5eac70d7-2bce-53d0-91aa-dcfeb9ac396a",
+        "c00a74df-2756-5a4d-bf20-01bdaef33878",
+        "6e6d0321-7210-56c9-b9e8-1273c053da69"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 3,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 0.002127416999428533,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 6,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "aabc1edf-4c63-5888-81e3-35a424f1c930",
+        "a4d207a8-2d45-5628-a1dc-c6167b94b381",
+        "4692f953-d7f3-5637-8195-2ba056536db1",
+        "88abeb59-53d4-5bdd-8867-5af928393e7d",
+        "12ab3c7a-44c9-539b-afdb-7bfe4c40577d",
+        "900d017d-7dda-511a-98b8-86524393ae8d"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    },
+    {
+      "case_id": "recency_decay",
+      "repetition": 3,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.0007923749981273431,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 9,
+          "verdict_lookups": 6,
+          "verdict_hits": 6
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "hermetic",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 32768,
+            "max_output_tokens": 8192,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "hermetic",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 64,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "lexical-hash-v1",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "hermetic",
+            "lexical-hash-v1",
+            false
+          ],
+          [
+            "hermetic",
+            "rules-v1",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "hermetic",
+          "completion_model": "rules-v1",
+          "embedding_provider": "hermetic",
+          "embedding_model": "lexical-hash-v1",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 6,
+      "requirement_ids": [
+        "aabc1edf-4c63-5888-81e3-35a424f1c930",
+        "a4d207a8-2d45-5628-a1dc-c6167b94b381",
+        "4692f953-d7f3-5637-8195-2ba056536db1",
+        "88abeb59-53d4-5bdd-8867-5af928393e7d",
+        "12ab3c7a-44c9-539b-afdb-7bfe4c40577d",
+        "900d017d-7dda-511a-98b8-86524393ae8d"
+      ],
+      "incomplete_count": 0,
+      "score": 18.21428571428571,
+      "band": "limited",
+      "error_code": null
+    }
+  ],
+  "summaries": [
+    {
+      "case_id": "clean_match",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.001969750002899673,
+      "p95_seconds": 0.003354708998813294
+    },
+    {
+      "case_id": "clean_match",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0008718339995539282,
+      "p95_seconds": 0.0008969170012278482
+    },
+    {
+      "case_id": "partial_match",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0018451670002832543,
+      "p95_seconds": 0.0019224579991714563
+    },
+    {
+      "case_id": "partial_match",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0007626669976161793,
+      "p95_seconds": 0.0007644170000276063
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0015753750012663659,
+      "p95_seconds": 0.0016181669998331927
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0006220000032044481,
+      "p95_seconds": 0.0006277909997152165
+    },
+    {
+      "case_id": "vague_seniority",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0017552499994053505,
+      "p95_seconds": 0.0018013750013778917
+    },
+    {
+      "case_id": "vague_seniority",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0006728330008627381,
+      "p95_seconds": 0.000689959000737872
+    },
+    {
+      "case_id": "injection_attempt",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0018113750011252705,
+      "p95_seconds": 0.0018227500004286412
+    },
+    {
+      "case_id": "injection_attempt",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0006988749992160592,
+      "p95_seconds": 0.0007615419999638107
+    },
+    {
+      "case_id": "recency_decay",
+      "temperature": "cold",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.001876208003523061,
+      "p95_seconds": 0.002127416999428533
+    },
+    {
+      "case_id": "recency_decay",
+      "temperature": "warm",
+      "successful_runs": 3,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.0007923749981273431,
+      "p95_seconds": 0.0008527499994670507
+    }
+  ]
+}

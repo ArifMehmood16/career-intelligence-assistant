@@ -50,7 +50,7 @@ Update 2026-10-02: the human requested implementation of this slice while retain
 deferred checks. Its [spec, plan and tasks](../specs/001-synthetic-analysis-benchmark/spec.md)
 now exist and `make benchmark` is implemented. Use the existing artifacts rather
 than creating another spec for the same change. Tests/lint subsequently resumed
-and pass; benchmark execution remains pending. Commands and scope are in
+and pass; offline benchmark execution is recorded in Evaluation. Commands and scope are in
 [Evaluation](evaluation.md#current-analysis-benchmark-plan-194).
 The prompts below document how that bounded feature was chosen.
 
