@@ -29,6 +29,21 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 180 — Synchronize both retained frontend locks
+
+- Date: 2026-10-08; Codex; PLAN 19.4 dependency verification; spec 011 T004.
+- Human decision: keep both lockfiles and synchronize them. Bun remains the install,
+  build and test path; frontend agent guidance now records this explicit exception.
+- Outcome: npm lock receives the same seven transitive patches as Bun. All 498 npm
+  package entries match a Bun name/version; changed entries carry Bun integrity
+  hashes and registry URLs. No package.json, extra lockfile or production tool change.
+- Changed suggestion: npm regeneration discarded existing metadata and expanded
+  optional bundled entries. Retained the existing graph and only the seven verified
+  patches instead of introducing unrelated platform churn.
+- Validation: Bun frozen install passes without changing bun.lock; npm audit reports
+  zero advisories and full Bun audit passes. Source/image scan closure remains separate.
+
+
 ### 179 — Prove populated progress-migration preservation
 
 - Date: 2026-10-08; Codex; PLAN 19.4 progress preservation; spec 011 US3.
