@@ -12,7 +12,7 @@ Same branch/PR #48 by human instruction. No new application or v1 path.
 ## Foundation
 
 - [x] T003 Save already observed offline report with source/input/model provenance in docs/evaluation-results/ and docs/evaluation.md; tick only its PLAN.md checkbox (FR-004/SC-004).
-- [ ] T004 Repair advisory-reported dependencies in backend/pyproject.toml, both backend locks and frontend/bun.lock; preserve frontend/package-lock.json and verify compatibility (FR-006/SC-005).
+- [x] T004 Repair advisory-reported dependencies in backend/pyproject.toml, both backend locks and frontend/bun.lock; preserve frontend/package-lock.json and verify compatibility (FR-006/SC-005).
 
 ## US1 — Complete the browser journey
 

@@ -34,7 +34,7 @@ click==8.5.0
     # via uvicorn
 coverage==7.16.1
     # via pytest-cov
-cryptography==46.0.7
+cryptography==50.0.2
     # via
     #   career-assistant (pyproject.toml)
     #   pyjwt

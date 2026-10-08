@@ -29,6 +29,21 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 176 — Patch audited dependency findings
+
+- Date: 2026-10-08; Codex; PLAN 19.4 security acceptance.
+- Outcome: targeted cryptography 46.0.7 -> 50.0.2 in both Python locks (the
+  existing <47 range excluded patched releases); Bun applied seven minimal
+  transitive upgrades within existing ranges. No npm lock/package API change.
+- Validation observed: both pip-audit lock checks and full Bun audit report no
+  known vulnerabilities. make lint passes; 825 backend tests pass with three
+  existing skips, 85% reported coverage. All 192 frontend tests pass after granting
+  required loopback socket access; initial restricted run failed two proxy tests
+  with listen EPERM, not an application assertion failure.
+- Scope: dependency advisory checks only; source/secrets/image checks remain open.
+  Human authorized remaining release work on PR #48; no personal/paid data use.
+
+
 ### 175 — Record offline benchmark and remaining release tasks
 
 - Date: 2026-10-08 (benchmark observed 2026-10-07).

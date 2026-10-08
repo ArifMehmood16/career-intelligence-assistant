@@ -23,7 +23,7 @@ cffi==2.1.1
     # via cryptography
 click==8.5.0
     # via uvicorn
-cryptography==46.0.7
+cryptography==50.0.2
     # via
     #   career-assistant (pyproject.toml)
     #   pyjwt
