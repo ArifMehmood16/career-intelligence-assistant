@@ -29,6 +29,32 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 190 — Replace the custom draft with unchanged PolyForm
+
+- Date: 2026-10-08; Codex; spec 012 continuation on existing PR #49.
+- Human decision: use reusable PolyForm with retained ownership and a way to
+  negotiate commercial revenue. Explained that it retains original copyright,
+  not automatic ownership of additions or a right to take every user's revenue.
+- Accepted: unchanged official PolyForm Noncommercial 1.0.0, standard organisational
+  exceptions and patent/violation terms intact. Separate NOTICE carries Arif's
+  Required Notice; README, CONTRIBUTING and docs/licensing.md explain the grant,
+  ownership and optional commercial agreements outside existing permissions.
+- Revenue boundary: separate agreements may negotiate fees or a revenue share for
+  controlled rights. No royalty percentage, automatic profit transfer, assignment
+  of contributors' work, retroactive fee on permitted use or custom licence clause.
+- Observed checks: official downloaded text is byte-identical, SHA-256
+  ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064c94cc8;
+  four existing third-party notices unchanged, 71 local Markdown links resolve,
+  branch whitespace and final diff review pass. Initial notice-check script
+  incorrectly matched the new feature directory name; corrected it to compare
+  main's existing notice basenames before recording successful results.
+- Scope: earlier custom draft f1d1f4e is superseded. No runtime, dependency, provider,
+  secret or personal-data change; unrelated npm lock working copy preserved.
+  No professional legal-enforceability or damages/revenue entitlement claim.
+- Delivery: same branch/PR, no extra PR/checkout or merge. Prior draft passed all
+  four CI jobs in run 37772075026; updated-head checks stay enforced before merge.
+
+
 ### 189 — Permit noncommercial reuse while reserving commercial rights
 
 - Date: 2026-10-08; Codex; human-requested licensing follow-up; spec 012.

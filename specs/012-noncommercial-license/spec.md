@@ -1,72 +1,73 @@
-# Feature Specification: Noncommercial reuse and collaboration
+# Feature Specification: PolyForm noncommercial reuse
 
 **Branch**: `docs/phase-19-noncommercial-license`
 **Created**: 2026-10-08
-**Status**: Implemented and locally reviewed
-**Input**: Human requests free learning, use, duplication, modification and
-collaboration; commercial gain from original or modified code requires permission.
+**Status**: Unchanged PolyForm adopted and locally verified
+**Input**: Human selected unchanged PolyForm Noncommercial after reviewing its
+standard organisational exceptions, with copyright retained and an option to
+negotiate commercial revenue. This supersedes the custom draft in f1d1f4e.
 
-Human-authorized scope: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08)
-and [BACKLOG](../../BACKLOG.md#now--prove-the-current-product). This is a legal-text
-and documentation change, not a new application phase or a claim of legal review.
+Root: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08) and
+[BACKLOG](../../BACKLOG.md#now--prove-the-current-product). Legal-text/documentation
+scope only; not professional legal advice or an application architecture change.
 
 ## User Scenarios & Testing
 
 ### US1 — Learn, share and collaborate (P1)
 
-A learner runs the project, forks it, modifies it and shares it freely for
-noncommercial purposes while preserving credit and the licence.
-Independent review: each action is expressly permitted, including free hosting.
-Acceptance: noncommercial personal, educational, research and nonprofit activity
-is permitted; a modified copy retains the commercial restriction and attribution.
+A user studies, runs, forks, modifies and shares the code under PolyForm's permitted
+purposes and notice requirements. Independent check: unchanged official licence
+text, required owner notice and matching current summaries.
+Acceptance: standard personal/noncommercial and listed organisational permissions
+remain intact; no custom extra restrictions or silent removal of the patent grant.
 
-### US2 — Request commercial permission (P1)
+### US2 — Retain ownership and negotiate commercial permission (P1)
 
-Someone wants to sell a fork, run a paid service, use it in a business, or receive
-money or valuable commercial favors in exchange for its use or related services.
-Independent review: each requires Arif Mehmood's prior explicit written permission,
-including indirect benefits, modified copies and free business use.
-Acceptance: nonprofit status or lack of profit does not excuse a commercial use;
-ordinary learning, collaboration and credit are not prohibited benefits.
+The owner keeps copyright in their original code, including copied portions in
+modified versions, and can negotiate a separate commercial licence for rights
+they control. Independent review: distinguish copyright ownership from permission
+to use and from a contractual right to licence fees or a revenue share.
+Acceptance: no promise of ownership of others' original additions, automatic
+royalties, all revenue, or payment from uses PolyForm already permits.
 
-### US3 — Contribute without claiming other people's rights (P2)
+### US3 — Contribute with clear rights (P2)
 
-A contributor reads the contribution terms and retains copyright in their work.
-Independent review: contributions use the same noncommercial terms; there is no
-silent assignment or automatic commercial licence. Third-party licences survive.
-Acceptance: general ideas and independent implementations are not claimed as
-copyrighted code; third-party materials keep their existing terms.
+Contributors retain their copyright and submit under the same PolyForm terms.
+Independent review: no assignment or separate commercial licence is implied by
+contributing; commercial licensing must secure required contributor permissions.
+Acceptance: third-party licences remain unchanged and outside this project licence.
 
 ## Requirements
 
-- **FR-001**: Expressly permit noncommercial use, study, copying, forking,
-  modification, distribution, hosting and collaboration with attribution.
-- **FR-002**: Require prior explicit written owner permission for direct/indirect
-  commercial advantage, revenue, profit, payment, barter or valuable commercial
-  favors, including internal business use and paid services without distribution.
-- **FR-003**: Apply restrictions to covered portions of modified, renamed,
-  translated, combined and derivative copies; no commercial relicensing loophole.
-- **FR-004**: Preserve third-party licences, contributor ownership, statutory
-  exceptions and valid pre-existing permissions; do not claim ownership of ideas.
-- **FR-005**: Align README and contribution guidance with the full licence;
-  retain warranty/liability protection and state source-available status.
-- **FR-006**: Change no runtime code, dependencies, lockfiles, private settings or
-  user documents; record observed checks and keep branch/commit scope reviewable.
+- **FR-001**: Use unchanged official PolyForm Noncommercial 1.0.0 in LICENSE,
+  including its standard permitted purposes, notices, patent and violation terms.
+- **FR-002**: Preserve Arif Mehmood's original copyright through a separate
+  Required Notice; explain that modified copies do not transfer ownership of
+  original code, and original additions remain their authors' property.
+- **FR-003**: Explain separate commercial permission outside existing grants,
+  optional negotiated fees/revenue share, and the absence of automatic royalties
+  or ownership of someone else's entire derivative project.
+- **FR-004**: Preserve third-party licences, contributor ownership and lawful
+  independent implementations; add no extra restrictions to PolyForm.
+- **FR-005**: Align README, contribution/licensing guidance and root acceptance;
+  describe the standard organisational exceptions and source-available status.
+- **FR-006**: Change no runtime code, dependencies, lockfiles, settings or private
+  data. Record observed checks and deliver on the existing PR #49 branch.
 
 ## Success Criteria
 
-- **SC-001**: All allowed and restricted actions in US1/US2 have express terms in
-  the licence and no conflicting current README description.
-- **SC-002**: Third-party licence files remain byte-for-byte unchanged.
-- **SC-003**: Local documentation links resolve and branch whitespace checks pass;
-  the commit contains only licensing and its linked change records.
+- **SC-001**: LICENSE is byte-identical to the official plain-text download;
+  ownership/revenue summaries agree with its actual permissions and separate terms.
+- **SC-002**: Existing third-party licence/notice files remain byte-for-byte intact.
+- **SC-003**: Documentation links and branch whitespace pass; intended licensing
+  files only are committed and the unrelated npm lock change is preserved.
 
 ## Edge cases and assumptions
 
-Commercial purpose controls, not the organisation's nonprofit registration or
-whether a fee exceeds costs. Ordinary knowledge and contributor credit are allowed;
-commercial quid-pro-quo favors are restricted. General-purpose infrastructure or
-model costs alone do not commercialise an otherwise permitted use; selling or
-providing paid Software-based services still requires permission. Independently written work merely
-inspired by an idea is outside these copyright terms. Arif Mehmood is the existing
-named copyright owner; permissions cover only rights the grantor controls.
+Listed charitable, educational, public research, public safety/health,
+environmental and government organisations retain PolyForm's funding-independent
+permissions. No blanket nonprofit commercial prohibition is added. Standard
+noncommercial wording does not enumerate every favor or indirect gain. Revenue
+sharing needs a separate agreement with a licensee, and cannot be imposed on a
+use already permitted by PolyForm. Contributor/third-party rights remain separate.
+Copyright exceptions and independent work are not turned into royalty obligations.

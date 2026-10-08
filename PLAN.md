@@ -216,10 +216,12 @@ Do not rebuild retired approaches to satisfy old tests or measurement plans.
 Human-authorized follow-up after PR #48 merged, separate from application phases.
 [Spec 012](specs/012-noncommercial-license/spec.md) records the bounded change.
 
-- [x] Permit learning, noncommercial use, forks, modifications, redistribution and
-      collaboration with attribution; require explicit prior written permission
-      for direct/indirect commercial use of original or modified covered code.
-      Keep README/contribution terms consistent, preserve third-party licences
-      and contributor ownership, and distinguish general ideas from copied code.
-      Exit: scenario review, resolving local links, clean branch whitespace and
-      unchanged third-party licence bytes; no claim of professional legal review.
+- [x] Adopt unchanged PolyForm Noncommercial 1.0.0 with Arif Mehmood's separate
+      Required Notice. Permit its standard noncommercial/personal/organisational
+      uses and preserve third-party and contributor rights. Explain retained
+      copyright in original code and separate commercial licensing outside the
+      public grant; fees/revenue sharing require an agreement, not automatic claims.
+      This human-selected standard replaces the initial stricter custom draft.
+      Exit: byte-identical official licence, consistent ownership/revenue guidance,
+      resolving local links, branch whitespace and unchanged third-party notices;
+      no claim of professional legal review or automatic royalty entitlement.

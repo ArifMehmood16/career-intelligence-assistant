@@ -18,6 +18,28 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Licensing policy — Human-selected standard PolyForm
+
+- Date: 2026-10-08. Human selected reusable PolyForm after standard organisational
+  exceptions were explained, asking about ownership and commercial revenue.
+- Change: replace custom draft with official unchanged PolyForm Noncommercial
+  1.0.0 and separate Required Notice. Align README/CONTRIBUTING, add explanatory
+  docs/licensing.md and reconcile current spec/PLAN/BACKLOG. Original copyright
+  remains; no automatic ownership of additions, royalties or seizure of revenue.
+  Commercial fees/revenue share need a separate agreement for required rights.
+- Observed: curl downloaded official plain text; byte comparison passes with
+  SHA-256 ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064c94cc8.
+  Corrected validation's path matching to existing main notice basenames; all
+  four third-party files unchanged and 71 local Markdown links resolve.
+  Read-only spec/plan/tasks consistency review and git diff --check pass.
+- Boundaries: no custom additional restrictions to PolyForm, commercial agreement
+  or contributor assignment introduced. Official standard patent/organisational
+  grants remain. No runtime tests added for legal wording or legal review claimed.
+  Unrelated npm lock SHA remains unchanged and is excluded from the commit.
+- Delivery: same licensing branch and PR #49; no merge or new checkout. Original
+  draft f1d1f4e passed all four CI jobs in run 37772075026; enforce new-head CI.
+
+
 ## Licensing policy — Noncommercial reuse and collaboration
 
 - Date: 2026-10-08. Human requested learning/use/forks/modification/collaboration

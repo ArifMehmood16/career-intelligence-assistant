@@ -39,3 +39,27 @@ Observed local review: allowed/restricted scenarios have express licence terms,
 all four tracked third-party notices are unchanged, and local file links resolve.
 No automated legal-enforceability claim or runtime change. Unrelated npm lock
 working copy remains excluded. Exact commands/checks are in the engineering journal.
+
+## Human-selected standard licence continuation — 2026-10-08
+
+The original T001–T006 record the custom draft checkpoint. The human subsequently
+selected unchanged PolyForm; final requirements in spec.md supersede the earlier
+blanket commercial restrictions and align to the standard permitted purposes.
+
+- [x] T007 Review unchanged official PolyForm and ownership/revenue limits; revise
+  spec.md, plan.md and research.md and perform consistency review (FR-001–FR-006).
+- [x] T008 [US1] Copy official text unchanged to LICENSE and add owner's Required
+  Notice in NOTICE, preserving third-party notices (FR-001/FR-002/FR-004).
+- [x] T009 [US2] Align README.md, CONTRIBUTING.md and docs/licensing.md with standard
+  exceptions, retained copyright and negotiated commercial fees/revenue share;
+  assert no automatic revenue entitlement (FR-002–FR-005).
+- [x] T010 Review official bytes/links/whitespace/third-party notices; reconcile
+  PLAN.md/BACKLOG.md and factual AI/journal records, commit/push/update existing
+  PR #49 with updated-head checks enforced and no merge (FR-006/SC-001–SC-003).
+
+Execution: T007 -> T008 -> T009 -> T010, one branch/PR and no parallel agents.
+
+Observed standard continuation: official text is byte-identical, four existing
+third-party notices unchanged and 71 local links resolve. Required Notice and
+ownership/revenue guidance reviewed; no automatic royalty or custom extra licence
+terms. Update the existing PR and observe CI on the pushed head before merge.

@@ -1,138 +1,131 @@
-ARIF MEHMOOD NONCOMMERCIAL SOURCE LICENSE
-Version 1.0 — 8 October 2026
+# PolyForm Noncommercial License 1.0.0
 
-Copyright (c) 2026 Arif Mehmood.
-All rights not expressly granted below are reserved.
+<https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-1. Scope and acceptance
+## Acceptance
 
-"Software" means the original source code, documentation, assets and related
-materials released under this License by their copyright holders, including
-covered portions contained in copies, modifications and derivative works.
-Separately licensed third-party materials are excluded as explained in section 7.
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
 
-By exercising permissions granted by this License, you accept its conditions.
-"You" includes an individual or an organisation exercising those permissions.
-Each copyright holder releasing their work under this License grants only the
-rights they own or are authorised to license.
+## Copyright License
 
-2. Permission for noncommercial use
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor's copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
 
-Subject to this License, you are granted worldwide, royalty-free, non-exclusive
-copyright permission to access, run, study, copy, duplicate, fork, modify, adapt,
-build upon, combine, host and redistribute the Software in source or compiled
-form, solely for Noncommercial Purposes.
+## Distribution License
 
-"Noncommercial Purposes" means personal, educational, research, charitable,
-community, collaborative or other nonprofit purposes that are not intended for
-or directed towards commercial advantage, revenue, profit, financial compensation
-or other commercial benefit for you or any other person or organisation.
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
 
-You may learn from the Software, experiment, contribute improvements, make and
-share modified versions, and provide free noncommercial access. Ordinary learning,
-noncommercial collaboration and acknowledgement of authorship do not, by themselves,
-constitute prohibited commercial benefit.
+## Notices
 
-Paying for general-purpose computing, internet access or model services needed
-for an otherwise permitted noncommercial use does not, by itself, make that use
-commercial. This does not permit selling the Software, paid services based on it,
-or paid hosting or support of the Software itself.
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with `Required Notice:` that the licensor provided
+with the software.  For example:
 
-3. Commercial use requires prior written permission
+> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
 
-No commercial rights are granted by this License. Before any commercial use of
-any covered Software, you must obtain explicit prior written permission from
-Arif Mehmood for the rights he controls, and from any other copyright holder whose
-permission is required. Permission must expressly cover the proposed use.
+## Changes and New Works License
 
-Commercial use includes, without limitation:
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
 
-(a) Selling, licensing for a fee, renting, leasing or otherwise monetising the
-    Software or a product, bundle or derivative work containing it.
-(b) Offering the Software as a paid hosted service, subscription, API, platform,
-    integration or other paid access, whether or not a copy is distributed.
-(c) Using the Software to operate or support a business, a commercial product or
-    service, paid consulting, paid development, paid support or other paid work,
-    including internal business use and services offered free to their users.
-(d) Using the Software to obtain advertising revenue, affiliate income, commercial
-    sponsorship, sales leads, promotional advantage or another direct or indirect
-    commercial gain.
-(e) Receiving or soliciting payment, fees, access-linked donations, goods, services,
-    barter, preferential business treatment or valuable commercial favors in
-    exchange for providing, using, hosting, modifying, distributing or supporting
-    the Software, including charges described as cost recovery rather than profit.
+## Patent License
 
-A free price, absence of realised profit, nonprofit or charitable registration,
-or use of an intermediary does not exempt an otherwise commercial activity.
-These restrictions apply equally to unmodified and modified Software and to
-covered portions in forks, renamed projects, translations, adaptations,
-combinations and derivative works. Changing the name, language, interface or
-structure does not grant commercial rights in the covered Software.
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
 
-4. Attribution and redistribution conditions
+## Noncommercial Purposes
 
-Every copy or substantial portion of the Software that you distribute must retain
-this License and applicable copyright, attribution and third-party notices.
-Clearly identify your modifications and do not misrepresent their authorship or
-imply endorsement by Arif Mehmood or another contributor.
+Any noncommercial purpose is a permitted purpose.
 
-When providing a permitted hosted version, make the copyright notice and this
-License reasonably accessible to users, for example through an About or licence
-link. You may share source or compiled versions for Noncommercial Purposes.
+## Personal Uses
 
-Covered Software in redistributed or modified versions remains subject to this
-License. You may not remove its commercial restrictions, offer commercial
-sublicences, or relicense covered Software under terms that grant commercial use.
-Recipients receive the same noncommercial permissions directly under this License
-from the applicable copyright holders. You cannot grant rights you do not hold.
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
 
-5. Separate permissions and reserved rights
+## Noncommercial Organizations
 
-A separate written commercial agreement may grant additional rights only within
-its stated scope. Silence, public availability, a fork, a star, an issue response,
-a contribution or acceptance of a pull request is not commercial permission.
-Contact Arif Mehmood, the repository owner, to request a commercial agreement.
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
 
-No ownership, trademark, endorsement or patent rights are granted by this License.
-This License does not override a valid separate or pre-existing permission or
-restrict rights and exceptions that applicable law does not allow to be restricted.
+## Fair Use
 
-6. Ideas and independent work
+You may have "fair use" rights for the software under the
+law. These terms do not limit them.
 
-You may learn from and build independently on the general ideas and concepts
-shown by this project. This License does not claim ownership of ideas, methods or
-independently written implementations that do not copy protected expression from
-the Software. Copying or adapting covered code, documentation or assets remains
-subject to this License, including its commercial restrictions.
+## No Other Rights
 
-7. Third-party materials and contributions
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
 
-Dependencies, fonts, vendored tools and other separately identified third-party
-materials remain governed by their own licences and notices. In particular, the
-bundled fonts retain their SIL Open Font License terms, and the vendored Spec Kit
-materials retain their upstream MIT terms. This License does not replace, restrict
-or expand the rights granted by those third parties.
+## Patent Defense
 
-Contributors retain copyright in their contributions. Contributions intentionally
-submitted for inclusion under this License are made available under the same
-noncommercial terms unless a different written agreement is expressly accepted.
-Submission does not assign copyright or automatically grant anyone a separate
-commercial licence to that contribution. Any commercial agreement must secure
-all permissions required for the work it covers.
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
 
-8. Termination
+## Violations
 
-Permissions granted to you by this License terminate automatically if you breach
-its conditions. You must then stop exercising those permissions unless the
-applicable copyright holders expressly reinstate them in writing. Termination of
-your permissions does not terminate the permissions of compliant recipients.
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
 
-9. Disclaimer of warranty and limitation of liability
+## No Liability
 
-TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS", WITHOUT
-WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO
-EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES
-OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE OR OTHER DEALINGS.
-NOTHING IN THIS LICENSE EXCLUDES LIABILITY THAT CANNOT LAWFULLY BE EXCLUDED.
+***As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these
+terms, and the **software** is the software the licensor makes
+available under these terms.
+
+**You** refers to the individual or entity agreeing to these
+terms.
+
+**Your company** is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  **Control**
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the
+software under these terms.
+
+**Use** means anything you do with the software requiring one
+of your licenses.

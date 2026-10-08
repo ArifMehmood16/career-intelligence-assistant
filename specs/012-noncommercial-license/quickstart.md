@@ -1,15 +1,16 @@
-# Licensing validation guide
+# PolyForm validation guide
 
-Review LICENSE sections against spec.md's allowed and restricted actions. Confirm
-README links the authoritative licence and CONTRIBUTING explains incoming terms.
-Inspect commercial restrictions for modified/forked copies, internal business use,
-free commercial services, nonprofit commercial activity and payment in kind.
-Confirm ordinary learning, credit and noncommercial collaboration remain allowed.
+Compare LICENSE byte-for-byte with the official plain-text download:
+https://polyformproject.org/licenses/noncommercial/1.0.0.txt
+Check NOTICE has Arif's Required Notice and that README/CONTRIBUTING link it.
+Read docs/licensing.md against actual organisational/personal permissions, patent
+terms and No Other Rights. No fee/revenue clause may be inserted into LICENSE.
 
-Run git diff --check, verify local Markdown links, and compare upstream font/Spec Kit
-licence files with origin/main byte-for-byte. Inspect the full staged diff and file
-list: only licence/policy documentation and this bounded change record may be staged.
-Do not stage or reset the unrelated frontend/package-lock.json working-tree change.
+Review ownership of original code versus contributors' additions, negotiated fees
+versus automatic revenue claims, and preserve standard organisational exceptions.
+Check local documentation links and git diff --check; compare existing third-party
+notices with origin/main byte-for-byte. Inspect staged paths; do not stage/reset
+frontend/package-lock.json or alter runtime code/settings/dependencies.
 
-No runtime tests prove licence enforceability. Application code is unchanged;
-existing PR CI may run normal regression checks without paid provider calls.
+No text-matching test proves legal enforceability. Existing PR CI runs ordinary
+regressions without paid provider calls. Push/update PR #49 without merging.
