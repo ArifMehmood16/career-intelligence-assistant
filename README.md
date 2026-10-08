@@ -1,5 +1,8 @@
 # Career Intelligence Assistant
 
+Created by [Arif Mehmood](https://github.com/ArifMehmood16). Open source under the
+[Apache License 2.0](LICENSE). Contributions are welcome.
+
 Upload a CV, optional supporting cover letters, and a set of job descriptions. The
 system works out what each role actually requires, maps every requirement to evidence
 in the CV, scores the fit arithmetically, and turns that mapping into the things a
@@ -109,4 +112,10 @@ Every command, the database topology, Compose and logging:
 
 ## Licence
 
-Proprietary — see [LICENSE](LICENSE).
+Open source under the [Apache License 2.0](LICENSE). Commercial use and closed-source
+modifications are permitted under its terms. Preserve relevant copyright and
+[NOTICE](NOTICE) attribution when redistributing, as the licence requires.
+
+Originally created by [Arif Mehmood](https://github.com/ArifMehmood16). Third-party
+materials retain their own terms. See [licensing and attribution](docs/licensing.md)
+and [contribution guidance](CONTRIBUTING.md).

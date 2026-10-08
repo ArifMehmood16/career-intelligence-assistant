@@ -210,3 +210,19 @@ One CV per workspace; candidate use only; English text PDF/DOCX/plain text;
 no OCR, multi-user auth, auto-apply, job-board ingestion, distributed queue, or
 model-emitted fit score. Supporting letters remain narrative-only for scoring.
 Do not rebuild retired approaches to satisfy old tests or measurement plans.
+
+## Licensing policy — 2026-10-08
+
+Human-authorized follow-up after PR #48 merged, separate from application phases.
+[Spec 012](specs/012-noncommercial-license/spec.md) records the bounded change.
+
+- [x] Adopt unchanged Apache License 2.0 for open-source collaboration and reuse,
+      including commercial and closed-source use. Credit Arif Mehmood as original
+      project creator in README/NOTICE, with attribution governed by standard
+      redistribution terms. Preserve contributor ownership, standard grants,
+      third-party terms and valid earlier grants; no extra commercial approval,
+      royalty, UI-credit requirement or claim to exclusive ownership of an idea.
+      The human's open-source choice supersedes earlier restrictive checkpoints.
+      Exit: byte-identical official licence, consistent current guidance, resolving
+      local links, branch whitespace and unchanged third-party notices; no runtime
+      or dependency change. Observe updated-head CI on the existing PR before merge.

@@ -26,6 +26,11 @@ including the new browser journey. Updated-head CI remains enforced and merging 
 
 ## Now — prove the current product
 
+- [x] [Licensing policy](PLAN.md#licensing-policy--2026-10-08) — unchanged Apache 2.0
+      for open-source collaboration, commercial and closed-source reuse. Credit
+      Arif Mehmood as original project creator in README/NOTICE; preserve relevant
+      attribution and contributor/third-party rights under standard terms.
+
 - [x] [19.1](PLAN.md#191--retire-the-competing-analysis) — retirement, populated
       preservation/deletion, uniform publications/citations and Fit/Gaps regressions.
 - [x] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) — provider

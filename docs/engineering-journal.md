@@ -18,6 +18,95 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Licensing policy — Apache 2.0 and original creator attribution
+
+- Date: 2026-10-08. Human chose open-source collaboration with recognition that
+  Arif Mehmood started/created this project. Adopt unchanged Apache 2.0, removing
+  prior commercial restrictions; credit original creator in README and NOTICE.
+- Observed commands: .specify/scripts/bash/check-prerequisites.sh --json
+  --require-spec --require-tasks --include-tasks resolves feature 012. Read-only
+  requirement/task consistency review passes before implementation. curl downloads
+  official Apache text; cmp LICENSE /private/tmp/career-apache-2.0.txt passes.
+  Official text: 11,358 bytes, SHA-256
+  cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.
+  Python validation confirms four unchanged third-party notices, 72 resolving
+  local links and the preserved npm lock working copy. git diff --check passes.
+- Review: standard commercial/closed-source permissions, copyright/patent grants,
+  section 4 notice options and section 5 contribution terms preserved. No royalty,
+  commercial approval, copyright assignment, exclusive idea claim or extra CLA.
+  No runtime change or executable tests purporting to prove legal enforceability.
+- Documentation: README, NOTICE, CONTRIBUTING, licensing guide, current spec/plan/
+  tasks/research/validation/checklist and root PLAN/BACKLOG reflect the new policy.
+  Historical draft checkpoints retained; earlier valid grants stay applicable.
+- Delivery: same PR #49 and branch; no merge. Prior e2f6844 passed all four jobs
+  in run 37774572919; observe CI on the new pushed head and record it in the PR.
+
+
+## Licensing policy — Internal business use and external monetisation
+
+- Date: 2026-10-08. Latest human policy permits internal use in profitable companies,
+  closed-source modifications and free unmonetised public products. Reserve external
+  sales/subscriptions/paid services/ads/sponsorship for prior written permission.
+- Change: custom named LICENSE, NOTICE, concise README, contributor and ownership
+  guidance. Specify credit in copies and accessible external About/Credits/Legal
+  locations and accompanying public docs. Preserve earlier valid grants, contributor
+  ownership and third-party terms. Fees/revenue sharing require separate agreement.
+- Commands observed: .specify/scripts/bash/check-prerequisites.sh --json
+  --require-spec --require-tasks --include-tasks resolves existing feature 012.
+  Python-based local file-link/third-party-byte/lock-hash validation passes:
+  72 links, four notices unchanged; unrelated npm working copy preserved.
+  git diff --check passes; read-only requirements/task and eight-scenario review
+  confirms sections 1–4 cover the requested policy. No runtime code changed.
+- Boundaries: current policy supersedes earlier unmerged licensing checkpoints;
+  historical records retained. No automatic royalties, copyright assignment,
+  source disclosure, new commercial contract or professional legal review claimed.
+- Delivery: reuse PR #49 and its branch; updated-head CI stays required. Previous
+  head 18ef2e1 passed all four jobs in run 37773150249. New results are recorded
+  in the PR after observation; no merge or extra checkout.
+
+
+## Licensing policy — Human-selected standard PolyForm
+
+- Date: 2026-10-08. Human selected reusable PolyForm after standard organisational
+  exceptions were explained, asking about ownership and commercial revenue.
+- Change: replace custom draft with official unchanged PolyForm Noncommercial
+  1.0.0 and separate Required Notice. Align README/CONTRIBUTING, add explanatory
+  docs/licensing.md and reconcile current spec/PLAN/BACKLOG. Original copyright
+  remains; no automatic ownership of additions, royalties or seizure of revenue.
+  Commercial fees/revenue share need a separate agreement for required rights.
+- Observed: curl downloaded official plain text; byte comparison passes with
+  SHA-256 ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064c94cc8.
+  Corrected validation's path matching to existing main notice basenames; all
+  four third-party files unchanged and 71 local Markdown links resolve.
+  Read-only spec/plan/tasks consistency review and git diff --check pass.
+- Boundaries: no custom additional restrictions to PolyForm, commercial agreement
+  or contributor assignment introduced. Official standard patent/organisational
+  grants remain. No runtime tests added for legal wording or legal review claimed.
+  Unrelated npm lock SHA remains unchanged and is excluded from the commit.
+- Delivery: same licensing branch and PR #49; no merge or new checkout. Original
+  draft f1d1f4e passed all four CI jobs in run 37772075026; enforce new-head CI.
+
+
+## Licensing policy — Noncommercial reuse and collaboration
+
+- Date: 2026-10-08. Human requested learning/use/forks/modification/collaboration
+  rights, reserving commercial gain from original/modified code for written permission.
+- Change: custom LICENSE, matching README and CONTRIBUTING, plus linked spec 012
+  and root acceptance records. Commercial purpose controls, including indirect
+  benefits, valuable commercial favors, free business use and modified copies.
+  Preserve third-party terms, contributor ownership and independent ideas/work.
+- Observed checks: read-only spec/plan/tasks consistency review; Python-based local
+  Markdown link validation and byte comparison of tracked third-party notices
+  against origin/main; full licence/diff review; git diff --check passes.
+  General-purpose tool costs do not alone commercialise otherwise permitted use.
+- Scope: documentation/legal text only, no runtime code, dependencies, models,
+  settings or private data changes. No new tests that merely match legal text and
+  no claim of legal enforceability or professional legal review.
+- Git: PR #48 already merged at dd91343; one new docs/phase-19-noncommercial-license
+  branch from fetched main, no extra checkout or merge. An unrelated working-tree
+  frontend/package-lock.json modification is preserved and excluded from staging.
+
+
 ## Phase 19.4 — Configured OpenAI measurement continuation
 
 - Date: 2026-10-08. Human requested configured OpenAI from the project directory

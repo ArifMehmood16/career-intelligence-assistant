@@ -29,6 +29,111 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 192 — Open source under Apache 2.0 with creator credit
+
+- Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.
+- Human decision: choose open source to encourage contributions and recognise
+  Arif Mehmood as the project's creator. This supersedes previous noncommercial
+  and custom source-available restrictions; commercial reuse is now permitted.
+- Accepted: unchanged official Apache License 2.0, informational NOTICE with
+  original creator/copyright/project URL, visible README byline and aligned
+  contributor/licensing guidance. Preserve section 4 attribution placement,
+  section 5 incoming terms, patent grant and contributor copyright; no extra CLA.
+- Rejected: custom external-monetisation permission/royalty gates, mandatory product
+  UI credit and exclusive ownership of a general idea. Standard notice preservation
+  documents project origin without promising credit on every screen or output.
+- Observed local checks: Spec Kit prerequisites and read-only requirement/task
+  coverage review pass. curl downloaded official Apache plain text; cmp confirms
+  unchanged 11,358 bytes, SHA-256
+  cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.
+  Python validation confirms four third-party notices unchanged, 72 resolving
+  local links and unchanged unrelated npm working-copy hash. git diff --check
+  passes; current guidance/scenarios reviewed against Apache sections 2–5.
+- Scope: licensing, README, current bounded spec/PLAN/BACKLOG and factual logs.
+  Earlier records remain historical. No runtime, dependencies, provider, secrets
+  or personal-data change; no professional legal review or wording tests claimed.
+- Delivery: same branch and PR #49, no merge/new checkout. Prior head e2f6844 passed
+  all four jobs in run 37774572919; updated-head results are recorded in the PR
+  after observation, without treating old CI as proof of the new revision.
+
+
+### 191 — Allow internal business use; reserve external monetisation
+
+- Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.
+- Human decision: internal tools in profitable companies and closed-source changes
+  are allowed; public products must be unmonetised unless separately authorised.
+  This supersedes the earlier strict custom and unchanged PolyForm checkpoints.
+- Accepted: independently written Arif Mehmood Source-Available License 1.0. Sales,
+  subscriptions, paid tool-based client services and ads/sponsorship need prior
+  written permission. Paid internal workers, ordinary business profits and cost
+  savings remain allowed. Retain notices and show accessible external About,
+  Credits or Legal attribution plus credit in accompanying public documentation.
+- Rights: original copyright retained; contributors own additions. No automatic
+  revenue entitlement, assignment, source-publication duty or retroactive change
+  to valid earlier grants. Separate agreements may negotiate fees/revenue share.
+  Third-party terms and statutory exceptions preserved; no patent/trademark grant.
+- Observed local evidence: read-only spec/plan/tasks coverage review; all eight
+  human scenarios reviewed against sections 1–4. Python file-link check resolves
+  72 links, compares four existing third-party notices unchanged against origin/main
+  and confirms unrelated npm lock SHA remains unchanged. git diff --check passes.
+- Scope: licence/notice, README, contributor/ownership guide, bounded spec and
+  PLAN/BACKLOG/logs only. No application, provider, dependency or private-data change.
+  No executable tests for legal wording or professional enforceability claim.
+- Delivery: same branch and PR #49; no merge. Prior PolyForm head 18ef2e1 passed
+  all four CI jobs in run 37773150249; updated-head results belong in the PR.
+
+
+### 190 — Replace the custom draft with unchanged PolyForm
+
+- Date: 2026-10-08; Codex; spec 012 continuation on existing PR #49.
+- Human decision: use reusable PolyForm with retained ownership and a way to
+  negotiate commercial revenue. Explained that it retains original copyright,
+  not automatic ownership of additions or a right to take every user's revenue.
+- Accepted: unchanged official PolyForm Noncommercial 1.0.0, standard organisational
+  exceptions and patent/violation terms intact. Separate NOTICE carries Arif's
+  Required Notice; README, CONTRIBUTING and docs/licensing.md explain the grant,
+  ownership and optional commercial agreements outside existing permissions.
+- Revenue boundary: separate agreements may negotiate fees or a revenue share for
+  controlled rights. No royalty percentage, automatic profit transfer, assignment
+  of contributors' work, retroactive fee on permitted use or custom licence clause.
+- Observed checks: official downloaded text is byte-identical, SHA-256
+  ffcca38841adb694b6f380647e15f17c446a4d1656fed51a1e2041d064c94cc8;
+  four existing third-party notices unchanged, 71 local Markdown links resolve,
+  branch whitespace and final diff review pass. Initial notice-check script
+  incorrectly matched the new feature directory name; corrected it to compare
+  main's existing notice basenames before recording successful results.
+- Scope: earlier custom draft f1d1f4e is superseded. No runtime, dependency, provider,
+  secret or personal-data change; unrelated npm lock working copy preserved.
+  No professional legal-enforceability or damages/revenue entitlement claim.
+- Delivery: same branch/PR, no extra PR/checkout or merge. Prior draft passed all
+  four CI jobs in run 37772075026; updated-head checks stay enforced before merge.
+
+
+### 189 — Permit noncommercial reuse while reserving commercial rights
+
+- Date: 2026-10-08; Codex; human-requested licensing follow-up; spec 012.
+- Accepted: replace proprietary no-reuse terms with custom noncommercial copyright
+  permissions for learning, use, copying, forks, modifications, sharing, hosting
+  and collaboration. Commercial/indirect gain, internal business use, paid services
+  and valuable commercial favors require explicit prior written owner permission,
+  including for modified or renamed covered code.
+- Boundaries: retain attribution, third-party terms, contributor ownership,
+  statutory exceptions and valid prior grants. Ideas and independent expression
+  are not claimed as code. Ordinary learning/credit and incidental general-purpose
+  infrastructure/model costs do not automatically become prohibited commerce.
+- Documentation: aligned README, added contributor terms, root PLAN/BACKLOG and
+  bounded Spec Kit record. No implicit copyright assignment or commercial grant
+  from accepting a contribution. Application code and provider settings unchanged.
+- Observed validation: scenario/wording and full diff review, local-link checks,
+  whitespace check and byte comparison of all four tracked third-party notices.
+  No new executable tests for licence wording; no professional legal review claimed.
+- Rejected: standard open-source labelling for commercial restrictions, claiming
+  control over third-party licences or ideas, and including an unrelated npm lock
+  modification that appeared during the session. That working copy is preserved.
+- Human-owned decision: the requested reuse/commercial boundary; final legal
+  enforceability and any future written commercial permission remain human-owned.
+
+
 ### 188 — Validate configured OpenAI without changing frozen expectations
 
 - Date: 2026-10-08; Codex; PLAN 19.4; spec 011 authorized hosted continuation.
