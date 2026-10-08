@@ -1,73 +1,80 @@
-# Feature Specification: PolyForm noncommercial reuse
+# Feature Specification: Internal use and external monetisation permission
 
 **Branch**: `docs/phase-19-noncommercial-license`
 **Created**: 2026-10-08
-**Status**: Unchanged PolyForm adopted and locally verified
-**Input**: Human selected unchanged PolyForm Noncommercial after reviewing its
-standard organisational exceptions, with copyright retained and an option to
-negotiate commercial revenue. This supersedes the custom draft in f1d1f4e.
+**Status**: Revised custom policy implemented and locally verified; PR CI required
+**Input**: Human permits internal business use, closed-source modifications and
+free unmonetised public products. External monetisation requires separate written
+permission. Preserve Arif Mehmood's copyright and visible attribution. This latest
+policy supersedes the initial strict custom draft and the PolyForm continuation.
 
 Root: [Licensing policy](../../PLAN.md#licensing-policy--2026-10-08) and
 [BACKLOG](../../BACKLOG.md#now--prove-the-current-product). Legal-text/documentation
-scope only; not professional legal advice or an application architecture change.
+scope only; no application architecture change or professional legal review.
 
 ## User Scenarios & Testing
 
-### US1 — Learn, share and collaborate (P1)
+### US1 — Learn, build and use internally (P1)
 
-A user studies, runs, forks, modifies and shares the code under PolyForm's permitted
-purposes and notice requirements. Independent check: unchanged official licence
-text, required owner notice and matching current summaries.
-Acceptance: standard personal/noncommercial and listed organisational permissions
-remain intact; no custom extra restrictions or silent removal of the patent grant.
+A person or organisation runs, copies, forks and modifies the software for learning
+or internal operations, including in a profitable company. They may keep changes
+closed-source. A free public product is permitted if it is not monetised.
+Acceptance: express permissions cover these uses; retaining attribution does not
+require publishing source. Internal productivity, cost savings and ordinary
+business profits do not require a separate licence.
 
-### US2 — Retain ownership and negotiate commercial permission (P1)
+### US2 — Reserve external monetisation and retain ownership (P1)
 
-The owner keeps copyright in their original code, including copied portions in
-modified versions, and can negotiate a separate commercial licence for rights
-they control. Independent review: distinguish copyright ownership from permission
-to use and from a contractual right to licence fees or a revenue share.
-Acceptance: no promise of ownership of others' original additions, automatic
-royalties, all revenue, or payment from uses PolyForm already permits.
+Selling software containing covered code, subscriptions, paid hosted/API services,
+paid tool-based client analysis, and advertising/sponsorship of an otherwise free
+product require prior written permission. Modification or renaming does not avoid
+this boundary. Ordinary internal administration by a paid worker is allowed.
+Acceptance: commercial permission may negotiate fees/revenue share, but creates
+no automatic entitlement to another person's revenue or original additions.
 
-### US3 — Contribute with clear rights (P2)
+### US3 — Share with credit and contribute with clear rights (P2)
 
-Contributors retain their copyright and submit under the same PolyForm terms.
-Independent review: no assignment or separate commercial licence is implied by
-contributing; commercial licensing must secure required contributor permissions.
-Acceptance: third-party licences remain unchanged and outside this project licence.
+Copies retain LICENSE/NOTICE and original copyright. Externally distributed or
+hosted user-facing products show Arif Mehmood's name and project/licence links in
+an accessible About, Credits or Legal location; accompanying public documentation
+also retains credit. Contributors keep their copyright and offer their changes
+under the same terms, without an assignment or additional monetisation grant.
+Acceptance: third-party terms, independent work, statutory exceptions and valid
+prior licence grants remain intact. No source publication or per-output credit.
 
 ## Requirements
 
-- **FR-001**: Use unchanged official PolyForm Noncommercial 1.0.0 in LICENSE,
-  including its standard permitted purposes, notices, patent and violation terms.
-- **FR-002**: Preserve Arif Mehmood's original copyright through a separate
-  Required Notice; explain that modified copies do not transfer ownership of
-  original code, and original additions remain their authors' property.
-- **FR-003**: Explain separate commercial permission outside existing grants,
-  optional negotiated fees/revenue share, and the absence of automatic royalties
-  or ownership of someone else's entire derivative project.
-- **FR-004**: Preserve third-party licences, contributor ownership and lawful
-  independent implementations; add no extra restrictions to PolyForm.
-- **FR-005**: Align README, contribution/licensing guidance and root acceptance;
-  describe the standard organisational exceptions and source-available status.
+- **FR-001**: Write a clearly named custom source-available licence, allowing
+  personal/learning use, internal business use regardless of profitability,
+  closed-source modifications and free unmonetised external products/services.
+- **FR-002**: Define external monetisation and require prior written permission
+  for sales, subscriptions, paid services and advertising/sponsorship-supported
+  products, including modified versions. Distinguish internal business benefits.
+- **FR-003**: Preserve original copyright and require retained notices plus
+  accessible external product/documentation attribution to Arif Mehmood.
+- **FR-004**: Preserve contributor/third-party rights, independent ideas and work,
+  statutory exceptions, valid earlier grants and warranty/liability boundaries.
+  Claim no automatic ownership, royalty, revenue share or assignment.
+- **FR-005**: Align README, NOTICE, contribution/licensing guidance and root
+  acceptance with this policy; identify it as custom, not unchanged PolyForm.
 - **FR-006**: Change no runtime code, dependencies, lockfiles, settings or private
-  data. Record observed checks and deliver on the existing PR #49 branch.
+  data. Record observed checks and deliver on existing PR #49 without merging.
 
 ## Success Criteria
 
-- **SC-001**: LICENSE is byte-identical to the official plain-text download;
-  ownership/revenue summaries agree with its actual permissions and separate terms.
+- **SC-001**: Review all eight human-provided use cases against explicit licence
+  clauses; current summaries agree on permissions, attribution and revenue limits.
 - **SC-002**: Existing third-party licence/notice files remain byte-for-byte intact.
-- **SC-003**: Documentation links and branch whitespace pass; intended licensing
-  files only are committed and the unrelated npm lock change is preserved.
+- **SC-003**: Documentation links and branch whitespace pass; only intended files
+  are committed and the unrelated npm lock working copy is preserved.
 
 ## Edge cases and assumptions
 
-Listed charitable, educational, public research, public safety/health,
-environmental and government organisations retain PolyForm's funding-independent
-permissions. No blanket nonprofit commercial prohibition is added. Standard
-noncommercial wording does not enumerate every favor or indirect gain. Revenue
-sharing needs a separate agreement with a licensee, and cannot be imposed on a
-use already permitted by PolyForm. Contributor/third-party rights remain separate.
-Copyright exceptions and independent work are not turned into royalty obligations.
+Paid staff/contractors may operate an organisation's private internal tools on its
+behalf. Charging external clients for the tool's analysis/functionality is a paid
+service requiring permission; ordinary internal administration does not become
+restricted merely because the organisation sells unrelated goods or services.
+The licence governs covered software, not ownership of user inputs or outputs.
+Earlier valid grants cannot be retroactively revoked by this policy revision.
+Additional external monetisation rights require the necessary rights holders'
+permission; no royalty rate or future commercial agreement is invented here.

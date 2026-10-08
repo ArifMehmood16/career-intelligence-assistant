@@ -1,52 +1,77 @@
 # Licensing, ownership and commercial permission
 
-The project uses the unchanged [PolyForm Noncommercial License 1.0.0](../LICENSE).
-The owner's [Required Notice](../NOTICE) accompanies it. This page explains the
-licensing approach; it adds no conditions to the standard public licence.
+The project uses the custom [Arif Mehmood Source-Available License 1.0](../LICENSE),
+with attribution in [NOTICE](../NOTICE). This page explains its terms; the full
+LICENSE controls. It replaces the earlier proposed PolyForm policy for copies
+offered under this licence. It is source-available, with restrictions on external
+monetisation, rather than an unrestricted open-source licence.
 
 ## Permitted uses
 
-PolyForm permits noncommercial use, changes and distribution subject to its terms
-and notices. Its Personal Uses and Noncommercial Organizations sections provide
-specific permissions, including for the listed charitable, educational, public
-research, public safety/health, environmental and government organisations
-regardless of funding. These permissions are retained exactly as published;
-this repository does not add a blanket ban on every financial benefit or favor.
-The [official terms](https://polyformproject.org/licenses/noncommercial/1.0.0)
-control whether a use is permitted.
+- Personal use, learning, research, copying, forks and collaboration.
+- Internal business tools, including in profitable companies. Paid employees and
+  contractors may develop, maintain and operate a private internal deployment on
+  the organisation's behalf. Internal productivity, cost savings and profits from
+  ordinary business activities do not require a separate commercial agreement.
+- Modifications kept closed-source. You do not have to publish your changes.
+- Public products or services offered free to users, provided they are unmonetised.
 
-Dependencies, fonts, Spec Kit and other separately identified third-party materials
-retain their own licences. General ideas and independently written implementations
-are distinct from copied protected code or documentation.
+For example, a company's private career-development tool is allowed, as is a free
+community application without monetisation. Using the tool privately to administer
+a consultancy is allowed; selling clients the tool's analysis as a service needs
+separate permission. Inputs and outputs are not assigned to the owner by this
+licence; the paid-service restriction concerns how the software is used.
 
-## Ownership across versions
+## Uses requiring written permission
 
-Arif Mehmood retains copyright in the original code he owns. Licensing it for use,
-copying and modification does not transfer that ownership. A fork or modified
-version does not take away his rights in copied portions of that original code.
-It also does not make him the automatic owner of another author's original
-additions or of an independently written project inspired by the same idea.
-Contributors retain their rights; see [CONTRIBUTING.md](../CONTRIBUTING.md).
-The [UK IPO ownership guidance](https://www.gov.uk/guidance/ownership-of-copyright-works)
-explains ownership and permissions where more than one rights holder is involved.
+Before monetising an external offering, contact [Arif Mehmood, the repository
+owner](https://github.com/ArifMehmood16) for express written permission for rights
+he controls. This includes selling products containing the code, subscriptions,
+paid access or APIs, paid tool-based analysis/services, and advertising,
+sponsorship or affiliate revenue tied to a product that is free to its users.
+Modified, combined and renamed versions still need permission for covered code.
+Nonprofit status does not exempt an externally monetised offering.
 
-## Commercial licences and revenue
+A separate agreement can negotiate a fixed fee, recurring fee or revenue share.
+No amount or percentage is set here. Required rights holders must authorise the
+use, including contributors where their rights are needed. The public licence
+does not automatically give Arif ownership of someone else's business, royalties
+or the right to take their revenue. Permitted internal use incurs no automatic
+fee. Suspected infringement and any remedies require assessment; revenue does not
+automatically become the owner's property. [UK IPO licensing guidance](https://www.gov.uk/copyright/license-and-sell-your-copyright)
+distinguishes licensing from assignment. Obtain legal advice for an agreement
+or enforcement claim; this custom text has not received professional legal review.
 
-For a proposed commercial use outside PolyForm's existing permissions, contact
-[Arif Mehmood, the repository owner](https://github.com/ArifMehmood16), to discuss a
-separate written commercial licence for rights he controls. PolyForm's No Other
-Rights section leaves the licensor free to offer separate licences.
+## Where credit must appear
 
-A commercial agreement can negotiate a fixed fee, recurring fee or revenue share.
-No amount or percentage is set by this repository. An agreement would need to
-specify the permitted use, payment basis and any reporting/audit obligations, with
-all required rights holders' permissions. Third-party or contributor rights cannot
-be commercially licensed by someone who does not hold the necessary authority.
-See [UK IPO licensing guidance](https://www.gov.uk/copyright/license-and-sell-your-copyright).
+Keep original copyright and attribution. Include LICENSE and NOTICE with shared
+copies or substantial portions, including modified and compiled distributions.
+Externally distributed or hosted user-facing products must show this credit in an
+accessible About, Credits or Legal location, with the project URL and a link or
+reference to the licence:
 
-PolyForm does not automatically give Arif a royalty, ownership of a user's business,
-or a right to collect that user's revenue. Users exercising permissions already
-granted by PolyForm do not owe payment merely because they use this tool. Suspected
-unauthorised use is an enforcement question; revenue does not automatically become
-the copyright owner's property. Seek legal advice for a commercial agreement or
-an enforcement claim rather than assuming that the public licence sets damages.
+> Includes software by Arif Mehmood, used under the Arif Mehmood Source-Available
+> License 1.0.
+
+For a service without a visual interface, accessible documentation or a legal
+notice is sufficient. Accompanying public product documentation, if provided,
+must retain the same credit and references. There is no required splash screen,
+per-output attribution or source-publication obligation. Identify modifications
+as your own without implying the original author's endorsement.
+
+## Ownership and earlier versions
+
+Arif Mehmood retains copyright in the original work he owns, including copied
+portions in modified versions. Permission to use and modify it does not transfer
+ownership. Contributors keep their original additions; see
+[CONTRIBUTING.md](../CONTRIBUTING.md). Arif does not automatically own an entire
+fork or independently written implementation of the same idea. [UK IPO ownership
+guidance](https://www.gov.uk/guidance/ownership-of-copyright-works) explains rights
+where multiple authors are involved.
+
+This licence grants no patent or trademark rights. Dependencies, fonts, Spec Kit
+and other separately identified third-party materials retain their own licences.
+Statutory exceptions and valid earlier grants are preserved. Changing this
+repository's licence cannot withdraw rights already validly granted for earlier
+versions, including copies offered under PolyForm; those versions remain subject
+to their earlier grants. New custom conditions do not apply retroactively.

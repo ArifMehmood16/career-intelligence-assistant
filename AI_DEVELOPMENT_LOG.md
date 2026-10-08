@@ -29,6 +29,32 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 191 — Allow internal business use; reserve external monetisation
+
+- Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.
+- Human decision: internal tools in profitable companies and closed-source changes
+  are allowed; public products must be unmonetised unless separately authorised.
+  This supersedes the earlier strict custom and unchanged PolyForm checkpoints.
+- Accepted: independently written Arif Mehmood Source-Available License 1.0. Sales,
+  subscriptions, paid tool-based client services and ads/sponsorship need prior
+  written permission. Paid internal workers, ordinary business profits and cost
+  savings remain allowed. Retain notices and show accessible external About,
+  Credits or Legal attribution plus credit in accompanying public documentation.
+- Rights: original copyright retained; contributors own additions. No automatic
+  revenue entitlement, assignment, source-publication duty or retroactive change
+  to valid earlier grants. Separate agreements may negotiate fees/revenue share.
+  Third-party terms and statutory exceptions preserved; no patent/trademark grant.
+- Observed local evidence: read-only spec/plan/tasks coverage review; all eight
+  human scenarios reviewed against sections 1–4. Python file-link check resolves
+  72 links, compares four existing third-party notices unchanged against origin/main
+  and confirms unrelated npm lock SHA remains unchanged. git diff --check passes.
+- Scope: licence/notice, README, contributor/ownership guide, bounded spec and
+  PLAN/BACKLOG/logs only. No application, provider, dependency or private-data change.
+  No executable tests for legal wording or professional enforceability claim.
+- Delivery: same branch and PR #49; no merge. Prior PolyForm head 18ef2e1 passed
+  all four CI jobs in run 37773150249; updated-head results belong in the PR.
+
+
 ### 190 — Replace the custom draft with unchanged PolyForm
 
 - Date: 2026-10-08; Codex; spec 012 continuation on existing PR #49.

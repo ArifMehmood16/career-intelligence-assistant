@@ -26,10 +26,11 @@ including the new browser journey. Updated-head CI remains enforced and merging 
 
 ## Now — prove the current product
 
-- [x] [Licensing policy](PLAN.md#licensing-policy--2026-10-08) — unchanged PolyForm
-      Noncommercial with required owner notice, retained copyright and standard
-      organisational permissions. Separate commercial agreements may negotiate
-      fees/revenue sharing outside existing grants; no automatic revenue claim.
+- [x] [Licensing policy](PLAN.md#licensing-policy--2026-10-08) — custom source-available
+      terms allowing internal business use, closed-source modifications and free
+      unmonetised public products; external monetisation requires written permission.
+      Retain attribution, original/contributor rights and earlier grants. Separate
+      fees/revenue sharing require agreement; no automatic revenue claim.
 
 - [x] [19.1](PLAN.md#191--retire-the-competing-analysis) — retirement, populated
       preservation/deletion, uniform publications/citations and Fit/Gaps regressions.

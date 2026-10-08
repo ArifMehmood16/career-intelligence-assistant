@@ -109,14 +109,13 @@ Every command, the database topology, Compose and logging:
 
 ## Licence
 
-Source-available under [PolyForm Noncommercial License 1.0.0](LICENSE), with the
-copyright notice in [NOTICE](NOTICE). It permits noncommercial use, learning,
-modification and sharing, and includes specific permissions for the organisations
-listed in the licence. Third-party components retain their own terms.
+Source-available under the custom [Arif Mehmood Source-Available License 1.0](LICENSE).
+Learning, internal business use (including profitable companies), closed-source
+modifications and free unmonetised public products are allowed. External sales,
+subscriptions, paid services, advertising or sponsorship require separate written
+permission. Keep original notices and show credit in external products as specified
+in [NOTICE](NOTICE) and the licence. Third-party materials retain their own terms.
 
-Arif Mehmood retains copyright in his original code, including copied portions in
-modified versions. For commercial uses outside PolyForm's permissions, contact the
-repository owner to discuss a separate written licence, which may include a fee
-or negotiated revenue share. PolyForm itself grants no automatic royalty or claim
-to a user's revenue. See [licensing and ownership](docs/licensing.md) and
-[contribution terms](CONTRIBUTING.md); the full LICENSE controls.
+Arif Mehmood retains copyright in his original work. Fees or revenue sharing require
+a separate agreement; this licence creates no automatic royalty or revenue claim.
+See [licensing and ownership](docs/licensing.md) and [contribution terms](CONTRIBUTING.md).

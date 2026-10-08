@@ -63,3 +63,32 @@ Observed standard continuation: official text is byte-identical, four existing
 third-party notices unchanged and 71 local links resolve. Required Notice and
 ownership/revenue guidance reviewed; no automatic royalty or custom extra licence
 terms. Update the existing PR and observe CI on the pushed head before merge.
+
+## Revised internal-use policy continuation — 2026-10-08
+
+T001–T010 remain historical checkpoints. The latest human policy expressly allows
+internal business use and closed-source modifications; current spec.md supersedes
+the earlier restrictions. Continue on the same branch and PR #49.
+
+- [x] T011 Review latest policy/primary sources, revise spec/plan/research/validation
+  guide and perform read-only consistency analysis (FR-001–FR-006).
+- [x] T012 [US1] Write custom named terms with internal business and closed-source
+  permissions and external monetisation conditions (FR-001/FR-002).
+- [x] T013 [US2] Preserve ownership, prior grants and third-party boundaries;
+  reserve separately negotiated external monetisation rights (FR-002/FR-004).
+- [x] T014 [US3] Align attribution, NOTICE, README, contributor/licensing guidance,
+  PLAN/BACKLOG and factual logs (FR-003–FR-005).
+- [x] T015 Review eight scenarios, links, whitespace, third-party bytes and scoped
+  diff; record observed local evidence and preserve the unrelated lockfile (FR-006,
+  SC-001–SC-003).
+
+Execution: T011 -> T012 -> T013 -> T014 -> T015. No new branch, PR or subagents.
+
+Observed revised-policy review: personal learning and free unmonetised public use
+are granted in section 2; internal business use in sections 1–2; closed-source
+changes in section 2. Sales, subscriptions/paid services and ads/sponsorship are
+reserved by sections 1 and 3. Section 4 prohibits removing original credit and
+specifies accessible external attribution. Four third-party notices unchanged;
+72 local Markdown links resolve and branch whitespace passes. No runtime changes.
+Delivery: commit/push and update existing PR #49; observe CI on the updated head.
+The PR records delivery/check results without predicting them in this local record.

@@ -18,6 +18,29 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Licensing policy — Internal business use and external monetisation
+
+- Date: 2026-10-08. Latest human policy permits internal use in profitable companies,
+  closed-source modifications and free unmonetised public products. Reserve external
+  sales/subscriptions/paid services/ads/sponsorship for prior written permission.
+- Change: custom named LICENSE, NOTICE, concise README, contributor and ownership
+  guidance. Specify credit in copies and accessible external About/Credits/Legal
+  locations and accompanying public docs. Preserve earlier valid grants, contributor
+  ownership and third-party terms. Fees/revenue sharing require separate agreement.
+- Commands observed: .specify/scripts/bash/check-prerequisites.sh --json
+  --require-spec --require-tasks --include-tasks resolves existing feature 012.
+  Python-based local file-link/third-party-byte/lock-hash validation passes:
+  72 links, four notices unchanged; unrelated npm working copy preserved.
+  git diff --check passes; read-only requirements/task and eight-scenario review
+  confirms sections 1–4 cover the requested policy. No runtime code changed.
+- Boundaries: current policy supersedes earlier unmerged licensing checkpoints;
+  historical records retained. No automatic royalties, copyright assignment,
+  source disclosure, new commercial contract or professional legal review claimed.
+- Delivery: reuse PR #49 and its branch; updated-head CI stays required. Previous
+  head 18ef2e1 passed all four jobs in run 37773150249. New results are recorded
+  in the PR after observation; no merge or extra checkout.
+
+
 ## Licensing policy — Human-selected standard PolyForm
 
 - Date: 2026-10-08. Human selected reusable PolyForm after standard organisational

@@ -216,12 +216,13 @@ Do not rebuild retired approaches to satisfy old tests or measurement plans.
 Human-authorized follow-up after PR #48 merged, separate from application phases.
 [Spec 012](specs/012-noncommercial-license/spec.md) records the bounded change.
 
-- [x] Adopt unchanged PolyForm Noncommercial 1.0.0 with Arif Mehmood's separate
-      Required Notice. Permit its standard noncommercial/personal/organisational
-      uses and preserve third-party and contributor rights. Explain retained
-      copyright in original code and separate commercial licensing outside the
-      public grant; fees/revenue sharing require an agreement, not automatic claims.
-      This human-selected standard replaces the initial stricter custom draft.
-      Exit: byte-identical official licence, consistent ownership/revenue guidance,
-      resolving local links, branch whitespace and unchanged third-party notices;
-      no claim of professional legal review or automatic royalty entitlement.
+- [x] Adopt a custom Arif Mehmood Source-Available License 1.0 permitting learning,
+      internal business use regardless of profitability, closed-source changes and
+      free unmonetised public products. External monetisation requires prior written
+      permission. Retain notices and provide accessible external product/documentation
+      credit. Preserve third-party/contributor rights and valid earlier grants;
+      separate fees/revenue sharing require agreement, with no automatic entitlement.
+      The latest human policy supersedes earlier unmerged licensing checkpoints.
+      Exit: eight requested scenarios covered by explicit terms, consistent current
+      guidance, resolving local links, branch whitespace and unchanged third-party
+      notices; no claim of professional legal review or automatic royalty entitlement.

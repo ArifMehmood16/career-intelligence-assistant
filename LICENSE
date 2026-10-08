@@ -1,131 +1,119 @@
-# PolyForm Noncommercial License 1.0.0
+Arif Mehmood Source-Available License 1.0
 
-<https://polyformproject.org/licenses/noncommercial/1.0.0>
+Copyright (c) 2026 Arif Mehmood
+https://github.com/ArifMehmood16/career-intelligence-assistant
 
-## Acceptance
+1. Scope and definitions
 
-In order to get any license under these terms, you must agree
-to them as both strict obligations and conditions to all
-your licenses.
+This licence applies to the original code and documentation offered under it,
+including covered portions retained in copies, modifications and derived works
+(the "Software"). Each copyright holder grants only rights they control.
+Separately identified third-party materials remain under their own licences.
 
-## Copyright License
+"Internal Use" means using the Software privately for your own activities or an
+organisation's internal operations, including through employees and contractors
+acting on its behalf. It includes use in profitable businesses, internal
+administration, productivity improvements, cost savings and support for ordinary
+business activities. Those benefits and profits from unrelated goods or services
+do not by themselves constitute External Monetisation.
 
-The licensor grants you a copyright license for the
-software to do everything you might do with the software
-that would otherwise infringe the licensor's copyright
-in it for any permitted purpose.  However, you may
-only distribute the software according to [Distribution
-License](#distribution-license) and make changes or new works
-based on the software according to [Changes and New Works
-License](#changes-and-new-works-license).
+"External Monetisation" means receiving, seeking or arranging revenue or other
+valuable consideration in return for an external product or service that contains,
+provides access to, or delivers the functionality of the Software. It includes:
 
-## Distribution License
+(a) selling, renting or licensing copies or products containing the Software,
+    including bundled products and modified or renamed versions;
+(b) charging for access, subscriptions, hosted services, APIs or paid features
+    that use the Software to provide their functionality;
+(c) charging external clients for analysis, reports or other services in which
+    the Software's functionality or outputs are the offering being supplied; and
+(d) advertising, sponsorship, affiliate revenue or other funding received in
+    exchange for promotion or benefits associated with that product or service,
+    even when users receive it free of charge.
 
-The licensor grants you an additional copyright license
-to distribute copies of the software.  Your license
-to distribute covers distributing the software with
-changes and new works permitted by [Changes and New Works
-License](#changes-and-new-works-license).
+Merely paying an employee or contractor to develop, maintain or operate a private
+internal deployment on your behalf does not make your Internal Use External
+Monetisation. Using the Software for ordinary internal administration of a
+business is distinct from offering its functionality or outputs as a paid service
+to that business's clients. An organisation's nonprofit status does not exempt
+an externally monetised offering from these conditions.
 
-## Notices
+2. Permission
 
-You must ensure that anyone who gets a copy of any part of
-the software from you also gets a copy of these terms or the
-URL for them above, as well as copies of any plain-text lines
-beginning with `Required Notice:` that the licensor provided
-with the software.  For example:
+Subject to this licence, you may use, run, study, copy, modify, combine, create
+derived works from, host and distribute the Software in source or compiled form
+for personal use, learning, research, collaboration and Internal Use. You may also
+make products or services containing or using the Software available to others
+free of charge, provided they involve no External Monetisation.
 
-> Required Notice: Copyright Yoyodyne, Inc. (http://example.com)
+You may keep your modifications and original additions closed-source. This
+licence does not require you to publish source code. Sharing covered portions
+must preserve this licence and its conditions, but your separate original
+additions may have their own terms. You may not impose terms that remove the
+permissions or notices applicable to the covered portions.
 
-## Changes and New Works License
+3. External monetisation requires separate written permission
 
-The licensor grants you an additional copyright license to
-make changes and new works based on the software for any
-permitted purpose.
+This licence does not permit External Monetisation. Before undertaking it, obtain
+express written permission from the copyright holder or holders whose rights
+are required. For Arif Mehmood's original work, contact the repository owner at
+https://github.com/ArifMehmood16. Modification, combination, rebranding or changes
+to the Software do not remove this requirement for retained covered portions.
 
-## Patent License
+Separate permission may specify a fee, revenue share or other agreed terms. This
+public licence sets no payment amount or percentage and creates no automatic
+royalty, transfer of profits or entitlement to another person's revenue. Granting
+permission for one copyright holder's work does not grant rights in another's.
 
-The licensor grants you a patent license for the software that
-covers patent claims the licensor can license, or becomes able
-to license, that you would infringe by using the software.
+4. Attribution and notices
 
-## Noncommercial Purposes
+Keep the original copyright and attribution notices. Include this LICENSE and
+NOTICE with copies or substantial portions of the Software that you share,
+including distributions of modified or compiled versions. Identify modifications
+as your own without implying endorsement by Arif Mehmood.
 
-Any noncommercial purpose is a permitted purpose.
+For externally distributed or hosted user-facing products or services containing
+or using the Software, provide an accessible About, Credits or Legal notice with:
 
-## Personal Uses
+"Includes software by Arif Mehmood, used under the Arif Mehmood Source-Available
+License 1.0."
 
-Personal use for research, experiment, and testing for
-the benefit of public knowledge, personal study, private
-entertainment, hobby projects, amateur pursuits, or religious
-observance, without any anticipated commercial application,
-is use for a permitted purpose.
+Include the project URL above and a link or reference allowing users to read this
+licence. For a service without a visual interface, an accessible documentation or
+legal-notice location is sufficient. Accompanying public product documentation,
+if provided, must retain the same credit and references. These notices do not
+require publication of modifications, a splash screen or credit in every output.
 
-## Noncommercial Organizations
+5. Ownership and reserved rights
 
-Use by any charitable organization, educational institution,
-public research organization, public safety or health
-organization, environmental protection organization,
-or government institution is use for a permitted purpose
-regardless of the source of funding or obligations resulting
-from the funding.
+Copyright remains with each copyright holder. Arif Mehmood retains copyright in
+his original work, including covered portions in modified versions. This licence
+does not assign ownership of contributors' original additions, independent work,
+user inputs or generated outputs to Arif Mehmood or any other copyright holder.
+General ideas and independently written implementations that do not copy protected
+expression are outside this licence's restrictions.
 
-## Fair Use
+No trademark or patent licence is granted by this licence. No rights in third-party
+materials are granted beyond their applicable terms. Rights not expressly granted
+are reserved. Nothing here limits rights available under applicable law or revokes
+valid rights previously granted for versions offered under an earlier licence;
+those earlier grants continue to apply to those versions on their own terms.
 
-You may have "fair use" rights for the software under the
-law. These terms do not limit them.
+6. Compliance
 
-## No Other Rights
+The permissions in this licence are conditional on compliance with its terms.
+If you breach them, your permissions under this licence terminate automatically.
+For a first breach, they are reinstated if you stop the breach and remedy it within
+30 days of becoming aware of it. Otherwise, reinstatement requires written
+permission from the relevant copyright holder. Reinstatement does not erase any
+liability arising during the breach or grant permission for External Monetisation.
 
-These terms do not allow you to sublicense or transfer any of
-your licenses to anyone else, or prevent the licensor from
-granting licenses to anyone else.  These terms do not imply
-any other licenses.
+7. Disclaimer of warranty and limitation of liability
 
-## Patent Defense
-
-If you make any written claim that the software infringes or
-contributes to infringement of any patent, your patent license
-for the software granted under these terms ends immediately. If
-your company makes such a claim, your patent license ends
-immediately for work on behalf of your company.
-
-## Violations
-
-The first time you are notified in writing that you have
-violated any of these terms, or done anything with the software
-not covered by your licenses, your licenses can nonetheless
-continue if you come into full compliance with these terms,
-and take practical steps to correct past violations, within
-32 days of receiving notice.  Otherwise, all your licenses
-end immediately.
-
-## No Liability
-
-***As far as the law allows, the software comes as is, without
-any warranty or condition, and the licensor will not be liable
-to you for any damages arising out of these terms or the use
-or nature of the software, under any kind of legal claim.***
-
-## Definitions
-
-The **licensor** is the individual or entity offering these
-terms, and the **software** is the software the licensor makes
-available under these terms.
-
-**You** refers to the individual or entity agreeing to these
-terms.
-
-**Your company** is any legal entity, sole proprietorship,
-or other kind of organization that you work for, plus all
-organizations that have control over, are under the control of,
-or are under common control with that organization.  **Control**
-means ownership of substantially all the assets of an entity,
-or the power to direct its management and policies by vote,
-contract, or otherwise.  Control can be direct or indirect.
-
-**Your licenses** are all the licenses granted to you for the
-software under these terms.
-
-**Use** means anything you do with the software requiring one
-of your licenses.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. TO THE EXTENT PERMITTED
+BY APPLICABLE LAW, IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
