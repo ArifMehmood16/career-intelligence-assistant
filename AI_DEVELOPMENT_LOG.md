@@ -40,7 +40,8 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   note. Replaced the setup status table with direct prerequisites and retained the
   app overview, screenshot, architecture, quick start and documentation index.
 - Changed/rejected: progress/release evidence remains in PLAN/BACKLOG and linked
-  operational docs; no unsupported deployment or quality claim was added.
+  operational docs; no unsupported deployment or quality claim was added. Aligned
+  AGENTS.md with the human's README preference so later edits retain this separation.
 - Validation observed: README local links resolve; git diff --check passes.
   Documentation-only edit; no new application tests needed. Same PR #48 retained.
 - Human-owned decision: product-focused README; no status section.
