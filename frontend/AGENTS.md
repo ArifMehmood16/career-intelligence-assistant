@@ -8,7 +8,10 @@ the working protocol, TDD commit rhythm, SonarQube rules and security rules.
   ([ADR 006](../docs/adr/006-tanstack-start-frontend.md)). Lovable owns how it looks;
   the repository owns what it does
   ([docs/frontend-integration.md](../docs/frontend-integration.md)).
-- Packages are managed with `bun` only (`bun.lock`). Do not add npm or yarn lockfiles.
+- Install, build and test with `bun` (`bun.lock`). The human explicitly requested
+  retaining and synchronizing the existing `package-lock.json` on 2026-10-08; keep
+  its package versions aligned with Bun when dependencies change. Do not add a
+  third lockfile or switch the application tooling to npm.
 - Routing is file-based under `src/routes/`. Read `src/routes/README.md` before adding
   a route, and never edit `routeTree.gen.ts` by hand.
 - The design tokens in `src/styles.css` are fixed and guarded by the ESLint rule in

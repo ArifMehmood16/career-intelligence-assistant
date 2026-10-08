@@ -96,3 +96,56 @@ jobs:
 
       - name: Integration tests
         run: make test-integration
+
+  browser:
+    name: Synthetic browser journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      E2E_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/career_assistant_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.0"
+      - name: Install backend
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements-dev.lock
+          backend/.venv/bin/pip install --no-deps -e ./backend
+      - name: Install frontend and browser runner
+        run: |
+          cd frontend
+          bun install --frozen-lockfile
+          cd ../e2e
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps chromium
+          bun run typecheck
+      - name: Create dedicated browser database
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -c 'CREATE DATABASE career_assistant_e2e'
+      - name: Complete synthetic candidate journey
+        run: make test-e2e
+      - name: Preserve synthetic failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-browser-failure
+          path: e2e/test-results/
+          retention-days: 7

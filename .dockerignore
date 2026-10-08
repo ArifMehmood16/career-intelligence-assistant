@@ -1,0 +1,16 @@
+# Backend root build context contains only runtime inputs, never private uploads/env.
+**
+!backend/
+!backend/Dockerfile
+!backend/pyproject.toml
+!backend/requirements.lock
+!backend/alembic.ini
+!backend/src/
+!backend/src/**
+!backend/migrations/
+!backend/migrations/**
+!config/
+!config/models.toml
+!config/scoring_rubric.toml
+**/__pycache__/
+**/*.pyc

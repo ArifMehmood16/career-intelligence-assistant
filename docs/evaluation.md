@@ -1,11 +1,11 @@
 # Evaluation
 
-> Current status (2026-10-02): the measurements below are historical results for the
-> retired analysis. The current one-call document reader, capacity-sized judge and
-> parallel executor have not received a live quality/latency evaluation. Tests/lint
-> for final consolidation edits were deferred at the human's request. PLAN 19.4
-> records the remaining measurement gate; retirement is an approved product decision,
-> not evidence that measured quality improved.
+> Current status (2026-10-08): the human-authorized configured OpenAI run below
+> completes both frozen synthetic cases cold and warm. PLAN 19.4's measurement
+> execution is complete; this is not a calibrated quality pass. Partial-case clause
+> alignment is incomplete and unsupported-met rates remain null. Earlier local
+> attempts failed before judging. Historical results later in this document
+> describe the retired analysis and cannot establish current quality.
 
 Retrieval, extraction and generation quality are claims. This file is where they are
 evidenced. No number appears here that was not observed from a recorded run.
@@ -13,11 +13,27 @@ evidenced. No number appears here that was not observed from a recorded run.
 ## Current analysis benchmark (PLAN 19.4)
 
 Implemented 2026-10-02 in `career_assistant.ops.benchmark`, with its bounded
-[feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Not executed:**
-the human retained their tests/lint/measurement deferral. There is no new performance
-or quality result, and no release checkbox is closed.
+[feature spec](../specs/001-synthetic-analysis-benchmark/spec.md). **Offline execution observed 2026-10-07:**
+[Saved report](evaluation-results/offline-2026-10-07.json) records 36 successful
+observations: six shipped pairs, three cold/warm repetitions, no failures and zero
+physical completion, embedding or metadata requests. Source was clean revision
+`9c2f27e208b85184ae6308fc70f9397ff752c908`; inputs, rubric/model fingerprints,
+frozen analysis date and prompt versions are in the report. Fixture providers were
+`rules-v1` and `lexical-hash-v1`; fallback was disabled.
 
-After verification is resumed, from the repository root:
+Command actually run:
+
+```bash
+make benchmark BENCHMARK_ARGS='--repetitions 3 --output /private/tmp/career-analysis-offline-20261007.json'
+```
+
+Per-pair cold p50 ranged from 1.575 to 1.970 ms; warm p50 from 0.622 to 0.872 ms.
+The clean-match warm run reused two documents, nine vectors and all six verdicts,
+with zero structured operations and one search embedding operation. These are
+fixture observations, not production latency or model-quality measurements. This
+closes only offline execution; frozen-label local-model quality remains open.
+
+To reproduce another offline measurement, from the repository root:
 
 ```bash
 make benchmark BENCHMARK_ARGS='--case clean_match --repetitions 3'
@@ -80,11 +96,173 @@ Only live mode loads existing provider settings; hosted requests still require
 disabled so a failed hosted run cannot become a fixture measurement. The command
 does not enable hosted egress, migrate a database or read uploaded personal data.
 
-The old evaluation dataset below remains historical. This runner measures timing
-and accounting only: frozen current-architecture labels, unsupported matches,
-ranking agreement, SQL migration preservation and the browser journey remain open
-19.4 work. Record any future observed numbers here with the saved report's provenance;
-do not present offline fixture timing as live-model quality or production latency.
+### Frozen current-judge development labels
+
+The historical dataset below does not define current truth. Spec 011 adds
+`sample-data/evaluation/current-judge-labels.json`, version
+`current-judge-development-v1`, frozen before any local-model execution. Eleven
+full requirement clauses cover the adjacent-skills CV against the partial-match
+and poor-match jobs; the ranking expectation compares these two jobs for that
+same CV. These agent-authored development expectations require human calibration
+before use as a release-quality threshold. No prompts were tuned against the labels.
+
+`--quality` selects these two cases by default and emits `analysis-benchmark-v2`;
+ordinary benchmark reports retain v1. Input SHA-256 values must match frozen labels
+before model work. The report fingerprints both canonical label values and the
+original label file. Quality calculation occurs after the timed analysis interval.
+
+Quote matching normalizes whitespace, bullet prefix, case and final full stop;
+it preserves punctuation such as C++. It does not infer equivalent clauses or
+silently discard changed segmentation. Per observation, report expected/matched,
+unmatched/unlabelled/duplicate requirements, absent verdicts and correct labels.
+Agreement divides unique correct judgments by **all expected requirements**;
+unmatched or duplicate clauses cannot improve it. Unsupported `met` counts fully
+supported predictions against a labelled `partial` or `missing` expectation.
+Its rate divides by labelled `met` predictions, and is null when none exist.
+Unlabelled predictions remain visible and are excluded from that denominator.
+
+Ranking agreement compares strict score ordering for the same CV, grouped by
+repetition and cold/warm state. Both jobs must have successful published scores;
+failed/skipped/missing results yield no eligible comparison. Ties do not satisfy
+an expected strict ordering. Failure remains failure even if partial diagnostic
+quality counts are available. These narrow metrics do not measure citation
+semantic support, broad extraction accuracy or production retrieval quality.
+
+```bash
+make benchmark BENCHMARK_ARGS='--quality'
+# Explicit synthetic local model work; keep hosted egress disabled.
+make benchmark BENCHMARK_ARGS='--quality --live --provider ollama --embedding-provider ollama --completion-model qwen2.5:7b --embedding-model nomic-embed-text:latest'
+```
+
+### Observed local attempts — 2026-10-08
+
+Saved original reports:
+[qwen2.5:7b](evaluation-results/local-qwen7b-2026-10-08.json) at clean `7a07a6e`, and
+[qwen2.5:14b](evaluation-results/local-qwen14b-2026-10-08.json) at clean `f7344a9`.
+Each used the same frozen partial/poor labels, one cold/warm repetition, analysis
+date 2026-09-01 and local `nomic-embed-text:latest` selection. Both commands exited
+1: two failed cold observations and two skipped warm observations per model.
+No score, band, verdict-quality result or eligible ranking pair was produced.
+
+7B failed cold attempts took 42.098 and 38.187 seconds; 14B took 94.364 and 85.863
+seconds. Each cold attempt made two completion HTTP attempts and one model-metadata
+request; zero embedding attempts. The current CV chunk plan remained invalid after
+its bounded repair, so judging never started. A separate synthetic 14B diagnostic
+confirmed `chunking_incomplete` with two remaining structural problems; a second
+metadata-only 7B diagnostic identified numbered CV lines 4 and 8 omitted in both
+the initial and repaired plans. No model payload was logged. These are **failure durations**, not successful latency results.
+Warm p50/p95 and ranking agreement correctly remain null. Do not interpret absent
+unsupported-match counts as zero errors or the reports as a quality pass.
+
+The reports record actual completion digests, execution capabilities, source,
+fixture/label/rubric/model-config hashes and chunk/judge prompt/contract versions.
+The 14B model uses its existing conservative default profile (8,192 context / 4,096
+output); 7B uses its configured 32,768 / 8,192 profile. No prompts, profiles or labels
+were tuned during these measurements. Hosted egress and fallback were explicitly
+disabled, keys blank, timeout 180 seconds and transport retries zero. Runs used an
+empty temporary cwd and isolated environment, so personal env files were not loaded.
+
+Commands actually run, from an empty temporary directory, for each MODEL value
+`qwen2.5:7b` and `qwen2.5:14b` (using distinct unused absolute OUTPUT paths):
+
+```bash
+env -i PATH="$PATH" HOME="$PWD" ALLOW_HOSTED_PROVIDERS=false \
+  OPENAI_API_KEY= ANTHROPIC_API_KEY= PROVIDER_ALLOW_LOCAL_FALLBACK=false \
+  PROVIDER_TIMEOUT_SECONDS=180 PROVIDER_MAX_RETRIES=0 \
+  OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+  /absolute/repo/backend/.venv/bin/python -m career_assistant.ops.benchmark \
+  --quality --live --provider ollama --embedding-provider ollama \
+  --completion-model "$MODEL" --embedding-model nomic-embed-text:latest \
+  --output "$OUTPUT"
+```
+
+A bounded development experiment added explicit adjacent-range/no-gap coverage
+instructions. The same 7B cases still failed before judging, so that prompt change
+was rejected and reverted. It is not a successful measurement or a shipped prompt
+version; the two original reports above remain unchanged.
+
+These local-model structural failures remain unresolved. The separately authorized
+OpenAI continuation below supplies successful judged observations without changing
+validation, labels or prompts. Human calibration of the frozen development
+expectations is still required before setting a release threshold.
+
+The browser,
+populated progress migration and private startup now have separate acceptance
+evidence in the engineering journal; none establish live model quality.
+
+### Observed configured OpenAI run — 2026-10-08
+
+The human explicitly requested using OpenAI already configured in the project
+directory. The [original safe report](evaluation-results/openai-2026-10-08.json)
+was captured at clean revision `46650d0f44d4ec8b4bd241f3594e152149514483`, timestamp
+`2026-10-08T10:25:20.963132+00:00`. From the repository root, the actual command was:
+
+```bash
+backend/.venv/bin/python -m career_assistant.ops.benchmark \
+  --quality --live --provider openai --embedding-provider openai \
+  --output /private/tmp/career-pr48-openai-20261008.json
+```
+
+Normal project provider settings selected `gpt-5-mini` and
+`text-embedding-3-small`, timeout 180 seconds and two allowed transport retries.
+Hosted access was already enabled with a configured key; the command did not
+change secrets or settings. Actual attribution records both OpenAI models and
+`leaves_machine=true`: only the shipped synthetic fixtures were sent off-machine.
+Fallback was disabled. This uses the production application pipeline with fixture
+retrieval/caches, without an application database, binary intake, queue or browser;
+it is not a hosted end-to-end or production-latency result.
+
+The command exited 0. One cold/warm repetition for each frozen partial/poor case,
+analysis date 2026-09-01, produced four successful observations, complete verdicts
+and domain-computed scores. The original report preserves raw floating-point scores.
+
+- Partial match: cold 77.091 seconds, score 35.00, seven extracted requirements,
+  three completion and three embedding HTTP attempts. Warm 1.845 seconds, same
+  score/verdicts, zero completion and two embedding attempts; seven of seven
+  verdict lookups hit the cache, with two document hits and four reused vectors.
+- Poor match: cold 69.293 seconds, score 0.00, five requirements, three completion
+  and two embedding HTTP attempts. Warm 0.405 seconds, same score/verdicts, zero
+  completion and one embedding attempt; five of five verdict lookups hit, with
+  two document hits and four reused vectors.
+
+Total physical attempts: six completion, eight embedding and zero metadata.
+These are observed attempts, not token costs or a billing estimate. Each cold run
+made one judge request after two document-chunk requests. Single-observation
+p50/p95 values in the report repeat those durations and establish no latency
+percentile distribution. Warm observations reuse judgments and are not independent
+model-quality samples; queries still make real embedding requests.
+
+Frozen-label observations are deliberately narrower than successful execution:
+
+- Partial match: five of six expected clauses align, four labels are correct,
+  one expected clause is unmatched, and two extracted requirements are unlabelled.
+  Agreement is 4/6 (66.67%) using all expected clauses as the denominator; no
+  duplicates or missing verdicts. The strict quote matcher exposes segmentation
+  differences; the metadata-only report cannot establish whether the unmatched
+  requirement is semantically omitted or equivalently split.
+- Poor match: all five expected clauses align and all five labels are correct
+  (100% agreement), with no unmatched, unlabelled or duplicate requirements and
+  no missing verdicts.
+- Neither case has a labelled `met` prediction. Both report unsupported-met count
+  zero with **rate null**, not a measured zero-error rate. The partial case's one
+  `met` prediction is unlabelled and cannot establish semantic support from these
+  metrics. Do not claim zero unsupported positive judgments.
+- The partial job scores above the poor job for the same CV, agreeing with the
+  single frozen ordering in cold and warm groups (one eligible/agreed pair in
+  each). The cached warm result is not a second independent ranking sample.
+
+The report records unchanged `chunking-v4`, `judge-prompt-v2`, `judge-anchors-v2`,
+`cv-chunks-v2`, `job-chunks-v3`, `judge-v1` and `scoring-rubric-v2`, plus actual
+capabilities and all input/label/configuration fingerprints. Frozen label file
+SHA-256 remains `ad8d59faaac664f9b5b7a3e66681d013cf7544bec4e1ef4674de86a5c0521455`.
+No label, model profile, prompt or validation rule was tuned for this run.
+
+This closes the PLAN 19.4 requirement to execute and record current synthetic
+measurements and their limits, which defines no numeric quality threshold. It does
+not establish calibrated accuracy, citation semantic support, local-model
+compatibility, production retrieval quality or public deployment readiness.
+Future quality acceptance needs human-reviewed labels, clause-alignment review,
+labelled positive predictions and broader independent cases/repetitions.
 
 ## Dataset
 

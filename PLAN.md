@@ -1,103 +1,47 @@
 # Delivery plan — one career intelligence pipeline
 
-Updated 2026-10-06. This plan replaces the competing v1 release/evaluation and v2
-build tracks. BACKLOG.md lists priority; this file defines milestone acceptance.
-Completed implementation history remains in AI_DEVELOPMENT_LOG.md and dated
-evaluation rows.
+Updated 2026-10-08 from reviewed code, observed acceptance checks and
+merged history. BACKLOG.md owns priority; this file owns milestone acceptance.
+Historical delivery details remain in AI_DEVELOPMENT_LOG.md and the engineering journal.
 
-**Checkpoint:** Phase 18 foundations, the 19.1–19.3 consolidation and subsequent
-provider/display repairs are merged in [PR #42](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/42)
-at `2212790`. Superseded task branches and the merged delivery branch are removed;
-their complete history is preserved on `main`. The local main checkout is synced.
-The human explicitly resumed verification to repair [PR #43](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/43).
-Its original creation CI failed lint and test collection. The bounded
-[CI repair](specs/005-pr43-ci-repair/spec.md) aligns current fixtures/contracts,
-repairs response cancellation, evidence-deletion invalidation and citation labels,
-and restores pgvector resolution across repeated migration cycles. Local
-`make lint`, `make test` and `make test-integration` pass on synthetic data;
-[GitHub CI](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548) passed all three jobs
-on code head `5b8a585`. CI now runs on synchronized and reopened PR heads. No personal database or paid model calls were used.
+**Current checkpoint:** 19.1 retirement and 19.2–19.3 provider/runtime acceptance
+are verified. Spec 011 adds observed browser/startup/progress-migration acceptance,
+scoped security review and honest synthetic measurements. Local `make lint` and
+`make test` pass (838 backend / 195 frontend, three existing skips); all 150 SQL
+cases and the complete browser journey pass. Dependency patches are audited;
+Playwright is a test-only dependency. The human-authorized configured OpenAI
+synthetic run now supplies current measurement evidence; no personal documents or
+application database were used. Quality limits remain explicit in docs/evaluation.md.
 
-The synthetic benchmark is implemented but unexecuted. Phase 19.1 populated
-retirement preservation and publication/deletion checks now pass. Browser journeys,
-progress acceptance, security/dependency checks and measured quality/latency
-gates remain open. Passing regression checks do not close those
-broader acceptance criteria.
+[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
+and [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47)
+are merged. Main was synchronized at `6340cd0` before the sole current task branch,
+`test/phase-19-runtime-verification`, was created. The final PR #47 code head
+`7ff3ac4` passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 in
+[CI run 37532319038](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37532319038).
+Updated-head CI remains enforced; the human owns merging.
+PR #48 hosted-evidence checkpoint `929ee26` passes all four jobs, including the
+synthetic browser journey, in [CI run 37764143176](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37764143176).
+Subsequent delivery-record edits are documentation only; checks stay enforced.
+
+**19.4 acceptance evidence is recorded.** Offline and configured OpenAI synthetic
+measurements, the browser journey, populated progress preservation, private startup
+and scoped security review have observed evidence. The OpenAI run succeeds without
+relaxing validation; local 7B/14B chunk failures remain recorded. Clause-alignment
+gaps and unmeasured unsupported-met rates prevent a calibrated quality claim.
+Updated-head CI remains required before merge. Retired v1 comparison and repeated
+provider/concurrency implementation are superseded. Follow-ups live in BACKLOG.md.
 
 ## Using Spec Kit for the existing project
 
-GitHub Spec Kit v1.0.13 is adopted as a planning layer; see
-[docs/spec-kit.md](docs/spec-kit.md). Each feature spec elaborates one bounded change
-and links to this plan. Its plan/tasks do not replace this roadmap or close a gate.
-The first scoped change is
-[synthetic analysis benchmarking](specs/001-synthetic-analysis-benchmark/spec.md).
-Its implementation and regression tests pass the local checks; benchmark runs
-remain pending. Retirement preservation is verified by spec 009. Specification
-quality review proves no application behavior.
-
-The human-requested [OpenAI analysis repair](specs/002-openai-request-errors/spec.md)
-addresses a reproduced advert-format rejection under 19.2. The repaired converter
-received HTTP 200 with a tiny synthetic request; safe rejection diagnostics are
-implemented. The human later reported a complete analysis, confirmed as a ready
-publication by read-only HTTP. Its regression tests pass in the local suite;
-the measured release gate remains pending.
-
-The subsequent [incomplete-judging diagnosis](specs/003-judge-failure-diagnostics/spec.md)
-adds content-free timeout/judge diagnostics under 19.2. Read-only timings suggest
-three exhausted 60-second judge attempts; the local ignored limit is now 180 seconds.
-The later completed analysis does not prove that timeout was the original cause;
-regressions pass in the local suite; the release gate remains open.
-
-The human subsequently reported a completed analysis; read-only HTTP confirms a
-ready role and published verdicts. The [19.1 recency display repair](specs/004-recency-gap-display/spec.md)
-aligns the frontend with the domain's existing fourth gap category, which the
-client previously rejected. The same live result now passes client validation
-through API and web proxy; synthetic gallery rendering was inspected. Local
-suites pass; broader release/quality gates remain pending; no reanalysis or scoring change is needed.
-
-Next checkpoint: verify Phase 19.2 provider efficiency and execution contracts,
-then 19.3 concurrency/progress before 19.4 browser, security and measurement work.
-Documentation follow-ups receive their own updated-head CI. Local disposable
-PostgreSQL regression and migration-cycle checks pass; successful checks only
-close the bounded acceptance they actually exercise.
-
-PR #43 is merged at `8333b39`. The human-requested
-[running-analysis expiry repair](specs/006-running-analysis-expiry/spec.md)
-addresses the 20-minute spinner: the existing 15-minute timeout was enforced only
-at startup. Runtime sweeps now fail expired jobs, preserve terminal outcomes and
-stop subsequent retries; the UI explains batch completion and stops failed-task
-animation. Local lint, 810 backend and 172 frontend tests, and all 141 disposable
-PostgreSQL integration tests pass. The original provider wait remains unexplained;
-this repair does not establish model quality or measured release latency.
-
-The scoped [requirement filters and documentation](specs/007-requirement-filters-docs/spec.md)
-add combined status/domain-score filtering without changing the publication.
-Current system, pipeline and job-lifecycle diagrams reflect inspected code;
-screenshots are refreshed synthetic component-gallery captures. Browser filter
-interactions and component regressions pass. Work is consolidated in the normal
-checkout; the merged documentation checkpoint branch has been removed. Broader
-browser journeys and measured release gates stay open.
-
-[PR #44](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/44)
-is merged at `ad88781`. [CI run 37301152754](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37301152754)
-passed lint/typecheck/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `08ef56b`.
-The merge preceded the final plan/log commit; the human requested another PR
-for that remaining documentation. [PR #45](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/45)
-is merged at `0362666`; all three CI jobs passed on `a1f24c2`.
-
-The human subsequently requested [fit explanations and responsive Ask](specs/008-fit-explanations/spec.md)
-under 19.1–19.3 ahead of broader release verification. Stored point contributions
-now explain earned versus unearned fit; verified qualitative experience and overall
-CV/JD context inform new judgments; Ask exposes immediate processing and protects
-successive requests after cancellation. Local lint, 818 backend tests, 192 frontend
-tests and all 141 disposable SQL integration tests pass. Synthetic Browser checks
-cover arrows, asked/supported explanations, filter preservation and pending Ask.
-Judgment changes require reanalysis; scoring weights/formula are unchanged.
-[PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46) is merged at `45ae5c8`; [CI run 37525036496](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37525036496)
-passed lint/hermetic, PostgreSQL 16 and Supabase Postgres 17 on `d579923`.
-The canonical checkout holds PR #47's `test/phase-19-retirement-verification` branch,
-which now incorporates main and preserves this feature work. The old merged
-checkpoint branch was safely removed. No additional worktree or personal database was used.
+GitHub Spec Kit v1.0.13 is the bounded development workflow; see
+[docs/spec-kit.md](docs/spec-kit.md). Feature specs elaborate a root item rather
+than replacing this roadmap. Completed records are historical; measured results
+belong in docs/evaluation.md. The current
+[runtime verification record](specs/010-runtime-verification/spec.md) reconciles
+19.2–19.3 acceptance. The
+[benchmark record](specs/001-synthetic-analysis-benchmark/spec.md) describes the
+existing tooling; execution and quality evidence remain distinct gates.
 
 ## Approved direction
 
@@ -136,30 +80,19 @@ hosted development checks.
 Exit: no selectable or executable v1 analysis remains; synthetic upload, fit,
 citations and generated-artifact flows still work; schema/deletion tests pass.
 
-Evidence (2026-10-06): [retirement verification](specs/009-retirement-verification/spec.md)
-adds populated historical upgrades, legacy live-job termination, original/current
-row equality, selector/schema rejection, consumer consistency, source-citation and
-artifact generation, invalidation/reanalysis and scoped hard-deletion checks.
-`make lint`, `make test` (810 backend / 180 frontend) and all 149 disposable SQL tests
-pass. Current frontend Fit/Gaps use `RoleFitContainer` and the verdict publication;
-shared presentation values remain where used. No personal migration or paid call.
+Evidence (2026-10-06, delivery reconciled 2026-10-07):
+[spec 009](specs/009-retirement-verification/spec.md) proves populated historical
+upgrades, legacy live-job termination, original/current row preservation,
+selector/schema rejection, uniform consumers/citations/artifacts,
+invalidation/reanalysis and scoped deletion. Combined local checks after including
+PR #46 passed 818 backend / 192 frontend and all 149 disposable SQL tests.
+PR #47 is merged at `6340cd0`; its final three-job CI passed on `7ff3ac4`.
 Already-applied retirement revisions cannot recover erased legacy job identities;
-this correction protects upgrades that still cross that revision. Broader release
-and measured model-quality gates remain open. [PR #47](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/47) is open;
-[CI run 37527404818](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37527404818) passed all three jobs on 3511aa9.
-Final checkpoint documentation receives its own updated-head checks.
+the correction protects upgrades that still cross that revision.
 
-Documentation follow-up requested for the same PR: the system, analysis, publication,
-job-lifecycle and retirement diagrams are reconciled with current code. The usage guide
-covers provider selection, progress/failure, filters, citations, drafts and upgrades;
-ten synthetic component screenshots include Ask processing, completed Ask and Letter. These captures do not
-close the broader end-to-end browser or measured quality gates below.
-
-Merge follow-up (2026-10-06): the human merged PR #46 at `45ae5c8`. PR #47 now
-incorporates that main commit, retaining its features and this retirement gate.
-Combined local lint, 818 backend / 192 frontend tests and 149 disposable SQL tests
-pass. Documentation and screenshots describe both changes. Final-head CI is required
-before the resolution report; broader acceptance gates remain open.
+The diagrams, usage guide and ten synthetic gallery screenshots describe current
+behavior, including point contributions, contextual judgments and Ask processing.
+Component/gallery checks do not close the full browser journey or model-quality gate.
 
 ## 19.2 — reduce model/API calls and respect each provider
 
@@ -168,23 +101,30 @@ before the resolution report; broader acceptance gates remain open.
       context-aware cache/budget checks and asked/supported explanations (spec 008).
       These regressions prove behavior, not measured model quality.
 
-- [ ] Read each fitting document with one structured response containing line-range
+- [x] Read each fitting document with one structured response containing line-range
       chunks, details, atomic requirements and technology relationships. Validate
       coverage and verbatim fields before storage; bounded repairs/splits handle
       malformed/truncated results. Never trim evidence to force a successful call.
-- [ ] Pack judge requirements against both input and output capacity. Use configured
+- [x] Pack judge requirements against both input and output capacity. Use configured
       per-model operational budgets; remove a shared small output ceiling. Batch
       corrective judging of changed candidate packets; unchanged candidates cost no
       extra judge call. Cache reusable verdicts.
-- [ ] Batch Ollama and OpenAI embeddings. Reused chunks and vectors make no probe
+- [x] Batch Ollama and OpenAI embeddings. Reused chunks and vectors make no probe
       call when the adapter supplies model identity/dimensions. Simultaneous roles
       share one CV index within the process.
-- [ ] Keep separate provider adapters and execution profiles. Context/output limits,
+- [x] Keep separate provider adapters and execution profiles. Context/output limits,
       concurrency and schema/temperature support are model configuration; an Ollama
       operator may tune local concurrency. Hosted rate headers bound shared calls.
 
 Exit: contract tests cover one-call documents, large output budgets, batched repairs,
 cache reuse and native embeddings; no hosted content leaves through a new path.
+
+Evidence (2026-10-07): [spec 010](specs/010-runtime-verification/spec.md).
+185 focused provider tests pass: one-response coverage/repair/split checks,
+large-capacity judge/cache/corrective retrieval, native Ollama/OpenAI embedding
+contracts, shared CV reuse, execution profiles, schema dialects, safe OpenAI
+failures and local/hosted shared call gates. Full local lint/hermetic checks pass.
+These use recorded/fake provider boundaries; live quality stays open under 19.4.
 
 ## 19.3 — bounded concurrency and useful progress
 
@@ -197,15 +137,15 @@ cache reuse and native embeddings; no hosted content leaves through a new path.
       explain batch-completion counts. Synthetic blocked-call, publication-race,
       cancellation and component regressions pass, with full local checks.
 
-- [ ] Overlap independent document reads and judge batches with bounded threads;
+- [x] Overlap independent document reads and judge batches with bounded threads;
       preserve call-accounting/cancellation context across threads. Dependencies,
       validation and publication remain ordered.
-- [ ] Parse binary documents in a bounded spawned CPU process pool, separate from
+- [x] Parse binary documents in a bounded spawned CPU process pool, separate from
       model/database I/O; plain text avoids startup overhead. Stop workers on
       shutdown/timeout. Pass immutable upload data, never database connections or
       provider objects. Spawned children inherit the host environment; they are not
       a credential sandbox (see docs/threat-model.md).
-- [ ] Show estimated time and remaining LLM/embedding API calls. Track physical
+- [x] Show estimated time and remaining LLM/embedding API calls. Track physical
       attempts, including retries; cached/skipped work consumes zero calls. Label
       undiscovered work and repair uncertainty. Parallel-stage ETA follows overlap;
       no timing history means unknown time, never a fabricated promise.
@@ -214,32 +154,52 @@ Exit: focused concurrency, failure, retry-accounting and component checks pass;
 full lint/unit checks and PostgreSQL integration checks pass or state their concrete
 external blocker. Document verification and measured latency separately.
 
+Evidence (2026-10-07): [spec 010](specs/010-runtime-verification/spec.md).
+55 focused runtime tests pass, including real spawned-worker timeout/crash
+termination, pool recreation, idempotent close, both app lifespan paths and actual
+thread cancellation/progress/retry accounting. Existing tests retain ordered
+repairs, bounded overlap, cache/skipped work, unknown ETA and parallel-stage ETA.
+Full lint and 825 backend / 192 frontend checks pass; frontend progress components
+cover simultaneous stages and incomplete estimates. The unchanged 149 SQL
+contracts passed locally for spec 009 and on both final PR #47 database CI jobs;
+updated-head CI is still required. No model-latency measurement is claimed.
+
 ## 19.4 — prove the current product
 
 Measurement tooling checkpoint: `make benchmark` drives the current analysis with
 named synthetic fixtures, cold/warm application caches, physical request accounting
 and attribution. Explicit live mode reuses provider factories and the egress gate.
 This is fixture retrieval; PostgreSQL/browser latency and frozen-label quality
-evaluation are separate work. No benchmark result is claimed before execution.
+evaluation are separate work. The [offline run](docs/evaluation.md#current-analysis-benchmark-plan-194)
+completed 36 observations with zero physical requests on 2026-10-07.
 
-- [ ] Run one synthetic end-to-end browser journey: upload CV, add role, wait, inspect
-      fit and source citation, prepare, draft and ask. Fix broken current features.
-- [ ] Measure the current one-call/judge architecture on frozen synthetic labels.
+- [x] Implement and run one reusable synthetic Playwright journey: upload CV, add
+      role, wait, inspect fit/source citation, prepare, draft and ask. Fix broken
+      current features. This also satisfies the former duplicate browser-smoke task.
+- [x] Execute the existing offline synthetic benchmark and record timing/accounting
+      provenance in docs/evaluation.md. Fixture timing proves neither model quality
+      nor SQL/browser latency; no paid provider request is needed.
+- [x] Measure the current one-call/judge architecture on frozen synthetic labels.
       Record provider/model/prompt versions, physical calls, cold/warm duration,
       unsupported matches and ranking agreement in docs/evaluation.md. Tune on
       development data only. Hosted measurements need enabled keys and synthetic
-      data; no paid or live quality claims from fixture tests.
+      data; no paid or live quality claims from fixture tests. Local 7B/14B attempts
+      are recorded in docs/evaluation.md; both failed chunking before judging.
+      The separately authorized configured OpenAI run completes cold/warm judging;
+      original reports and alignment/null-rate limits are recorded. This is
+      measurement execution, not a calibrated quality threshold or production pass.
 - [x] Repair PR #43's observed collection/lint failures and pass local lint,
       hermetic and disposable PostgreSQL regression/migration-cycle checks.
       Enable CI on PR updates/reopening. See specs/005-pr43-ci-repair/.
 - [x] Observe both database image jobs and lint/hermetic CI on code head `5b8a585`
       ([run](https://github.com/ArifMehmood16/career-intelligence-assistant/actions/runs/37293311548)); keep updated-head checks enforced.
-- [ ] Complete broader progress migration preservation and dependency/security
-      release checks; retirement preservation and stored-data deletion are verified
-      under 19.1, without claiming a full security audit.
-- [ ] Prove one startup/deployment path. Repair Docker configuration or remove its
-      supported claim; add one Playwright smoke journey. Keep deployment private
-      until authentication exists.
+- [x] Prove populated progress-migration preservation. Empty migration cycles and
+      retirement preservation/deletion already pass; do not repeat them as new work.
+- [x] Complete dependency/security release checks. Stored-data deletion is verified
+      under 19.1 and is not a full security audit. Dependency/secret scans pass;
+      all 22 visible Bandit heuristics are reviewed in docs/threat-model.md.
+- [x] Prove one startup/deployment path. Repair Docker configuration or remove its
+      supported claim. Keep deployment private until authentication exists.
 
 Exit: observed results, reproducible startup and one complete current journey. An
 architecture checkpoint is distinct from this measured release gate.

@@ -368,10 +368,11 @@ Update `docs/threat-model.md` when a trust boundary or control changes.
 
 Documentation is part of the change.
 
-- Keep `README.md` short: status, what the product does, one diagram, quick start and
-  the documentation index. Detail lives in the page it links (`docs/running-locally.md`,
-  `docs/architecture.md`, `docs/model-providers.md` and the rest). Keep both accurate:
-  commands, status and scope boundaries.
+- Keep `README.md` short: what the product does, one diagram, quick start and
+  the documentation index. Development status belongs in `PLAN.md`, `BACKLOG.md`
+  and the engineering journal. Detail lives in the page it links
+  (`docs/running-locally.md`, `docs/architecture.md`, `docs/model-providers.md`
+  and the rest). Keep commands and scope boundaries accurate.
 - Keep `BACKLOG.md` current: add an item when you find open work, remove or tick it
   when its `PLAN.md` box is ticked. Do not restate acceptance criteria there — link
   the `PLAN.md` id.

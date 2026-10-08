@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -38,33 +38,74 @@ export function AddRoleDialog({
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
   const [description, setDescription] = useState("");
-  const [filename, setFilename] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileDescription, setFileDescription] = useState("");
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const displayedError = errorMessage ?? fileError;
+  let uploadLabel = submitting ? "Adding…" : "Add role";
+  if (reading) uploadLabel = "Reading file…";
 
-  const reset = () => {
+  useEffect(() => {
+    setFileDescription("");
+    setFileError(null);
+    setReading(false);
+    if (!file) return;
+    if (
+      !file.name.toLowerCase().endsWith(".txt") ||
+      file.size > 10 * 1024 * 1024
+    ) {
+      setFileError(
+        "Choose a plain-text .txt file up to 10 MB, or paste the description.",
+      );
+      return;
+    }
+    const reader = new FileReader();
+    setReading(true);
+    reader.onload = () => {
+      setReading(false);
+      const text =
+        typeof reader.result === "string" ? reader.result.trim() : "";
+      if (!text || text.includes("\u0000")) {
+        setFileError("The file must contain plain job-description text.");
+        return;
+      }
+      setFileDescription(text);
+    };
+    reader.onerror = () => {
+      setReading(false);
+      setFileError(
+        "Could not read that file. Choose it again or paste the description.",
+      );
+    };
+    reader.readAsText(file);
+    return () => {
+      reader.onload = null;
+      reader.onerror = null;
+      if (reader.readyState === FileReader.LOADING) reader.abort();
+    };
+  }, [file]);
+
+  useEffect(() => {
+    if (open) return;
     setTitle("");
     setCompany("");
     setDescription("");
-    setFilename("");
-  };
+    setFile(null);
+  }, [open]);
 
   const submit = (source: "file" | "text") => {
-    if (!title.trim() || !company.trim()) return;
+    const text = source === "file" ? fileDescription : description.trim();
+    if (submitting || !title.trim() || !company.trim() || !text) return;
     onSubmit({
       title: title.trim(),
       company: company.trim(),
-      description: source === "file" ? filename : description.trim(),
+      description: text,
     });
-    reset();
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset();
-        onOpenChange(next);
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" size="sm" disabled={disabled}>
           Add role
@@ -74,13 +115,13 @@ export function AddRoleDialog({
         <DialogHeader>
           <DialogTitle>Add role</DialogTitle>
           <DialogDescription>
-            Upload a job description file or paste the text.
+            Upload a plain-text job description (.txt) or paste the text.
           </DialogDescription>
         </DialogHeader>
 
-        {errorMessage ? (
+        {displayedError ? (
           <p className="text-sm text-muted-foreground" role="alert">
-            {errorMessage}
+            {displayedError}
           </p>
         ) : null}
 
@@ -117,15 +158,14 @@ export function AddRoleDialog({
               <Input
                 id="role-file"
                 type="file"
-                accept=".pdf,.docx,.txt"
-                onChange={(event) =>
-                  setFilename(event.target.files?.[0]?.name ?? "")
-                }
+                accept=".txt,text/plain"
+                disabled={submitting}
+                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </div>
-            {filename ? (
+            {file ? (
               <p className="font-mono text-sm text-muted-foreground">
-                {filename}
+                {file.name}
               </p>
             ) : null}
             <DialogFooter>
@@ -133,10 +173,14 @@ export function AddRoleDialog({
                 type="button"
                 onClick={() => submit("file")}
                 disabled={
-                  submitting || !title.trim() || !company.trim() || !filename
+                  submitting ||
+                  reading ||
+                  !title.trim() ||
+                  !company.trim() ||
+                  !fileDescription
                 }
               >
-                {submitting ? "Adding…" : "Add role"}
+                {uploadLabel}
               </Button>
             </DialogFooter>
           </TabsContent>

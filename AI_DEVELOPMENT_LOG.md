@@ -29,6 +29,300 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 188 — Validate configured OpenAI without changing frozen expectations
+
+- Date: 2026-10-08; Codex; PLAN 19.4; spec 011 authorized hosted continuation.
+- Prompt intent: use OpenAI already configured in the project directory instead
+  of isolated local mode, or retry Qwen. Selected the configured OpenAI option.
+- Accepted: run the existing synthetic live benchmark from the repository root
+  through normal provider factories/settings. Save original safe report at clean
+  46650d0, record actual hosted attribution and unchanged prompt/label versions.
+- Observed: command exits 0 with all cold/warm observations complete and warm
+  verdict reuse. Detailed measurements and their alignment/null-rate limits are
+  confined to docs/evaluation.md. Root measurement execution is complete; no
+  calibrated semantic-quality pass is claimed and local failures stay unresolved.
+- Rejected: changing labels, weakening coverage/citations, tuning prompts post hoc,
+  treating unlabelled positives/null rates as supported zero-error evidence, or
+  presenting fixture retrieval as production SQL/browser latency.
+- Validation: original report bytes/provenance/label hash and transport totals
+  checked; changed-document links and complete branch whitespace check pass.
+  Production code/settings/secrets unchanged. Pushed evidence commit 929ee26 and
+  observed all four CI jobs pass in run 37764143176. Delivery-record edits follow
+  on the same branch; updated-head checks remain enforced before merge.
+- Human authorization: explicit paid OpenAI synthetic validation and existing PR
+  #48 commit/push scope. No personal documents/database, new branch/PR or merge.
+
+
+### 187 — Deliver the verification checkpoint on the existing PR
+
+- Date: 2026-10-08; Codex; PLAN 19.4; spec 011 delivery.
+- Outcome: retain one task branch/checkout and PR #48; update PR description and
+  reconcile current plan/backlog counts, security scope and model-measurement limit.
+  README stays product-focused. All spec implementation tasks have observed proof;
+  the root quality gate remains open rather than being closed by failed model runs.
+- Validation: all four CI jobs pass at 99c86d1 in run 37761425946, including new
+  Chromium journey. Complete branch whitespace check passes and 106 local Markdown
+  links resolve. All owned temporary services/disposable DB volumes are removed.
+- Human-owned decision: PR review/merge and eventual calibrated model-quality
+  threshold. No extra PR/branch, force push, paid egress or personal data change.
+
+
+### 186 — Reject an ineffective coverage-prompt experiment
+
+- Date: 2026-10-08; Codex; PLAN 19.4 local measurement limit.
+- Finding: metadata-only synthetic 7B diagnostic identifies numbered CV lines 4/8
+  absent from both initial/repaired plans. No quote, prompt or response is logged.
+- Rejected: a temporary explicit adjacency/no-gap prompt clarification did not
+  produce a completed analysis on either frozen case. Reverted it in full rather
+  than shipping an unproven prompt/version or weakening line validation. Frozen
+  labels and original measurement reports remain unchanged; quality stays open.
+- Validation: 66 focused chunk/index/benchmark tests passed during the experiment;
+  previous full checks apply to restored production source. All four PR CI jobs
+  passed on e9221dd, including the new real browser journey; final delivery is next.
+- Review correction: complete branch diff caught original OFL CRLF/trailing spaces;
+  normalize formatting only, preserving all license words and original font bytes.
+  Repository remains one task branch and one checkout with no redundant refs.
+
+
+### 185 — Record failed local measurements without fabricating quality
+
+- Date: 2026-10-08; Codex; PLAN 19.4 measurement; spec 011 T017.
+- Outcome: run frozen shipped synthetic inputs on installed local Qwen 7B and 14B
+  from clean 7a07a6e/f7344a9 with blank keys/closed hosted gate and empty cwd.
+  Save original safe reports; both fail chunk validation before judging, warm runs
+  skipped and quality/ranking values absent. Diagnostic reports two structural
+  problems only, without model payload. Root quality gate remains open.
+- Rejected: treating failed/absent measurements as zero unsupported matches,
+  weakening complete-line validation, or claiming historical/fixture model quality.
+- Validation: full lint and 838 backend/195 frontend tests pass, three existing
+  skips; all 150 SQL tests pass. Browser rerun passes with explicit synthetic role
+  removal as well as CV/history cleanup. Updated PR CI remains required.
+- Human-owned scope: continue remaining verification on the same PR #48, maintain
+  both synchronized locks; no paid call, personal upload or database migration.
+
+
+### 184 — Triage source heuristics and scan only tracked release inputs
+
+- Date: 2026-10-08; Codex; PLAN 19.4 security; spec 011 T018.
+- Outcome: all dependency audits and redacted tracked-file secret scan pass.
+  Trivy confirms both synchronized frontend locks have no HIGH/CRITICAL findings.
+  All 22 Bandit findings are narrowly reviewed by source/group in threat model;
+  no suppression or finding-free Bandit claim. Its nonzero status is retained.
+- Control: containerized Make targets consume git archive HEAD rather than the
+  personal working directory; secrets output is redacted and Trivy uses vuln only.
+  Python/frontend/e2e audits run before visible source findings.
+- Validation: make security-dependencies security-secrets passes on f7344a9.
+  Full tests pass 838 backend/195 frontend, three existing skips, 85.22% coverage;
+  quality module reports 100%. No SonarQube server or image-OS scan is claimed.
+- Human-owned decision: maintain both frontend locks and complete assigned release
+  evidence on PR #48; private operation only, no unconditional security guarantee.
+
+
+### 183 — Reject mislabeled fixture quotes before measurement
+
+- Date: 2026-10-08; Codex; PLAN 19.4 evaluation guard.
+- Outcome: reject labels whose clauses are absent from the fingerprinted fixture;
+  validate duplicate cases/clauses and same-CV distinct-job ranking assumptions.
+- Red observed: invented-quote test failed with DID NOT RAISE ValueError before
+  the quote guard. All 24 benchmark/quality tests now pass, with Ruff/mypy passing.
+- Boundary: validation only, no model or production analysis changes. The first
+  local run used clean 7a07a6e before this additional guard; no result is rewritten.
+
+
+### 182 — Freeze current-judge development labels and honest metrics
+
+- Date: 2026-10-08; Codex; PLAN 19.4 local measurement; spec 011 T015/T016.
+- Outcome: freeze eleven synthetic clauses for one CV/two jobs before model calls.
+  Extend the existing benchmark with opt-in quality reports; original v1 output
+  stays unchanged. Fingerprints reject fixture drift before work. Metrics expose
+  missing/unlabelled/duplicate extraction and absent judgments; unsupported met
+  rates use labelled predictions only. Ranking excludes failed scores and ties.
+- Red observed: metric stubs failed three assertions for unsupported matches,
+  duplicate extraction and eligible ranking, while fixture-drift rejection passed.
+- Validation: all 18 benchmark/quality tests pass; Ruff and strict mypy pass. The
+  offline quality command exercises report wiring with zero physical requests and
+  serializes no fixture text. No live result is claimed yet.
+- Human-owned boundary: assigned release verification on PR #48. These are explicit
+  agent-authored development expectations, not human-calibrated release thresholds;
+  no tuning or retired-model comparison is inferred.
+
+
+### 181 — Verify the complete browser journey and keep font requests local
+
+- Date: 2026-10-08; Codex; PLAN 19.4 browser acceptance; spec 011 US1.
+- Outcome: Bun-managed Playwright runner starts existing API/worker and frontend
+  proxy against only a dedicated loopback *_e2e database, refuses server reuse,
+  clears personal provider configuration and cleans up children. Journey verifies
+  file intake, Fit filters/evidence, Prepare source, persisted cited draft and
+  streamed Ask/reload/history deletion before deleting its synthetic CV.
+- Red observed: the external-request assertion caught Google Fonts fetches after
+  every product flow completed. Bundled the same five original font files with
+  original OFL licenses/provenance; removed external stylesheet/preconnect links.
+- Validation: complete Chromium journey passes; zero external requests. e2e
+  typecheck and audit pass; full lint and 827 backend/195 frontend checks pass.
+  SQL suite passes all 150 tests. A new isolated CI job enforces the journey.
+- Human-owned scope: finish remaining verification on PR #48. No paid model calls,
+  real uploads, altered design tokens or public deployment claim.
+
+
+### 180 — Synchronize both retained frontend locks
+
+- Date: 2026-10-08; Codex; PLAN 19.4 dependency verification; spec 011 T004.
+- Human decision: keep both lockfiles and synchronize them. Bun remains the install,
+  build and test path; frontend agent guidance now records this explicit exception.
+- Outcome: npm lock receives the same seven transitive patches as Bun. All 498 npm
+  package entries match a Bun name/version; changed entries carry Bun integrity
+  hashes and registry URLs. No package.json, extra lockfile or production tool change.
+- Changed suggestion: npm regeneration discarded existing metadata and expanded
+  optional bundled entries. Retained the existing graph and only the seven verified
+  patches instead of introducing unrelated platform churn.
+- Validation: Bun frozen install passes without changing bun.lock; npm audit reports
+  zero advisories and full Bun audit passes. Source/image scan closure remains separate.
+
+
+### 179 — Prove populated progress-migration preservation
+
+- Date: 2026-10-08; Codex; PLAN 19.4 progress preservation; spec 011 US3.
+- Outcome: regression downgrades only disposable test DB to c1f7a2d94e08, seeds
+  pending/running/done/skipped task rows with counts, unknown totals and timestamps,
+  then upgrades b2d9c8e4f601. Historical tasks, jobs, original documents, scores,
+  generated drafts and citations remain identical; model/embedding counters default
+  to 0/unknown and reject negative done/total or excess done values. Finally restores head.
+- Validation: focused migration test and all 150 SQL tests pass on pgvector/PG16
+  at loopback port 55444 with separate application/test DB names. No production
+  migration change was needed; this verifies existing behavior rather than claiming
+  an artificial red defect. Full source lint/type/unit checks also pass.
+- Boundary: shipped synthetic documents only, no user DB or paid providers. Both
+  PostgreSQL CI image jobs remain required on the updated PR head.
+
+
+### 178 — Package runtime resources and migrate before serving
+
+- Date: 2026-10-08; Codex; PLAN 19.4 startup; spec 011 US2.
+- Red observed: built prior API image with no network/personal config; importing
+  main failed because config/scoring_rubric.toml was absent after wheel installation.
+- Fix: allowlisted root context, explicit source/TOML/Alembic packaging and source
+  PYTHONPATH preserve resource ancestry. Persistence startup migrates before exec
+  of the fixed Python/uvicorn command; readiness gates web startup. Published Compose
+  ports bind loopback; frontend context excludes personal env files.
+- Validation: two startup tests and architecture guard pass; full make lint and
+  827 backend/195 frontend tests pass (three existing skips; reported coverage 85%).
+  Fresh API and full Compose stack reach readiness, complete queued synthetic analysis
+  through the production frontend proxy and expose verdicts; final build serves local
+  fonts. Final API shutdown exits 0. No personal migration or hosted provider call.
+- Changed: full checks caught SQLAlchemy outside the persistence boundary; moved the
+  entry point into that existing boundary instead of weakening its architecture test.
+- Human-owned scope: remaining release verification on the existing PR #48; private
+  startup only, no authentication or public deployment claim.
+
+
+### 177 — Submit job-file contents and retain retry input
+
+- Date: 2026-10-08; Codex; PLAN 19.4 browser defect; spec 011 US1.
+- Red observed: content test received role.txt instead of description text; retry
+  input test received cleared fields. Fixed test cleanup before interpreting failures.
+- Green: FileReader reads supported .txt contents with bounded size, empty/binary
+  rejection, safe read errors and cancellation on replacement/unmount. Submit uses
+  text, keeps input while awaiting backend success and resets on controlled close.
+- Validation: three component regressions pass; frontend lint/typecheck pass.
+- Documentation: how-to-use explains pasted/.txt descriptions; binary advert intake
+  remains an explicit later server feature, never a filename-as-description fallback.
+- Boundary: existing JSON API unchanged, escaped text only, no new dependency/egress.
+  Human assigned current-feature repair and continued same PR #48.
+
+
+### 176 — Patch audited dependency findings
+
+- Date: 2026-10-08; Codex; PLAN 19.4 security acceptance.
+- Outcome: targeted cryptography 46.0.7 -> 50.0.2 in both Python locks (the
+  existing <47 range excluded patched releases); Bun applied seven minimal
+  transitive upgrades within existing ranges. No npm lock/package API change.
+- Validation observed: both pip-audit lock checks and full Bun audit report no
+  known vulnerabilities. make lint passes; 825 backend tests pass with three
+  existing skips, 85% reported coverage. All 192 frontend tests pass after granting
+  required loopback socket access; initial restricted run failed two proxy tests
+  with listen EPERM, not an application assertion failure.
+- Scope: dependency advisory checks only; source/secrets/image checks remain open.
+  Human authorized remaining release work on PR #48; no personal/paid data use.
+
+
+### 175 — Record offline benchmark and remaining release tasks
+
+- Date: 2026-10-08 (benchmark observed 2026-10-07).
+- Tool / model: Codex; repository Spec Kit tasks/analyze/implement workflow.
+- Plan task: PLAN 19.4; same PR #48 per human instruction.
+- Intent: explain uncommitted planning files and continue remaining acceptance.
+- Outcome: completed spec 011's task list; all seven requirements and five success
+  criteria covered. Five checklist items pass; no blocking analysis findings or hooks.
+  Saved the already observed 36-success offline report and closed only that gate.
+- Validation: verified statuses, zero physical attempts, cache reuse, clean source
+  provenance and report scope; diff/linked documentation reviewed. No new model call.
+- Rejected: treating millisecond fixture timing as model quality or product latency.
+  README retains product focus; npm lock preserved; no personal DB was touched.
+- Human-owned decision: continue remaining group using the same PR and branch.
+
+
+### 174 — Keep README focused on the product
+
+- Date: 2026-10-07
+- Tool / model: Codex.
+- Plan task: human-requested README edit during same-PR 19.4 continuation.
+- Prompt intent: remove status from README because progress notes feel out of place
+  and make the repository look unfinished.
+- Outcome: removed the dated milestone/PR/test status block and unexecuted benchmark
+  note. Replaced the setup status table with direct prerequisites and retained the
+  app overview, screenshot, architecture, quick start and documentation index.
+- Changed/rejected: progress/release evidence remains in PLAN/BACKLOG and linked
+  operational docs; no unsupported deployment or quality claim was added. Aligned
+  AGENTS.md with the human's README preference so later edits retain this separation.
+- Validation observed: README local links resolve; git diff --check passes.
+  Documentation-only edit; no new application tests needed. Same PR #48 retained.
+- Human-owned decision: product-focused README; no status section.
+
+### 173 — Reconcile the remaining development plan
+
+- Date: 2026-10-07
+- Tool / model: Codex.
+- Plan task: spec 010 checkpoint; PLAN 19.2–19.3 acceptance and 19.4 audit.
+- Prompt intent: remove stale or redundant pending work before executing the plan.
+- Outcome: closed provider/runtime checkboxes only after existing contracts and
+  new lifecycle/context regressions passed. Replaced stale open-PR/branch status
+  with observed merged delivery, trimmed duplicated delivery history from current
+  roadmap pages and corrected old Docker milestone references.
+- Changed/rejected: consolidated the duplicate browser smoke/full journey request;
+  split offline benchmark execution from model quality and progress migrations
+  from security. Retained genuine 19.4 gates and conditional Later work. Corrected
+  old tests/lint deferral wording while preserving historical feature/log records.
+- Validation observed: local lint and full 825 backend / 192 frontend checks passed
+  before documentation edits. Diff/link/checkbox review confirms shared root gate
+  status and unchanged public contracts. No measurement or new SQL run claimed.
+- Human-owned decisions: review before continuing, one canonical checkout/task
+  branch and authorized commit/push/PR. Human owns merge and live quality testing.
+
+### 172 — Verify existing provider and runtime acceptance
+
+- Date: 2026-10-07
+- Tool / model: Codex; repository Spec Kit specify/plan/tasks/analyze workflow.
+- Plan task: PLAN 19.2–19.3, specs/010-runtime-verification.
+- Prompt intent: review remaining plan items for completed, stale or redundant
+  work before continuing development.
+- Outcome: inspected current code, tests and merged PR history. Existing provider
+  acceptance passes 185 focused tests. Runtime research identified missing parser
+  lifecycle and actual thread-context proof; added seven regressions for real
+  timeout/crash termination, pool recreation, idempotent close, both app shutdown
+  paths, concurrent retry accounting and inherited cancellation.
+- Changed/rejected: reused all production code. Rejected rebuilding implemented
+  provider/concurrency features or claiming offline tests as model-quality evidence.
+  No production defect was demonstrated, so no artificial red fix is claimed.
+- Validation observed: focused lifecycle/context tests pass 13 cases; surrounding
+  runtime suite passes 55; make lint passes Ruff/format/mypy/TypeScript/ESLint;
+  make test passes 825 backend and 192 frontend tests, three existing skips,
+  reported total coverage 85%. Read-only research used synthetic unit tests only.
+- Human-owned decisions: continue development and reconcile the plan; standing
+  commit/push/PR authority retained. No live provider calls, personal uploads,
+  database migration or new dependency. Human-added npm lock stays untouched.
+  Broader release gates and final-head CI remain separate from this local proof.
+
 ### 171 — Resolve PR #47 conflicts after PR #46 merge
 
 - Date: 2026-10-06

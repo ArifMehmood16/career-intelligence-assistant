@@ -1,0 +1,343 @@
+{
+  "schema_version": "analysis-benchmark-v2",
+  "measured_at": "2026-10-08T09:52:06.965824+00:00",
+  "measurement_kind": "live_provider",
+  "scope": "application_cache_cold_warm_with_fixture_retrieval",
+  "configuration": {
+    "repetitions": 1,
+    "as_of": "2026-09-01",
+    "live": true,
+    "provider": "ollama",
+    "embedding_provider": "ollama",
+    "completion_model": "qwen2.5:14b",
+    "embedding_model": "nomic-embed-text:latest"
+  },
+  "source": {
+    "revision": "f7344a99702a4538cf1e48a9ae0137aea7fc30ff",
+    "dirty": false
+  },
+  "runtime": {
+    "python": "3.14.4",
+    "platform": "Darwin"
+  },
+  "fingerprints": {
+    "manifest_sha256": "0c6f604f05a380fd5dcdcd60e28baea42f3ff8648018ead41889d44440245772",
+    "rubric_sha256": "ce49907224bd1d565f4d290ebfcf7b11994c6229506e0a9a39f7e1032eb9770d",
+    "models_sha256": "880b5c3c5aec20666be942d322b5f4f87ecfe5052347ed38430eec710aa13b4d",
+    "cases": [
+      {
+        "case_id": "partial_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "cd3ab9f6e5b35e98ba9ca0a8811845838e20f8ad947d827130d1a4ef10bfc305"
+      },
+      {
+        "case_id": "poor_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "f3773d3ee5dd91d7e2d65793c10bdb3ea3022eb1ba00f2f879177cf78a56e491"
+      }
+    ],
+    "quality_labels_sha256": "ff18e695eb9f83ec103f68e8c1ccee0bd98e34ee238fec19a7e52f1fb1d9fb37",
+    "quality_label_file_sha256": "ad8d59faaac664f9b5b7a3e66681d013cf7544bec4e1ef4674de86a5c0521455"
+  },
+  "prompts": {
+    "chunking": "chunking-v4",
+    "judge": "judge-prompt-v2",
+    "judge_anchors": "judge-anchors-v2",
+    "cv_contract": "cv-chunks-v2",
+    "job_contract": "job-chunks-v3",
+    "judge_contract": "judge-v1",
+    "rubric": "scoring-rubric-v2"
+  },
+  "observations": [
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "failed",
+      "elapsed_seconds": 94.36357000000135,
+      "counts": {
+        "physical_attempts": {
+          "completion": 2,
+          "embedding": 0,
+          "metadata": 1
+        },
+        "logical_operations": {
+          "structured": 2,
+          "embedding": 0
+        },
+        "progress_attempts": {
+          "read_cv.model": 2
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 0,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "ollama",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 4096,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": true,
+            "supports_seed": true,
+            "model_tag": null,
+            "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 8192,
+              "judge_output_tokens": 8192,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "ollama",
+            "qwen2.5:14b",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "ollama",
+          "completion_model": "qwen2.5:14b",
+          "embedding_provider": "ollama",
+          "embedding_model": "nomic-embed-text:latest",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 0,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 0,
+      "requirement_ids": [],
+      "incomplete_count": 0,
+      "score": null,
+      "band": null,
+      "error_code": "chunking_incomplete",
+      "quality": null
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "skipped",
+      "elapsed_seconds": null,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 0
+        },
+        "progress_attempts": {},
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 0,
+          "verdict_hits": 0
+        },
+        "capabilities": {},
+        "observed_providers": [],
+        "selected_configuration": {}
+      },
+      "requirement_count": 0,
+      "requirement_ids": [],
+      "incomplete_count": 0,
+      "score": null,
+      "band": null,
+      "error_code": "cold_run_failed",
+      "quality": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "failed",
+      "elapsed_seconds": 85.8627295419974,
+      "counts": {
+        "physical_attempts": {
+          "completion": 2,
+          "embedding": 0,
+          "metadata": 1
+        },
+        "logical_operations": {
+          "structured": 2,
+          "embedding": 0
+        },
+        "progress_attempts": {
+          "read_cv.model": 2
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 0,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "ollama",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 8192,
+            "max_output_tokens": 4096,
+            "embedding_dimensions": null,
+            "leaves_machine": false,
+            "supports_tool_calling": false,
+            "supports_prompt_caching": false,
+            "supports_temperature": true,
+            "supports_seed": true,
+            "model_tag": null,
+            "model_digest": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+            "execution": {
+              "completion_concurrency": 1,
+              "embedding_concurrency": 1,
+              "document_output_tokens": 8192,
+              "judge_output_tokens": 8192,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "ollama",
+            "qwen2.5:14b",
+            false
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "ollama",
+          "completion_model": "qwen2.5:14b",
+          "embedding_provider": "ollama",
+          "embedding_model": "nomic-embed-text:latest",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 0,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 0,
+      "requirement_ids": [],
+      "incomplete_count": 0,
+      "score": null,
+      "band": null,
+      "error_code": "chunking_incomplete",
+      "quality": null
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "skipped",
+      "elapsed_seconds": null,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 0,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 0
+        },
+        "progress_attempts": {},
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 0,
+          "verdict_hits": 0
+        },
+        "capabilities": {},
+        "observed_providers": [],
+        "selected_configuration": {}
+      },
+      "requirement_count": 0,
+      "requirement_ids": [],
+      "incomplete_count": 0,
+      "score": null,
+      "band": null,
+      "error_code": "cold_run_failed",
+      "quality": null
+    }
+  ],
+  "summaries": [
+    {
+      "case_id": "partial_match",
+      "temperature": "cold",
+      "successful_runs": 0,
+      "failed_runs": 1,
+      "skipped_runs": 0,
+      "p50_seconds": null,
+      "p95_seconds": null
+    },
+    {
+      "case_id": "partial_match",
+      "temperature": "warm",
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "skipped_runs": 1,
+      "p50_seconds": null,
+      "p95_seconds": null
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "cold",
+      "successful_runs": 0,
+      "failed_runs": 1,
+      "skipped_runs": 0,
+      "p50_seconds": null,
+      "p95_seconds": null
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "warm",
+      "successful_runs": 0,
+      "failed_runs": 0,
+      "skipped_runs": 1,
+      "p50_seconds": null,
+      "p95_seconds": null
+    }
+  ],
+  "quality": {
+    "label_version": "current-judge-development-v1",
+    "basis": "Agent-authored synthetic development expectations, frozen before model execution; not human-calibrated release labels.",
+    "ranking_groups": [
+      {
+        "repetition": 1,
+        "temperature": "cold",
+        "expected_pairs": 1,
+        "eligible_pairs": 0,
+        "agreed_pairs": 0,
+        "agreement": null
+      },
+      {
+        "repetition": 1,
+        "temperature": "warm",
+        "expected_pairs": 1,
+        "eligible_pairs": 0,
+        "agreed_pairs": 0,
+        "agreement": null
+      }
+    ]
+  }
+}

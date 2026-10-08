@@ -18,6 +18,160 @@ Nothing predicted, nothing rounded up.
 
 ## Entries
 
+## Phase 19.4 — Configured OpenAI measurement continuation
+
+- Date: 2026-10-08. Human requested configured OpenAI from the project directory
+  after isolated local failures. Ran existing quality/live benchmark from root;
+  exact command and safe original report are in docs/evaluation.md.
+- Observed: process exits 0; every frozen cold/warm observation succeeds with
+  complete verdicts. Configured gpt-5-mini/text-embedding-3-small attribution shows
+  off-machine synthetic input, fallback false; original source clean 46650d0.
+  Report bytes, label-file hash, provider attribution and transport totals checked.
+- Decision: close root measurement execution, which has no numeric quality
+  threshold. Keep clause-alignment gaps, null unsupported-met rates and narrow
+  ranking sample explicit in evaluation.md; human calibration remains future work.
+  Do not retune labels/prompts, relax validators or erase local failure reports.
+- Scope: no application server/database or private uploads used. Normal settings
+  loaded, no secret file modified. This report is model/application work with
+  fixture retrieval, not SQL/browser latency or an end-to-end hosted deployment.
+- Delivery: pushed evidence commit 929ee26 to the same PR #48/branch and observed
+  all four jobs pass in CI run 37764143176: lint/hermetic, PostgreSQL, Supabase and
+  synthetic browser. Original committed report verified byte-for-byte; changed
+  document links and complete branch whitespace check pass. Delivery-record edits
+  follow on the same branch, with updated-head checks enforced before merge.
+
+
+## Phase 19.4 — Delivery checkpoint
+
+- Date: 2026-10-08. Same PR #48 title/description updated to final scope; pushed
+  test/phase-19-runtime-verification without rewriting history or merging.
+- Observed checkpoint 99c86d1 passes all four jobs in CI run 37761425946:
+  lint/typecheck/hermetic, PostgreSQL 16, Supabase Postgres 17 and browser journey.
+- All spec 011 implementation/delivery tasks have observed evidence. The broader
+  root model-quality gate stays open because both local models failed before
+  judging. Frozen development labels still require human calibration for thresholds.
+- Complete branch whitespace review passes after license formatting normalization;
+  106 changed-document local file links resolve. Temporary Compose services/volume
+  and standalone API/disposable database containers were removed; no extra checkout
+  or redundant branch remains. Final checkpoint edits are documentation only.
+
+
+## Phase 19.4 — Local model attempts and final regression checks
+
+- Date: 2026-10-08. Exact isolated commands and safe original reports are in
+  docs/evaluation.md. Shipped synthetic adjacent CV/partial and poor jobs only;
+  frozen labels preceded calls. Hosted gate/fallback false, keys blank, no personal
+  dotenv or database used. Models qwen2.5:7b and qwen2.5:14b, local nomic selection.
+- Observed: both commands exit 1. Each model has two failed cold and two skipped
+  warm observations; chunk validation still fails after repair. A metadata-only
+  diagnostic confirms two remaining structural problems. No score/band, successful
+  quality count or ranking comparison; the root model-quality gate remains open.
+- Original reports precede tuning. A later bounded adjacency/coverage prompt
+  clarification still failed on both cases and was fully reverted. No profile/label
+  change or complete-line validation relaxation shipped. Failure
+  reports retain physical calls, source/input/label/prompt/model provenance; no
+  raw response, prompt or exception payload was logged or saved.
+- Final checks: make lint passes; make test passes 838 backend/195 frontend,
+  three existing skips, 85.22% coverage. Disposable SQL suite passes 150. Full
+  browser rerun passes after adding explicit role deletion before CV deletion.
+- Branch review: inspected changed startup/build, browser, intake, benchmark and
+  dependency code for unrelated changes, egress and unnecessary abstractions.
+  Same branch/PR #48; no extra branch, worktree, force push or merge.
+
+
+## Phase 19.4 — Scoped security review
+
+- Date: 2026-10-08. Commands: make security-dependencies security-secrets;
+  backend/.venv/bin/bandit -r backend/src -f json; npm audit --json from frontend.
+- Observed: both Python lock audits pass; full frontend Bun audit (446 packages)
+  and browser-runner Bun audit (26 packages) pass; npm audit reports zero advisories.
+  Trivy HIGH/CRITICAL dependency scan finds none; redacted Gitleaks finds none.
+  Container scans use committed tracked files at f7344a9, including runner/fonts
+  and both synchronized frontend locks, excluding ignored configuration/uploads.
+- Source: Bandit reports 22 findings (three medium, nineteen low), reviewed in
+  docs/threat-model.md by exact site/group. Constant SQL templates, private container
+  bind, fixed command vectors, internal invariants and result enum are justified.
+  No suppression/baseline was added; Bandit and aggregate make security remain
+  nonzero. No SonarQube or image-OS scan claim.
+- Control repair: make security container inputs now come from git archive HEAD;
+  Gitleaks redacts instead of verbose source output, Trivy explicitly scans
+  vulnerabilities only. Commit intended changes before this tracked-source scan.
+- Compatibility: latest make test passes 838 backend and 195 frontend tests,
+  three existing skips, reported coverage 85.22%; new quality module has 100%
+  statement/branch coverage. Earlier make lint and 150 SQL/browser checks pass.
+- Carried forward: local-model measurement results and updated-head CI.
+
+
+## Phase 19.4 — Browser, startup and populated progress acceptance
+
+- Date: 2026-10-08. Commands: make lint; make test; make test-integration with
+  distinct disposable application/test URLs on port 55444; make test-e2e with a
+  dedicated loopback *_e2e database; e2e bun run typecheck and bun audit.
+- Observed: lint passes; 827 backend and 195 frontend tests pass, three existing
+  skips, reported coverage 85%; all 150 SQL tests pass. Browser journey passes:
+  upload, text-file role, Fit filters/evidence, Prepare quote, persisted cited draft,
+  streamed Ask/source, reload and own workspace cleanup. Zero external browser requests.
+- Defects: job-file control submitted its filename and discarded retry input;
+  focused red assertions reproduced both. Original API image import failed with
+  missing scoring_rubric.toml. Packaging now preserves TOML/source/migrations and
+  startup migrates before serving; full fresh Compose stack reaches ready and
+  completes analysis through the production web proxy. Final API shutdown exits 0.
+- Browser regression initially completed product flows but caught Google Fonts
+  egress. Self-host the same licensed faces/weights, preserving original OFL notices;
+  the external-request assertion now passes. No new design tokens or typography.
+- Progress migration: real populated c1 -> b2 upgrade preserves documents, jobs,
+  task timestamps/counts, scores, drafts and citations; added counters default to
+  zero/unknown and reject invalid counts. Test finally restores migration head.
+- Tooling: Playwright is a test-only dependency because DOM component checks cannot
+  prove browser/proxy/SQL persistence. CI adds an isolated synthetic browser job;
+  failure artifacts contain only test fixtures and expire after seven days.
+- Carried forward: local-model quality and final scoped security results. No paid
+  providers, personal database migration or SonarQube server scan claimed.
+
+
+## Phase 19.4 — Offline benchmark evidence
+
+- Date: 2026-10-08; measurement executed 2026-10-07.
+- Command: make benchmark BENCHMARK_ARGS='--repetitions 3 --output /private/tmp/career-analysis-offline-20261007.json'.
+- Observed: 36 successful synthetic observations, zero physical provider requests,
+  clean source 9c2f27e, fixture-only retrieval. Safe report saved under
+  docs/evaluation-results/offline-2026-10-07.json; cache/call/timing provenance verified.
+- Decision: close offline execution only; local model quality, SQL/browser latency,
+  startup, populated progress preservation and security need separate evidence.
+- Continuation: specs/011-synthetic-release-verification defines 21 linked tasks;
+  seven requirements/five success criteria covered, all five specification checklist
+  items pass, no blocking consistency finding. No extension hooks installed.
+
+
+## Phase 19.2–19.3 — Plan reconciliation and runtime acceptance
+
+- Date: 2026-10-07
+- Trigger: human requested review of remaining done/stale/redundant work before
+  continuing development. Spec Kit record: specs/010-runtime-verification.
+- Audit: provider reading/budgets/native batches/repair/cache/profiles and bounded
+  concurrency were already implemented. Missing acceptance proof concerned real
+  parser failure/shutdown and combined thread cancellation/progress/accounting.
+  Added seven regressions without changing production code or dependencies.
+- Commands/results: provider command in spec quickstart passes 185 tests; runtime
+  command passes 55, including real spawned timeout/crash/close/recreation and both
+  application lifespan branches. Focused lifecycle/context suite passes 13.
+  make lint passes Ruff/format/mypy/TypeScript/ESLint; make test passes 825 backend
+  and 192 frontend tests, three existing skips and reported total coverage 85%.
+  The existing Starlette/AnyIO deprecation warning is unchanged.
+- SQL: no persistence/migration change, so local SQL was not rerun. The unchanged
+  149 SQL contracts passed at spec 009 and final PR #47 CI on both database images.
+  Final-head CI remains enforced for this branch.
+- Disposition: close proven 19.2/19.3 gates; consolidate duplicate browser-smoke
+  work into one complete Playwright journey. Separate unexecuted offline benchmark,
+  current-model quality, progress-migration preservation, security and startup
+  proof. Keep Ask hybrid retrieval/test-provider catalogue work relevant and
+  tool-history/audit retention conditional on user value.
+- Delivery state: PRs 46/47 merged; main synchronized at 6340cd0 before creating
+  one task branch. Human-added npm lock untouched; historical logs preserved.
+- Review: inspect complete branch diff, immutable test-only uploads, bounded cleanup
+  and exact accounting; no new egress/storage/API boundary. Ruff/mypy pass; no
+  SonarQube server scan is claimed. No paid provider call or personal database used.
+
 ## Phase 19.1 — Integrate merged PR #46 into PR #47
 
 - Date: 2026-10-06

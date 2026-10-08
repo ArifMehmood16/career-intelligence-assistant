@@ -1,6 +1,6 @@
 # Architecture — one evidence-bound analysis
 
-Current behavior, 2026-10-06. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
+Current behavior, 2026-10-08. See [ADR 016](adr/016-consolidated-parallel-analysis.md)
 and [PLAN 19](../PLAN.md). The retired span-classification/assessment pipeline is
 implementation history, not an alternate runtime or a release dependency.
 
@@ -21,6 +21,20 @@ The route-to-service/store map is [production-wiring.md](production-wiring.md).
 - Ask uses `POST /api/messages` with JSON or SSE. Its retrieval/agent tools read
   stored documents and validated results. The read-only stdio MCP entry point
   shares the workspace tools, but does not run an answer model itself.
+
+## Private startup and assets
+
+The API container preserves repository source/resource paths for model profiles,
+scoring rubric and Alembic. `adapters.persistence.startup` applies the configured
+migrations before replacing its process with uvicorn; failure prevents serving and
+logs a safe category. `/api/ready` checks the database and migration head. Compose
+starts web only after API readiness and binds published ports to loopback. Root and
+frontend build contexts exclude private environment files. Authentication remains
+required before public deployment.
+
+Inter and IBM Plex Mono are bundled with their original open-font licenses and
+served from the application origin. Browser assets do not require a Google Fonts
+connection. The provider/MCP egress boundaries below remain separate.
 
 ## Analysis flow and dependencies
 

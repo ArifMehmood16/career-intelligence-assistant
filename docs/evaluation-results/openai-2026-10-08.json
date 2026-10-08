@@ -1,0 +1,639 @@
+{
+  "schema_version": "analysis-benchmark-v2",
+  "measured_at": "2026-10-08T10:25:20.963132+00:00",
+  "measurement_kind": "live_provider",
+  "scope": "application_cache_cold_warm_with_fixture_retrieval",
+  "configuration": {
+    "repetitions": 1,
+    "as_of": "2026-09-01",
+    "live": true,
+    "provider": "openai",
+    "embedding_provider": "openai",
+    "completion_model": null,
+    "embedding_model": null
+  },
+  "source": {
+    "revision": "46650d0f44d4ec8b4bd241f3594e152149514483",
+    "dirty": false
+  },
+  "runtime": {
+    "python": "3.14.4",
+    "platform": "Darwin"
+  },
+  "fingerprints": {
+    "manifest_sha256": "0c6f604f05a380fd5dcdcd60e28baea42f3ff8648018ead41889d44440245772",
+    "rubric_sha256": "ce49907224bd1d565f4d290ebfcf7b11994c6229506e0a9a39f7e1032eb9770d",
+    "models_sha256": "880b5c3c5aec20666be942d322b5f4f87ecfe5052347ed38430eec710aa13b4d",
+    "cases": [
+      {
+        "case_id": "partial_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "cd3ab9f6e5b35e98ba9ca0a8811845838e20f8ad947d827130d1a4ef10bfc305"
+      },
+      {
+        "case_id": "poor_match",
+        "cv_sha256": "b18e904616c599fe07046155cb65921a5ff1e5382262b12a0fadc95c0f0c5a1f",
+        "jd_sha256": "f3773d3ee5dd91d7e2d65793c10bdb3ea3022eb1ba00f2f879177cf78a56e491"
+      }
+    ],
+    "quality_labels_sha256": "ff18e695eb9f83ec103f68e8c1ccee0bd98e34ee238fec19a7e52f1fb1d9fb37",
+    "quality_label_file_sha256": "ad8d59faaac664f9b5b7a3e66681d013cf7544bec4e1ef4674de86a5c0521455"
+  },
+  "prompts": {
+    "chunking": "chunking-v4",
+    "judge": "judge-prompt-v2",
+    "judge_anchors": "judge-anchors-v2",
+    "cv_contract": "cv-chunks-v2",
+    "job_contract": "job-chunks-v3",
+    "judge_contract": "judge-v1",
+    "rubric": "scoring-rubric-v2"
+  },
+  "observations": [
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 77.09113887499916,
+      "counts": {
+        "physical_attempts": {
+          "completion": 3,
+          "embedding": 3,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 3
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1,
+          "recheck.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 7,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "openai",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 400000,
+            "max_output_tokens": 128000,
+            "embedding_dimensions": null,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": true,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 32768,
+              "judge_output_tokens": 32768,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "openai",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8191,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 1536,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "text-embedding-3-small",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "openai",
+            "gpt-5-mini",
+            true
+          ],
+          [
+            "openai",
+            "text-embedding-3-small",
+            true
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "openai",
+          "completion_model": "gpt-5-mini",
+          "embedding_provider": "openai",
+          "embedding_model": "text-embedding-3-small",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 2,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 7,
+      "requirement_ids": [
+        "a927a922-0613-5a2a-9b32-815f88021d3c",
+        "5b889859-dfe6-5a8e-bf42-b25846b5b9e3",
+        "c471109a-3ce3-5fa6-82be-f14540991ac0",
+        "e6d1b796-e7e3-533f-895c-caeefac9befa",
+        "caa052b9-c840-599e-a248-a929185053f1",
+        "104cb9a4-8fa5-568c-8f53-7d2403f87b97",
+        "28a01594-f4c0-5075-8619-79c98b6e084d"
+      ],
+      "incomplete_count": 0,
+      "score": 34.99999999999999,
+      "band": "limited",
+      "error_code": null,
+      "quality": {
+        "expected_requirements": 6,
+        "matched_requirements": 5,
+        "correct_labels": 4,
+        "unmatched_requirements": 1,
+        "unlabelled_requirements": 2,
+        "duplicate_requirements": 0,
+        "missing_verdicts": 0,
+        "predicted_met": 1,
+        "labelled_met": 0,
+        "unsupported_met": 0,
+        "label_agreement": 0.6666666666666666,
+        "unsupported_met_rate": null
+      }
+    },
+    {
+      "case_id": "partial_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 1.845129834000545,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 2,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "search.embedding": 1,
+          "recheck.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 4,
+          "verdict_lookups": 7,
+          "verdict_hits": 7
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "openai",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 400000,
+            "max_output_tokens": 128000,
+            "embedding_dimensions": null,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": true,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 32768,
+              "judge_output_tokens": 32768,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "openai",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8191,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 1536,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "text-embedding-3-small",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "openai",
+            "gpt-5-mini",
+            true
+          ],
+          [
+            "openai",
+            "text-embedding-3-small",
+            true
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "openai",
+          "completion_model": "gpt-5-mini",
+          "embedding_provider": "openai",
+          "embedding_model": "text-embedding-3-small",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 2,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 7,
+      "requirement_ids": [
+        "a927a922-0613-5a2a-9b32-815f88021d3c",
+        "5b889859-dfe6-5a8e-bf42-b25846b5b9e3",
+        "c471109a-3ce3-5fa6-82be-f14540991ac0",
+        "e6d1b796-e7e3-533f-895c-caeefac9befa",
+        "caa052b9-c840-599e-a248-a929185053f1",
+        "104cb9a4-8fa5-568c-8f53-7d2403f87b97",
+        "28a01594-f4c0-5075-8619-79c98b6e084d"
+      ],
+      "incomplete_count": 0,
+      "score": 34.99999999999999,
+      "band": "limited",
+      "error_code": null,
+      "quality": {
+        "expected_requirements": 6,
+        "matched_requirements": 5,
+        "correct_labels": 4,
+        "unmatched_requirements": 1,
+        "unlabelled_requirements": 2,
+        "duplicate_requirements": 0,
+        "missing_verdicts": 0,
+        "predicted_met": 1,
+        "labelled_met": 0,
+        "unsupported_met": 0,
+        "label_agreement": 0.6666666666666666,
+        "unsupported_met_rate": null
+      }
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "cold",
+      "status": "succeeded",
+      "elapsed_seconds": 69.29321579200041,
+      "counts": {
+        "physical_attempts": {
+          "completion": 3,
+          "embedding": 2,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 3,
+          "embedding": 2
+        },
+        "progress_attempts": {
+          "read_cv.model": 1,
+          "read_cv.embedding": 1,
+          "read_advert.model": 1,
+          "search.embedding": 1,
+          "judge.model": 1
+        },
+        "cache_reuse": {
+          "documents": 0,
+          "vectors": 0,
+          "verdict_lookups": 5,
+          "verdict_hits": 0
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "openai",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 400000,
+            "max_output_tokens": 128000,
+            "embedding_dimensions": null,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": true,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 32768,
+              "judge_output_tokens": 32768,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "openai",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8191,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 1536,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "text-embedding-3-small",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "openai",
+            "gpt-5-mini",
+            true
+          ],
+          [
+            "openai",
+            "text-embedding-3-small",
+            true
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "openai",
+          "completion_model": "gpt-5-mini",
+          "embedding_provider": "openai",
+          "embedding_model": "text-embedding-3-small",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 2,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "adddfbbc-db68-50dd-9164-12cebd860730",
+        "4cfe9371-2ed3-5fa6-a9f4-e9e89efdc46f",
+        "22ab0773-8731-5d4d-87e3-f5cbee6a49cf",
+        "dee86125-e65f-55c1-8dc1-3794dbe70649",
+        "bd434462-2185-5f17-8f09-e881fcfc968c"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null,
+      "quality": {
+        "expected_requirements": 5,
+        "matched_requirements": 5,
+        "correct_labels": 5,
+        "unmatched_requirements": 0,
+        "unlabelled_requirements": 0,
+        "duplicate_requirements": 0,
+        "missing_verdicts": 0,
+        "predicted_met": 0,
+        "labelled_met": 0,
+        "unsupported_met": 0,
+        "label_agreement": 1.0,
+        "unsupported_met_rate": null
+      }
+    },
+    {
+      "case_id": "poor_match",
+      "repetition": 1,
+      "temperature": "warm",
+      "status": "succeeded",
+      "elapsed_seconds": 0.4048042920003354,
+      "counts": {
+        "physical_attempts": {
+          "completion": 0,
+          "embedding": 1,
+          "metadata": 0
+        },
+        "logical_operations": {
+          "structured": 0,
+          "embedding": 1
+        },
+        "progress_attempts": {
+          "search.embedding": 1
+        },
+        "cache_reuse": {
+          "documents": 2,
+          "vectors": 4,
+          "verdict_lookups": 5,
+          "verdict_hits": 5
+        },
+        "capabilities": {
+          "completion": {
+            "provider_id": "openai",
+            "supports_completion": true,
+            "supports_embedding": false,
+            "supports_structured_output": true,
+            "context_window_tokens": 400000,
+            "max_output_tokens": 128000,
+            "embedding_dimensions": null,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": true,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": null,
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 32768,
+              "judge_output_tokens": 32768,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          },
+          "embedding": {
+            "provider_id": "openai",
+            "supports_completion": false,
+            "supports_embedding": true,
+            "supports_structured_output": false,
+            "context_window_tokens": 8191,
+            "max_output_tokens": 0,
+            "embedding_dimensions": 1536,
+            "leaves_machine": true,
+            "supports_tool_calling": true,
+            "supports_prompt_caching": false,
+            "supports_temperature": false,
+            "supports_seed": false,
+            "model_tag": "text-embedding-3-small",
+            "model_digest": null,
+            "execution": {
+              "completion_concurrency": 4,
+              "embedding_concurrency": 4,
+              "document_output_tokens": 0,
+              "judge_output_tokens": 0,
+              "tokens_per_verdict": 400,
+              "max_document_split_depth": 4
+            }
+          }
+        },
+        "observed_providers": [
+          [
+            "openai",
+            "gpt-5-mini",
+            true
+          ],
+          [
+            "openai",
+            "text-embedding-3-small",
+            true
+          ]
+        ],
+        "selected_configuration": {
+          "completion_provider": "openai",
+          "completion_model": "gpt-5-mini",
+          "embedding_provider": "openai",
+          "embedding_model": "text-embedding-3-small",
+          "max_rewrites": 5,
+          "max_embedding_chars": 8000,
+          "timeout_seconds": 180.0,
+          "max_retries": 2,
+          "breaker_failure_threshold": 5,
+          "hosted_max_in_flight": 4,
+          "fallback_enabled": false
+        }
+      },
+      "requirement_count": 5,
+      "requirement_ids": [
+        "adddfbbc-db68-50dd-9164-12cebd860730",
+        "4cfe9371-2ed3-5fa6-a9f4-e9e89efdc46f",
+        "22ab0773-8731-5d4d-87e3-f5cbee6a49cf",
+        "dee86125-e65f-55c1-8dc1-3794dbe70649",
+        "bd434462-2185-5f17-8f09-e881fcfc968c"
+      ],
+      "incomplete_count": 0,
+      "score": 0.0,
+      "band": "limited",
+      "error_code": null,
+      "quality": {
+        "expected_requirements": 5,
+        "matched_requirements": 5,
+        "correct_labels": 5,
+        "unmatched_requirements": 0,
+        "unlabelled_requirements": 0,
+        "duplicate_requirements": 0,
+        "missing_verdicts": 0,
+        "predicted_met": 0,
+        "labelled_met": 0,
+        "unsupported_met": 0,
+        "label_agreement": 1.0,
+        "unsupported_met_rate": null
+      }
+    }
+  ],
+  "summaries": [
+    {
+      "case_id": "partial_match",
+      "temperature": "cold",
+      "successful_runs": 1,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 77.09113887499916,
+      "p95_seconds": 77.09113887499916
+    },
+    {
+      "case_id": "partial_match",
+      "temperature": "warm",
+      "successful_runs": 1,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 1.845129834000545,
+      "p95_seconds": 1.845129834000545
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "cold",
+      "successful_runs": 1,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 69.29321579200041,
+      "p95_seconds": 69.29321579200041
+    },
+    {
+      "case_id": "poor_match",
+      "temperature": "warm",
+      "successful_runs": 1,
+      "failed_runs": 0,
+      "skipped_runs": 0,
+      "p50_seconds": 0.4048042920003354,
+      "p95_seconds": 0.4048042920003354
+    }
+  ],
+  "quality": {
+    "label_version": "current-judge-development-v1",
+    "basis": "Agent-authored synthetic development expectations, frozen before model execution; not human-calibrated release labels.",
+    "ranking_groups": [
+      {
+        "repetition": 1,
+        "temperature": "cold",
+        "expected_pairs": 1,
+        "eligible_pairs": 1,
+        "agreed_pairs": 1,
+        "agreement": 1.0
+      },
+      {
+        "repetition": 1,
+        "temperature": "warm",
+        "expected_pairs": 1,
+        "eligible_pairs": 1,
+        "agreed_pairs": 1,
+        "agreement": 1.0
+      }
+    ]
+  }
+}

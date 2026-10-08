@@ -43,6 +43,15 @@ from career_assistant.ops.benchmark_cases import (
     load_dataset,
 )
 from career_assistant.ops.benchmark_probe import BenchmarkProbe, ProbeSnapshot
+from career_assistant.ops.benchmark_quality import (
+    QUALITY_CASES,
+    JudgedLabel,
+    QualityLabels,
+    QualityMetrics,
+    load_quality,
+    measure,
+    ranking_agreement,
+)
 from career_assistant.ops.benchmark_runtime import BenchmarkConfig, BenchmarkRuntime
 
 Temperature = Literal["cold", "warm"]
@@ -75,6 +84,7 @@ class Observation:
     score: float | None = None
     band: str | None = None
     error_code: str | None = None
+    quality: QualityMetrics | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +111,7 @@ class BenchmarkReport:
     prompts: dict[str, str]
     observations: tuple[Observation, ...]
     summaries: tuple[LatencySummary, ...]
+    quality: dict[str, object] | None = None
 
     @property
     def succeeded(self) -> bool:
@@ -109,7 +120,12 @@ class BenchmarkReport:
         )
 
     def payload(self) -> dict[str, object]:
-        return asdict(self)
+        payload = asdict(self)
+        if self.quality is None:
+            payload.pop("quality")
+            for item in payload["observations"]:
+                item.pop("quality")
+        return payload
 
 
 def _error_code(error: Exception) -> str:
@@ -135,6 +151,7 @@ def _observe(
     *,
     runtime: BenchmarkRuntime | None = None,
     transport: HttpTransport | None = None,
+    quality_labels: QualityLabels | None = None,
 ) -> tuple[Observation, BenchmarkRuntime | None]:
     started = perf_counter()
     try:
@@ -160,12 +177,27 @@ def _observe(
             if analysis.match.incomplete
             else "no_scoreable_requirements"
         )
+    elapsed = perf_counter() - started
+    quality = None
+    if quality_labels is not None:
+        expected = next(
+            item for item in quality_labels.cases if item.case_id == case.case_id
+        )
+        judgments = []
+        for item in analysis.requirements:
+            record = analysis.match.verdicts.get(item.packet.requirement_id)
+            judgments.append(
+                JudgedLabel(
+                    item.packet.quote, record.verdict.verdict if record else None
+                )
+            )
+        quality = measure(expected, judgments)
     return Observation(
         case.case_id,
         label.repetition,
         label.temperature,
         SUCCEEDED if publishable else FAILED,
-        perf_counter() - started,
+        elapsed,
         probe.snapshot(),
         len(analysis.requirements),
         tuple(item.packet.requirement_id for item in analysis.requirements),
@@ -173,6 +205,7 @@ def _observe(
         analysis.fit.score if publishable else None,
         analysis.fit.band if publishable else None,
         error_code,
+        quality,
     ), runtime
 
 
@@ -181,10 +214,16 @@ def _pair(
     case: BenchmarkCase,
     repetition: int,
     transport: HttpTransport | None,
+    quality_labels: QualityLabels | None,
 ) -> tuple[Observation, Observation]:
     probe = BenchmarkProbe()
     cold, runtime = _observe(
-        config, case, probe, _RunLabel(repetition, COLD), transport=transport
+        config,
+        case,
+        probe,
+        _RunLabel(repetition, COLD),
+        transport=transport,
+        quality_labels=quality_labels,
     )
     probe.reset()
     if cold.status != SUCCEEDED:
@@ -199,7 +238,12 @@ def _pair(
         )
     else:
         warm, _ = _observe(
-            config, case, probe, _RunLabel(repetition, WARM), runtime=runtime
+            config,
+            case,
+            probe,
+            _RunLabel(repetition, WARM),
+            runtime=runtime,
+            quality_labels=quality_labels,
         )
     return cold, warm
 
@@ -282,19 +326,27 @@ def run_benchmark(
     dataset: BenchmarkDataset,
     *,
     transport: HttpTransport | None = None,
+    quality_labels: QualityLabels | None = None,
 ) -> BenchmarkReport:
     # Capture provenance before work, so filesystem/git activity is outside timing.
     source, fingerprints = _source(), _fingerprints(dataset)
+    if quality_labels is not None:
+        quality_labels.validate_dataset(dataset)
+        fingerprints["quality_labels_sha256"] = fingerprint(
+            quality_labels.model_dump_json().encode("utf-8")
+        )
     measured_at = datetime.now(UTC).isoformat()
     observations: list[Observation] = []
     for case in dataset.cases:
         for repetition in range(1, config.repetitions + 1):
-            observations.extend(_pair(config, case, repetition, transport))
+            observations.extend(
+                _pair(config, case, repetition, transport, quality_labels)
+            )
     configuration = asdict(config)
     configuration["as_of"] = config.as_of.isoformat()
     rubric = load_scoring_rubric_v2(ROOT / "config/scoring_rubric.toml")
     return BenchmarkReport(
-        _SCHEMA,
+        "analysis-benchmark-v2" if quality_labels else _SCHEMA,
         measured_at,
         "live_provider" if config.live else "fixture",
         "application_cache_cold_warm_with_fixture_retrieval",
@@ -313,7 +365,29 @@ def run_benchmark(
         },
         tuple(observations),
         _summaries(observations),
+        _quality_summary(quality_labels, observations) if quality_labels else None,
     )
+
+
+def _quality_summary(
+    labels: QualityLabels, observations: Sequence[Observation]
+) -> dict[str, object]:
+    groups: dict[tuple[int, Temperature], dict[str, float | None]] = {}
+    for item in observations:
+        scores = groups.setdefault((item.repetition, item.temperature), {})
+        scores[item.case_id] = item.score if item.status == SUCCEEDED else None
+    return {
+        "label_version": labels.version,
+        "basis": labels.basis,
+        "ranking_groups": [
+            {
+                "repetition": repetition,
+                "temperature": temperature,
+                **ranking_agreement(labels.rankings, scores),
+            }
+            for (repetition, temperature), scores in groups.items()
+        ],
+    }
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -323,6 +397,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--as-of", default="2026-09-01")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--quality", action="store_true")
     parser.add_argument(
         "--provider",
         choices=("hermetic", "ollama", "openai", "anthropic"),
@@ -356,11 +431,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     output: TextIO | None = None
     try:
         config = _config(arguments)
-        dataset = load_dataset(arguments.case)
+        selected = arguments.case or (QUALITY_CASES if arguments.quality else ())
+        dataset = load_dataset(selected)
+        quality_labels = None
+        label_hash = None
+        if arguments.quality:
+            quality_labels, label_hash = load_quality(dataset)
         if arguments.output is not None:
             # Reserve before any paid work, and never overwrite an existing artifact.
             output = arguments.output.open("x", encoding="utf-8")
-        report = run_benchmark(config, dataset)
+        report = run_benchmark(config, dataset, quality_labels=quality_labels)
+        if label_hash is not None:
+            report.fingerprints["quality_label_file_sha256"] = label_hash
         target = output or sys.stdout
         json.dump(report.payload(), target, indent=2, allow_nan=False)
         target.write("\n")

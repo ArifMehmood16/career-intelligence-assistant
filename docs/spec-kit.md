@@ -49,8 +49,9 @@ restart Codex if the newly installed skills do not appear.
 Update 2026-10-02: the human requested implementation of this slice while retaining
 deferred checks. Its [spec, plan and tasks](../specs/001-synthetic-analysis-benchmark/spec.md)
 now exist and `make benchmark` is implemented. Use the existing artifacts rather
-than creating another spec for the same change. Tests/lint/benchmark execution remain
-pending; commands and scope are in [Evaluation](evaluation.md#current-analysis-benchmark-plan-194).
+than creating another spec for the same change. Tests/lint subsequently resumed
+and pass; offline benchmark execution is recorded in Evaluation. Commands and scope are in
+[Evaluation](evaluation.md#current-analysis-benchmark-plan-194).
 The prompts below document how that bounded feature was chosen.
 
 The first feature targeted PLAN 19.4's current-analysis measurement slice, building
@@ -156,6 +157,10 @@ the constitution resolver successfully loaded the upstream template. The new
 constitution contains the project's existing rules. Discovery by a fresh Codex chat
 still needs the project reload described above.
 
-No application tests, lint, model benchmarks or migrations were run for adoption,
-following the human's instruction. Earlier Phase 19 final checks remain pending.
-This setup does not change those checkboxes or claim a release gate has passed.
+No application tests, lint, model benchmarks or migrations were run for the original
+adoption, following the human's instruction. Verification subsequently resumed:
+retirement acceptance (spec 009), provider/runtime acceptance (spec 010) and full
+lint/hermetic checks pass. Spec 011 records offline execution, browser/startup/
+populated-progress acceptance and scoped security review. Original local-model
+attempts failed before judging; successful current-model quality remains open in
+PLAN 19.4. Workflow adoption alone closes no gate.

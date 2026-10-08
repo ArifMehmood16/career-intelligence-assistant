@@ -6,21 +6,6 @@ in the CV, scores the fit arithmetically, and turns that mapping into the things
 candidate actually needs — a prioritised gap plan, CV bullets, an interview pack, a
 cover letter draft — with every claim traceable to the span of text it came from.
 
-> **Status (2026-10-06):** one chunk/search/judge analysis with PostgreSQL-backed
-> jobs and bounded parallel work. Server checks cited evidence; domain code computes
-> fit. Requirements show green earned points and red shortfalls from full credit.
-> Experience and seniority use overall CV/job context with asked/supported labels;
-> reanalyse to obtain new judgments. Ask shows processing, receiving and history refresh.
-> [PR #46](https://github.com/ArifMehmood16/career-intelligence-assistant/pull/46)
-> is merged at `45ae5c8`. PR #47 adds verified retirement preservation, shared
-> publication/citation/artifact reads and scoped deletion, plus detailed diagrams
-> and refreshed usage/screenshots. Provider/concurrency acceptance, measured quality,
-> full browser journeys and release checks remain open in [PLAN.md](PLAN.md).
-> This is a private, single-user local tool.
-
-The current synthetic cold/warm benchmark is implemented but unexecuted. Usage and
-measurement limits are in [Evaluation](docs/evaluation.md#current-analysis-benchmark-plan-194).
-
 ![Current Fit view with score, requirement filters and evidence](docs/images/fit.jpg)
 
 *Synthetic example rendered from the current component gallery; [screenshots and usage](docs/how-to-use.md).*
@@ -98,10 +83,7 @@ for execution boundaries.
 
 ## Quick start
 
-| Path | You need | First commands |
-|---|---|---|
-| Make | Python 3.14, bun, local PostgreSQL 16 with pgvector on port 5432, Ollama | `make setup` then `make run` |
-| Docker | Docker Engine and Compose v2 | `make run-docker` — written but not yet verified end to end (PLAN 16.1) |
+You need Python 3.14, Bun, PostgreSQL with pgvector and Ollama.
 
 ```bash
 ollama pull qwen2.5:7b && ollama pull nomic-embed-text
@@ -123,7 +105,7 @@ Every command, the database topology, Compose and logging:
 | **Trust and quality** | [Evaluation](docs/evaluation.md) · [Privacy position](docs/privacy.md) · [Threat model](docs/threat-model.md) · [Engineering standards and AI use](docs/engineering-standards.md) |
 | **Working on it** | [AGENTS.md](AGENTS.md) (protocol for coding agents; [CLAUDE.md](CLAUDE.md) imports it) · [PLAN.md](PLAN.md) (tasks and gates) · [BACKLOG.md](BACKLOG.md) (open work, in order) · [Spec Kit adoption](docs/spec-kit.md) · [AI_DEVELOPMENT_LOG.md](AI_DEVELOPMENT_LOG.md) · [Engineering journal](docs/engineering-journal.md) |
 | **Frontend** | [Lovable brief](docs/frontend-brief.md) · [Integration record](docs/frontend-integration.md) |
-| **Logging plan** | [Phase 15B detail](docs/observability-logging-plan.md) |
+| **Logging** | [Observability design](docs/observability-logging-plan.md) |
 
 ## Licence
 
