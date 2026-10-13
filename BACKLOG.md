@@ -55,6 +55,9 @@ including the new browser journey. Updated-head CI remains enforced and merging 
       returns "unscored"), whose message says requirements went unassessed. Give it
       its own job error code and UI text.
 
+- [ ] [Debug logging](PLAN.md#debug-logging--2026-10-13) — spec 013 on
+      `feat/phase-19-debug-logging`, stacked on the batching fix.
+
 The retired v1 comparison/release track is superseded. CI repair, empty migration
 cycles and retirement checks are complete; they are not new pending work. The
 offline benchmark has 36 successful observations and zero physical requests;
