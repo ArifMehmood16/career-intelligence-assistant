@@ -224,6 +224,14 @@ def log_event(logger: logging.Logger, event: str, **fields: object) -> None:
         logger.info("%s", event)
 
 
+def log_debug(logger: logging.Logger, event: str, **fields: object) -> None:
+    extra = format_fields(**fields)
+    if extra:
+        logger.debug("%s %s", event, extra)
+    else:
+        logger.debug("%s", event)
+
+
 def log_failure(logger: logging.Logger, event: str, **fields: object) -> None:
     """ERROR-level failure with ``site=module.function`` when not supplied.
 

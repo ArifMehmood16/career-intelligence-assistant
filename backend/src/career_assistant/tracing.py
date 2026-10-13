@@ -9,10 +9,17 @@ or a short token passed under an identifier-like name; anything else is
 from __future__ import annotations
 
 import dataclasses
+import functools
+import inspect
+import logging
 import re
-from collections.abc import Mapping
+import time
+from collections.abc import Callable, Mapping
 from datetime import date
 from enum import Enum
+from typing import Any
+
+from career_assistant.logconfig import log_debug
 
 _MAX_SUMMARY = 190
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -22,6 +29,7 @@ _SAFE_NAMES = frozenset(
     {
         "band",
         "code",
+        "id",
         "kind",
         "method",
         "mode",
@@ -37,6 +45,84 @@ _SAFE_NAMES = frozenset(
     }
 )
 _SAFE_SUFFIXES = ("_id", "_tag", "_version", "_code", "_kind")
+
+
+_RESERVED = frozenset({"fn", "duration_ms", "result", "error"})
+_TRACED = "__career_assistant_traced__"
+
+
+def traced[T](target: T) -> T:
+    """Trace a function, or every public method a class defines, at DEBUG.
+
+    ``call.start`` names the function and summarises its arguments; ``call.done``
+    adds the duration and a result summary; ``call.error`` names the exception
+    type and re-raises. Above DEBUG the wrapper only checks the level.
+    """
+    if isinstance(target, type):
+        for name, member in list(vars(target).items()):
+            if not name.startswith("_") and inspect.isfunction(member):
+                setattr(target, name, _trace_function(member))
+        return target
+    if inspect.isfunction(target):
+        return _trace_function(target)  # type: ignore[return-value]
+    return target
+
+
+def _trace_function(function: Callable[..., Any]) -> Callable[..., Any]:
+    if getattr(function, _TRACED, False) or inspect.isgeneratorfunction(function):
+        return function
+    logger = logging.getLogger(function.__module__)
+    signature = inspect.signature(function)
+    name = function.__qualname__
+
+    @functools.wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return function(*args, **kwargs)
+        log_debug(logger, "call.start", fn=name, **_arguments(signature, args, kwargs))
+        started = time.perf_counter()
+        try:
+            result = function(*args, **kwargs)
+        except BaseException as error:
+            log_debug(
+                logger,
+                "call.error",
+                fn=name,
+                duration_ms=_elapsed_ms(started),
+                error=type(error).__name__,
+            )
+            raise
+        log_debug(
+            logger,
+            "call.done",
+            fn=name,
+            duration_ms=_elapsed_ms(started),
+            result=summarize("result", result),
+        )
+        return result
+
+    setattr(wrapper, _TRACED, True)
+    return wrapper
+
+
+def _arguments(
+    signature: inspect.Signature, args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> dict[str, str]:
+    try:
+        bound = signature.bind_partial(*args, **kwargs)
+    except TypeError:
+        return {"arguments": f"unbound[{len(args) + len(kwargs)}]"}
+    fields: dict[str, str] = {}
+    for key, value in bound.arguments.items():
+        if key in {"self", "cls"}:
+            continue
+        label = f"arg_{key}" if key in _RESERVED else key
+        fields[label] = summarize(key, value)
+    return fields
+
+
+def _elapsed_ms(started: float) -> int:
+    return int((time.perf_counter() - started) * 1000)
 
 
 def summarize(name: str, value: object) -> str:
