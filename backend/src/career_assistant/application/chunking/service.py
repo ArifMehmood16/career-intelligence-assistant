@@ -7,6 +7,7 @@ adapter policy, while validation preserves global role-heading references.
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -53,6 +54,7 @@ from career_assistant.domain.chunking import (
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.knowledge_graph import GraphEdge
 from career_assistant.domain.lines import NumberedLine, number_lines
+from career_assistant.logconfig import log_event
 
 _CONTRACTS: dict[DocumentKind, type[DocumentChunkResponse]] = {
     DocumentKind.CV: CvChunkResponse,
@@ -60,6 +62,17 @@ _CONTRACTS: dict[DocumentKind, type[DocumentChunkResponse]] = {
     DocumentKind.JOB_DESCRIPTION: JobChunkResponse,
 }
 _LIMIT_ERRORS = (StructuredOutputTruncatedError, ProviderInputTooLargeError)
+_LABELS = {
+    DocumentKind.CV: "CV",
+    DocumentKind.COVER_LETTER: "cover letter",
+    DocumentKind.JOB_DESCRIPTION: "job advert",
+}
+_log = logging.getLogger(__name__)
+
+
+def document_label(kind: DocumentKind) -> str:
+    """How a log line names a document kind: CV, job advert, cover letter."""
+    return _LABELS.get(kind, kind.value)
 
 
 class ChunkingIncompleteError(Exception):
@@ -151,6 +164,14 @@ class DocumentChunker:
         if any(not budget.fits(section) for section in sections):
             raise ChunkingIncompleteError("chunking_input_too_large")
         prepared = [(section, self._user(run, section)) for section in sections]
+        label = document_label(request.kind)
+        log_event(
+            _log,
+            f"Reading {label} into chunks",
+            document_id=request.document_id,
+            lines=len(lines),
+            sections=len(sections),
+        )
         plan_calls(model=len(prepared))
         replies = map_in_order(
             prepared,
@@ -160,6 +181,15 @@ class DocumentChunker:
         )
         for (section, user), reply in zip(prepared, replies, strict=True):
             self._accept(run, section, user, reply, depth=0)
+        log_event(
+            _log,
+            f"Read {label} into chunks",
+            document_id=request.document_id,
+            chunks=len(run.chunks),
+            model_calls=run.calls,
+            repairs=run.repairs,
+            dropped_fields=run.dropped_fields or None,
+        )
         return ChunkingOutcome(
             chunks=tuple(run.chunks),
             calls=run.calls,
@@ -213,6 +243,12 @@ class DocumentChunker:
             run.taxonomy.extend(reply.taxonomy)
             return
         run.repairs += 1
+        log_event(
+            _log,
+            "Chunk plan broke the line rules, asking the model to repair it",
+            document_id=run.request.document_id,
+            problems=len(plan.problems),
+        )
         plan_calls(model=1)
         repaired = self._first_reply(
             run,
@@ -244,6 +280,13 @@ class DocumentChunker:
         ):
             raise ChunkingIncompleteError("chunking_truncated") from error
         half = len(section) // 2
+        log_event(
+            _log,
+            "Section too large for one reply, splitting it in two",
+            document_id=run.request.document_id,
+            lines=len(section),
+            depth=depth + 1,
+        )
         plan_calls(model=2)
         for part in (section[:half], section[half:]):
             user = self._user(run, part)
