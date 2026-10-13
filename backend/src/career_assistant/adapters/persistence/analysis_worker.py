@@ -50,6 +50,7 @@ from career_assistant.domain.jobs import (
     recover_stale_running,
 )
 from career_assistant.logconfig import (
+    bind_log_context,
     bind_request_context,
     clear_request_context,
     log_event,
@@ -172,7 +173,8 @@ class SqlAnalysisWorker:
     def complete(self, job: AnalysisJob) -> AnalysisJob:
         bind_request_context(correlation_id=job.id, workspace_id=job.workspace_id)
         try:
-            return self._v2.run(job)
+            with bind_log_context(job_id=job.id, role_id=job.role_id):
+                return self._v2.run(job)
         finally:
             clear_request_context()
 
