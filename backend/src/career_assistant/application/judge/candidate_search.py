@@ -7,6 +7,7 @@ judge only ever sees chunks whose role and dates this search can state.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 
 from career_assistant.application.judge.matching import CandidateSearchResult
@@ -19,6 +20,9 @@ from career_assistant.domain.chunking import RoleProposal
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.judging import Candidate, RequirementPacket
 from career_assistant.domain.search import query_terms
+from career_assistant.logconfig import log_debug
+
+_log = logging.getLogger(__name__)
 
 
 class HybridCandidateSearch:
@@ -88,6 +92,14 @@ class HybridCandidateSearch:
             )
         )
         hits = tuple(hit for hit in found if hit.chunk_id in self._chunks)
+        log_debug(
+            _log,
+            "Searched the CV for one requirement",
+            requirement_id=requirement.requirement_id,
+            hits=len(found),
+            candidates=len(hits),
+            top_score=round(hits[0].fused_score, 4) if hits else None,
+        )
         return CandidateSearchResult(
             hits=hits,
             candidates=tuple(self._candidate(self._chunks[h.chunk_id]) for h in hits),

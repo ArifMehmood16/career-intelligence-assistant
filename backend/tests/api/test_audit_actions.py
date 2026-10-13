@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+
+import pytest
 from fastapi.testclient import TestClient
 
 from career_assistant.application.observability.memory import InMemoryAuditRecorder
@@ -156,3 +159,26 @@ def test_ask_records_action_without_question_text() -> None:
     dumped = repr(actions[-1])
     assert _PLANTED not in dumped
     assert planted not in dumped
+
+
+def test_a_provider_change_is_logged_in_plain_words(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    configure_logging(force=True)
+    client = TestClient(create_app())
+    with caplog.at_level(logging.INFO, logger="career_assistant"):
+        client.put(
+            "/api/settings/providers",
+            json={
+                "answerProviderId": "hermetic",
+                "answerModel": "rules-v1",
+                "indexProviderId": "hermetic",
+                "indexModel": "lexical-hash-v1",
+                "acknowledgedEgress": False,
+            },
+        )
+
+    assert (
+        "Changed the models used for answers and search "
+        "answer_provider=hermetic search_provider=hermetic"
+    ) in [record.getMessage() for record in caplog.records]

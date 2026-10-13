@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date
 
+import pytest
 from tests.support.in_memory_search import ChunkSeed, InMemoryHybridSearch
 from tests.support.v2_chunks import cv_chunks
 
@@ -136,3 +138,22 @@ def test_several_queries_share_one_embedding_request() -> None:
         "Python data platform",
         "retrieval service",
     ]
+
+
+def test_each_requirement_search_is_described_at_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    finder, _, _, _ = _world()
+
+    with caplog.at_level(logging.DEBUG, logger="career_assistant"):
+        found = finder.find(REQUIREMENT, REQUIREMENT.statement)
+
+    (line,) = [
+        r.getMessage()
+        for r in caplog.records
+        if r.getMessage().startswith("Searched the CV for one requirement")
+    ]
+    assert f"requirement_id={REQUIREMENT.requirement_id}" in line
+    assert f"candidates={len(found.candidates)}" in line
+    assert all(r.levelno == logging.DEBUG for r in caplog.records)
+    assert REQUIREMENT.statement not in caplog.text
