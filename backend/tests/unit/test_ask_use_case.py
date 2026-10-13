@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+
+import pytest
 
 from career_assistant.api.sse import format_ask_sse
 from career_assistant.application.ask.service import (
@@ -602,3 +605,28 @@ def test_a_router_answer_sends_no_tool_steps() -> None:
     )
 
     assert "tools" not in [event.type for event in events]
+
+
+def test_the_log_says_how_a_question_was_answered_without_its_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    completion = _TrackingCompletion()
+    completion.tool_calling = True
+    service, _, _ = _service(completion=completion, tool_calling=_agent_script())
+    request = _open_request()
+
+    with caplog.at_level(logging.INFO):
+        service.ask(request)
+
+    lines = [record.getMessage() for record in caplog.records]
+    assert lines[0] == (
+        f"Answering a question question_characters={len(request.content)} "
+        f"intent=open_question roles_in_scope={len(request.roles)} "
+        f"evidence_pool={len(request.retrieved_pool)}"
+    )
+    assert "Answering with the tool-calling agent" in lines
+    assert any(
+        line.startswith("Answer ready kind=answer citations=1 provider=hermetic")
+        for line in lines
+    )
+    assert request.content not in caplog.text
