@@ -87,9 +87,11 @@ Transport failures emit `provider.transport_failed` with a fixed category and,
 for timeouts, the connect/read/write/pool phase and configured limit. No URL,
 exception message, request body or credentials are logged. `judge.call_failed`
 identifies initial/repair phase, provider/model, batch count and a fixed failure
-category. `judge.verdicts_rejected` records counts before/after bounded repair;
-`judge.incomplete` records accepted/incomplete totals. No validation problem text,
-requirement identifiers, quotes or model replies are retained by these diagnostics.
+category. `judge.verdicts_rejected` records counts before/after bounded repair and
+`problem_kinds`, a tally of the fixed rule names each rejected verdict broke (for
+example `no_verdict:1,quote_not_verbatim:3`); `judge.incomplete` records
+accepted/incomplete totals. No validation problem text, chunk or requirement
+identifiers, quotes or model replies are retained by these diagnostics.
 Handled progress units do not imply accepted judgments. Incomplete judging still
 publishes no score.
 
@@ -159,7 +161,10 @@ remaining calls are explicitly estimates.
 
 The configured `gpt-5-mini` has an explicit catalogue row: published 400,000 context
 and 128,000 maximum output tokens, with 32,768 operational output caps for document
-reading/judging. Reasoning consumes output tokens. The caps are tunable, and no
-live quality/latency measurement is claimed.
+reading/judging. Reasoning consumes output tokens, so the row reserves 2,048 tokens
+per verdict: at most 16 requirements per judge call, sent in parallel. With the
+400-token default a 73-requirement advert went to the judge as one call and the
+analysis ended `assessment_incomplete` after its one repair (2026-10-13). The caps
+are tunable, and no live quality/latency measurement is claimed.
 [Official model documentation](https://developers.openai.com/api/docs/models/gpt-5-mini),
 [reasoning-token guidance](https://developers.openai.com/api/docs/guides/reasoning).

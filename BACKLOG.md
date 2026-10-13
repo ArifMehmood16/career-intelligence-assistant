@@ -44,6 +44,16 @@ including the new browser journey. Updated-head CI remains enforced and merging 
       unresolved. Updated-head CI stays required before merge. One Playwright
       journey covers the former duplicate smoke task.
 
+- [ ] [19.2](PLAN.md#192--reduce-modelapi-calls-and-respect-each-provider) follow-up —
+      2026-10-13 `assessment_incomplete` with gpt-5-mini: one judge call for 73
+      requirements plus one repair. Branch `fix/phase-19-judge-batch-size-diagnostics`
+      caps gpt-5-mini at 16 verdicts per call and logs `problem_kinds`; the human's
+      rerun on that branch is the open proof.
+- [ ] [19.4](PLAN.md#194--prove-the-current-product) defect — an advert that yields
+      no atomic requirements also fails as `assessment_incomplete` (`score_v2`
+      returns "unscored"), whose message says requirements went unassessed. Give it
+      its own job error code and UI text.
+
 The retired v1 comparison/release track is superseded. CI repair, empty migration
 cycles and retirement checks are complete; they are not new pending work. The
 offline benchmark has 36 successful observations and zero physical requests;

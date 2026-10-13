@@ -29,6 +29,44 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 193 — Judge gpt-5-mini in smaller batches and name rejected rules
+
+- Date: 2026-10-13; Claude (Cowork), claude-opus-5-5; one agent, no delegation.
+- Plan task: human-requested debugging under 19.2; proof waits on the human's rerun.
+- Prompt intent: diagnose `assessment_incomplete` at scoring for job 7a797ad4 in
+  the running app, then make the required changes before the human reruns it.
+- Evidence (read-only, through the local web proxy in the human's browser): the
+  job's progress shows 73 requirements, two judge model calls, one recheck call
+  for five rewrites, and failure about 5.5 minutes after start. The provider list
+  shows OpenAI gpt-5-mini/text-embedding-3-small; Anthropic is unavailable. With the
+  400-token verdict reserve, gpt-5-mini's 32,768 judge cap fits 81 verdicts, so two
+  calls are one call for all 73 plus one repair (a split would plan three). The
+  preceding `judge.*` lines were only on the terminal, so which rule failed is
+  not known; timeouts are not the mode, because the initial call returned.
+- Changed: gpt-5-mini catalogue row reserves 2,048 tokens per verdict (at most 16
+  per call, through the existing parallel path). `check_verdicts` reports a
+  `ProblemKind` beside each repair message; `judge.verdicts_rejected` logs
+  `problem_kinds` as fixed names and counts. Docs and BACKLOG updated. The
+  ignored local `config/app.env` now sets `LOG_FILE` under ignored `var/log/`.
+- Trade-off: each judge call repeats the facts and document context, so five
+  calls send more input tokens than one; gpt-5-mini supports prompt caching.
+- Rejected: weakening validation, a second repair round, publishing a partial
+  score, raising the timeout again, and running the human's documents from the
+  agent. The "unscored" mislabel (an advert with no requirements reported as
+  `assessment_incomplete`) is recorded in BACKLOG, not changed here.
+- TDD evidence: the catalogue wiring test failed with `assert 73 <= 16`, then
+  passed after the row change. The nine rule-kind cases failed with
+  `KeyError: 'r1'` before `check_verdicts` filled `kinds`. The logging test
+  failed without `problem_kinds=unknown_chunk:1`, then passed.
+- Validation: on the Cowork Linux VM (Python 3.14.7): ruff check/format and mypy
+  strict pass; one coverage run reported 85.24% total; a later full backend run
+  passed with three existing skips. One intermediate full run failed
+  `test_reports_fingerprint_inputs_without_serializing_their_contents`, which
+  passes alone and in the next full run; its 5-second `git status` timeout on the
+  VM's mounted folder is the suspected cause, not proven. No frontend, SQL or
+  live-model run. Human-owned: approve the reserve and rerun the analysis.
+
+
 ### 192 — Open source under Apache 2.0 with creator credit
 
 - Date: 2026-10-08; Codex; human-directed spec 012 continuation on existing PR #49.
