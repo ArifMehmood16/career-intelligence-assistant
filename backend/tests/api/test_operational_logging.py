@@ -214,3 +214,52 @@ def test_validation_error_records_error_code_not_request_body() -> None:
     assert envelope.status in {409, 422}
     assert _PLANTED_JD not in repr(envelope)
     assert _PLANTED_JD not in (envelope.error_code or "")
+
+
+def _messages(caplog: logging.LogCaptureFixture) -> list[str]:
+    return [record.getMessage() for record in caplog.records]
+
+
+def test_a_cv_upload_says_what_was_received_parsed_and_stored(
+    caplog: logging.LogCaptureFixture,
+) -> None:
+    configure_logging(force=True)
+    caplog.set_level(logging.INFO, logger="career_assistant")
+    client = TestClient(create_app())
+    body = f"Owned dbt models. {_PLANTED_CV}\n".encode()
+
+    response = client.post("/api/cv", files={"file": ("my-cv.txt", body, "text/plain")})
+
+    assert response.status_code == 201
+    lines = _messages(caplog)
+    assert (
+        f"Receiving CV upload file_name=my-cv.txt bytes={len(body)} "
+        "declared_media_type=text/plain"
+    ) in lines
+    assert any(
+        line.startswith("Parsed CV file_name=my-cv.txt format=") for line in lines
+    )
+    assert any(
+        line.startswith("Stored the CV document_id=") and "file_name=my-cv.txt" in line
+        for line in lines
+    )
+    assert _PLANTED_CV not in caplog.text
+
+
+def test_a_rejected_upload_names_the_file_and_the_reason(
+    caplog: logging.LogCaptureFixture,
+) -> None:
+    configure_logging(force=True)
+    caplog.set_level(logging.INFO, logger="career_assistant")
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/cover-letters",
+        files={"file": ("letter.exe", b"MZ\x90\x00binary", "application/octet-stream")},
+    )
+
+    assert response.status_code == 415
+    assert any(
+        line.startswith("Cover letter upload rejected file_name=letter.exe code=")
+        for line in _messages(caplog)
+    )
