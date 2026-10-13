@@ -16,6 +16,10 @@ human-requested after the 19.2 batching fix (stacked on `fix/phase-19-judge-batc
   finish reason and duration. No CV, advert, prompt or model text.
 - Method tracing goes **everywhere** the level allows: terminal and file both
   follow `LOG_LEVEL`; the human runs locally at `DEBUG`.
+- Amended the same day: the human wants **explicit readable lines in the existing
+  code** ("extracting content from CV" with the workspace and file name), not a
+  generic tracing decorator. File names, role titles and company names may be
+  logged; text never.
 - The batching fix ships as its own PR; this work is stacked on it.
 
 ## User Scenarios & Testing
@@ -41,16 +45,14 @@ missing=3`), or the failure category.
 `llm.response` and `llm.structured` lines with those fields and none of the
 reply text.
 
-### User Story 3 — Method-level tracing (P2)
+### User Story 3 — Readable step lines (P1, amended)
 
-At DEBUG, each traced application and adapter method logs `call.start` with its
-arguments and `call.done` with duration and result, or `call.error` with the
-exception type. Arguments and results are summarised: ids, enums, numbers, sizes,
-lengths and hashes, never free text.
+Each step of uploads, roles, the analysis, Ask, drafting and MCP says in a plain
+sentence what it is doing and what came out: file names, role title and company,
+ids, counts and durations.
 
-**Independent test**: a traced function given an id, an enum, a long string and a
-dataclass logs the id/enum verbatim, `str[len=N]` for the text, and the dataclass's
-ids; nothing is emitted, and no summary is built, above DEBUG.
+**Independent test**: the analysis, upload, role, Ask, drafting and MCP tests
+assert the sentences in order and that no document or question text appears.
 
 ### User Story 4 — Less noise (P3)
 
@@ -72,11 +74,11 @@ writes and failures stay INFO. The request line no longer repeats `correlation_i
 - **FR-002**: Every model and embedding call MUST log request and outcome with
   provider, model, operation (contract and attempt), task, sizes, duration, tokens
   and finish reason; structured replies MUST log a content-free summary.
-- **FR-003**: Traced methods MUST log start, finish (duration, result summary) and
-  error (type) at DEBUG, with argument summaries that never contain free text.
+- **FR-003**: Each step MUST log a readable start and result line in the code that
+  performs it; values are ids, counts, durations, codes or human-given labels.
 - **FR-004**: No log line may contain document text, prompts, questions, answers,
   model responses, embeddings or credentials (ADR 012, threat model).
-- **FR-005**: With the level above DEBUG, tracing MUST NOT build summaries.
+- **FR-005**: Superseded with the tracing decorator (dropped 2026-10-13).
 - **FR-006**: Successful GETs log at DEBUG; the request line has one correlation id.
 
 ## Success Criteria
@@ -88,6 +90,5 @@ writes and failures stay INFO. The request line no longer repeats `correlation_i
 
 ## Assumptions
 
-Text log format stays `key=value`. No new dependency. Tracing is applied to
-application services and adapters by explicit decorators; HTTP routes are covered
-by the request middleware and the use cases they call.
+Text log format stays sentence plus `key=value`. No new dependency. HTTP routes
+are covered by the request middleware and the use cases they call.

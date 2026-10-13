@@ -235,7 +235,8 @@ Human-requested after the 19.2 judge batching fix, stacked on that branch.
 
 - [ ] Logs a human can follow: job and role on every line of an analysis, task
       start/finish, every model and embedding call with tokens, finish reason and a
-      content-free response summary, and DEBUG method tracing of application
-      services and adapters with summarised inputs and outputs. Exit: a hermetic
-      analysis at DEBUG leaks no fixture text and every in-job line has `job_id`;
-      full backend checks pass; the human follows a real rerun in the log file.
+      content-free response summary, and readable step lines written in the code
+      for uploads, roles, the analysis, Ask, drafting and MCP (amended from DEBUG
+      method tracing at the human's request). Exit: a hermetic analysis at DEBUG
+      leaks no fixture text and every in-job line has `job_id`; full backend and
+      SQL checks pass; the human follows a real rerun in the log file.
