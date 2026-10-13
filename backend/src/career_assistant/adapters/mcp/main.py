@@ -30,7 +30,8 @@ from career_assistant.adapters.persistence.supporting_store import (
 from career_assistant.adapters.persistence.unit_of_work import SqlUnitOfWork
 from career_assistant.application.ask.registry import ToolRegistry
 from career_assistant.application.ask.workspace_tools import workspace_registry
-from career_assistant.settings import DatabaseSettings
+from career_assistant.logconfig import configure_logging, load_secret_values
+from career_assistant.settings import DatabaseSettings, LoggingSettings
 
 
 def main(argv: Sequence[str] | None = None, *, config_file: Path = CONFIG_FILE) -> int:
@@ -41,11 +42,26 @@ def main(argv: Sequence[str] | None = None, *, config_file: Path = CONFIG_FILE) 
     if config.refusal is not None or config.workspace_id is None:
         print(config.refusal, file=sys.stderr)
         return 2
+    configure_server_logging(config_file)
     server = build_server(
         _registry_factory(DatabaseSettings(_env_file=config_file), config.workspace_id)
     )
     anyio.run(_serve, server)
     return 0
+
+
+def configure_server_logging(config_file: Path) -> None:
+    """Log to stderr and the configured file; stdout carries the protocol."""
+    settings = LoggingSettings(_env_file=config_file)
+    configure_logging(
+        force=True,
+        stream=sys.stderr,
+        secret_values=load_secret_values(),
+        log_file=settings.log_file,
+        level=settings.resolved_level(),
+        max_bytes=settings.log_file_max_bytes,
+        backup_count=settings.log_file_backup_count,
+    )
 
 
 def _parser() -> argparse.ArgumentParser:
