@@ -65,6 +65,21 @@ def test_a_completion_logs_its_request_and_response_without_text(
     assert "PRIVATE" not in caplog.text
 
 
+def test_reasoning_tokens_are_logged_when_the_vendor_reports_them(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = LoggingCompletion(
+        ScriptedCompletion([Reply(_REPLY, output_tokens=400, reasoning_tokens=352)]),
+        provider_id="openai",
+        model_tag="gpt-5-mini",
+    )
+    with caplog.at_level(logging.INFO):
+        port.complete(_REQUEST)
+
+    (response,) = _events(caplog, "llm.response")
+    assert "output_tokens=400 reasoning_tokens=352 finish_reason=stop" in response
+
+
 def test_the_operation_and_task_come_from_the_caller(
     caplog: pytest.LogCaptureFixture,
 ) -> None:

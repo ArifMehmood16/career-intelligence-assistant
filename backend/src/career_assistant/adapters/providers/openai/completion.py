@@ -123,6 +123,7 @@ class OpenAICompletionAdapter:
                 input_tokens=prompt_tokens,
                 output_tokens=completion_tokens,
                 finish_reason=str(finish_reason) if finish_reason else None,
+                reasoning_tokens=_reasoning_tokens(usage),
             )
 
         return run_hosted(
@@ -165,6 +166,13 @@ class OpenAICompletionAdapter:
         if request.seed is not None and self._profile.supports_seed:
             body["seed"] = request.seed
         return body
+
+
+def _reasoning_tokens(usage: dict[str, Any]) -> int | None:
+    details = usage.get("completion_tokens_details")
+    if not isinstance(details, dict):
+        return None
+    return _int_or_none(details.get("reasoning_tokens"))
 
 
 def _int_or_none(value: Any) -> int | None:

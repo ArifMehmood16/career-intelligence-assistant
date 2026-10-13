@@ -96,6 +96,7 @@ class LoggingCompletion:
             duration_ms=_elapsed_ms(started),
             input_tokens=result.input_tokens,
             output_tokens=result.output_tokens,
+            reasoning_tokens=result.reasoning_tokens,
             finish_reason=result.finish_reason,
             output_chars=len(result.text),
             fallback_used=result.fallback_used or None,
