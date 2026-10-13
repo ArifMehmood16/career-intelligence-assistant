@@ -11,9 +11,16 @@ from tests.support.scripted_completion import Reply, ScriptedCompletion
 from career_assistant.adapters.providers.factory import (
     build_completion_port,
     build_embedding_port,
+    build_tool_calling_port,
 )
 from career_assistant.application.ports.errors import ProviderTransientError
 from career_assistant.application.ports.progress import progress_scope
+from career_assistant.application.ports.tool_calling import (
+    ChatMessage,
+    ToolCall,
+    ToolCallingRequest,
+    ToolCallingResult,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -24,6 +31,7 @@ from career_assistant.application.ports.types import (
 from career_assistant.application.providers.logging_ports import (
     LoggingCompletion,
     LoggingEmbedding,
+    LoggingToolCaller,
     llm_operation,
 )
 from career_assistant.domain.progress import TaskKey
@@ -181,3 +189,59 @@ def test_the_provider_factory_returns_logging_ports(
     assert embedder.startswith(
         "Calling embedding model provider=hermetic model=lexical-hash-v1 "
     )
+
+
+class _ToolModel:
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return ScriptedCompletion([]).capabilities
+
+    def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
+        return ToolCallingResult(
+            content="PRIVATE answer",
+            tool_calls=(ToolCall("c1", "search_evidence", {"query": "PRIVATE"}),),
+            provider_id="openai",
+            model_tag="gpt-5-mini",
+            input_tokens=700,
+            output_tokens=90,
+        )
+
+
+def test_a_tool_calling_turn_logs_its_size_and_tool_calls_without_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = LoggingToolCaller(_ToolModel(), provider_id="openai", model_tag="gpt-5-mini")
+    request = ToolCallingRequest(
+        system="system",
+        messages=(ChatMessage("user", _PROMPT),),
+        tools=(),
+        max_output_tokens=500,
+    )
+    with caplog.at_level(logging.INFO):
+        port.complete(request)
+
+    (calling,) = _events(caplog, "Calling model ")
+    (replied,) = _events(caplog, _REPLIED)
+    assert calling.startswith(
+        "Calling model provider=openai model=gpt-5-mini contract=tool-calling "
+    )
+    assert "messages=1 tools_offered=0 max_output_tokens=500" in calling
+    assert "input_tokens=700 output_tokens=90 tool_calls=1" in replied
+    assert "PRIVATE" not in caplog.text
+
+
+def test_the_provider_factory_logs_tool_calling_turns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    settings = ProviderSettings(
+        _env_file=None,  # type: ignore[call-arg]
+        completion_provider="hermetic",
+    )
+    port = build_tool_calling_port(settings)
+    request = ToolCallingRequest(
+        system="s", messages=(ChatMessage("user", "q"),), tools=(), max_output_tokens=50
+    )
+    with caplog.at_level(logging.INFO):
+        port.complete(request)
+
+    assert _events(caplog, "Calling model provider=hermetic ")
