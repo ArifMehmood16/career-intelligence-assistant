@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 
 from fastapi.testclient import TestClient
@@ -15,22 +16,40 @@ _PLANTED_JD = "PLANTED_JD_PHRASE_MUST_NOT_APPEAR_IN_LOGS_7b1e4d"
 _PLANTED_KEY = "sk-planted-secret-key-value-for-redaction"
 
 
-def test_health_request_emits_http_log_with_correlation_id(
-    caplog: logging.LogCaptureFixture,
-) -> None:
-    configure_logging(force=True)
-    caplog.set_level(logging.INFO, logger="career_assistant")
+def _request_lines(buffer: io.StringIO) -> list[str]:
+    return [line for line in buffer.getvalue().splitlines() if " request " in line]
+
+
+def test_a_successful_get_logs_at_debug_with_one_correlation_id() -> None:
+    buffer = io.StringIO()
+    configure_logging(force=True, stream=buffer, level=logging.DEBUG)
     client = TestClient(create_app())
 
     response = client.get(
         "/api/health", headers={"X-Correlation-Id": "corr-log-test-1"}
     )
+    configure_logging(force=True)
 
     assert response.status_code == 200
-    assert "path=/api/health" in caplog.text
-    assert "method=GET" in caplog.text
-    assert "status=200" in caplog.text
-    assert "corr-log-test-1" in caplog.text
+    (line,) = _request_lines(buffer)
+    assert " DEBUG career_assistant.http request method=GET path=/api/health" in line
+    assert "status=200" in line
+    assert line.count("correlation_id=corr-log-test-1") == 1
+
+
+def test_polling_gets_are_quiet_at_info_but_failures_are_not() -> None:
+    buffer = io.StringIO()
+    configure_logging(force=True, stream=buffer, level=logging.INFO)
+    client = TestClient(create_app())
+
+    client.get("/api/health")
+    missing = client.get("/api/roles/00000000-0000-0000-0000-000000000000")
+    configure_logging(force=True)
+
+    assert missing.status_code == 404
+    (line,) = _request_lines(buffer)
+    assert " INFO career_assistant.http request method=GET" in line
+    assert "status=404" in line
 
 
 def test_cv_upload_logs_operation_without_document_text(
