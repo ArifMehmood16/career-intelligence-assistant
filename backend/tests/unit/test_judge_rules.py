@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
 from career_assistant.domain.judging import (
     Adjustment,
     Candidate,
+    ProblemKind,
     ProposedQuote,
     ProposedScore,
     ProposedVerdict,
@@ -142,6 +145,75 @@ def test_asking_for_another_search_needs_the_query() -> None:
     assert _problems(PACKET, _verdict(sufficient=False)) == (
         "retrieval_feedback: rewrite_query is required when sufficient is false",
     )
+
+
+@pytest.mark.parametrize(
+    ("packet", "returned", "kinds"),
+    [
+        pytest.param(PACKET, (), (ProblemKind.NO_VERDICT,), id="none"),
+        pytest.param(
+            PACKET,
+            (_verdict(), _verdict()),
+            (ProblemKind.DUPLICATE_VERDICT,),
+            id="duplicate",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(evidence=(ProposedQuote("c9", "hybrid retrieval"),)),),
+            (ProblemKind.UNKNOWN_CHUNK,),
+            id="unknown-chunk",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(evidence=(ProposedQuote("c1", "built retrieval on pgvector"),)),),
+            (ProblemKind.QUOTE_NOT_VERBATIM,),
+            id="paraphrase",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(verdict="partial", match=_score(2), evidence=()),),
+            (ProblemKind.QUOTE_REQUIRED,),
+            id="no-quote",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(verdict="met", match=_score(2)),),
+            (ProblemKind.VERDICT_SCORE_MISMATCH,),
+            id="label-score",
+        ),
+        pytest.param(
+            replace(PACKET, years_expected=5.0, seniority_expected="senior"),
+            (_verdict(),),
+            (ProblemKind.DIMENSION_REQUIRED, ProblemKind.DIMENSION_REQUIRED),
+            id="unscored-dimension",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(seniority=_score(3)),),
+            (ProblemKind.DIMENSION_NOT_STATED,),
+            id="unstated-dimension",
+        ),
+        pytest.param(
+            PACKET,
+            (_verdict(sufficient=False),),
+            (ProblemKind.REWRITE_QUERY_REQUIRED,),
+            id="no-rewrite-query",
+        ),
+    ],
+)
+def test_each_problem_has_a_fixed_kind_beside_its_message(
+    packet: RequirementPacket,
+    returned: tuple[ProposedVerdict, ...],
+    kinds: tuple[ProblemKind, ...],
+) -> None:
+    check = check_verdicts([packet], returned)
+
+    assert check.kinds["r1"] == kinds
+    assert len(check.problems["r1"]) == len(kinds)
+
+
+def test_an_accepted_verdict_has_no_problem_kinds() -> None:
+    assert check_verdicts([PACKET], [_verdict()]).kinds == {}
 
 
 def test_a_skills_line_alone_caps_match_at_2_and_experience_at_1() -> None:
