@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import pytest
 from pydantic import SecretStr
@@ -357,3 +358,38 @@ def test_ollama_sends_the_json_schema_as_structured_format() -> None:
 
     assert transport.json_body is not None
     assert transport.json_body["format"] == schema
+
+
+def test_a_retry_and_an_open_breaker_are_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    policy = ResiliencePolicy(
+        timeout_seconds=1.0,
+        max_retries=1,
+        breaker=CircuitBreaker(failure_threshold=2),
+        sleep=lambda _s: None,
+    )
+
+    def always_fail() -> None:
+        raise ProviderTransientError("PRIVATE upstream detail")
+
+    with caplog.at_level(logging.INFO):
+        with pytest.raises(ProviderTransientError):
+            policy.run(always_fail)
+        with pytest.raises(ProviderUnavailableError):
+            policy.run(always_fail)
+
+    lines = [record.getMessage() for record in caplog.records]
+    assert lines[0].startswith(
+        "Provider call failed, retrying attempt=2 of=2 wait_seconds="
+    )
+    assert any(
+        line.startswith("Provider circuit breaker opened after repeated failures")
+        and "failures=2" in line
+        for line in lines
+    )
+    assert any(
+        line.startswith("Provider call refused: the circuit breaker is open")
+        for line in lines
+    )
+    assert "PRIVATE" not in caplog.text
