@@ -6,6 +6,7 @@ search. The judge may refuse; then nothing is scored.
 
 from __future__ import annotations
 
+import io
 import logging
 from dataclasses import replace
 from datetime import UTC, date, datetime
@@ -46,6 +47,7 @@ from career_assistant.application.scoring.rubric_loader import load_scoring_rubr
 from career_assistant.domain.documents import DocumentKind
 from career_assistant.domain.pipeline import PipelineVersion
 from career_assistant.domain.progress import TaskKey, plan_for
+from career_assistant.logconfig import bind_log_context, configure_logging
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / "sample-data" / "fixtures"
@@ -240,3 +242,21 @@ def test_an_unscored_analysis_says_why(caplog: pytest.LogCaptureFixture) -> None
     (line,) = [m for m in _story(caplog) if m.startswith("Role not scored")]
     assert "reason=requirements_without_verdict" in line
     assert "incomplete=" in line
+
+
+def test_at_debug_every_line_names_the_job_and_no_document_text_leaks() -> None:
+    buffer = io.StringIO()
+    configure_logging(force=True, stream=buffer, level=logging.DEBUG)
+    documents = _documents()
+    try:
+        with bind_log_context(job_id="job-9", role_id="role-9"):
+            _analysis(HermeticStructuredCompleter()).run(documents)
+    finally:
+        configure_logging(force=True)
+
+    lines = buffer.getvalue().splitlines()
+    assert len(lines) > 10
+    assert all("job_id=job-9 role_id=role-9" in line for line in lines)
+    for text in (documents.cv.text, documents.advert.text):
+        for line in [ln.strip() for ln in text.splitlines() if len(ln.strip()) > 12]:
+            assert line not in buffer.getvalue()
