@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
@@ -47,6 +48,8 @@ from career_assistant.application.ports.verdicts import VerdictCache, VerdictRec
 from career_assistant.application.providers.fanout import map_in_order
 from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import (
+    JudgeCheck,
+    ProblemKind,
     ProposedQuote,
     ProposedScore,
     ProposedVerdict,
@@ -202,11 +205,11 @@ class RequirementJudge:
         except _UNANSWERED as exc:
             self._call_failed(exc, "initial", len(batch))
             return {}
-        records, problems = self._accept(batch, result, context)
-        self._rejected("initial", len(batch), len(records), len(problems))
-        failed = [p for p in batch if p.requirement_id in problems]
+        records, check = self._accept(batch, result, context)
+        self._rejected("initial", len(batch), len(records), check.kinds)
+        failed = [p for p in batch if p.requirement_id in check.problems]
         if failed:
-            records.update(self._repair(failed, problems, context))
+            records.update(self._repair(failed, check.problems, context))
         return records
 
     def _split(
@@ -245,8 +248,8 @@ class RequirementJudge:
         except _UNANSWERED as exc:
             self._call_failed(exc, "repair", len(failed))
             return {}
-        records, remaining = self._accept(failed, result, context)
-        self._rejected("repair", len(failed), len(records), len(remaining))
+        records, check = self._accept(failed, result, context)
+        self._rejected("repair", len(failed), len(records), check.kinds)
         return records
 
     def _call_failed(
@@ -268,9 +271,13 @@ class RequirementJudge:
         )
 
     def _rejected(
-        self, phase: str, requirement_count: int, accepted: int, rejected: int
+        self,
+        phase: str,
+        requirement_count: int,
+        accepted: int,
+        kinds: Mapping[str, tuple[ProblemKind, ...]],
     ) -> None:
-        if rejected:
+        if kinds:
             log_event(
                 _log,
                 "judge.verdicts_rejected",
@@ -279,7 +286,8 @@ class RequirementJudge:
                 phase=phase,
                 requirement_count=requirement_count,
                 accepted_count=accepted,
-                rejected_count=rejected,
+                rejected_count=len(kinds),
+                problem_kinds=_tally(kinds),
             )
 
     def _accept(
@@ -287,7 +295,7 @@ class RequirementJudge:
         batch: Sequence[RequirementPacket],
         result: StructuredResult[JudgeResponse],
         context: _Context,
-    ) -> tuple[dict[str, VerdictRecord], Mapping[str, tuple[str, ...]]]:
+    ) -> tuple[dict[str, VerdictRecord], JudgeCheck]:
         check = check_verdicts(batch, [_proposed(v) for v in result.value.verdicts])
         same_model = (result.provider_id, result.model_tag) == (
             self._model.provider_id,
@@ -306,7 +314,7 @@ class RequirementJudge:
             if same_model:
                 self._cache.keep(key, record)
             records[requirement_id] = record
-        return records, check.problems
+        return records, check
 
     def _call(self, user: str) -> StructuredResult[JudgeResponse]:
         capabilities = self._structured.capabilities
@@ -331,6 +339,12 @@ class RequirementJudge:
 
 def _ignore(handled: int) -> None:
     del handled
+
+
+def _tally(kinds: Mapping[str, tuple[ProblemKind, ...]]) -> str:
+    """Fixed rule names and counts only, e.g. ``no_verdict:1,quote_not_verbatim:3``."""
+    counts = Counter(kind for found in kinds.values() for kind in found)
+    return ",".join(f"{kind.value}:{count}" for kind, count in sorted(counts.items()))
 
 
 def _rebound(record: VerdictRecord, requirement_id: str) -> VerdictRecord:

@@ -156,6 +156,34 @@ def test_invalid_judgments_log_counts_before_and_after_repair(
         assert hidden not in caplog.text
 
 
+def test_rejected_judgments_log_which_rules_they_broke(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    unknown_chunk = _verdict(
+        "r1",
+        match={
+            "score": 3,
+            "rationale": "private-rationale",
+            "evidence": [{"chunk_id": "private-chunk-id", "quote": "private-quote"}],
+        },
+    )
+    structured = ScriptedStructured(
+        [_reply(unknown_chunk), _reply(_verdict("r1", verdict="missing"))]
+    )
+    with caplog.at_level(logging.INFO):
+        _judge(structured).judge([_packet("r1")], FACTS, as_of=AS_OF)
+
+    rejected = [
+        r.getMessage()
+        for r in caplog.records
+        if "judge.verdicts_rejected" in r.getMessage()
+    ]
+    assert len(rejected) == 2
+    assert "problem_kinds=unknown_chunk:1" in rejected[0]
+    assert "problem_kinds=verdict_score_mismatch:1" in rejected[1]
+    assert "private-chunk-id" not in caplog.text
+
+
 def test_valid_verdicts_are_accepted_from_one_call() -> None:
     structured = ScriptedStructured([_reply(_verdict("r1"), _verdict("r2"))])
 
