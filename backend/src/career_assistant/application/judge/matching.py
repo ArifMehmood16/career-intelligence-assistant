@@ -8,6 +8,7 @@ and both searches go into the trace.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
@@ -24,6 +25,9 @@ from career_assistant.domain.candidate_facts import CandidateFacts
 from career_assistant.domain.judging import Candidate, RequirementPacket
 from career_assistant.domain.progress import TaskKey
 from career_assistant.domain.search import SearchHit
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +79,7 @@ class EvidenceMatcher:
     ) -> MatchOutcome:
         total = len(requirements)
         progress.enter(TaskKey.SEARCH)
+        log_event(_log, "Searching the CV for evidence", requirements=total)
         progress.count(TaskKey.SEARCH, 0, total)
         packets: list[RequirementPacket] = []
         traces: dict[str, tuple[SearchRound, ...]] = {}
@@ -90,6 +95,13 @@ class EvidenceMatcher:
                 SearchRound(0, requirement.statement, result.hits),
             )
             progress.count(TaskKey.SEARCH, done, total)
+        log_event(
+            _log,
+            "Searched the CV for evidence",
+            requirements=total,
+            candidates=sum(len(result.candidates) for result in found),
+            without_candidates=sum(1 for result in found if not result.candidates),
+        )
         progress.enter(TaskKey.JUDGE)
         with progress_scope(progress, TaskKey.JUDGE):
             judged = self._judge.judge(
@@ -106,6 +118,14 @@ class EvidenceMatcher:
             if (query := _rewrite_query(verdicts.get(packet.requirement_id)))
         ][: self._max_rewrites]
         if wanted:
+            log_event(
+                _log,
+                "Rechecking requirements with new search queries",
+                requirements=len(wanted),
+                asked=sum(
+                    1 for p in packets if _rewrite_query(verdicts.get(p.requirement_id))
+                ),
+            )
             progress.enter(TaskKey.RECHECK)
             progress.count(TaskKey.RECHECK, 0, len(wanted))
             with progress_scope(progress, TaskKey.RECHECK):
@@ -113,6 +133,7 @@ class EvidenceMatcher:
                     wanted, facts, traces, verdicts, as_of=as_of, progress=progress
                 )
         else:
+            log_event(_log, "No requirement asked for another search")
             progress.skip(TaskKey.RECHECK)
         return MatchOutcome(
             verdicts=verdicts,
@@ -140,6 +161,13 @@ class EvidenceMatcher:
         for requirement_id, corrected in outcomes:
             if corrected is not None:
                 verdicts[requirement_id] = corrected
+        log_event(
+            _log,
+            "Rechecked requirements",
+            requirements=len(wanted),
+            with_new_evidence=len(outcomes),
+            verdicts_replaced=sum(1 for _, corrected in outcomes if corrected),
+        )
 
     def _rejudge_all(
         self,

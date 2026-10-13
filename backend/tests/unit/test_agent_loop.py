@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import logging
+
+import pytest
 
 from career_assistant.application.ask.agent import AgentLimits, run_agent
 from career_assistant.application.ask.registry import evidence_registry
@@ -214,3 +217,50 @@ def test_a_refusal_still_lists_the_tools_it_tried() -> None:
 
     assert outcome.result.kind is AnswerKind.INSUFFICIENT
     assert [s.name for s in outcome.result.tool_steps] == ["search_evidence"]
+
+
+def _said(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [record.getMessage() for record in caplog.records]
+
+
+def test_the_log_follows_each_agent_turn_and_tool_without_the_question(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = _Port([_tool_call(), _text(_answer(_TEXT))])
+
+    with caplog.at_level(logging.INFO):
+        run_agent(
+            question="Where is PRIVATE dbt work?",
+            port=port,
+            registry=evidence_registry((), _pool()),
+            limits=AgentLimits(),
+        )
+
+    lines = _said(caplog)
+    assert lines[0].startswith("Agent asked the model step=1 tools_offered=True")
+    assert any(
+        line.startswith("Agent called a tool tool=search_evidence found=1 failed=False")
+        for line in lines
+    )
+    assert lines[-1] == "Agent finished kind=answer citations=1 tool_calls=1"
+    assert "PRIVATE" not in caplog.text
+    assert _TEXT not in caplog.text
+
+
+def test_the_log_says_why_the_agent_refused(caplog: pytest.LogCaptureFixture) -> None:
+    port = _Port([_tool_call(), _text(_answer(_TEXT, chunk_id="guessed"))])
+
+    with caplog.at_level(logging.INFO):
+        run_agent(
+            question="Where is dbt?",
+            port=port,
+            registry=evidence_registry((), _pool()),
+            limits=AgentLimits(),
+        )
+
+    lines = _said(caplog)
+    assert any(
+        line.startswith("Agent reply failed the citation check") for line in lines
+    )
+    assert any(line.startswith("Agent could not ground an answer") for line in lines)
+    assert lines[-1] == "Agent finished kind=insufficient citations=0 tool_calls=1"

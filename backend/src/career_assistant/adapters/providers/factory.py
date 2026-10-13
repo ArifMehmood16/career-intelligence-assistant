@@ -34,10 +34,18 @@ from career_assistant.application.ports.types import (
     EmbeddingRequest,
     EmbeddingResult,
 )
+from career_assistant.application.providers.catalogue import (
+    default_completion_model,
+    default_embedding_model,
+)
 from career_assistant.application.providers.egress import HostedEgressPolicy
 from career_assistant.application.providers.fallback import (
     CompletingWithOptionalFallback,
     FallbackPolicy,
+)
+from career_assistant.application.providers.logging_ports import (
+    LoggingCompletion,
+    LoggingEmbedding,
 )
 from career_assistant.application.providers.model_catalogue import (
     ModelCatalogue,
@@ -155,7 +163,11 @@ def build_completion_port(
             fallback="hermetic",
             model_tag=model_tag or "",
         )
-        return wrapped
+        return LoggingCompletion(
+            wrapped,
+            provider_id=selected,
+            model_tag=model_tag or default_completion_model(settings, selected),
+        )
     log_event(
         _log,
         "provider.constructed",
@@ -163,7 +175,11 @@ def build_completion_port(
         provider_id=selected,
         model_tag=model_tag or "",
     )
-    return primary
+    return LoggingCompletion(
+        primary,
+        provider_id=selected,
+        model_tag=model_tag or default_completion_model(settings, selected),
+    )
 
 
 def build_embedding_port(
@@ -189,7 +205,11 @@ def build_embedding_port(
         catalogue=catalogue or default_model_catalogue(),
     )
     log_event(_log, "provider.constructed", kind="embedding", provider_id=selected)
-    return port
+    return LoggingEmbedding(
+        port,
+        provider_id=selected,
+        model_tag=model_tag or default_embedding_model(settings, selected),
+    )
 
 
 def _completion_for(

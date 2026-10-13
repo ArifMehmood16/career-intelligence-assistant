@@ -137,6 +137,12 @@ def upload_pasted_cv(
     limits: AdmissionLimits,
 ) -> CvView:
     started = time.perf_counter()
+    log_event(
+        _log,
+        "Receiving pasted CV",
+        file_name=filename or "pasted.txt",
+        characters=len(text),
+    )
     try:
         parsed = parse_pasted_text(
             text,
@@ -153,6 +159,12 @@ def upload_pasted_cv(
             started=started,
         )
     except IntakeError as exc:
+        log_event(
+            _log,
+            "CV upload rejected",
+            file_name=filename or "pasted.txt",
+            code=exc.code.value,
+        )
         emit_action(
             "cv.upload",
             outcome="failed",
@@ -171,6 +183,13 @@ def upload_bytes_cv(
     parser: UploadParser,
 ) -> CvView:
     started = time.perf_counter()
+    log_event(
+        _log,
+        "Receiving CV upload",
+        file_name=upload.filename,
+        bytes=len(upload.data),
+        declared_media_type=upload.declared_media_type,
+    )
     try:
         parsed = parser.parse(upload)
         return _store_parsed_cv(
@@ -181,6 +200,12 @@ def upload_bytes_cv(
             started=started,
         )
     except IntakeError as exc:
+        log_event(
+            _log,
+            "CV upload rejected",
+            file_name=upload.filename,
+            code=exc.code.value,
+        )
         emit_action(
             "cv.upload",
             outcome="failed",
@@ -202,6 +227,15 @@ def _store_parsed_cv(
     from career_assistant.domain.documents import ParsedDocument
 
     assert isinstance(parsed, ParsedDocument)
+    log_event(
+        _log,
+        "Parsed CV",
+        file_name=parsed.document.filename,
+        format=parsed.document.format.value,
+        pages=parsed.document.page_count,
+        characters=parsed.document.character_count,
+        spans=len(parsed.spans),
+    )
     document = NewDocument(
         id=parsed.document.id,
         kind=DocumentKind.CV,
@@ -217,6 +251,12 @@ def _store_parsed_cv(
         spans=parsed.spans,
     )
     stored = store.replace(workspace_id, document)
+    log_event(
+        _log,
+        "Stored the CV",
+        document_id=stored.view.id,
+        file_name=stored.view.filename,
+    )
     log_event(
         _log,
         "cv.uploaded",
@@ -250,6 +290,7 @@ def get_cv(store: CvStore, *, workspace_id: str) -> CvView | None:
 def delete_cv(store: CvStore, *, workspace_id: str) -> None:
     store.delete_active(workspace_id)
     log_event(_log, "cv.deleted")
+    log_event(_log, "Deleted the CV and everything derived from it")
     emit_action("cv.delete", outcome="succeeded", entity_type="cv")
 
 

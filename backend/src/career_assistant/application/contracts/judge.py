@@ -7,6 +7,7 @@ after this parses.
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Annotated, Literal
 
 from pydantic import Field
@@ -15,6 +16,7 @@ from career_assistant.application.contracts.base import (
     Contract,
     NonEmpty,
     VersionedContract,
+    counted,
 )
 
 Score = Annotated[int, Field(ge=0, le=4)]
@@ -57,3 +59,12 @@ class RequirementVerdict(Contract):
 class JudgeResponse(VersionedContract):
     contract_version = "judge-v1"
     verdicts: list[RequirementVerdict] = Field(min_length=1)
+
+    def log_summary(self) -> str:
+        labels = Counter(verdict.verdict for verdict in self.verdicts)
+        wanting = sum(1 for v in self.verdicts if not v.retrieval_feedback.sufficient)
+        return (
+            f"{counted(len(self.verdicts), 'verdict')} ({labels['met']} met, "
+            f"{labels['partial']} partial, {labels['missing']} missing; "
+            f"{wanting} {'asks' if wanting == 1 else 'ask'} for more evidence)"
+        )

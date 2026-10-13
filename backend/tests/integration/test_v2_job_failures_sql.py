@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -17,6 +18,9 @@ from career_assistant.adapters.persistence.v2_worker import (
 )
 from career_assistant.adapters.providers.hermetic.embedding import (
     HermeticEmbeddingAdapter,
+)
+from career_assistant.adapters.providers.hermetic.structured import (
+    HermeticStructuredCompleter,
 )
 from career_assistant.application.analysis.v2 import V2Limits
 from career_assistant.application.judge.cache import ModelIdentity
@@ -85,3 +89,28 @@ def test_an_incomplete_v2_analysis_publishes_no_score(
     assert role["fitScore"] == 0
     verdicts = app.client.get(f"/api/roles/{role_id}/verdicts")
     assert verdicts.status_code == 409
+
+
+def test_the_log_names_the_role_files_and_models_of_an_analysis(
+    session_factory: sessionmaker[Session], caplog: pytest.LogCaptureFixture
+) -> None:
+    app = sql_app(session_factory)
+    queue_role(app)
+
+    with caplog.at_level(logging.INFO, logger="career_assistant"):
+        finished = _run(app, HermeticStructuredCompleter())
+
+    assert finished.error is None
+    lines = [record.getMessage() for record in caplog.records]
+    assert any(
+        line.startswith("Picked up a queued analysis job_id=") and "waited_ms=" in line
+        for line in lines
+    )
+    (starting,) = [line for line in lines if line.startswith("Starting analysis")]
+    assert "role_title=Data Engineer company=Northwind cv_file=cv.txt" in starting
+    assert any(
+        line.startswith("Using models for this analysis judge_provider=hermetic")
+        for line in lines
+    )
+    (published,) = [line for line in lines if line.startswith("Published the analysis")]
+    assert "band=" in published and "requirements=" in published

@@ -1,5 +1,11 @@
 # Observability logging plan — files, actions, events, API envelopes
 
+> **2026-10-13:** readable step lines and model-call lines are specified in
+> [spec 013](../specs/013-debug-logging/spec.md) and
+> [ADR 017](adr/017-method-tracing-and-model-call-logs.md); how to read them is in
+> [Running locally](running-locally.md#reading-the-log). This page remains the
+> record of the 15B durable audit design.
+
 Instruction set for coding agents and the human reviewer. Phase **15B** is
 approved to proceed under [ADR 012](adr/012-durable-operational-audit.md).
 15B.1–15B.5 are done. Implement one remaining 15B.n task at a time.

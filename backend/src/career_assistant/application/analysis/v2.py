@@ -7,6 +7,7 @@ whole analysis unscored.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -29,7 +30,11 @@ from career_assistant.application.ports.progress import (
 )
 from career_assistant.application.ports.search import HybridSearchPort
 from career_assistant.application.providers.fanout import map_in_order
-from career_assistant.domain.candidate_facts import candidate_facts
+from career_assistant.domain.candidate_facts import (
+    CandidateFacts,
+    Coverage,
+    candidate_facts,
+)
 from career_assistant.domain.chunking import TechTermProposal
 from career_assistant.domain.judging import JudgeDocumentContext, RequirementPacket
 from career_assistant.domain.progress import TaskKey
@@ -44,6 +49,9 @@ from career_assistant.domain.scoring_v2 import (
     keyword_coverage,
     score_v2,
 )
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 # Requirement ids derive from the stored advert chunk, so they are stable while
 # the advert's chunks are.
@@ -106,11 +114,19 @@ class RoleAnalysisV2:
         ws, as_of = documents.workspace_id, documents.as_of
         cv, advert = self._index(ws, documents, progress)
         requirements = _requirements(advert.chunks)
+        log_event(
+            _log,
+            "Found requirements in the job advert",
+            requirements=len(requirements),
+            must_have=sum(1 for r in requirements if r.packet.must_have),
+            advert_chunks=len(advert.chunks),
+        )
         facts = candidate_facts(
             [s.chunk for s in cv.chunks],
             [t for r in requirements for t in r.tech_terms],
             as_of=as_of,
         )
+        _log_facts(facts)
         facts = replace(
             facts, context=_document_context(documents, cv.chunks, advert.chunks)
         )
@@ -130,12 +146,15 @@ class RoleAnalysisV2:
         progress.enter(TaskKey.SCORE)
         items = _to_score(requirements, match, _chunk_dates(cv.chunks))
         rubric, incomplete = self._rubric, match.incomplete
+        fit = score_v2(items, rubric=rubric, as_of=as_of, incomplete=incomplete)
+        gaps = gap_plan(items, rubric=rubric, as_of=as_of, incomplete=incomplete)
+        _log_fit(fit, requirements=len(requirements), incomplete=len(incomplete))
         return V2Analysis(
             requirements=requirements,
             match=match,
-            fit=score_v2(items, rubric=rubric, as_of=as_of, incomplete=incomplete),
+            fit=fit,
             coverage=keyword_coverage(facts),
-            gaps=gap_plan(items, rubric=rubric, as_of=as_of, incomplete=incomplete),
+            gaps=gaps,
             left_machine=cv.left_machine
             or advert.left_machine
             or any(record.left_machine for record in match.verdicts.values()),
@@ -164,6 +183,42 @@ class RoleAnalysisV2:
             max_workers=self._indexer.concurrency,
         )
         return indexed[0], indexed[1]
+
+
+def _log_facts(facts: CandidateFacts) -> None:
+    def covered(kind: Coverage) -> int:
+        return sum(1 for term in facts.terms if term.coverage is kind)
+
+    log_event(
+        _log,
+        "Summarised the CV against the advert's terms",
+        terms=len(facts.terms),
+        exact=covered(Coverage.EXACT),
+        alias_only=covered(Coverage.ALIAS),
+        missing=covered(Coverage.MISSING),
+        cv_roles=len(facts.roles),
+    )
+
+
+def _log_fit(fit: FitScoreV2, *, requirements: int, incomplete: int) -> None:
+    if fit.publishable and fit.score is not None:
+        log_event(
+            _log,
+            "Scored the role",
+            score=round(fit.score, 1),
+            band=fit.band,
+            gated=fit.gated,
+            requirements_scored=len(fit.components),
+        )
+        return
+    reason = "no_requirements" if requirements == 0 else "requirements_without_verdict"
+    log_event(
+        _log,
+        "Role not scored",
+        reason=reason,
+        requirements=requirements,
+        incomplete=incomplete,
+    )
 
 
 def _requirements(advert: Sequence[StoredChunk]) -> tuple[AnalysedRequirement, ...]:

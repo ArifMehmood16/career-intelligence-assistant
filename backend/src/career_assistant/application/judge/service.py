@@ -56,7 +56,7 @@ from career_assistant.domain.judging import (
     RequirementPacket,
     check_verdicts,
 )
-from career_assistant.logconfig import log_event, log_failure
+from career_assistant.logconfig import bind_log_context, log_event, log_failure
 
 _log = logging.getLogger(__name__)
 _FAILURE_CATEGORIES = (
@@ -145,16 +145,31 @@ class RequirementJudge:
         batches = judge_batches(
             pending, capabilities, self._limits, prefix_chars=prefix
         )
+        log_event(
+            _log,
+            "Judging requirements",
+            requirements=len(packets),
+            from_cache=handled,
+            to_judge=len(pending),
+            batches=len(batches),
+            largest_batch=max((len(batch) for batch in batches), default=0),
+        )
         plan_calls(model=len(batches))
         if self.concurrency > 1 and len(batches) > 1:
             records.update(self._judge_parallel(batches, context, handled, report))
         else:
-            for batch in batches:
-                records.update(self._judge_batch(batch, context))
+            for number, batch in enumerate(batches, start=1):
+                records.update(self._numbered(number, len(batches), batch, context))
                 handled += len(batch)
                 report(handled)
         incomplete = tuple(
             p.requirement_id for p in packets if p.requirement_id not in records
+        )
+        log_event(
+            _log,
+            "Judged requirements",
+            accepted=len(records),
+            incomplete=len(incomplete),
         )
         if incomplete:
             log_failure(
@@ -178,9 +193,13 @@ class RequirementJudge:
         """Independent batches share no verdicts. A repair stays inside its batch."""
         state = {"handled": handled}
         lock = threading.Lock()
+        numbered = list(enumerate(batches, start=1))
 
-        def one(batch: Sequence[RequirementPacket]) -> dict[str, VerdictRecord]:
-            judged = self._judge_batch(batch, context)
+        def one(
+            item: tuple[int, Sequence[RequirementPacket]],
+        ) -> dict[str, VerdictRecord]:
+            number, batch = item
+            judged = self._numbered(number, len(numbered), batch, context)
             with lock:
                 state["handled"] += len(batch)
                 report(state["handled"])
@@ -188,10 +207,22 @@ class RequirementJudge:
 
         merged: dict[str, VerdictRecord] = {}
         for part in map_in_order(
-            batches, one, parallel=True, max_workers=self.concurrency
+            numbered, one, parallel=True, max_workers=self.concurrency
         ):
             merged.update(part)
         return merged
+
+    def _numbered(
+        self,
+        number: int,
+        total: int,
+        batch: Sequence[RequirementPacket],
+        context: _Context,
+    ) -> dict[str, VerdictRecord]:
+        """Every line about this batch, model calls included, names the batch."""
+        with bind_log_context(batch=f"{number}/{total}"):
+            log_event(_log, "Judging a batch of requirements", requirements=len(batch))
+            return self._judge_batch(batch, context)
 
     def _judge_batch(
         self, batch: Sequence[RequirementPacket], context: _Context
@@ -207,6 +238,13 @@ class RequirementJudge:
             return {}
         records, check = self._accept(batch, result, context)
         self._rejected("initial", len(batch), len(records), check.kinds)
+        log_event(
+            _log,
+            "Batch judged",
+            requirements=len(batch),
+            accepted=len(records),
+            rejected=len(check.problems),
+        )
         failed = [p for p in batch if p.requirement_id in check.problems]
         if failed:
             records.update(self._repair(failed, check.problems, context))
@@ -217,6 +255,11 @@ class RequirementJudge:
     ) -> dict[str, VerdictRecord]:
         if len(batch) == 1:
             return {}
+        log_event(
+            _log,
+            "Batch reply too long, splitting the batch in two",
+            requirements=len(batch),
+        )
         half = len(batch) // 2
         plan_calls(model=2)
         return {
@@ -241,6 +284,11 @@ class RequirementJudge:
                 "\n".join([_REPAIR_OPENING, *listed]),
                 _REPAIR_CLOSING,
             ]
+        )
+        log_event(
+            _log,
+            "Asking the model to repair verdicts that broke the rules",
+            requirements=len(failed),
         )
         plan_calls(model=1)
         try:

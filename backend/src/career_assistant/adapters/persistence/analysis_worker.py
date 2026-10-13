@@ -50,6 +50,7 @@ from career_assistant.domain.jobs import (
     recover_stale_running,
 )
 from career_assistant.logconfig import (
+    bind_log_context,
     bind_request_context,
     clear_request_context,
     log_event,
@@ -167,12 +168,21 @@ class SqlAnalysisWorker:
                 job_id=claimed.id,
                 role_id=claimed.role_id,
             )
+            log_event(
+                _log,
+                "Picked up a queued analysis",
+                job_id=claimed.id,
+                role_id=claimed.role_id,
+                waited_ms=_waited_ms(claimed),
+                still_queued=len(queued) - 1,
+            )
             return claimed
 
     def complete(self, job: AnalysisJob) -> AnalysisJob:
         bind_request_context(correlation_id=job.id, workspace_id=job.workspace_id)
         try:
-            return self._v2.run(job)
+            with bind_log_context(job_id=job.id, role_id=job.role_id):
+                return self._v2.run(job)
         finally:
             clear_request_context()
 
@@ -366,3 +376,9 @@ class SqlAnalysisWorker:
             provider_id,
             model_tag,
         )
+
+
+def _waited_ms(job: AnalysisJob) -> int | None:
+    if job.started_at is None:
+        return None
+    return max(0, int((job.started_at - job.created_at).total_seconds() * 1000))

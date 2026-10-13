@@ -50,7 +50,8 @@ remains open work, distinct from SQL provider-call accounting.
   citations refer only to text returned that turn and pass a verbatim check.
 - MCP/client: stdio only and off by default, enabled by server-owned configuration.
   Every tool/result carries the notice that the client controls onward model egress.
-- Logs/audit: allowlisted ids, counts, durations and codes only; no document, prompt,
+- Logs/audit: ids, counts, durations, codes, and the labels a human typed or
+  uploaded (file names, role titles, company names; ADR 017); no document, prompt,
   question/answer, model response, embedding, HTTP bodies or credentials. Progress
   persists call counts, not payloads. API keys never appear in route responses.
 - Benchmark/model: an offline-default command reads only named shipped synthetic

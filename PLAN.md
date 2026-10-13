@@ -226,3 +226,17 @@ Human-authorized follow-up after PR #48 merged, separate from application phases
       Exit: byte-identical official licence, consistent current guidance, resolving
       local links, branch whitespace and unchanged third-party notices; no runtime
       or dependency change. Observe updated-head CI on the existing PR before merge.
+
+## Debug logging — 2026-10-13
+
+Human-requested after the 19.2 judge batching fix, stacked on that branch.
+[Spec 013](specs/013-debug-logging/spec.md) records the bounded change;
+[ADR 017](docs/adr/017-method-tracing-and-model-call-logs.md) records the policy.
+
+- [ ] Logs a human can follow: job and role on every line of an analysis, task
+      start/finish, every model and embedding call with tokens, finish reason and a
+      content-free response summary, and readable step lines written in the code
+      for uploads, roles, the analysis, Ask, drafting and MCP (amended from DEBUG
+      method tracing at the human's request). Exit: a hermetic analysis at DEBUG
+      leaks no fixture text and every in-job line has `job_id`; full backend and
+      SQL checks pass; the human follows a real rerun in the log file.

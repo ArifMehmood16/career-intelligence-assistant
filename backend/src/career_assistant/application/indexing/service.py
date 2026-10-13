@@ -7,6 +7,7 @@ already stored under the same model key is not computed twice.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ from career_assistant.application.chunking.prompts import CHUNKING_PROMPT_VERSIO
 from career_assistant.application.chunking.service import (
     ChunkingRequest,
     DocumentChunker,
+    document_label,
 )
 from career_assistant.application.ports.chunks import (
     ChunkProvenance,
@@ -30,6 +32,9 @@ from career_assistant.application.ports.progress import plan_calls
 from career_assistant.application.ports.types import EmbeddingRequest, EmbeddingResult
 from career_assistant.domain.chunking import retrieval_text
 from career_assistant.domain.knowledge_graph import graph_from_chunks
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,9 +72,16 @@ class DocumentIndexer:
             )
             reused = bool(stored)
             left_machine = False
-            if not reused:
+            if reused:
+                log_event(
+                    _log,
+                    f"Reusing the stored chunks of the {document_label(request.kind)}",
+                    document_id=request.document_id,
+                    chunks=len(stored),
+                )
+            else:
                 stored, left_machine = self._chunk(workspace_id, request)
-            embedded_remotely = self._embed(workspace_id, request.document_id, stored)
+            embedded_remotely = self._embed(workspace_id, request, stored)
             return IndexedDocument(
                 chunks=stored,
                 reused=reused,
@@ -93,8 +105,12 @@ class DocumentIndexer:
         return stored, outcome.left_machine
 
     def _embed(
-        self, workspace_id: str, document_id: str, stored: Sequence[StoredChunk]
+        self,
+        workspace_id: str,
+        request: ChunkingRequest,
+        stored: Sequence[StoredChunk],
     ) -> bool:
+        document_id = request.document_id
         eligible = [
             (s.chunk_id, text)
             for s in stored
@@ -113,10 +129,24 @@ class DocumentIndexer:
             )
             done = self._store.embedded_chunk_ids(workspace_id, document_id, model.key)
         missing = [(cid, text) for cid, text in eligible if cid not in done]
+        label = document_label(request.kind)
         if not missing:
+            log_event(
+                _log,
+                f"{label} chunks already embedded",
+                document_id=document_id,
+                chunks=len(eligible),
+            )
             return False
         plan_calls(embedding=1)
         result = self._vectors([text for _, text in missing])
+        log_event(
+            _log,
+            f"Embedded {label} chunks",
+            document_id=document_id,
+            vectors=len(result.vectors),
+            already_embedded=len(eligible) - len(missing) or None,
+        )
         self._store.save_vectors(
             workspace_id,
             _document_model(result),

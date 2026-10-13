@@ -137,15 +137,45 @@ from hermetic and PostgreSQL/Supabase integration checks.
 
 ## Observability
 
+### Reading the log
+
+Set `LOG_FILE` in `config/app.env` (for example `var/log/career-assistant.log`,
+which Git ignores) to keep lines after the terminal scrolls, and `LOG_LEVEL=DEBUG`
+to see quiet lines too (successful `GET` polling). Restart the API after either.
+
+Lines are plain sentences followed by `key=value` fields. Every line written
+during an analysis ends with `job_id=` and `role_id=`; judge lines add
+`batch=i/n`. To follow one analysis, search the file for its job id:
+
+```text
+Picked up a queued analysis job_id=… waited_ms=310 still_queued=0
+Starting analysis role_title=Data Engineer company=Northwind cv_file=cv.pdf …
+Using models for this analysis judge_provider=openai judge_model=gpt-5-mini
+Task started task=read_advert
+Reading job advert into chunks document_id=… lines=48 sections=1
+Calling model provider=openai model=gpt-5-mini contract=job-chunks-v3 attempt=1 …
+Model replied … duration_ms=41250 input_tokens=5120 output_tokens=9800 reasoning_tokens=6400 finish_reason=stop
+Model reply parsed: 14 chunks, 73 requirements (40 must-have), 25 tech terms, 8 taxonomy entries contract=job-chunks-v3 attempt=1
+Found requirements in the job advert requirements=73 must_have=40
+Judging requirements requirements=73 from_cache=0 to_judge=73 batches=5 largest_batch=16
+Batch judged requirements=16 accepted=15 rejected=1 … batch=2/5
+Scored the role score=61.3 band=partial gated=False requirements_scored=73
+Published the analysis analysis_version=4 score=61.3 band=partial requirements=73 gaps=12
+```
+
+The log names files, role titles and companies, and counts everything else. It
+never contains CV, advert or cover-letter text, questions, answers, prompts or
+model replies ([ADR 017](adr/017-method-tracing-and-model-call-logs.md)).
+
+### Failed analyses
+
 `assessment_incomplete` at scoring means some required judgments were unavailable
 or failed server checks; it is not a low fit score. Inspect preceding
 `provider.transport_failed`, `judge.call_failed`, `judge.verdicts_rejected` and
-`judge.incomplete` events for fixed categories and counts; every line of one
-analysis shares its `correlation_id` (the job id). `judge.verdicts_rejected`
-names the broken rules in `problem_kinds`. The judge progress task counts
-requirements handled, including failed calls. To keep these lines after the
-terminal scrolls, set `LOG_FILE` in `config/app.env` (for example
-`var/log/career-assistant.log`, which Git ignores) and restart the API.
+`judge.incomplete` events for fixed categories and counts, and the plain
+`Role not scored reason=…` line. `judge.verdicts_rejected` names the broken rules
+in `problem_kinds`. The judge progress task counts requirements handled,
+including failed calls.
 
 For the reported slow gpt-5-mini run, local `PROVIDER_TIMEOUT_SECONDS` is now 180
 (tracked default remains 60); `PROVIDER_MAX_RETRIES` remains 2. Restart the API

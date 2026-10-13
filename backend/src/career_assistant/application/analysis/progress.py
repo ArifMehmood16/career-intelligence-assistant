@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable, Sequence
 from datetime import datetime
@@ -18,7 +19,9 @@ from career_assistant.domain.progress import (
     skip,
     start,
 )
+from career_assistant.logconfig import log_event
 
+_log = logging.getLogger(__name__)
 Sink = Callable[[tuple[JobTask, ...]], None]
 
 
@@ -86,4 +89,33 @@ class TrackedProgress:
 
     def _set(self, tasks: tuple[JobTask, ...]) -> None:
         self._sink(tasks)
+        before = {task.key: task.state for task in self._tasks}
         self._tasks = tasks
+        for task in tasks:
+            if before.get(task.key) is not task.state:
+                _log_transition(task)
+
+
+def _log_transition(task: JobTask) -> None:
+    if task.state is TaskState.RUNNING:
+        log_event(_log, "Task started", task=task.key.value)
+    elif task.state is TaskState.DONE:
+        log_event(
+            _log,
+            "Task finished",
+            task=task.key.value,
+            duration_ms=_duration_ms(task),
+            units=f"{task.units_done}/{task.units_total}"
+            if task.units_total is not None
+            else None,
+            model_calls=task.model_calls_done or None,
+            embedding_calls=task.embedding_calls_done or None,
+        )
+    elif task.state is TaskState.SKIPPED:
+        log_event(_log, "Task skipped", task=task.key.value)
+
+
+def _duration_ms(task: JobTask) -> int | None:
+    if task.started_at is None or task.finished_at is None:
+        return None
+    return int((task.finished_at - task.started_at).total_seconds() * 1000)

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
@@ -26,6 +27,7 @@ from career_assistant.application.ask.registry import (
     ToolRun,
     evidence_registry,
 )
+from career_assistant.logconfig import log_event
 
 NAME = "career-intelligence"
 NOTICE = "decided by the MCP client"
@@ -44,6 +46,7 @@ _READ_ONLY = types.ToolAnnotations(
 )
 
 RegistryFactory = Callable[[], ToolRegistry]
+_log = logging.getLogger(__name__)
 
 
 def build_server(registry_for_call: RegistryFactory) -> Server[Any]:
@@ -60,8 +63,21 @@ def build_server(registry_for_call: RegistryFactory) -> Server[Any]:
         ctx: ServerRequestContext[Any], params: types.CallToolRequestParams
     ) -> types.CallToolResult:
         arguments = dict(params.arguments or {})
+        log_event(
+            _log,
+            "MCP client called a tool",
+            tool=params.name,
+            arguments=len(arguments),
+        )
         run = await anyio.to_thread.run_sync(
             lambda: registry_for_call().call(params.name, arguments)
+        )
+        log_event(
+            _log,
+            "MCP tool returned",
+            tool=params.name,
+            found=len(run.chunks),
+            failed=run.error is not None,
         )
         return _result(run)
 

@@ -51,3 +51,32 @@ def test_worker_overlaps_independent_jobs_with_the_configured_thread_limit() -> 
     thread.join(timeout=5)
     assert not thread.is_alive()
     assert worker.complete.call_count == 2
+
+
+def test_every_line_logged_during_a_job_names_the_job_and_role() -> None:
+    import io
+    import logging
+
+    from career_assistant.logconfig import configure_logging, log_event
+
+    buffer = io.StringIO()
+    configure_logging(force=True, stream=buffer, level=logging.INFO)
+    worker = SqlAnalysisWorker(Mock())
+    job = new_role_analysis_job(
+        job_id="job-7",
+        workspace_id="ws",
+        role_id="role-7",
+        created_at=datetime.now(UTC),
+    )
+
+    def run(claimed: AnalysisJob) -> AnalysisJob:
+        log_event(logging.getLogger("career_assistant.test"), "inside the job")
+        return claimed
+
+    worker._v2 = Mock()
+    worker._v2.run.side_effect = run
+    worker.complete(job)
+    configure_logging(force=True)
+
+    (line,) = buffer.getvalue().splitlines()
+    assert line.endswith("job_id=job-7 role_id=role-7")

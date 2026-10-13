@@ -58,6 +58,9 @@ def generate_draft(
     left_machine = False
 
     for attempt in range(2):
+        log_event(
+            _log, "Drafting with the model", purpose=audit_action, attempt=attempt + 1
+        )
         result = completion.complete(
             CompletionRequest(
                 system=system,
@@ -100,11 +103,18 @@ def generate_draft(
                 )
             return draft
         counters.validator_failures += 1
+        log_event(
+            _log,
+            "Draft failed the groundedness check",
+            purpose=audit_action,
+            attempt=attempt + 1,
+        )
         if attempt == 0:
             regenerations += 1
             counters.regenerations += 1
 
     # Template path is span-backed by construction; still run the validator.
+    log_event(_log, "Using the template draft", purpose=audit_action)
     check = validate_groundedness(template_text, cited_span_texts)
     counters.template_fallbacks += 1
     draft = GeneratedDraft(

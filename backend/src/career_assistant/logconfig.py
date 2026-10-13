@@ -13,6 +13,8 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -26,6 +28,10 @@ _SECRET_PATTERN = re.compile(
 
 correlation_id_var: ContextVar[str] = ContextVar("correlation_id", default="-")
 workspace_id_var: ContextVar[str] = ContextVar("workspace_id", default="-")
+# Fields such as job_id and role_id, appended to every line inside an analysis.
+_log_context: ContextVar[tuple[tuple[str, str], ...]] = ContextVar(
+    "log_context", default=()
+)
 
 _configured = False
 _secret_values: tuple[str, ...] = ()
@@ -61,6 +67,22 @@ def bind_request_context(*, correlation_id: str, workspace_id: str | None) -> No
     workspace_id_var.set(workspace_id or "-")
 
 
+@contextmanager
+def bind_log_context(**fields: str) -> Iterator[None]:
+    """Append these fields to every line logged inside the block.
+
+    Bindings nest; an inner value replaces an outer one for the same key. Thread
+    fan-out copies the context, so worker threads keep the fields.
+    """
+    merged = dict(_log_context.get())
+    merged.update(fields)
+    token = _log_context.set(tuple(merged.items()))
+    try:
+        yield
+    finally:
+        _log_context.reset(token)
+
+
 def clear_request_context() -> None:
     correlation_id_var.set("-")
     workspace_id_var.set("-")
@@ -86,7 +108,19 @@ class ContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         record.correlation_id = correlation_id_var.get()
         record.workspace_id = workspace_id_var.get()
+        record.log_context = _context_suffix(record)
         return True
+
+
+def _context_suffix(record: logging.LogRecord) -> str:
+    bound = _log_context.get()
+    if not bound:
+        return ""
+    message = record.getMessage()
+    extra = format_fields(
+        **{key: value for key, value in bound if f"{key}=" not in message}
+    )
+    return f" {extra}" if extra else ""
 
 
 class RedactingFilter(logging.Filter):
@@ -109,7 +143,7 @@ class RedactingFilter(logging.Filter):
 
 _LOG_FORMAT = (
     "%(asctime)s %(levelname)s %(name)s %(message)s "
-    "correlation_id=%(correlation_id)s workspace_id=%(workspace_id)s"
+    "correlation_id=%(correlation_id)s workspace_id=%(workspace_id)s%(log_context)s"
 )
 _DEFAULT_MAX_BYTES = 10_485_760
 _DEFAULT_BACKUP_COUNT = 5
@@ -188,6 +222,14 @@ def log_event(logger: logging.Logger, event: str, **fields: object) -> None:
         logger.info("%s %s", event, extra)
     else:
         logger.info("%s", event)
+
+
+def log_debug(logger: logging.Logger, event: str, **fields: object) -> None:
+    extra = format_fields(**fields)
+    if extra:
+        logger.debug("%s %s", event, extra)
+    else:
+        logger.debug("%s", event)
 
 
 def log_failure(logger: logging.Logger, event: str, **fields: object) -> None:

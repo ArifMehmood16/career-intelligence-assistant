@@ -325,6 +325,30 @@ class AskService:
 
     def _produce(self, request: AskRequest) -> tuple[AnswerResult, str, str, bool]:
         intent = route_intent(request.content, role_id=request.role_id)
+        log_event(
+            _log,
+            "Answering a question",
+            question_characters=len(request.content),
+            intent=intent.value,
+            role_id=request.role_id,
+            roles_in_scope=len(request.roles),
+            evidence_pool=len(request.retrieved_pool),
+        )
+        result = self._answer(request, intent)
+        log_event(
+            _log,
+            "Answer ready",
+            kind=result[0].kind.value,
+            citations=len(result[0].citations),
+            provider=result[1],
+            model=result[2],
+            left_machine=result[3],
+        )
+        return result
+
+    def _answer(
+        self, request: AskRequest, intent: Intent
+    ) -> tuple[AnswerResult, str, str, bool]:
         if intent is not Intent.OPEN_QUESTION:
             structured = answer_structured(
                 intent,
@@ -333,7 +357,16 @@ class AskService:
                 known_span_ids=self._known_span_ids,
             )
             if structured.kind is AnswerKind.INSUFFICIENT:
+                log_event(
+                    _log,
+                    "The stored analysis cannot answer this; the model is not called",
+                )
                 return structured, "mapping", "deterministic", False
+            log_event(
+                _log,
+                "Asking the model to phrase an answer from the stored analysis",
+                citations=len(structured.citations),
+            )
             prompt = build_analysis_prompt(
                 question=request.content,
                 grounding=_analysis_grounding(request.roles),
@@ -361,12 +394,18 @@ class AskService:
             )
 
         if self._uses_agent():
+            log_event(_log, "Answering with the tool-calling agent")
             return self._run_agent(request)
 
         selected = select_spans_for_open_question(
             request.content,
             request.retrieved_pool,
             role_id=request.role_id,
+        )
+        log_event(
+            _log,
+            "Asking the model to answer from selected evidence",
+            evidence=len(selected),
         )
         prompt = build_open_question_prompt(
             question=request.content,
