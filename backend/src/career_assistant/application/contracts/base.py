@@ -18,6 +18,21 @@ class VersionedContract(Contract):
 
     contract_version: ClassVar[str]
 
+    def log_summary(self) -> str:
+        """Describe the reply for a log line: counts and labels, never its text."""
+        sized = [
+            counted(len(value), name.removesuffix("s"))
+            for name, value in self
+            if isinstance(value, list)
+        ]
+        return ", ".join(sized) or type(self).__name__
+
+
+def counted(number: int, noun: str, plural: str | None = None) -> str:
+    """``1 chunk``, ``2 chunks``; for content-free log summaries."""
+    word = noun if number == 1 else (plural or f"{noun}s")
+    return f"{number} {word}"
+
 
 NonEmpty = Annotated[str, Field(min_length=1)]
 

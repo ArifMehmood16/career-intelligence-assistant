@@ -14,6 +14,7 @@ from career_assistant.application.contracts.base import (
     Contract,
     NonEmpty,
     VersionedContract,
+    counted,
 )
 
 
@@ -27,3 +28,9 @@ class AgentAnswer(VersionedContract):
     answer: NonEmpty = Field(max_length=4_000)
     citations: list[Citation] = Field(default_factory=list)
     support: Literal["grounded", "partial", "insufficient"]
+
+    def log_summary(self) -> str:
+        return (
+            f"{self.support} answer, {counted(len(self.citations), 'citation')}, "
+            f"{counted(len(self.answer), 'character')}"
+        )

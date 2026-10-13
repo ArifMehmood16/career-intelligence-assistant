@@ -1,9 +1,8 @@
 """Log every model and embedding call: identity, sizes, timing, never text (ADR 017).
 
 Decorators over the completion and embedding ports, applied by the provider
-factory, so every caller is covered. The caller names the operation (for example
-a contract and its attempt) with ``llm_operation``; the pipeline task comes from
-the progress scope.
+factory, so every caller is covered. A caller names the contract and attempt with
+``llm_operation``; the pipeline task comes from the progress scope.
 """
 
 from __future__ import annotations
@@ -27,24 +26,29 @@ from career_assistant.application.ports.types import (
 from career_assistant.logconfig import log_event, log_failure
 
 _log = logging.getLogger(__name__)
-_operation: ContextVar[str | None] = ContextVar("llm_operation", default=None)
+_operation: ContextVar[tuple[str, int] | None] = ContextVar(
+    "llm_operation", default=None
+)
 
 
 @contextmanager
-def llm_operation(name: str) -> Iterator[None]:
-    """Name the calls made inside the block, e.g. ``judge-v1#2``."""
-    token = _operation.set(name)
+def llm_operation(contract: str, *, attempt: int) -> Iterator[None]:
+    """Name the contract and attempt that calls inside the block serve."""
+    token = _operation.set((contract, attempt))
     try:
         yield
     finally:
         _operation.reset(token)
 
 
-def _call_fields(provider_id: str, model_tag: str, default: str) -> dict[str, object]:
+def _call_fields(provider_id: str, model_tag: str) -> dict[str, object]:
+    operation = _operation.get()
+    contract, attempt = operation if operation else (None, None)
     return {
         "provider": provider_id,
         "model": model_tag,
-        "operation": _operation.get() or default,
+        "contract": contract,
+        "attempt": attempt,
         "task": current_task(),
     }
 
@@ -54,7 +58,7 @@ def _elapsed_ms(started: float) -> int:
 
 
 class LoggingCompletion:
-    """Logs llm.request before and llm.response or llm.failed after each call."""
+    """Logs each call before it starts and after it replies or fails."""
 
     def __init__(
         self, inner: CompletionPort, *, provider_id: str, model_tag: str
@@ -68,10 +72,10 @@ class LoggingCompletion:
         return self._inner.capabilities
 
     def complete(self, request: CompletionRequest) -> CompletionResult:
-        fields = _call_fields(self._provider_id, self._model_tag, "completion")
+        fields = _call_fields(self._provider_id, self._model_tag)
         log_event(
             _log,
-            "llm.request",
+            "Calling model",
             **fields,
             input_chars=len(request.system) + len(request.user),
             max_output_tokens=request.max_output_tokens,
@@ -83,7 +87,7 @@ class LoggingCompletion:
         except Exception as error:
             log_failure(
                 _log,
-                "llm.failed",
+                "Model call failed",
                 **fields,
                 duration_ms=_elapsed_ms(started),
                 error=type(error).__name__,
@@ -91,7 +95,7 @@ class LoggingCompletion:
             raise
         log_event(
             _log,
-            "llm.response",
+            "Model replied",
             **{**fields, "provider": result.provider_id, "model": result.model_tag},
             duration_ms=_elapsed_ms(started),
             input_tokens=result.input_tokens,
@@ -105,7 +109,7 @@ class LoggingCompletion:
 
 
 class LoggingEmbedding:
-    """Logs llm.request before and llm.response or llm.failed after each embed."""
+    """Logs each embedding call before it starts and after it replies or fails."""
 
     def __init__(
         self, inner: EmbeddingPort, *, provider_id: str, model_tag: str
@@ -119,10 +123,10 @@ class LoggingEmbedding:
         return self._inner.capabilities
 
     def embed(self, request: EmbeddingRequest) -> EmbeddingResult:
-        fields = _call_fields(self._provider_id, self._model_tag, "embedding")
+        fields = _call_fields(self._provider_id, self._model_tag)
         log_event(
             _log,
-            "llm.request",
+            "Calling embedding model",
             **fields,
             inputs=len(request.texts),
             input_chars=sum(len(text) for text in request.texts),
@@ -134,7 +138,7 @@ class LoggingEmbedding:
         except Exception as error:
             log_failure(
                 _log,
-                "llm.failed",
+                "Embedding call failed",
                 **fields,
                 duration_ms=_elapsed_ms(started),
                 error=type(error).__name__,
@@ -142,7 +146,7 @@ class LoggingEmbedding:
             raise
         log_event(
             _log,
-            "llm.response",
+            "Embedding model replied",
             **{**fields, "provider": result.provider_id, "model": result.model_tag},
             duration_ms=_elapsed_ms(started),
             vectors=len(result.vectors),
