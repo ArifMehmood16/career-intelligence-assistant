@@ -168,6 +168,14 @@ class SqlAnalysisWorker:
                 job_id=claimed.id,
                 role_id=claimed.role_id,
             )
+            log_event(
+                _log,
+                "Picked up a queued analysis",
+                job_id=claimed.id,
+                role_id=claimed.role_id,
+                waited_ms=_waited_ms(claimed),
+                still_queued=len(queued) - 1,
+            )
             return claimed
 
     def complete(self, job: AnalysisJob) -> AnalysisJob:
@@ -368,3 +376,9 @@ class SqlAnalysisWorker:
             provider_id,
             model_tag,
         )
+
+
+def _waited_ms(job: AnalysisJob) -> int | None:
+    if job.started_at is None:
+        return None
+    return max(0, int((job.started_at - job.created_at).total_seconds() * 1000))

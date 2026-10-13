@@ -102,6 +102,10 @@ def test_the_log_names_the_role_files_and_models_of_an_analysis(
 
     assert finished.error is None
     lines = [record.getMessage() for record in caplog.records]
+    assert any(
+        line.startswith("Picked up a queued analysis job_id=") and "waited_ms=" in line
+        for line in lines
+    )
     (starting,) = [line for line in lines if line.startswith("Starting analysis")]
     assert "role_title=Data Engineer company=Northwind cv_file=cv.txt" in starting
     assert any(
