@@ -139,13 +139,27 @@ def test_each_attempt_logs_its_outcome_and_a_content_free_summary(
     invalid, parsed = _reply_events(caplog)
     assert invalid == (
         "Model reply did not match its contract, asking for a repair "
-        "contract=agent-answer-v1 attempt=1 errors=1"
+        "contract=agent-answer-v1 attempt=1 errors=1 problems=support:literal_error"
     )
     assert parsed == (
         "Model reply parsed: grounded answer, 0 citations, 37 characters "
         "contract=agent-answer-v1 attempt=2"
     )
     assert "Northwind" not in caplog.text
+
+
+def test_a_reply_still_invalid_after_the_repair_names_the_problem(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = ScriptedCompletion([Reply(_INVALID), Reply(_INVALID)])
+
+    with caplog.at_level(logging.INFO), pytest.raises(StructuredOutputInvalidError):
+        StructuredCompleter(port).complete_structured(_request())
+
+    assert _reply_events(caplog)[-1] == (
+        "Model reply still did not match its contract after the repair "
+        "contract=agent-answer-v1 attempt=2 errors=1 problems=support:literal_error"
+    )
 
 
 def test_a_truncated_reply_logs_its_outcome(caplog: pytest.LogCaptureFixture) -> None:

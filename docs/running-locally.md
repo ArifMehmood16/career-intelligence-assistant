@@ -163,6 +163,16 @@ Scored the role score=61.3 band=partial gated=False requirements_scored=73
 Published the analysis analysis_version=4 score=61.3 band=partial requirements=73 gaps=12
 ```
 
+Both the terminal and the file receive every line at `LOG_LEVEL`. Uvicorn's own
+startup lines appear in the terminal only; the app's request lines cover the
+file. The MCP server (`career-assistant-mcp`) writes to stderr and the same file.
+
+When a model reply breaks its contract, the line names where: `problems=` lists
+JSON paths and error types, for example
+`chunks[3].atomic_requirements[0].experience_expected:string_too_long`. Retries
+("Provider call failed, retrying") and an open circuit breaker are logged too.
+At DEBUG each requirement's CV search adds one line with its hits and top score.
+
 The log names files, role titles and companies, and counts everything else. It
 never contains CV, advert or cover-letter text, questions, answers, prompts or
 model replies ([ADR 017](adr/017-method-tracing-and-model-call-logs.md)).

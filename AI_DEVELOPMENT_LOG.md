@@ -29,6 +29,31 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 195 — Name contract errors and close logging gaps
+
+- Date: 2026-10-13; Claude (Cowork), claude-opus-5-5; one agent, no delegation.
+- Plan task: follow-up to [Debug logging — 2026-10-13](PLAN.md#debug-logging--2026-10-13).
+- Prompt intent: the human reported job 0317d19b failing `extraction_incomplete`
+  and asked whether logging reaches console and file and covers the whole flow.
+- Evidence: the new log file showed the advert reply (14 lines, gpt-5-mini, 60 s,
+  4,352 reasoning tokens) broke `job-chunks-v3` with 2 errors, then 1 after the
+  repair; it did not say which fields.
+- Changed: reply lines add `problems=` (JSON paths and Pydantic error types, no
+  values; invented keys shown as `?`; kept under the field limit). Gaps closed:
+  the MCP server never configured logging, so its lines were dropped; retries and
+  the circuit breaker were silent; Ask agent model turns had no timing or tokens;
+  provider changes, per-requirement searches (DEBUG) and CV replacement had no
+  readable line.
+- Rejected: logging reply values or tool arguments; changing the one-repair rule
+  or the contract limits before the failing field is known.
+- TDD evidence: each new test failed first (empty summaries, missing lines, an
+  unconfigured MCP logger) and passed after.
+- Validation: on the VM, ruff, format and mypy strict pass; unit, API and contract
+  suites pass (891, 3 skips). In the cloud container (PG 16 + pgvector) the full
+  backend suite passes at 85.65% coverage and all 153 SQL tests pass. No live
+  model call. Open: the human's retry, to read which field broke the contract.
+
+
 ### 194 — Readable step logs and model-call logs
 
 - Date: 2026-10-13; Claude (Cowork), claude-opus-5-5; one agent, no delegation.

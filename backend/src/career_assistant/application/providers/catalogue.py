@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from career_assistant.application.observability.emit import emit_action
 from career_assistant.application.providers.egress import HostedEgressPolicy
+from career_assistant.logconfig import log_event
 from career_assistant.settings import ProviderSettings
+
+_log = logging.getLogger(__name__)
 
 _HOSTED = frozenset({"openai", "anthropic"})
 _LOCAL = frozenset({"hermetic", "ollama"})
@@ -100,6 +104,12 @@ def apply_provider_choice(
             message="Anthropic does not provide embeddings.",
             status_code=409,
         )
+    log_event(
+        _log,
+        "Changed the models used for answers and search",
+        answer_provider=choice.answer_provider_id,
+        search_provider=choice.index_provider_id,
+    )
     emit_action(
         "settings.provider_changed",
         outcome="succeeded",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -18,7 +19,9 @@ from career_assistant.application.ports.errors import (
 )
 from career_assistant.application.providers.accounting import provider_attempt
 from career_assistant.application.providers.cancellable import check_provider_cancelled
+from career_assistant.logconfig import log_event, log_failure
 
+_log = logging.getLogger(__name__)
 T = TypeVar("T")
 _BACKOFF_CAP_SECONDS = 1.0
 _BACKOFF_BASE_SECONDS = 0.05
@@ -37,6 +40,7 @@ class CircuitBreaker:
     def before_call(self) -> None:
         with self._guard:
             if self._open:
+                log_failure(_log, "Provider call refused: the circuit breaker is open")
                 raise ProviderUnavailableError("provider circuit breaker is open")
 
     def record_success(self) -> None:
@@ -47,8 +51,13 @@ class CircuitBreaker:
     def record_failure(self) -> None:
         with self._guard:
             self._failures += 1
-            if self._failures >= self.failure_threshold:
+            if self._failures >= self.failure_threshold and not self._open:
                 self._open = True
+                log_failure(
+                    _log,
+                    "Provider circuit breaker opened after repeated failures",
+                    failures=self._failures,
+                )
 
 
 @dataclass
@@ -72,7 +81,16 @@ class ResiliencePolicy:
                 self.breaker.record_failure()
                 if not _should_retry(exc, attempt, self.max_retries):
                     raise
-                self.sleep(_retry_delay(exc, attempt))
+                delay = _retry_delay(exc, attempt)
+                log_event(
+                    _log,
+                    "Provider call failed, retrying",
+                    attempt=attempt + 2,
+                    of=self.max_retries + 1,
+                    wait_seconds=round(delay, 2),
+                    rate_limited=exc.rate_limited,
+                )
+                self.sleep(delay)
                 attempt += 1
             except Exception:
                 self.breaker.record_failure()

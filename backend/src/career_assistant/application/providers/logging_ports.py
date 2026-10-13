@@ -16,6 +16,11 @@ from contextvars import ContextVar
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.embedding import EmbeddingPort
 from career_assistant.application.ports.progress import current_task
+from career_assistant.application.ports.tool_calling import (
+    ToolCallingPort,
+    ToolCallingRequest,
+    ToolCallingResult,
+)
 from career_assistant.application.ports.types import (
     CapabilityDescriptor,
     CompletionRequest,
@@ -152,5 +157,61 @@ class LoggingEmbedding:
             vectors=len(result.vectors),
             dimensions=result.dimensions,
             input_tokens=result.input_tokens,
+        )
+        return result
+
+
+class LoggingToolCaller:
+    """Logs each tool-calling turn of the Ask agent before and after it runs."""
+
+    def __init__(
+        self, inner: ToolCallingPort, *, provider_id: str, model_tag: str
+    ) -> None:
+        self._inner = inner
+        self._provider_id = provider_id
+        self._model_tag = model_tag
+
+    @property
+    def capabilities(self) -> CapabilityDescriptor:
+        return self._inner.capabilities
+
+    def complete(self, request: ToolCallingRequest) -> ToolCallingResult:
+        fields = {
+            **_call_fields(self._provider_id, self._model_tag),
+            "contract": "tool-calling",
+        }
+        log_event(
+            _log,
+            "Calling model",
+            **fields,
+            messages=len(request.messages),
+            tools_offered=len(request.tools),
+            max_output_tokens=request.max_output_tokens,
+        )
+        started = time.perf_counter()
+        try:
+            result = self._inner.complete(request)
+        except Exception as error:
+            log_failure(
+                _log,
+                "Model call failed",
+                **fields,
+                duration_ms=_elapsed_ms(started),
+                error=type(error).__name__,
+            )
+            raise
+        log_event(
+            _log,
+            "Model replied",
+            **{
+                **fields,
+                "provider": result.provider_id or self._provider_id,
+                "model": result.model_tag or self._model_tag,
+            },
+            duration_ms=_elapsed_ms(started),
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            tool_calls=len(result.tool_calls),
+            output_chars=len(result.content),
         )
         return result

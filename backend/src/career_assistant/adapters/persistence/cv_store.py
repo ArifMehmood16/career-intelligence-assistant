@@ -59,6 +59,13 @@ class SqlCvStore:
                 document_id=stored.id,
                 reanalysis_jobs=len(assigned),
             )
+            log_event(
+                _log,
+                "Replaced the CV and queued a new analysis of every role",
+                document_id=stored.id,
+                roles=len(roles),
+                jobs_queued=len(assigned),
+            )
             return _to_stored_cv(stored, spans, reanalysis_job_ids=assigned)
 
     def delete_active(self, workspace_id: str) -> None:

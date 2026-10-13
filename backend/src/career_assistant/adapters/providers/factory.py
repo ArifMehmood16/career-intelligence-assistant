@@ -46,6 +46,7 @@ from career_assistant.application.providers.fallback import (
 from career_assistant.application.providers.logging_ports import (
     LoggingCompletion,
     LoggingEmbedding,
+    LoggingToolCaller,
 )
 from career_assistant.application.providers.model_catalogue import (
     ModelCatalogue,
@@ -335,9 +336,12 @@ def build_tool_calling_port(
         model_tag=model_tag,
         catalogue=catalogue or default_model_catalogue(),
     )
+    model = model_tag or default_completion_model(settings, selected)
     if _builders(selected, "tool_calling").hosted_permission is not None:
-        return _CallTimeEgressToolCaller(
-            caller, settings=settings, hosted_kind=selected
+        return LoggingToolCaller(
+            _CallTimeEgressToolCaller(caller, settings=settings, hosted_kind=selected),
+            provider_id=selected,
+            model_tag=model,
         )
     log_event(
         _log,
@@ -346,7 +350,7 @@ def build_tool_calling_port(
         provider_id=selected,
         model_tag=model_tag or "",
     )
-    return caller
+    return LoggingToolCaller(caller, provider_id=selected, model_tag=model)
 
 
 def _tool_caller_for(

@@ -6,8 +6,12 @@ import pytest
 from pydantic import ValidationError
 
 from career_assistant.application.contracts.agent import AgentAnswer
+from career_assistant.application.contracts.chunking import JobChunkResponse
 from career_assistant.application.contracts.judge import JudgeResponse
-from career_assistant.application.contracts.repair import render_repair_message
+from career_assistant.application.contracts.repair import (
+    render_repair_message,
+    summarize_validation_error,
+)
 
 _SENTINEL = "SECRET-CV-TEXT-7731"
 
@@ -76,3 +80,56 @@ def test_invalid_json_is_reported_as_such() -> None:
         AgentAnswer.model_validate_json('{"answer": "x", "support": ')
 
     assert "- (root): Invalid JSON" in render_repair_message(caught.value)
+
+
+def test_a_log_summary_names_paths_and_error_types_without_values() -> None:
+    payload = _judge_with_score(7)
+    payload["verdicts"][0]["verdict"] = _SENTINEL  # type: ignore[index]
+
+    summary = summarize_validation_error(_error(JudgeResponse, payload))
+
+    assert summary == (
+        "verdicts[0].verdict:literal_error, verdicts[0].match.score:less_than_equal"
+    )
+    assert _SENTINEL not in summary
+
+
+def test_a_log_summary_shows_the_first_errors_and_counts_the_rest() -> None:
+    many = {"verdicts": [_judge_with_score(9)["verdicts"][0]] * 5}  # type: ignore[index]
+
+    summary = summarize_validation_error(_error(JudgeResponse, many), shown=2)
+
+    assert summary == (
+        "verdicts[0].match.score:less_than_equal, "
+        "verdicts[1].match.score:less_than_equal, +3 more"
+    )
+
+
+def test_an_invented_key_is_not_echoed_into_the_log() -> None:
+    error = _error(AgentAnswer, {"answer": "x", "support": "grounded", _SENTINEL: 1})
+
+    summary = summarize_validation_error(error)
+
+    assert summary == "?:extra_forbidden"
+
+
+def test_a_log_summary_stays_short_enough_to_be_logged() -> None:
+    requirement = {
+        "quote": "",
+        "statement": "",
+        "must_have": True,
+        "years_expected": 99,
+    }
+    chunk = {
+        "first_line": 1,
+        "last_line": 1,
+        "kind": "requirement",
+        "atomic_requirements": [requirement] * 3,
+    }
+    error = _error(JobChunkResponse, {"chunks": [chunk] * 4})  # type: ignore[arg-type]
+
+    summary = summarize_validation_error(error)
+
+    assert len(summary) <= 190
+    assert summary.startswith("chunks[0].atomic_requirements[0].quote:string_too_short")
+    assert summary.endswith("more")
