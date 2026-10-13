@@ -99,7 +99,15 @@ class SqlRoleStore:
         company: str,
         description: str,
     ) -> tuple[RoleView, JobView]:
+        log_event(
+            _log,
+            "Adding a role",
+            role_title=title,
+            company=company,
+            description_characters=len(description),
+        )
         if self.cv_store.get_active(workspace_id) is None:
+            log_event(_log, "Role not added: upload a CV first", code="cv_required")
             raise RoleOperationRejected(
                 "cv_required",
                 "Upload a CV before adding a role.",
@@ -158,6 +166,13 @@ class SqlRoleStore:
                 job_id=job_id,
                 jd_document_id=parsed.document.id,
             )
+            log_event(
+                _log,
+                "Role added and its analysis queued",
+                role_id=role_id,
+                job_id=job_id,
+                advert_document_id=parsed.document.id,
+            )
             emit_action(
                 "role.create",
                 outcome="accepted",
@@ -179,6 +194,13 @@ class SqlRoleStore:
             uow.documents.hard_delete(workspace_id, jd_id)
             uow.commit()
             log_event(_log, "sql.role.deleted", role_id=role_id)
+            log_event(
+                _log,
+                "Deleted the role",
+                role_title=record.title,
+                company=record.company,
+                role_id=role_id,
+            )
             emit_action(
                 "role.delete",
                 outcome="succeeded",
@@ -202,6 +224,13 @@ class SqlRoleStore:
                 )
             active = uow.jobs.active_for_role(workspace_id, role_id)
             if active is not None:
+                log_event(
+                    _log,
+                    "Analysis already queued or running",
+                    role_title=record.title,
+                    company=record.company,
+                    job_id=active.id,
+                )
                 return self._role_view(uow, workspace_id, record), _job_view(active)
             uow.roles.bump_analysis_version(workspace_id, role_id)
             queued = new_role_analysis_job(
@@ -219,6 +248,14 @@ class SqlRoleStore:
                 "sql.role.reanalysed",
                 role_id=role_id,
                 job_id=queued.id,
+            )
+            log_event(
+                _log,
+                "Queued a new analysis of the role",
+                role_title=updated.title,
+                company=updated.company,
+                job_id=queued.id,
+                analysis_version=updated.analysis_version,
             )
             emit_action(
                 "role.reanalyse",
