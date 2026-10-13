@@ -15,7 +15,10 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from career_assistant.application.contracts.repair import render_repair_message
+from career_assistant.application.contracts.repair import (
+    render_repair_message,
+    summarize_validation_error,
+)
 from career_assistant.application.ports.completion import CompletionPort
 from career_assistant.application.ports.errors import (
     StructuredOutputInvalidError,
@@ -78,6 +81,7 @@ class StructuredCompleter:
                 contract=_version(request),
                 attempt=2,
                 errors=error.error_count(),
+                problems=summarize_validation_error(error),
             )
             raise StructuredOutputInvalidError(
                 f"{_version(request)} reply invalid after one repair",
@@ -132,6 +136,7 @@ def _log_invalid[T: BaseModel](
         contract=_version(request),
         attempt=attempt,
         errors=error.error_count(),
+        problems=summarize_validation_error(error),
     )
 
 
