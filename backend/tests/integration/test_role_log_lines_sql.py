@@ -6,7 +6,7 @@ import logging
 
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
-from tests.support.v2_http import JD, queue_role, sql_app
+from tests.support.v2_http import CV, JD, queue_role, sql_app
 
 pytestmark = pytest.mark.integration
 
@@ -42,4 +42,21 @@ def test_adding_reanalysing_and_deleting_a_role_are_described(
     assert any(
         line.startswith("Deleted the role role_title=Data Engineer company=Northwind")
         for line in lines
+    )
+
+
+def test_replacing_the_cv_says_how_many_roles_were_queued_again(
+    session_factory: sessionmaker[Session], caplog: pytest.LogCaptureFixture
+) -> None:
+    app = sql_app(session_factory)
+    queue_role(app)
+    app.worker.drain()
+
+    with caplog.at_level(logging.INFO, logger="career_assistant"):
+        app.client.post("/api/cv", json={"text": CV, "filename": "cv-v2.txt"})
+
+    assert any(
+        line.startswith("Replaced the CV and queued a new analysis of every role")
+        and "roles=1 jobs_queued=1" in line
+        for line in _lines(caplog)
     )
