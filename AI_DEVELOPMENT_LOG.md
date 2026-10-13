@@ -65,6 +65,11 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
   passes alone and in the next full run; its 5-second `git status` timeout on the
   VM's mounted folder is the suspected cause, not proven. No frontend, SQL or
   live-model run. Human-owned: approve the reserve and rerun the analysis.
+- Human validation: the human restarted the API and reran the role on this
+  branch. Job b80138fd published (73 requirements, five rewrites, band partial).
+  The log file shows judge batches of 16 and five `judge.verdicts_rejected`
+  initial-phase events (`quote_not_verbatim`, `unknown_chunk`,
+  `dimension_required`), no repair-phase rejection and no `judge.incomplete`.
 
 
 ### 192 — Open source under Apache 2.0 with creator credit
