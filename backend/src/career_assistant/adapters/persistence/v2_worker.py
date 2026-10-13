@@ -114,6 +114,9 @@ class UnitOfWorkHybridSearch:
 class _Loaded:
     documents: V2Documents
     analysis_version: int
+    role_title: str
+    company: str
+    cv_file: str
 
 
 class V2JobRunner:
@@ -138,11 +141,27 @@ class V2JobRunner:
         try:
             progress.enter(TaskKey.PREPARE)
             loaded = self._load(job)
+            log_event(
+                _log,
+                "Starting analysis",
+                role_title=loaded.role_title,
+                company=loaded.company,
+                cv_file=loaded.cv_file,
+                cv_document_id=loaded.documents.cv.document_id,
+                advert_document_id=loaded.documents.advert.document_id,
+                analysis_version=loaded.analysis_version,
+            )
             job = self._start(job)
             stage = JobStage.MAPPING
             providers = _cancellable(
                 self._providers(job.workspace_id),
                 SqlJobLiveness(self._uow_factory, job),
+            )
+            log_event(
+                _log,
+                "Using models for this analysis",
+                judge_provider=providers.judge_model.provider_id,
+                judge_model=providers.judge_model.model_tag,
             )
             analysis = self._analysis(job.workspace_id, providers).run(
                 loaded.documents, progress=progress
@@ -187,7 +206,13 @@ class V2JobRunner:
                 ),
                 as_of=self._config.clock().date(),
             )
-            return _Loaded(documents, role.analysis_version)
+            return _Loaded(
+                documents,
+                role.analysis_version,
+                role_title=role.title,
+                company=role.company,
+                cv_file=cv.filename,
+            )
 
     def _start(self, job: AnalysisJob) -> AnalysisJob:
         running = (
@@ -306,6 +331,15 @@ class V2JobRunner:
             requirement_count=len(analysis.requirements),
             rewrites=analysis.match.rewrites,
             band=analysis.fit.band,
+        )
+        log_event(
+            _log,
+            "Published the analysis",
+            analysis_version=loaded.analysis_version,
+            score=None if analysis.fit.score is None else round(analysis.fit.score, 1),
+            band=analysis.fit.band,
+            requirements=len(analysis.requirements),
+            gaps=len(analysis.gaps),
         )
         return terminal
 
