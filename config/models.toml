@@ -92,6 +92,10 @@ context_window_tokens = 400000
 max_output_tokens = 128000
 document_output_tokens = 32768
 judge_output_tokens = 32768
+# Each verdict's reserve includes its reasoning tokens. The 400-token default packed
+# a 73-requirement advert into one judge call, which ended incomplete after its one
+# repair. 2048 allows at most 16 verdicts per call, sent in parallel.
+tokens_per_verdict = 2048
 native_structured_output = true
 supports_tool_calling = true
 supports_prompt_caching = true

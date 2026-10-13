@@ -140,8 +140,12 @@ from hermetic and PostgreSQL/Supabase integration checks.
 `assessment_incomplete` at scoring means some required judgments were unavailable
 or failed server checks; it is not a low fit score. Inspect preceding
 `provider.transport_failed`, `judge.call_failed`, `judge.verdicts_rejected` and
-`judge.incomplete` events for fixed categories and counts. The judge progress task
-counts requirements handled, including failed calls.
+`judge.incomplete` events for fixed categories and counts; every line of one
+analysis shares its `correlation_id` (the job id). `judge.verdicts_rejected`
+names the broken rules in `problem_kinds`. The judge progress task counts
+requirements handled, including failed calls. To keep these lines after the
+terminal scrolls, set `LOG_FILE` in `config/app.env` (for example
+`var/log/career-assistant.log`, which Git ignores) and restart the API.
 
 For the reported slow gpt-5-mini run, local `PROVIDER_TIMEOUT_SECONDS` is now 180
 (tracked default remains 60); `PROVIDER_MAX_RETRIES` remains 2. Restart the API

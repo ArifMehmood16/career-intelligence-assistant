@@ -8,7 +8,7 @@ ids and fields only; they never repeat document text.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Literal
 
@@ -105,11 +105,26 @@ class JudgedVerdict:
         return None if self.seniority is None else self.seniority.score
 
 
+class ProblemKind(StrEnum):
+    """A fixed name per broken rule, safe to log where the message is not."""
+
+    NO_VERDICT = "no_verdict"
+    DUPLICATE_VERDICT = "duplicate_verdict"
+    UNKNOWN_CHUNK = "unknown_chunk"
+    QUOTE_NOT_VERBATIM = "quote_not_verbatim"
+    QUOTE_REQUIRED = "quote_required"
+    VERDICT_SCORE_MISMATCH = "verdict_score_mismatch"
+    DIMENSION_REQUIRED = "dimension_required"
+    DIMENSION_NOT_STATED = "dimension_not_stated"
+    REWRITE_QUERY_REQUIRED = "rewrite_query_required"
+
+
 @dataclass(frozen=True, slots=True)
 class JudgeCheck:
     verdicts: Mapping[str, JudgedVerdict]
     problems: Mapping[str, tuple[str, ...]]
     stray: tuple[str, ...] = ()
+    kinds: Mapping[str, tuple[ProblemKind, ...]] = field(default_factory=dict)
 
 
 SKILLS_KIND = "skills"
@@ -118,6 +133,9 @@ _BARE_TOOL_MATCH_CAP = 3
 _SKILLS_EXPERIENCE_CAP = 1
 _CONTRADICTION_MATCH_CAP = 2
 _MET_FLOOR = 3
+
+
+_Problem = tuple[ProblemKind, str]
 
 
 def check_verdicts(
@@ -129,24 +147,26 @@ def check_verdicts(
         by_id.setdefault(verdict.requirement_id, []).append(verdict)
     verdicts: dict[str, JudgedVerdict] = {}
     problems: dict[str, tuple[str, ...]] = {}
+    kinds: dict[str, tuple[ProblemKind, ...]] = {}
     for requirement_id, packet in sent.items():
         returned = by_id.get(requirement_id, [])
         found = _problems(packet, returned)
         if found:
-            problems[requirement_id] = found
+            kinds[requirement_id] = tuple(kind for kind, _ in found)
+            problems[requirement_id] = tuple(message for _, message in found)
         else:
             verdicts[requirement_id] = _capped(packet, returned[0])
     stray = tuple(sorted(set(by_id) - set(sent)))
-    return JudgeCheck(verdicts=verdicts, problems=problems, stray=stray)
+    return JudgeCheck(verdicts=verdicts, problems=problems, stray=stray, kinds=kinds)
 
 
 def _problems(
     packet: RequirementPacket, returned: Sequence[ProposedVerdict]
-) -> tuple[str, ...]:
+) -> tuple[_Problem, ...]:
     if not returned:
-        return ("no verdict was returned",)
+        return ((ProblemKind.NO_VERDICT, "no verdict was returned"),)
     if len(returned) > 1:
-        return ("more than one verdict was returned",)
+        return ((ProblemKind.DUPLICATE_VERDICT, "more than one verdict was returned"),)
     verdict = returned[0]
     return (
         *_evidence_problems(packet, verdict),
@@ -158,40 +178,49 @@ def _problems(
 
 def _evidence_problems(
     packet: RequirementPacket, verdict: ProposedVerdict
-) -> list[str]:
+) -> list[_Problem]:
     texts = {c.chunk_id: _collapse(c.text) for c in packet.candidates}
-    found: list[str] = []
+    found: list[_Problem] = []
     for index, quote in enumerate(verdict.evidence):
         text = texts.get(quote.chunk_id)
         if text is None:
             found.append(
-                f"evidence[{index}]: chunk {quote.chunk_id} is not one of this "
-                "requirement's candidates"
+                (
+                    ProblemKind.UNKNOWN_CHUNK,
+                    f"evidence[{index}]: chunk {quote.chunk_id} is not one of this "
+                    "requirement's candidates",
+                )
             )
         elif _collapse(quote.quote) not in text:
             found.append(
-                f"evidence[{index}]: the quote is not in chunk {quote.chunk_id} "
-                "word for word"
+                (
+                    ProblemKind.QUOTE_NOT_VERBATIM,
+                    f"evidence[{index}]: the quote is not in chunk {quote.chunk_id} "
+                    "word for word",
+                )
             )
     if verdict.match.score > 0 and not verdict.evidence:
-        found.append("match: a score above 0 needs a quote")
+        found.append(
+            (ProblemKind.QUOTE_REQUIRED, "match: a score above 0 needs a quote")
+        )
     return found
 
 
-def _consistency_problems(verdict: ProposedVerdict) -> list[str]:
+def _consistency_problems(verdict: ProposedVerdict) -> list[_Problem]:
     score = verdict.match.score
+    message = ""
     if verdict.verdict == "missing" and score > 1:
-        return ["verdict: missing needs a match score of 0 or 1"]
-    if verdict.verdict != "missing" and score <= 1:
-        return ["verdict: partial or met needs a match score of 2 or more"]
-    if verdict.verdict == "met" and score < _MET_FLOOR:
-        return ["verdict: met needs a match score of 3 or more"]
-    return []
+        message = "verdict: missing needs a match score of 0 or 1"
+    elif verdict.verdict != "missing" and score <= 1:
+        message = "verdict: partial or met needs a match score of 2 or more"
+    elif verdict.verdict == "met" and score < _MET_FLOOR:
+        message = "verdict: met needs a match score of 3 or more"
+    return [(ProblemKind.VERDICT_SCORE_MISMATCH, message)] if message else []
 
 
 def _dimension_problems(
     packet: RequirementPacket, verdict: ProposedVerdict
-) -> list[str]:
+) -> list[_Problem]:
     checks = (
         ("seniority", "a level", packet.seniority_expected, verdict.seniority),
         (
@@ -203,22 +232,35 @@ def _dimension_problems(
             verdict.experience,
         ),
     )
-    found: list[str] = []
+    found: list[_Problem] = []
     for name, what, expected, scored in checks:
         if expected is not None and scored is None:
-            found.append(f"{name}: the requirement states {what}, so score it")
+            found.append(
+                (
+                    ProblemKind.DIMENSION_REQUIRED,
+                    f"{name}: the requirement states {what}, so score it",
+                )
+            )
         elif expected is None and scored is not None:
             found.append(
-                f"{name}: the requirement states no {what.removeprefix('a ')}, "
-                "so return null"
+                (
+                    ProblemKind.DIMENSION_NOT_STATED,
+                    f"{name}: the requirement states no "
+                    f"{what.removeprefix('a ')}, so return null",
+                )
             )
     return found
 
 
-def _feedback_problems(verdict: ProposedVerdict) -> list[str]:
+def _feedback_problems(verdict: ProposedVerdict) -> list[_Problem]:
     if verdict.sufficient or (verdict.rewrite_query or "").strip():
         return []
-    return ["retrieval_feedback: rewrite_query is required when sufficient is false"]
+    return [
+        (
+            ProblemKind.REWRITE_QUERY_REQUIRED,
+            "retrieval_feedback: rewrite_query is required when sufficient is false",
+        )
+    ]
 
 
 def _capped(packet: RequirementPacket, verdict: ProposedVerdict) -> JudgedVerdict:

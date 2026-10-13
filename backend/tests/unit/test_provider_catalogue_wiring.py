@@ -12,7 +12,9 @@ from career_assistant.adapters.providers.factory import (
     build_embedding_port,
 )
 from career_assistant.adapters.providers.http_transport import HttpResponse
+from career_assistant.application.judge.prompt import JudgeLimits, judge_batches
 from career_assistant.application.providers.model_catalogue import load_model_catalogue
+from career_assistant.domain.judging import RequirementPacket
 from career_assistant.settings import ProviderSettings
 
 _CATALOGUE = load_model_catalogue(
@@ -63,6 +65,29 @@ def test_hosted_completion_reports_its_catalogue_row() -> None:
     expected = _CATALOGUE.profile("openai", "gpt-4o-mini")
     assert port.capabilities.max_output_tokens == expected.max_output_tokens
     assert port.capabilities.supports_seed is expected.supports_seed
+
+
+def test_gpt_5_mini_judges_a_long_advert_in_several_smaller_calls() -> None:
+    # Regression: a 73-requirement advert went to gpt-5-mini as one judge call,
+    # and verdicts still invalid after the single repair left the job incomplete.
+    port = build_completion_port(
+        _settings(
+            completion_provider="openai",
+            allow_hosted_providers=True,
+            openai_api_key=SecretStr("test-key"),
+            openai_completion_model="gpt-5-mini",
+        ),
+        transport=ScriptedTransport({}),
+    )
+    packets = [
+        RequirementPacket(f"r{i}", "quote", "statement", True, (), ())
+        for i in range(73)
+    ]
+
+    batches = judge_batches(packets, port.capabilities, JudgeLimits(), prefix_chars=0)
+
+    assert max(len(batch) for batch in batches) <= 16
+    assert sum(len(batch) for batch in batches) == 73
 
 
 def test_embedding_ports_report_their_catalogue_row() -> None:
