@@ -78,6 +78,12 @@ def progress_scope(progress: AnalysisProgress, key: TaskKey) -> Iterator[None]:
         _scope.reset(token)
 
 
+def current_task() -> str | None:
+    """The pipeline task the current call is attributed to, if any."""
+    scope = _scope.get()
+    return None if scope is None else scope.key.value
+
+
 def plan_calls(*, model: int = 0, embedding: int = 0) -> None:
     scope = _scope.get()
     if scope is not None:
