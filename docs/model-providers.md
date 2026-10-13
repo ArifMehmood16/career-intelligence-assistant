@@ -93,7 +93,10 @@ example `no_verdict:1,quote_not_verbatim:3`); `judge.incomplete` records
 accepted/incomplete totals. No validation problem text, chunk or requirement
 identifiers, quotes or model replies are retained by these diagnostics.
 Handled progress units do not imply accepted judgments. Incomplete judging still
-publishes no score.
+publishes no score. Every completion and embedding call also logs "Calling model"
+and "Model replied" (or "Model call failed") with provider, model, contract,
+attempt, task, duration, tokens (reasoning tokens for OpenAI) and finish reason,
+and a parsed reply logs a count-only summary (ADR 017).
 
 Rejected OpenAI completion, embedding and tool requests emit
 `provider.request_failed` with provider/model, operation, HTTP status, a fixed error

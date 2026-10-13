@@ -7,6 +7,7 @@ Driven with the SDK's in-process client, once over the initialize handshake
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -113,3 +114,23 @@ def test_an_unknown_role_and_bad_input_are_error_results() -> None:
 def test_the_server_says_who_decides_where_results_go() -> None:
     assert "MCP client" in INSTRUCTIONS
     assert "untrusted" in INSTRUCTIONS
+
+
+def test_each_tool_call_is_logged_by_name_and_size_not_content(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    async def session(client: Client, _ws: Workspace) -> Any:
+        return await client.call_tool("search_evidence", {"query": "PRIVATE query"})
+
+    with caplog.at_level(logging.INFO):
+        _with_client(session)
+
+    lines = [record.getMessage() for record in caplog.records]
+    assert "MCP client called a tool tool=search_evidence arguments=1" in lines
+    assert any(
+        line.startswith("MCP tool returned tool=search_evidence found=")
+        and "failed=False" in line
+        for line in lines
+    )
+    assert "PRIVATE" not in caplog.text
+    assert "Owned dbt models" not in caplog.text

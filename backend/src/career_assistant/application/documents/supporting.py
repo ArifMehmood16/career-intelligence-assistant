@@ -202,6 +202,12 @@ def upload_pasted_cover_letter(
     limits: AdmissionLimits,
 ) -> SupportingDocumentView:
     started = time.perf_counter()
+    log_event(
+        _log,
+        "Receiving pasted cover letter",
+        file_name=filename or "cover-letter.txt",
+        characters=len(text),
+    )
     try:
         parsed = parse_pasted_text(
             text,
@@ -218,6 +224,12 @@ def upload_pasted_cover_letter(
             started=started,
         )
     except IntakeError as exc:
+        log_event(
+            _log,
+            "Cover letter upload rejected",
+            file_name=filename or "cover-letter.txt",
+            code=exc.code.value,
+        )
         emit_action(
             "cover_letter.upload",
             outcome="failed",
@@ -236,6 +248,13 @@ def upload_bytes_cover_letter(
     parser: UploadParser,
 ) -> SupportingDocumentView:
     started = time.perf_counter()
+    log_event(
+        _log,
+        "Receiving cover letter upload",
+        file_name=upload.filename,
+        bytes=len(upload.data),
+        declared_media_type=upload.declared_media_type,
+    )
     try:
         parsed = parser.parse(upload)
         return _store_parsed_cover_letter(
@@ -246,6 +265,12 @@ def upload_bytes_cover_letter(
             started=started,
         )
     except IntakeError as exc:
+        log_event(
+            _log,
+            "Cover letter upload rejected",
+            file_name=upload.filename,
+            code=exc.code.value,
+        )
         emit_action(
             "cover_letter.upload",
             outcome="failed",
@@ -267,6 +292,15 @@ def _store_parsed_cover_letter(
     from career_assistant.domain.documents import ParsedDocument
 
     assert isinstance(parsed, ParsedDocument)
+    log_event(
+        _log,
+        "Parsed cover letter",
+        file_name=parsed.document.filename,
+        format=parsed.document.format.value,
+        pages=parsed.document.page_count,
+        characters=parsed.document.character_count,
+        spans=len(parsed.spans),
+    )
     document = NewDocument(
         id=parsed.document.id,
         kind=DocumentKind.COVER_LETTER,
@@ -282,6 +316,12 @@ def _store_parsed_cover_letter(
         spans=parsed.spans,
     )
     view = store.add_cover_letter(workspace_id, document)
+    log_event(
+        _log,
+        "Stored the cover letter",
+        document_id=view.id,
+        file_name=view.filename,
+    )
     log_event(
         _log,
         "cover_letter.uploaded",

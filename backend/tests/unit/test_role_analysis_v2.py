@@ -6,10 +6,13 @@ search. The judge may refuse; then nothing is scored.
 
 from __future__ import annotations
 
+import io
+import logging
 from dataclasses import replace
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pytest
 from tests.support.in_memory_index import InMemoryIndexStore
 from tests.support.in_memory_verdicts import InMemoryVerdictCache
 from tests.support.index_backed_search import IndexBackedSearch
@@ -24,6 +27,7 @@ from career_assistant.adapters.providers.hermetic.structured import (
     DEFAULT_BUILDERS,
     HermeticStructuredCompleter,
 )
+from career_assistant.application.analysis.progress import TrackedProgress
 from career_assistant.application.analysis.v2 import (
     RoleAnalysisV2,
     V2Documents,
@@ -41,6 +45,9 @@ from career_assistant.application.judge.service import RequirementJudge
 from career_assistant.application.ports.structured import StructuredCompletionPort
 from career_assistant.application.scoring.rubric_loader import load_scoring_rubric_v2
 from career_assistant.domain.documents import DocumentKind
+from career_assistant.domain.pipeline import PipelineVersion
+from career_assistant.domain.progress import TaskKey, plan_for
+from career_assistant.logconfig import bind_log_context, configure_logging
 
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / "sample-data" / "fixtures"
@@ -174,3 +181,82 @@ def test_judge_receives_overall_documents_but_not_contact_chunks() -> None:
         analysis.match.verdicts[r.packet.requirement_id].verdict.experience is not None
         for r in expected
     )
+
+
+def _story(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [r.getMessage() for r in caplog.records if r.levelno >= logging.INFO]
+
+
+def _first(story: list[str], prefix: str) -> int:
+    return next(i for i, line in enumerate(story) if line.startswith(prefix))
+
+
+def test_the_log_tells_the_story_of_an_analysis_without_document_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    progress = TrackedProgress(
+        plan_for(PipelineVersion.V2),
+        clock=lambda: datetime(2026, 10, 13, tzinfo=UTC),
+        sink=lambda tasks: None,
+    )
+    progress.enter(TaskKey.PREPARE)
+    documents = _documents()
+
+    with caplog.at_level(logging.INFO):
+        _analysis(HermeticStructuredCompleter()).run(documents, progress=progress)
+
+    story = _story(caplog)
+    in_order = [
+        "Found requirements in the job advert requirements=",
+        "Summarised the CV against the advert's terms terms=",
+        "Searching the CV for evidence requirements=",
+        "Searched the CV for evidence requirements=",
+        "Judging requirements requirements=",
+        "Judged requirements accepted=",
+        "Scored the role score=",
+    ]
+    positions = [_first(story, prefix) for prefix in in_order]
+    assert positions == sorted(positions)
+    for prefix in (
+        "Reading CV into chunks document_id=cv-1 lines=",
+        "Read CV into chunks document_id=cv-1 chunks=",
+        "Reading job advert into chunks document_id=jd-1 lines=",
+        "Embedded CV chunks document_id=cv-1 vectors=",
+        "Task started task=judge",
+        "Task finished task=judge duration_ms=",
+    ):
+        assert any(line.startswith(prefix) for line in story), prefix
+    assert any(
+        line.startswith(("Rechecking requirements", "No requirement asked"))
+        for line in story
+    )
+    for text in (documents.cv.text, documents.advert.text):
+        for line in [ln.strip() for ln in text.splitlines() if len(ln.strip()) > 12]:
+            assert line not in caplog.text
+
+
+def test_an_unscored_analysis_says_why(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level(logging.INFO):
+        _analysis(RefusingJudge()).run(_documents())
+
+    (line,) = [m for m in _story(caplog) if m.startswith("Role not scored")]
+    assert "reason=requirements_without_verdict" in line
+    assert "incomplete=" in line
+
+
+def test_at_debug_every_line_names_the_job_and_no_document_text_leaks() -> None:
+    buffer = io.StringIO()
+    configure_logging(force=True, stream=buffer, level=logging.DEBUG)
+    documents = _documents()
+    try:
+        with bind_log_context(job_id="job-9", role_id="role-9"):
+            _analysis(HermeticStructuredCompleter()).run(documents)
+    finally:
+        configure_logging(force=True)
+
+    lines = buffer.getvalue().splitlines()
+    assert len(lines) > 10
+    assert all("job_id=job-9 role_id=role-9" in line for line in lines)
+    for text in (documents.cv.text, documents.advert.text):
+        for line in [ln.strip() for ln in text.splitlines() if len(ln.strip()) > 12]:
+            assert line not in buffer.getvalue()

@@ -57,9 +57,9 @@ class ProviderSelectionRejected(Exception):
 def default_provider_choice(settings: ProviderSettings) -> ProviderChoice:
     return ProviderChoice(
         answer_provider_id=settings.completion_provider,
-        answer_model=_default_completion_model(settings, settings.completion_provider),
+        answer_model=default_completion_model(settings, settings.completion_provider),
         index_provider_id=settings.embedding_provider,
-        index_model=_default_embedding_model(settings, settings.embedding_provider),
+        index_model=default_embedding_model(settings, settings.embedding_provider),
     )
 
 
@@ -143,7 +143,7 @@ def _assert_provider_permitted(provider_id: str, *, egress: HostedEgressPolicy) 
     )
 
 
-def _default_completion_model(settings: ProviderSettings, provider_id: str) -> str:
+def default_completion_model(settings: ProviderSettings, provider_id: str) -> str:
     if provider_id == "hermetic":
         return "rules-v1"
     if provider_id == "ollama":
@@ -155,7 +155,7 @@ def _default_completion_model(settings: ProviderSettings, provider_id: str) -> s
     return provider_id
 
 
-def _default_embedding_model(settings: ProviderSettings, provider_id: str) -> str:
+def default_embedding_model(settings: ProviderSettings, provider_id: str) -> str:
     if provider_id == "hermetic":
         return "lexical-hash-v1"
     if provider_id == "ollama":

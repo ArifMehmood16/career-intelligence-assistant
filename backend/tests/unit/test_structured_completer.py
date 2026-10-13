@@ -8,6 +8,7 @@ never becomes a partial result.
 from __future__ import annotations
 
 import json
+import logging
 
 import pytest
 from tests.support.scripted_completion import Reply, ScriptedCompletion
@@ -18,6 +19,7 @@ from career_assistant.application.ports.errors import (
     StructuredOutputTruncatedError,
 )
 from career_assistant.application.ports.structured import StructuredRequest
+from career_assistant.application.providers.logging_ports import LoggingCompletion
 from career_assistant.application.providers.structured import StructuredCompleter
 
 _VALID = json.dumps(
@@ -116,3 +118,65 @@ def test_without_structured_output_the_schema_goes_in_the_system_prompt() -> Non
     sent = port.requests[0]
     assert sent.json_schema is None
     assert json.dumps(AgentAnswer.model_json_schema()) in sent.system
+
+
+def _reply_events(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [
+        r.getMessage()
+        for r in caplog.records
+        if r.getMessage().startswith("Model reply ")
+    ]
+
+
+def test_each_attempt_logs_its_outcome_and_a_content_free_summary(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = ScriptedCompletion([Reply(_INVALID), Reply(_VALID)])
+
+    with caplog.at_level(logging.INFO):
+        StructuredCompleter(port).complete_structured(_request())
+
+    invalid, parsed = _reply_events(caplog)
+    assert invalid == (
+        "Model reply did not match its contract, asking for a repair "
+        "contract=agent-answer-v1 attempt=1 errors=1"
+    )
+    assert parsed == (
+        "Model reply parsed: grounded answer, 0 citations, 37 characters "
+        "contract=agent-answer-v1 attempt=2"
+    )
+    assert "Northwind" not in caplog.text
+
+
+def test_a_truncated_reply_logs_its_outcome(caplog: pytest.LogCaptureFixture) -> None:
+    port = ScriptedCompletion([Reply('{"answer": "North', finish_reason="length")])
+
+    with caplog.at_level(logging.INFO), pytest.raises(StructuredOutputTruncatedError):
+        StructuredCompleter(port).complete_structured(_request())
+
+    assert _reply_events(caplog) == [
+        "Model reply cut off by the output limit contract=agent-answer-v1 attempt=1"
+    ]
+
+
+def test_model_calls_are_named_by_contract_and_attempt(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    port = LoggingCompletion(
+        ScriptedCompletion([Reply(_INVALID), Reply(_VALID)]),
+        provider_id="openai",
+        model_tag="gpt-5-mini",
+    )
+
+    with caplog.at_level(logging.INFO):
+        StructuredCompleter(port).complete_structured(_request())
+
+    calls = [
+        r.getMessage()
+        for r in caplog.records
+        if r.getMessage().startswith("Calling model ")
+    ]
+    assert [line.split()[4:6] for line in calls] == [
+        ["contract=agent-answer-v1", "attempt=1"],
+        ["contract=agent-answer-v1", "attempt=2"],
+    ]

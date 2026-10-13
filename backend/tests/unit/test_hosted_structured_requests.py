@@ -114,6 +114,25 @@ def test_openai_sends_the_strict_dialect_of_the_schema() -> None:
     assert response_format["json_schema"]["schema"] == openai_strict_schema(_SCHEMA)
 
 
+def test_openai_reports_reasoning_tokens_from_usage() -> None:
+    reply = _openai_reply()
+    reply["usage"] = {
+        "prompt_tokens": 5,
+        "completion_tokens": 40,
+        "completion_tokens_details": {"reasoning_tokens": 36},
+    }
+
+    result = _openai(RecordingTransport(reply)).complete(_request())
+
+    assert (result.output_tokens, result.reasoning_tokens) == (40, 36)
+
+
+def test_openai_without_reasoning_details_reports_none() -> None:
+    result = _openai(RecordingTransport(_openai_reply())).complete(_request())
+
+    assert result.reasoning_tokens is None
+
+
 def test_openai_uses_max_completion_tokens() -> None:
     transport = RecordingTransport(_openai_reply())
 

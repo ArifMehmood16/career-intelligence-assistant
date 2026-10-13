@@ -5,6 +5,7 @@ The server checks coverage and every quoted field against stored text.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Literal
 
 from pydantic import Field
@@ -15,6 +16,7 @@ from career_assistant.application.contracts.base import (
     SeniorityLevel,
     TechTerm,
     VersionedContract,
+    counted,
 )
 from career_assistant.application.contracts.taxonomy import TermRelations
 
@@ -105,17 +107,57 @@ class CvChunkResponse(VersionedContract):
     chunks: list[CvChunk] = Field(min_length=1)
     taxonomy: list[TermRelations] = Field(default_factory=list)
 
+    def log_summary(self) -> str:
+        roles = sum(1 for chunk in self.chunks if chunk.role is not None)
+        return ", ".join(
+            [
+                counted(len(self.chunks), "chunk"),
+                counted(roles, "role"),
+                _terms(self.chunks),
+                _taxonomy(self.taxonomy),
+            ]
+        )
+
 
 class CoverLetterChunkResponse(VersionedContract):
     contract_version = "cover-letter-chunks-v2"
     chunks: list[CoverLetterChunk] = Field(min_length=1)
     taxonomy: list[TermRelations] = Field(default_factory=list)
 
+    def log_summary(self) -> str:
+        return ", ".join(
+            [
+                counted(len(self.chunks), "chunk"),
+                _terms(self.chunks),
+                _taxonomy(self.taxonomy),
+            ]
+        )
+
 
 class JobChunkResponse(VersionedContract):
     contract_version = "job-chunks-v3"
     chunks: list[JobChunk] = Field(min_length=1)
     taxonomy: list[TermRelations] = Field(default_factory=list)
+
+    def log_summary(self) -> str:
+        requirements = [r for c in self.chunks for r in c.atomic_requirements]
+        must = sum(1 for requirement in requirements if requirement.must_have)
+        return ", ".join(
+            [
+                counted(len(self.chunks), "chunk"),
+                f"{counted(len(requirements), 'requirement')} ({must} must-have)",
+                _terms(self.chunks),
+                _taxonomy(self.taxonomy),
+            ]
+        )
+
+
+def _terms(chunks: Sequence[ChunkFields]) -> str:
+    return counted(sum(len(chunk.tech_terms) for chunk in chunks), "tech term")
+
+
+def _taxonomy(entries: Sequence[TermRelations]) -> str:
+    return counted(len(entries), "taxonomy entry", "taxonomy entries")
 
 
 DocumentChunk = CvChunk | CoverLetterChunk | JobChunk

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+import pytest
+
 from career_assistant.application.generation.pipeline import (
     GenerationCounters,
     generate_draft,
@@ -358,3 +362,29 @@ def test_interview_pack_does_not_lead_with_adjacent_evidence() -> None:
     pack = build_interview_pack(requirements, mappings, ())
     assert pack.lead_with == ()
     assert pack.thin_areas
+
+
+def test_the_log_says_when_a_draft_fails_its_check_and_falls_back(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    claim = _claim("c1", "dbt", "Owned dbt models in production on Snowflake.")
+
+    with caplog.at_level(logging.INFO):
+        generate_draft(
+            completion=_FabricatingCompletion(),
+            system="Phrase only.",
+            user="Rewrite the claim as a CV bullet.",
+            cited_span_texts=(claim.context,),
+            template_text=draft_cv_bullet_template(claim),
+            counters=GenerationCounters(),
+            provider_id="hermetic",
+            audit_action="generation.bullet",
+        )
+
+    lines = [record.getMessage() for record in caplog.records]
+    assert lines[0] == "Drafting with the model purpose=generation.bullet attempt=1"
+    assert (
+        "Draft failed the groundedness check purpose=generation.bullet attempt=1"
+    ) in lines
+    assert "Using the template draft purpose=generation.bullet" in lines
+    assert "Kubernetes" not in caplog.text

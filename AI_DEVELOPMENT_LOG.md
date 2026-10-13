@@ -29,6 +29,41 @@ Entries are ordered newest first. Add a new entry directly under "Entries".
 
 ## Entries
 
+### 194 — Readable step logs and model-call logs
+
+- Date: 2026-10-13; Claude (Cowork), claude-opus-5-5; one agent, no delegation.
+- Plan task: [Debug logging — 2026-10-13](PLAN.md#debug-logging--2026-10-13),
+  spec 013, ADR 017; stacked on the 19.2 batching fix branch.
+- Prompt intent: method-level logging a human can debug from: what ran, for which
+  job and analysis, which model was called and a summary of what came back.
+- Human decisions: model replies as summaries only; tracing at DEBUG in terminal
+  and file; push the batching fix as its own PR. Mid-task the human asked for
+  explicit readable lines in the existing code ("extracting content from CV" with
+  the workspace and file name) rather than generic tracing, and file names, role
+  titles and company names in the log.
+- Accepted: job/role context on every in-job line (judge batches add
+  `batch=i/n`); "Calling model" / "Model replied" / "Model call failed" decorators
+  on every provider port with contract, attempt, task, tokens, reasoning tokens
+  and finish reason; parse outcome lines with count-only `log_summary()` per
+  contract; plain step lines for the worker, v2 runner, chunker, indexer,
+  analysis, matcher, judge, progress tasks, uploads, SQL role store, Ask, the
+  agent, drafting and MCP; successful GETs at DEBUG with one correlation id.
+- Changed: the generic `@traced` decorator and its summariser were built and then
+  removed at the human's request. Alembic's `fileConfig` now keeps application
+  loggers enabled; it had silenced them in any process that migrated first.
+- Rejected: logging excerpts of model replies, questions, tool arguments or
+  document text; renaming the existing dotted events other docs and tests use.
+- TDD evidence: each new behaviour failed first for its reason (missing lines,
+  `KeyError`/unpack on absent records, `assert 73 <= 16`-style asserts) and passed
+  after. The DEBUG privacy test passed at once, as the behaviour already held.
+- Validation: on the Cowork VM, ruff check/format and mypy strict pass, and unit,
+  API and contract suites pass. In the cloud container (Python 3.14.6, PG 16 +
+  pgvector): the backend suite passes at 85.59% coverage except the two
+  frontend-type contract tests, which need the frontend tree that was not copied
+  and pass on the VM; all 152 SQL integration tests pass. No live model call.
+- Open: the human's rerun read from the log file (spec 013 SC-003).
+
+
 ### 193 — Judge gpt-5-mini in smaller batches and name rejected rules
 
 - Date: 2026-10-13; Claude (Cowork), claude-opus-5-5; one agent, no delegation.

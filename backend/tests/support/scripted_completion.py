@@ -17,6 +17,7 @@ class Reply:
     finish_reason: str | None = "stop"
     input_tokens: int | None = 10
     output_tokens: int | None = 5
+    reasoning_tokens: int | None = None
 
 
 @dataclass
@@ -48,5 +49,6 @@ class ScriptedCompletion:
             left_machine=False,
             input_tokens=reply.input_tokens,
             output_tokens=reply.output_tokens,
+            reasoning_tokens=reply.reasoning_tokens,
             finish_reason=reply.finish_reason,
         )

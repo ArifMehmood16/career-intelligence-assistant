@@ -29,6 +29,7 @@ from career_assistant.application.ports.observability import HttpEnvelope
 from career_assistant.logconfig import (
     bind_request_context,
     clear_request_context,
+    log_debug,
     log_event,
 )
 
@@ -163,7 +164,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 path=request.url.path,
                 duration_ms=duration_ms,
-                correlation_id=correlation_id,
             )
             _persist_http_envelope(
                 request,
@@ -174,14 +174,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             raise
         else:
             duration_ms = int((time.perf_counter() - started) * 1000)
-            log_event(
+            # The UI polls with GETs; successful reads would drown the analysis.
+            quiet = request.method == "GET" and response.status_code < 400
+            (log_debug if quiet else log_event)(
                 _http_log,
                 "request",
                 method=request.method,
                 path=request.url.path,
                 status=response.status_code,
                 duration_ms=duration_ms,
-                correlation_id=correlation_id,
             )
             error_code = getattr(request.state, "error_code", None)
             _persist_http_envelope(

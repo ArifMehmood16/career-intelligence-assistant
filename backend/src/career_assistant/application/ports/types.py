@@ -76,6 +76,8 @@ class CompletionResult:
     fallback_used: bool = False
     latency_ms: int | None = None
     finish_reason: str | None = None
+    # Part of output_tokens, where the vendor reports it (reasoning models).
+    reasoning_tokens: int | None = None
 
 
 EmbeddingInputType = Literal["query", "document"]

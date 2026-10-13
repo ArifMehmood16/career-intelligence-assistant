@@ -7,6 +7,7 @@ from it. One repair, then an honest refusal that shows what was found.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
@@ -32,6 +33,9 @@ from career_assistant.domain.ask import (
     ToolStep,
 )
 from career_assistant.domain.intents import Intent
+from career_assistant.logconfig import log_event
+
+_log = logging.getLogger(__name__)
 
 _SYSTEM = (
     "You answer questions about the candidate's own documents by calling the tools. "
@@ -90,8 +94,16 @@ def run_agent(
 
     for step in range(limits.max_steps):
         if _over_budget(messages, limits.max_input_tokens):
+            log_event(_log, "Agent stopped: the conversation is over its input budget")
             break
         allow_tools = tool_runs < limits.max_tool_calls and step < limits.max_steps - 1
+        log_event(
+            _log,
+            "Agent asked the model",
+            step=step + 1,
+            tools_offered=allow_tools,
+            messages=len(messages),
+        )
         try:
             turned = port.complete(
                 ToolCallingRequest(
@@ -101,7 +113,12 @@ def run_agent(
                     max_output_tokens=max_output_tokens,
                 )
             )
-        except ProviderInputTooLargeError, ProviderRefusedError:
+        except (ProviderInputTooLargeError, ProviderRefusedError) as error:
+            log_event(
+                _log,
+                "Agent stopped: the model could not take the request",
+                error=type(error).__name__,
+            )
             break
         provider_id = turned.provider_id or provider_id
         model_tag = turned.model_tag or model_tag
@@ -110,6 +127,11 @@ def run_agent(
             turned.input_tokens is not None
             and turned.input_tokens > limits.max_input_tokens
         ):
+            log_event(
+                _log,
+                "Agent stopped: the model reported more input than the budget",
+                input_tokens=turned.input_tokens,
+            )
             break
         if turned.tool_calls and allow_tools:
             tool_runs = _run_tools(
@@ -126,6 +148,7 @@ def run_agent(
         if outcome is None:
             repairs += 1
             continue
+        _log_finished(outcome, steps)
         return AgentOutcome(
             replace(outcome, tool_steps=tuple(steps)),
             provider_id,
@@ -134,7 +157,18 @@ def run_agent(
         )
 
     refused = replace(_refuse(chunks), tool_steps=tuple(steps))
+    _log_finished(refused, steps)
     return AgentOutcome(refused, provider_id, model_tag, left_machine)
+
+
+def _log_finished(result: AnswerResult, steps: list[ToolStep]) -> None:
+    log_event(
+        _log,
+        "Agent finished",
+        kind=result.kind.value,
+        citations=len(result.citations),
+        tool_calls=len(steps),
+    )
 
 
 def _run_tools(
@@ -151,6 +185,13 @@ def _run_tools(
     for call in accepted:
         ran = registry.call(call.name, call.arguments)
         chunks.update(ran.chunks)
+        log_event(
+            _log,
+            "Agent called a tool",
+            tool=call.name,
+            found=len(ran.chunks),
+            failed=ran.error is not None,
+        )
         steps.append(
             ToolStep(
                 name=call.name,
@@ -193,6 +234,7 @@ def _finish(
     parsed = _parse(turned.content)
     if parsed is None:
         if repairs < 1:
+            log_event(_log, "Agent reply was not the expected JSON, asking again")
             messages.append(ChatMessage("assistant", turned.content))
             messages.append(
                 ChatMessage("user", "Reply with the JSON object only. Nothing else.")
@@ -218,6 +260,11 @@ def _finish(
             intent=Intent.OPEN_QUESTION,
         )
     if repairs < 1:
+        log_event(
+            _log,
+            "Agent reply failed the citation check, asking again",
+            problems=len(problems),
+        )
         messages.append(ChatMessage("assistant", turned.content))
         messages.append(
             ChatMessage("user", "Citation check failed: " + "; ".join(problems))
@@ -243,6 +290,9 @@ def _parse(content: str) -> AgentAnswer | None:
 
 
 def _refuse(chunks: Mapping[str, str]) -> AnswerResult:
+    log_event(
+        _log, "Agent could not ground an answer, refusing", evidence_seen=len(chunks)
+    )
     found = [
         f"{chunk_id}: {text[:_MAX_FOUND_CHARS]}" for chunk_id, text in chunks.items()
     ]
